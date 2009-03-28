@@ -1,0 +1,236 @@
+<?xml version="1.0"?>
+
+<!--
+  ~ Copyright (c) 2009 Share This, Inc. All rights reserved
+  -->
+
+<project name="searchcrawl" default="build" basedir=".">
+
+  <!-- load properties first -->
+  <!--<property file="${user.home}/${name}.build.properties" />-->
+  <property file="${basedir}/build.properties"/>
+
+  <!-- these are optional, only used if you uncomment the project.class.path filesets below -->
+  <property name="hadoop.home" location="${basedir}/../hadoop"/>
+  <property name="hadoop.lib" location="${hadoop.home}/lib"/>
+
+
+  <!-- assumes Cascading shares the same parent directory, change if necessary -->
+  <property name="cascading.home" location="${basedir}/../cascading"/>
+  <property file="${cascading.home}/version.properties"/>
+  <property name="cascading.release.version" value="x.y.z"/>
+  <property name="cascading.filename.core" value="cascading-core-${cascading.release.version}.jar"/>
+  <property name="cascading.filename.xml" value="cascading-xml-${cascading.release.version}.jar"/>
+  <property name="cascading.filename.test" value="cascading-test-${cascading.release.version}.jar"/>
+  <property name="cascading.libs" value="${cascading.home}/lib"/>
+  <property name="cascading.libs.core" value="${cascading.libs}"/>
+  <property name="cascading.libs.xml" value="${cascading.libs}/xml"/>
+
+  <condition property="cascading.path" value="${cascading.home}/"
+             else="${cascading.home}/build">
+    <available file="${cascading.home}/${cascading.filename.core}"/>
+  </condition>
+
+  <property name="cascading.lib.core" value="${cascading.path}/${cascading.filename.core}"/>
+  <property name="cascading.lib.xml" value="${cascading.path}/${cascading.filename.xml}"/>
+  <property name="cascading.lib.test" value="${cascading.path}/${cascading.filename.test}"/>
+
+  <property name="src.dir" location="${basedir}/src/java"/>
+  <property name="src.test" location="${basedir}/src/test"/>
+
+  <available file="${src.dir}" type="dir" property="main.available"/>
+  <available file="${src.test}" type="dir" property="test.available"/>
+
+  <property name="conf.dir" location="${hadoop.home}/conf"/>
+
+  <property name="lib.dir" location="${basedir}/lib"/>
+  <property name="lib.dir.build" location="${lib.dir}/build"/>
+
+  <property name="build.dir" location="${basedir}/build/"/>
+  <property name="build.classes" location="${build.dir}/classes"/>
+  <property name="build.test" location="${build.dir}/test"/>
+
+  <property name="dist" location="dist"/>
+
+  <property name="test.results" location="${build.dir}/testresults"/>
+  <property name="test.showoutput" value="no"/>
+
+  <property name="log.data" location="${basedir}/src/test/data/sample.log.gz"/>
+
+
+  <path id="project.class.path">
+    <pathelement location="${build.classes}"/>
+    <pathelement location="${build.test}"/>
+
+    <pathelement location="${cascading.lib.core}"/>
+    <pathelement location="${cascading.lib.xml}"/>
+    <pathelement location="${cascading.lib.test}"/>
+
+    <fileset dir="${cascading.libs.core}">
+      <include name="*.jar"/>
+    </fileset>
+
+    <fileset dir="${cascading.libs.xml}">
+      <include name="*.jar"/>
+    </fileset>
+
+    <fileset dir="${lib.dir}">
+      <include name="*.jar"/>
+    </fileset>
+
+    <fileset dir="${lib.dir.build}">
+      <include name="*.jar"/>
+    </fileset>
+
+    <pathelement location="${hadoop.home}"/>
+
+    <fileset dir="${hadoop.lib}">
+      <include name="*.jar"/>
+    </fileset>
+
+    <fileset dir="${hadoop.home}">
+      <include name="*.jar"/>
+    </fileset>
+
+    <fileset dir="${hadoop.home}/build" erroronmissingdir="false">
+      <include name="*.jar"/>
+    </fileset>
+
+  </path>
+
+  <target name="clean">
+
+    <echo message="cleaning..."/>
+    <delete dir="${build.dir}"/>
+    <delete dir="${dist}"/>
+    <delete dir="${ant.project.name}.tgz"/>
+
+    <!-- delete emacs cruft -->
+    <defaultexcludes remove="**/*~"/>
+    <delete>
+     <fileset dir=".">
+      <include name="**/*~"/>
+     </fileset>
+    </delete>
+
+  </target>
+
+  <target name="compile">
+
+    <echo message="building..."/>
+    <echo message="using cascading lib: ${cascading.lib.core}"/>
+    <mkdir dir="${build.classes}"/>
+    <mkdir dir="${lib.dir}"/>
+
+    <javac srcdir="${src.dir}" destdir="${build.classes}" verbose="off">
+      <classpath refid="project.class.path"/>
+    </javac>
+
+    <copy todir="${build.classes}">
+      <fileset dir="${src.dir}">
+        <exclude name="**/*.java"/>
+      </fileset>
+    </copy>
+
+  </target>
+
+  <target name="compile-test">
+
+    <echo message="building..."/>
+    <echo message="using cascading lib: ${cascading.lib.core}"/>
+    <mkdir dir="${build.test}"/>
+    <mkdir dir="${lib.dir}"/>
+
+    <javac srcdir="${src.test}" destdir="${build.test}" verbose="off">
+      <classpath refid="project.class.path"/>
+    </javac>
+
+    <copy todir="${build.test}">
+      <fileset dir="${src.test}">
+        <exclude name="**/*.java"/>
+      </fileset>
+    </copy>
+
+  </target>
+
+  <!-- runs JUnit tests -->
+  <target name="test" depends="compile,compile-test" description="run the unit tests">
+    <echo message="running all tests..."/>
+
+    <mkdir dir="build/test/log"/>
+    <mkdir dir="${test.results}"/>
+
+    <junit printsummary="true" showoutput="${test.showoutput}" fork="yes" haltonerror="no" haltonfailure="no" dir="."
+           maxmemory="756m">
+
+      <sysproperty key="test.cluster.enabled" value="${test.cluster.enabled}"/>
+      <sysproperty key="test.build.data" value="${log.data}"/>
+      <sysproperty key="hadoop.log.dir" value="build/test/log"/>
+
+      <!--<jvmarg value="-Xdebug"/>--><!--<jvmarg value="-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"/>-->
+
+      <classpath>
+        <path refid="project.class.path"/>
+        <pathelement path="${java.class.path}"/>
+      </classpath>
+      <formatter type="plain" usefile="true"/>
+
+      <test name="${testcase}" todir="${test.results}" if="testcase" haltonfailure="${test.haltonerror}"/>
+      <batchtest todir="${test.results}" haltonfailure="${test.haltonerror}" unless="testcase">
+        <fileset dir="${src.test}">
+          <include name="**/*Test.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+
+  </target>
+
+  <target name="jar" depends="compile" description="creates a Hadoop ready jar with all dependencies">
+
+    <!-- copy Cascading classes and libraries -->
+    <copy todir="${build.classes}/lib" file="${cascading.lib.core}"/>
+    <copy todir="${build.classes}/lib" file="${cascading.lib.xml}"/>
+    <copy todir="${build.classes}/lib">
+      <fileset dir="${cascading.libs.core}" includes="*.jar"/>
+      <fileset dir="${cascading.libs.xml}" includes="*.jar"/>
+    </copy>
+
+
+    <jar jarfile="${build.dir}/${ant.project.name}.jar">
+      <fileset dir="${build.classes}"/>
+      <fileset dir="${basedir}" includes="lib/"/>
+      <manifest>
+        <attribute name="Main-Class" value="sharethis.${ant.project.name}/Main"/>
+      </manifest>
+    </jar>
+
+  </target>
+
+  <target name="dist" depends="clean" description="packages current project">
+
+    <mkdir dir="${dist}"/>
+
+    <copy todir="${dist}">
+
+      <fileset dir=".">
+        <include name="data/**"/>
+        <include name="src/**"/>
+        <include name="lib/**"/>
+        <include name="build.xml"/>
+        <include name="README.TXT"/>
+      </fileset>
+
+    </copy>
+
+  </target>
+
+  <target name="tar" depends="dist" description="creates an archive of current project">
+    <tar destfile="${ant.project.name}.tgz"
+         compression="gzip">
+      <tarfileset dir="dist/" prefix="${ant.project.name}">
+        <include name="**/**"/>
+      </tarfileset>
+    </tar>
+  </target>
+
+</project>
