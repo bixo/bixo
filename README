@@ -1,3 +1,7 @@
+===============================
+Introduction
+===============================
+
 Bixo is an open source Java crawler that runs as a series of Cascading
 pipes. It is designed to be used as a tool for creating customized
 crawlers, thus each Cascading pipe implements a discrete operation. By
@@ -8,3 +12,30 @@ Bixo borrows heavily from the Apache Nutch project, as well as many other
 open source projects at Apache and elsewhere.
 
 Bixo is released under the MIT license.
+
+===============================
+Building
+===============================
+
+To build, you first need:
+
+1. A recent release of Cascading that works with Hadoop 0.19.0+
+
+http://cascading.googlecode.com/files/cascading-1.0.6-hadoop-0.19.0%2B.tgz
+
+2. A recent release of Hadoop 0.19
+
+http://www.apache.org/dyn/closer.cgi/hadoop/core/
+
+3. A build.properties file in the same directory as the build.xml file
+
+This file should contain:
+
+hadoop.home=<path to Hadoop you just downloaded>
+cascading.home=<path to Cascading you just downloaded>
+
+Note that you can't use user-relative paths here, e.g. ~/<path> won't work.
+They need to be either absolute or relative to the project directory.
+
+4. Run ant test to compile & test the code.
+
