@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2009 Share This, Inc. All rights reserved
+ * Copyright (c) 2009 The Bixo Project. All rights reserved
  */
 
-package sharethis.searchcrawl;
+
+package bixo;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -44,7 +45,6 @@ public class Main
 
   private static void printUsageAndExit( CmdLineParser parser )
     {
-    System.err.println( "java sharethis.logprocessing.Main [options...]" );
     parser.printUsage( System.err );
 
     System.exit( -1 );

@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2009 Share This, Inc. All rights reserved
+ * Copyright (c) 2009 The Bixo Project. All rights reserved
  */
 
-package sharethis.searchcrawl;
+package bixo;
 
 import java.net.URI;
 
