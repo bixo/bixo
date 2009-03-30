@@ -10,41 +10,15 @@
   <!--<property file="${user.home}/${name}.build.properties" />-->
   <property file="${basedir}/build.properties"/>
 
-  <!-- these are optional, only used if you uncomment the project.class.path filesets below -->
-  <property name="hadoop.home" location="${basedir}/../hadoop"/>
-  <property name="hadoop.lib" location="${hadoop.home}/lib"/>
-
-
-  <!-- assumes Cascading shares the same parent directory, change if necessary -->
-  <property name="cascading.home" location="${basedir}/../cascading"/>
-  <property file="${cascading.home}/version.properties"/>
-  <property name="cascading.release.version" value="x.y.z"/>
-  <property name="cascading.filename.core" value="cascading-core-${cascading.release.version}.jar"/>
-  <property name="cascading.filename.xml" value="cascading-xml-${cascading.release.version}.jar"/>
-  <property name="cascading.filename.test" value="cascading-test-${cascading.release.version}.jar"/>
-  <property name="cascading.libs" value="${cascading.home}/lib"/>
-  <property name="cascading.libs.core" value="${cascading.libs}"/>
-  <property name="cascading.libs.xml" value="${cascading.libs}/xml"/>
-
-  <condition property="cascading.path" value="${cascading.home}/"
-             else="${cascading.home}/build">
-    <available file="${cascading.home}/${cascading.filename.core}"/>
-  </condition>
-
-  <property name="cascading.lib.core" value="${cascading.path}/${cascading.filename.core}"/>
-  <property name="cascading.lib.xml" value="${cascading.path}/${cascading.filename.xml}"/>
-  <property name="cascading.lib.test" value="${cascading.path}/${cascading.filename.test}"/>
-
-  <property name="src.dir" location="${basedir}/src/java"/>
-  <property name="src.test" location="${basedir}/src/test"/>
+  <property name="src.dir" location="${basedir}/src/main/java"/>
+  <property name="src.test" location="${basedir}/src/test/java"/>
 
   <available file="${src.dir}" type="dir" property="main.available"/>
   <available file="${src.test}" type="dir" property="test.available"/>
 
-  <property name="conf.dir" location="${hadoop.home}/conf"/>
+  <property name="conf.dir" location="${basedir}/conf"/>
 
   <property name="lib.dir" location="${basedir}/lib"/>
-  <property name="lib.dir.build" location="${lib.dir}/build"/>
 
   <property name="build.dir" location="${basedir}/build/"/>
   <property name="build.classes" location="${build.dir}/classes"/>
@@ -62,40 +36,9 @@
     <pathelement location="${build.classes}"/>
     <pathelement location="${build.test}"/>
 
-    <pathelement location="${cascading.lib.core}"/>
-    <pathelement location="${cascading.lib.xml}"/>
-    <pathelement location="${cascading.lib.test}"/>
-
-    <fileset dir="${cascading.libs.core}">
-      <include name="*.jar"/>
-    </fileset>
-
-    <fileset dir="${cascading.libs.xml}">
-      <include name="*.jar"/>
-    </fileset>
-
     <fileset dir="${lib.dir}">
       <include name="*.jar"/>
     </fileset>
-
-    <fileset dir="${lib.dir.build}">
-      <include name="*.jar"/>
-    </fileset>
-
-    <pathelement location="${hadoop.home}"/>
-
-    <fileset dir="${hadoop.lib}">
-      <include name="*.jar"/>
-    </fileset>
-
-    <fileset dir="${hadoop.home}">
-      <include name="*.jar"/>
-    </fileset>
-
-    <fileset dir="${hadoop.home}/build" erroronmissingdir="false">
-      <include name="*.jar"/>
-    </fileset>
-
   </path>
 
   <target name="clean">
@@ -118,7 +61,6 @@
   <target name="compile">
 
     <echo message="building..."/>
-    <echo message="using cascading lib: ${cascading.lib.core}"/>
     <mkdir dir="${build.classes}"/>
     <mkdir dir="${lib.dir}"/>
 
@@ -137,7 +79,6 @@
   <target name="compile-test">
 
     <echo message="building..."/>
-    <echo message="using cascading lib: ${cascading.lib.core}"/>
     <mkdir dir="${build.test}"/>
     <mkdir dir="${lib.dir}"/>
 
@@ -187,20 +128,13 @@
 
   <target name="jar" depends="compile" description="creates a Hadoop ready jar with all dependencies">
 
-    <!-- copy Cascading classes and libraries -->
-    <copy todir="${build.classes}/lib" file="${cascading.lib.core}"/>
-    <copy todir="${build.classes}/lib" file="${cascading.lib.xml}"/>
-    <copy todir="${build.classes}/lib">
-      <fileset dir="${cascading.libs.core}" includes="*.jar"/>
-      <fileset dir="${cascading.libs.xml}" includes="*.jar"/>
-    </copy>
-
-
+    <!-- TODO Exclude hadoop jars here? -->
+    
     <jar jarfile="${build.dir}/${ant.project.name}.jar">
       <fileset dir="${build.classes}"/>
       <fileset dir="${basedir}" includes="lib/"/>
       <manifest>
-        <attribute name="Main-Class" value="sharethis.${ant.project.name}/Main"/>
+        <attribute name="Main-Class" value="bixo.${ant.project.name}/Main"/>
       </manifest>
     </jar>
 
