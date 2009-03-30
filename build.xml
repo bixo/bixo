@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <!--
-  ~ Copyright (c) 2009 Share This, Inc. All rights reserved
+  ~ Copyright (c) 2009 The Bixo Project. All rights reserved
   -->
 
 <project name="searchcrawl" default="build" basedir=".">
