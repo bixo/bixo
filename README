@@ -20,8 +20,18 @@ Building
 You need Apache Ant 1.7 or higher. 
 In the project root type:
 ant -p
-Try following to clean, run the tests and integration tests and build a jar.
+
+To  clean, run the tests and integration tests and build a jar type:
 ant clean test it jar
+
+To build a distribution type:
+ant dist
+
+To build a eclipse project type:
+ant eclipse
+Than choose "import existing project" in eclipse.
+ 
+
 
 
 
