@@ -22,16 +22,16 @@
 		<dependency org="ant-eclipse" name="ant-eclipse" rev="1.0-jvm1.2" conf="eclipse" />
 		
 		<!-- Testing -->
-        <dependency org="junit" name="junit" rev="4.5" conf="test" />
+        <dependency org="org.junit" name="junit" rev="4.5" conf="test" />
         
         <dependency org="org.mockito" name="mockito-core" rev="1.7" conf="test" />
-        <dependency org="hamcrest" name="hamcrest-core" rev="1.1" conf="test" />
-        <dependency org="objenesis" name="objenesis" rev="1.0" conf="test" />
+        <dependency org="org.hamcrest" name="hamcrest-core" rev="1.1" conf="test" />
+        <dependency org="org.objenesis" name="objenesis" rev="1.0" conf="test" />
 		<!-- coverage -->        
 		<dependency org="net.sourceforge.cobertura" name="cobertura" rev="1.9.1" conf="instrument" />
-		<dependency org="asm" name="asm" rev="3.0" conf="instrument" />
-		<dependency org="asm" name="asm-tree" rev="3.0" conf="instrument" />
-		<dependency org="jakarta-oro" name="jakarta-oro" rev="2.0.8" conf="instrument" />
+		<dependency org="org.asm" name="asm" rev="3.0" conf="instrument" />
+		<dependency org="org.asm" name="asm-tree" rev="3.0" conf="instrument" />
+		<dependency org="org.jakarta-oro" name="jakarta-oro" rev="2.0.8" conf="instrument" />
 		<!-- as well as log4j -->
 
         <dependency org="org.cascading" name="cascading-test" rev="1.0.6" conf="test" />
