@@ -17,25 +17,14 @@ Bixo is released under the MIT license.
 Building
 ===============================
 
-To build, you first need:
+You need Apache Ant 1.7 or higher. 
+In the project root type:
+ant -p
+Try following to clean, run the tests and integration tests and build a jar.
+ant clean test it jar
 
-1. A recent release of Cascading that works with Hadoop 0.19.0+
 
-http://cascading.googlecode.com/files/cascading-1.0.6-hadoop-0.19.0%2B.tgz
 
-2. A recent release of Hadoop 0.19
 
-http://www.apache.org/dyn/closer.cgi/hadoop/core/
 
-3. A build.properties file in the same directory as the build.xml file
-
-This file should contain:
-
-hadoop.home=<path to Hadoop you just downloaded>
-cascading.home=<path to Cascading you just downloaded>
-
-Note that you can't use user-relative paths here, e.g. ~/<path> won't work.
-They need to be either absolute or relative to the project directory.
-
-4. Run ant test to compile & test the code.
 

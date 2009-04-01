@@ -1,0 +1,64 @@
+<ivy-module version="2.0">
+	<info organisation="emi" module="event-processing/grid" />
+
+	<!-- project configuration 
+    -->
+	<configurations>
+		<conf name="ant" description="for ant usage" />
+		<conf name="eclipse" description="to generate eclipse config files" />
+		<conf name="compile" description="source compile" />
+		<conf name="test" extends="compile" description="compile plus test jars" />
+		<conf name="instrument" description="code coverage" />
+		<conf name="job" description="jars that go into the hadoop job jar" />
+	</configurations>
+
+
+	<!-- dependencies -->
+	<!-- e.g.:   <dependency org="apache" name="commons-collections" rev="3.1" conf="cc-impl->default"/> -->
+
+	<dependencies defaultconfmapping="*->default">
+
+		<!-- Ant -->
+		<dependency org="ant-eclipse" name="ant-eclipse" rev="1.0-jvm1.2" conf="eclipse" />
+		
+		<!-- Testing -->
+        <dependency org="junit" name="junit" rev="4.5" conf="test" />
+        
+        <dependency org="org.mockito" name="mockito-core" rev="1.7" conf="test" />
+        <dependency org="hamcrest" name="hamcrest-core" rev="1.1" conf="test" />
+        <dependency org="objenesis" name="objenesis" rev="1.0" conf="test" />
+		<!-- coverage -->        
+		<dependency org="net.sourceforge.cobertura" name="cobertura" rev="1.9.1" conf="instrument" />
+		<dependency org="asm" name="asm" rev="3.0" conf="instrument" />
+		<dependency org="asm" name="asm-tree" rev="3.0" conf="instrument" />
+		<dependency org="jakarta-oro" name="jakarta-oro" rev="2.0.8" conf="instrument" />
+		<!-- as well as log4j -->
+
+        <dependency org="org.cascading" name="cascading-test" rev="1.0.6" conf="test" />
+
+		 <!-- Cascading -->
+        <dependency org="org.cascading" name="cascading-core" rev="1.0.6" conf="compile,job" />
+        <dependency org="jgrapht" name="jgrapht" rev="jdk1.6" conf="compile,job" />
+
+		<!-- Hadoop --> 
+		<dependency org="org.apache.hadoop" name="hadoop-core" rev="0.19.0" conf="compile" />
+		<dependency org="org.apache.hadoop" name="hadoop-test" rev="0.19.0" conf="compile" />
+		<!-- TODO find out if we really need all of this -->
+		<dependency org="jetty" name="jetty" rev="5.1.4" conf="compile" />
+		<dependency org="jsp-api" name="jsp-api" rev="2.0" conf="compile" />
+		<dependency org="servlet-api" name="servlet-api" rev="2.4" conf="compile" />
+		<dependency org="jasper" name="jasper-compiler" rev="x" conf="compile" />
+		<dependency org="jasper" name="jasper-runtime" rev="x" conf="compile" />
+		
+		<!-- httpclient -->
+		<dependency org="httpComponents" name="httpclient" rev="4.0-beta2" conf="compile" />
+		<dependency org="httpComponents" name="httpcore" rev="4.0" conf="compile" />
+		<dependency org="apache-commons" name="commons-logging" rev="1.1.1" conf="compile" />
+		<dependency org="apache-commons" name="commons-codec" rev="1.3" conf="compile" />
+
+		
+		<dependency org="org.apache" name="log4j" rev="1.2.13" conf="compile, instrument" />
+		
+    </dependencies>
+
+</ivy-module>
