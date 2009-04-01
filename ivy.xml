@@ -43,6 +43,7 @@
 		<!-- Hadoop --> 
 		<dependency org="org.apache.hadoop" name="hadoop-core" rev="0.19.0" conf="compile" />
 		<dependency org="org.apache.hadoop" name="hadoop-test" rev="0.19.0" conf="compile" />
+		<dependency org="commons-http" name="commons-httpclient" rev="3.0.1" conf="compile" />
 		<!-- TODO find out if we really need all of this -->
 		<dependency org="jetty" name="jetty" rev="5.1.4" conf="compile" />
 		<dependency org="jsp-api" name="jsp-api" rev="2.0" conf="compile" />
