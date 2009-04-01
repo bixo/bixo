@@ -51,7 +51,8 @@
 	</target>
 
 	<target name="clean-cache" depends="install-ivy" description="--> clean the ivy cache">
-		<ivy:cleancache />
+		<ivy:settings file="${root.dir}/ivy/ivysettings.xml" />
+		<ivy:cleancache  />
 	</target>
 
 	<!-- ================================================================== -->
