@@ -58,7 +58,7 @@ public class UrlImporter extends HadoopConfigured {
             pipe = new GroupBy(pipe, new Fields(Constants.URL));
             //
             Aggregator last = new LastUpdated();
-            pipe = new Every(pipe, Constants.URL_TUPLE_VALUES, last, Fields.RESULTS);
+            pipe = new Every(pipe, Constants.URL_TUPLE_VALUES, last);
 
             FlowConnector flowConnector = new FlowConnector();
             try {
