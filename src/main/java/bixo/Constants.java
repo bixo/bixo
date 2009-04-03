@@ -19,6 +19,7 @@ public interface Constants {
 
     String FETCH = "fetch";
     String SCORE = "score";
+    String STATUS = "status";
     String CONTENT = "content";
 
 }

@@ -19,13 +19,12 @@ public class FetcherReducer implements Reducer<Tuple, Tuple, Tuple, Tuple> {
     private FetcherManager _fetcherMgr;
     private Thread _fetcherThread;
     private Reporter _lastReporter;
-    private TupleCollector _collector;
+    private FetchCollector _collector;
     
     @Override
     public void configure(JobConf conf) {
         _queueMgr = new FetcherQueueMgr();
-        
-        _collector = new TupleCollector();
+        _collector = new FetchCollector(conf);
         
         // TODO KKr- configure max threads in conf?
         int maxThreads = 10;
@@ -43,8 +42,7 @@ public class FetcherReducer implements Reducer<Tuple, Tuple, Tuple, Tuple> {
         
         try {
             // <key> is the PLD grouper, while each entry from <values> is a FetchItem.
-            // TODO KKr - get from PLD key
-            String domain = "domain.com";
+            String domain = key.getString(0);
             FetcherPolicy policy = new FetcherPolicy();
             
             // TODO KKr - base maxURLs on fetcher policy, target end of fetch
@@ -73,9 +71,15 @@ public class FetcherReducer implements Reducer<Tuple, Tuple, Tuple, Tuple> {
             if (_lastReporter != null) {
                 _lastReporter.progress();
             }
+            
+            try {
+                Thread.sleep(1000L);
+            } catch (InterruptedException e) {}
+            
         }
         
         _fetcherThread.interrupt();
+        _collector.close();
     }
 
 }

@@ -8,10 +8,10 @@ public class FetcherRunnable implements Runnable {
     private static Logger LOGGER = Logger.getLogger(FetcherRunnable.class);
     
     private IHttpFetcher _httpFetcher;
-    private TupleCollector _collector;
+    private FetchCollector _collector;
     private FetchList _items;
 
-    public FetcherRunnable(IHttpFetcher httpFetcher, TupleCollector collector, FetchList items) {
+    public FetcherRunnable(IHttpFetcher httpFetcher, FetchCollector collector, FetchList items) {
         _httpFetcher = httpFetcher;
         _collector = collector;
         _items = items;
@@ -25,7 +25,7 @@ public class FetcherRunnable implements Runnable {
                 FetchResult result = _httpFetcher.get(item.getUrl());
                 LOGGER.trace("Fetched " + result);
 
-                // TODO KKr - what to do with result?
+                _collector.collect(result);
             } catch (Throwable t) {
                 LOGGER.error("Exception: " + t.getMessage(), t);
             }

@@ -23,9 +23,9 @@ public class FetcherManager implements Runnable {
     private IFetchItemProvider _provider;
     private IHttpFetcherFactory _factory;
     private ThreadPoolExecutor _pool;
-    private TupleCollector _collector;
+    private FetchCollector _collector;
     
-    public FetcherManager(IFetchItemProvider provider, IHttpFetcherFactory factory, TupleCollector collector) {
+    public FetcherManager(IFetchItemProvider provider, IHttpFetcherFactory factory, FetchCollector collector) {
         _provider = provider;
         _factory = factory;
         _collector = collector;

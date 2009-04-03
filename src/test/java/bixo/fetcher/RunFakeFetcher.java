@@ -2,12 +2,19 @@ package bixo.fetcher;
 
 import java.util.Random;
 
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobConf;
+
 public class RunFakeFetcher {
     
     public static void main(String[] args) {
         
         try {
-            TupleCollector collector = new TupleCollector();
+            JobConf conf = new JobConf();
+            FileOutputFormat.setOutputPath(conf, new Path("build/test-data/RunFakeFetcher/working"));
+
+            FetchCollector collector = new FetchCollector(conf);
             FetcherQueueMgr queueMgr = new FetcherQueueMgr();
             FetcherManager threadMgr = new FetcherManager(queueMgr, new FakeHttpFetcherFactory(true, 10), collector);
             

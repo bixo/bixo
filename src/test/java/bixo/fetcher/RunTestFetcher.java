@@ -9,6 +9,9 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.JobConf;
 
 import bixo.utils.DomainNames;
 
@@ -59,7 +62,9 @@ public class RunTestFetcher {
             }
             
             // We've got all of the URLs set up for crawling.
-            TupleCollector collector = new TupleCollector();
+            JobConf conf = new JobConf();
+            FileOutputFormat.setOutputPath(conf, new Path("build/test-data/RunTestFetcher/working"));
+            FetchCollector collector = new FetchCollector(conf);
             FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFactory(10), collector);
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");

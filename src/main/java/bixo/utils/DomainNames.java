@@ -1,6 +1,5 @@
 package bixo.utils;
 
-import java.io.Serializable;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -13,8 +12,7 @@ import java.util.regex.Pattern;
  *
  */
 
-@SuppressWarnings("serial")
-public class DomainNames implements Serializable {
+public class DomainNames {
     private static final String CC_TLDS =
         "ac ad ae af ag ai al am an ao aq ar as at au aw ax az ba bb bd be bf bg bh bi " +
         "bj bl bm bn bo br bs bt bv bw by bz ca cc cd cf cg ch ci ck cl cm cn co cr cu " +
