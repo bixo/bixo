@@ -1,16 +1,16 @@
 package bixo.fetcher;
 
 public class FetchResult {
-    private FetchStatus _status;
+    private FetchStatusCode _statusCode;
     private FetchContent _content;
     
-    public FetchResult(FetchStatus status, FetchContent content) {
-        _status = status;
+    public FetchResult(FetchStatusCode statusCode, FetchContent content) {
+        _statusCode = statusCode;
         _content = content;
     }
 
-    public FetchStatus getStatus() {
-        return _status;
+    public FetchStatusCode getStatusCode() {
+        return _statusCode;
     }
 
     public FetchContent getContent() {
@@ -19,6 +19,6 @@ public class FetchResult {
     
     public String toString() {
         int size = _content.getContent() == null ? 0 : _content.getContent().length;
-        return String.format("%s (status %d, size %d)", _content.getFetchedUrl(), _status.getCode(), size);
+        return String.format("%s (status code %d, size %d)", _content.getFetchedUrl(), _statusCode.getCode(), size);
     }
 }

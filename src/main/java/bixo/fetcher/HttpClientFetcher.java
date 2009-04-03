@@ -35,14 +35,14 @@ public class HttpClientFetcher implements IHttpFetcher {
             HttpEntity entity = response.getEntity();
             byte[] bytes = EntityUtils.toByteArray(entity);
             // TODO KKr - handle redirects, real content type, what about charset? Do we need to capture HTTP headers?
-            return new FetchResult(new FetchStatus(0), new FetchContent(url, url, System.currentTimeMillis(), bytes, null));
+            return new FetchResult(new FetchStatusCode(0), new FetchContent(url, url, System.currentTimeMillis(), bytes, null));
         } catch (Throwable t) {
             safeAbort(httpget);
             
             LOGGER.debug("Exception while fetching url " + url + ": " + t.getMessage(), t);
             // TODO KKr - use real status for exception, include exception msg somehow.
             
-            return new FetchResult(new FetchStatus(-1), new FetchContent(url, url, System.currentTimeMillis(), null, null));
+            return new FetchResult(new FetchStatusCode(-1), new FetchContent(url, url, System.currentTimeMillis(), null, null));
         }
 
     }
