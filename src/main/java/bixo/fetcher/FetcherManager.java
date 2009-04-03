@@ -23,13 +23,15 @@ public class FetcherManager implements Runnable {
     private IFetchItemProvider _provider;
     private IHttpFetcherFactory _factory;
     private ThreadPoolExecutor _pool;
+    private TupleCollector _collector;
     
-    public FetcherManager(IFetchItemProvider provider, IHttpFetcherFactory factory, int maxThreads) {
+    public FetcherManager(IFetchItemProvider provider, IHttpFetcherFactory factory, TupleCollector collector) {
         _provider = provider;
         _factory = factory;
+        _collector = collector;
         
-        ArrayBlockingQueue<Runnable> queue = new ArrayBlockingQueue<Runnable>(maxThreads * 2);
-        _pool = new ThreadPoolExecutor(FETCH_THREAD_COUNT_CORE, maxThreads, FETCH_IDLE_TIMEOUT, TimeUnit.SECONDS, queue);
+        ArrayBlockingQueue<Runnable> queue = new ArrayBlockingQueue<Runnable>(_factory.getMaxThreads() * 2);
+        _pool = new ThreadPoolExecutor(FETCH_THREAD_COUNT_CORE, _factory.getMaxThreads(), FETCH_IDLE_TIMEOUT, TimeUnit.SECONDS, queue);
     }
     
     
@@ -56,7 +58,7 @@ public class FetcherManager implements Runnable {
 	            
 	            // Create a Runnable that has a way to fetch the URLs (the IHttpFetcher), and
 	            // the list of things to fetch (the <items>).
-	            FetcherRunnable command = new FetcherRunnable(_factory.newHttpFetcher(), items);
+	            FetcherRunnable command = new FetcherRunnable(_factory.newHttpFetcher(), _collector, items);
 	            _pool.execute(command);
 	        }
 	    }

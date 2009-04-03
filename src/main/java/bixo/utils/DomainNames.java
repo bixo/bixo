@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
  *
  */
 
+@SuppressWarnings("serial")
 public class DomainNames implements Serializable {
     private static final String CC_TLDS =
         "ac ad ae af ag ai al am an ao aq ar as at au aw ax az ba bb bd be bf bg bh bi " +

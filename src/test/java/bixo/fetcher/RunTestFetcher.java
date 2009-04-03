@@ -10,7 +10,7 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
 
-import bixo.DomainNames;
+import bixo.utils.DomainNames;
 
 public class RunTestFetcher {
 
@@ -21,7 +21,7 @@ public class RunTestFetcher {
         try {
             LineIterator iter = FileUtils.lineIterator(new File(args[0]), "UTF-8");
             
-            HashMap<String, List<URL>> domainMap = new HashMap<String, List<URL>>();
+            HashMap<String, List<String>> domainMap = new HashMap<String, List<String>>();
             
             while (iter.hasNext()) {
                 String line = iter.nextLine();
@@ -29,13 +29,13 @@ public class RunTestFetcher {
                 try {
                     URL url = new URL(line);
                     String pld = DomainNames.getPLD(url);
-                    List<URL> urls = domainMap.get(pld);
+                    List<String> urls = domainMap.get(pld);
                     if (urls == null) {
-                        urls = new ArrayList<URL>();
+                        urls = new ArrayList<String>();
                         domainMap.put(pld, urls);
                     }
                     
-                    urls.add(url);
+                    urls.add(url.toExternalForm());
                 } catch (MalformedURLException e) {
                     System.out.println("Invalid URL in input file: " + line);
                 }
@@ -49,9 +49,9 @@ public class RunTestFetcher {
 
             for (String pld : domainMap.keySet()) {
                 FetcherQueue queue = new FetcherQueue(pld, policy, 100);
-                List<URL> urls = domainMap.get(pld);
+                List<String> urls = domainMap.get(pld);
                 System.out.println("Adding " + urls.size() + " URLs for " + pld);
-                for (URL url : urls) {
+                for (String url : urls) {
                     queue.offer(url, 0.5f);
                 }
                 
@@ -59,7 +59,8 @@ public class RunTestFetcher {
             }
             
             // We've got all of the URLs set up for crawling.
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFactory(10), 10);
+            TupleCollector collector = new TupleCollector();
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFactory(10), collector);
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");
             t.start();

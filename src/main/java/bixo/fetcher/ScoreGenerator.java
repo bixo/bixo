@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 import bixo.items.UrlItem;
 
-public interface ScoreGenerator extends Serializable{
+public interface ScoreGenerator extends Serializable {
 
     double generateScore(UrlItem urlItem);
 

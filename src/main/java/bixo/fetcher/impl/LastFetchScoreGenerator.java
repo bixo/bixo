@@ -4,7 +4,6 @@ import bixo.fetcher.ScoreGenerator;
 import bixo.items.UrlItem;
 
 public class LastFetchScoreGenerator implements ScoreGenerator {
-
     private final long _now;
     private final long _interval;
 

@@ -2,6 +2,8 @@ package bixo.fetcher;
 
 import java.util.LinkedList;
 
+import bixo.items.FetchItem;
+
 @SuppressWarnings("serial")
 public class FetchList extends LinkedList<FetchItem> {
     private FetcherQueue _fromQueue;

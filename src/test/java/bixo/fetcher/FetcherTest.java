@@ -25,7 +25,7 @@ public class FetcherTest {
         }
         // now fetch those
 
-        Fetcher fetcher = new Fetcher();
+        FetcherJob fetcher = new FetcherJob();
         String input = workingFolder + "/" + Constants.URL_DB;
 
         String fetchFolder = workingFolder + "/" + Constants.FETCH + TimeStampUtil.nowWithUnderLine();

@@ -1,6 +1,5 @@
 package bixo.fetcher;
 
-import java.net.URL;
 import java.util.Random;
 
 public class RunFakeFetcher {
@@ -8,8 +7,9 @@ public class RunFakeFetcher {
     public static void main(String[] args) {
         
         try {
+            TupleCollector collector = new TupleCollector();
             FetcherQueueMgr queueMgr = new FetcherQueueMgr();
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new FakeHttpFetcherFactory(true), 10);
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new FakeHttpFetcherFactory(true, 10), collector);
             
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");
@@ -26,7 +26,7 @@ public class RunFakeFetcher {
 
                 for (int j = 0; j < 20; j++) {
                     String file = "/page-" + j + ".html";
-                    queue.offer(new URL("http", "www." + host, file), rand.nextFloat());
+                    queue.offer("http://www." + host + file, rand.nextFloat());
                 }
                 
                 while (!queueMgr.offer(queue)) {

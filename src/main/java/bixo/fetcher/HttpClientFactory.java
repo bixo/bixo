@@ -15,11 +15,14 @@ import org.apache.http.params.HttpProtocolParams;
 
 public class HttpClientFactory implements IHttpFetcherFactory {
     private HttpClient _httpClient;
+    private int _maxThreads;
     
     public HttpClientFactory(int maxThreads) {
+        _maxThreads = maxThreads;
+        
         // Create and initialize HTTP parameters
         HttpParams params = new BasicHttpParams();
-        ConnManagerParams.setMaxTotalConnections(params, maxThreads);
+        ConnManagerParams.setMaxTotalConnections(params, _maxThreads);
         HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
 
         // Create and initialize scheme registry 
@@ -36,6 +39,11 @@ public class HttpClientFactory implements IHttpFetcherFactory {
     @Override
     public IHttpFetcher newHttpFetcher() {
         return new HttpClientFetcher(_httpClient);
+    }
+
+    @Override
+    public int getMaxThreads() {
+        return _maxThreads;
     }
 
 }

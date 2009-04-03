@@ -1,11 +1,16 @@
 package bixo.fetcher;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
+import bixo.items.FetchItem;
+
 public class FetcherQueue implements IFetchItemProvider {
+    private static Logger LOGGER = Logger.getLogger(FetcherQueue.class);
+    
     private String _domain;
     private List<FetchItem> _queue;
     private FetcherPolicy _policy;
@@ -32,32 +37,47 @@ public class FetcherQueue implements IFetchItemProvider {
      * @param score - domain-relative score of the URL (high values => higher priority)
      * @return - true if we queued the URL
      */
-    public boolean offer(URL url, float score) {
+    public boolean offer(String url, double score, FetchItem fetchItem) {
         if (_queue.size() < _maxURLs) {
+            trace("adding url to unfilled queue", url);
             _queue.add(new FetchItem(url, score));
             _sorted = false;
             return true;
         }
 
+        // Since we have to insert, make sure the list is ordered first.
         sort();
 
-        if (score <= _queue.get(_queue.size() - 1)._score) {
+        if (score <= _queue.get(_queue.size() - 1).getScore()) {
+            trace("rejecting url due to low score", url);
             return false;
         } else {
             // Get rid of last (lowest score) item in queue, then insert
             // new item at the right location.
+            trace("adding url to full queue", url);
             _queue.remove(_queue.size() - 1);
-            FetchItem fetchItem = new FetchItem(url, score);
+            if (fetchItem == null) {
+                fetchItem = new FetchItem(url, score);
+            }
+            
             int index = Collections.binarySearch(_queue, fetchItem);
             if (index < 0) {
                 index = -(index + 1);
             }
+            
             _queue.add(index, fetchItem);
             return true;
         }
     }
 
-
+    public boolean offer(FetchItem fetchItem) {
+        return offer(fetchItem.getUrl(), fetchItem.getScore(), fetchItem);
+    }
+    
+    public boolean offer(String url, double score) {
+        return offer(url, score, null);
+    }
+    
     /**
      * Tell the caller whether this queue is done (empty and all using threads done)
      * 
@@ -73,6 +93,7 @@ public class FetcherQueue implements IFetchItemProvider {
      * @param items - items previously returned from call to poll()
      */
     public synchronized void release(FetchList items) {
+        trace("Release fetchlist", items.get(0).getUrl());
         _numActiveFetchers -= 1;
     }
 
@@ -111,6 +132,12 @@ public class FetcherQueue implements IFetchItemProvider {
         if (!_sorted) {
             _sorted = true;
             Collections.sort(_queue);
+        }
+    }
+    
+    private void trace(String msg, String url) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("(%s) %s: %s", _domain, msg, url));
         }
     }
     

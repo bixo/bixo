@@ -6,7 +6,7 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 
 /**
- * Just a wrapper around tuple with getter and setter for the knwon fields
+ * Just a wrapper around tuple with getter and setter for the known fields
  * 
  */
 public class UrlItem {
