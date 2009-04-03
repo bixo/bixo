@@ -136,6 +136,7 @@
 			<classpath>
 				<container path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6" />
 
+				<source path="${basedir}/conf" output="${build.dir.main-classes}" />
 			    <source path="${basedir}/src/main/java" output="${build.dir.main-classes}" />
 				<source path="${basedir}/src/test/java" output="${build.dir.test-classes}" />
 				<source path="${basedir}/src/test/resources" output="${build.dir.test-classes}" />
