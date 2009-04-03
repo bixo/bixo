@@ -3,3 +3,6 @@
 .project
 .settings/
 build
+build-eclipse
+build.properties
+build.sh
