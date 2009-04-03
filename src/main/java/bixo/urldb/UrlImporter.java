@@ -7,11 +7,11 @@ import org.apache.hadoop.fs.Path;
 
 import bixo.Constants;
 import bixo.HadoopConfigured;
+import bixo.items.UrlItem;
 import bixo.parser.TextUrlParser;
 import bixo.utils.TimeStampUtil;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
-import cascading.flow.PlannerException;
 import cascading.operation.Aggregator;
 import cascading.operation.Function;
 import cascading.operation.aggregator.Last;
@@ -37,36 +37,32 @@ public class UrlImporter extends HadoopConfigured {
         // if db exists we want to merge dbs
 
         Path newDb = new Path(workingFolder, Constants.URL_DB + "-new-" + TimeStampUtil.nowWithUnderLine());
-        Tap importSink = new Hfs(new SequenceFile(Constants.URL_TUPLE_ALL), newDb.toUri().toASCIIString(), true);
+        Tap importSink = new Hfs(new SequenceFile(UrlItem.FIELDS), newDb.toUri().toASCIIString(), true);
         // create tmp db
         importUrls(inputPath, importSink);
 
         if (dbexists) {
             // merge both together
 
-            Tap oldDbTap = new Hfs(new SequenceFile(Constants.URL_TUPLE_ALL), workingFolder + "/" + Constants.URL_DB);
+            Tap oldDbTap = new Hfs(new SequenceFile(UrlItem.FIELDS), workingFolder + "/" + Constants.URL_DB);
 
-            Tap newDbTap = new Hfs(new SequenceFile(Constants.URL_TUPLE_ALL), newDb.toUri().toASCIIString());
+            Tap newDbTap = new Hfs(new SequenceFile(UrlItem.FIELDS), newDb.toUri().toASCIIString());
 
             MultiTap source = new MultiTap(oldDbTap, newDbTap);
 
             Path mergeDb = new Path(workingFolder, Constants.URL_DB + "-merged-" + TimeStampUtil.nowWithUnderLine());
-            Tap mergeSink = new Hfs(new SequenceFile(Constants.URL_TUPLE_ALL), mergeDb.toUri().toASCIIString(), true);
+            Tap mergeSink = new Hfs(new SequenceFile(UrlItem.FIELDS), mergeDb.toUri().toASCIIString(), true);
 
             Pipe pipe = new Pipe("urldb-merge");
             // we want the url with the latest update.
             pipe = new GroupBy(pipe, new Fields(Constants.URL));
             //
-            Aggregator last = new LastUpdated();
+            Aggregator last = new LastUpdated(Constants.URL_TUPLE_VALUES);
             pipe = new Every(pipe, Constants.URL_TUPLE_VALUES, last);
 
             FlowConnector flowConnector = new FlowConnector();
-            try {
-                Flow flow = flowConnector.connect(source, mergeSink, pipe);
-                flow.complete();
-            } catch (PlannerException e) {
-                e.writeDOT("/urlMerger.dot");
-            }
+            Flow flow = flowConnector.connect(source, mergeSink, pipe);
+            flow.complete();
 
             Path oldDb = new Path(workingFolder, Constants.URL_DB + "-old-" + TimeStampUtil.nowWithUnderLine());
 

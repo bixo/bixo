@@ -1,17 +1,19 @@
 package bixo.urldb;
 
 import bixo.Constants;
+import bixo.items.UrlItem;
 import cascading.flow.FlowProcess;
 import cascading.operation.Aggregator;
 import cascading.operation.AggregatorCall;
 import cascading.operation.BaseOperation;
+import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 public class LastUpdated extends BaseOperation<Tuple> implements Aggregator<Tuple> {
 
-    public LastUpdated() {
-        super(Constants.URL_TUPLE_VALUES);
+    public LastUpdated(Fields fields) {
+        super(fields);
     }
 
     @Override
@@ -23,7 +25,7 @@ public class LastUpdated extends BaseOperation<Tuple> implements Aggregator<Tupl
             TupleEntry entry = aggregatorCall.getArguments();
 
             long newLast = entry.getLong(Constants.LAST_UPDATED);
-            long oldLast = new TupleEntry(Constants.URL_TUPLE_ALL, tuple).getLong(Constants.LAST_UPDATED);
+            long oldLast = new TupleEntry(UrlItem.FIELDS, tuple).getLong(Constants.LAST_UPDATED);
             if (newLast > oldLast) {
                 aggregatorCall.setContext(new Tuple(entry.getTuple()));
             }

@@ -14,8 +14,11 @@ public interface Constants {
     String LAST_FETCHED = "lastFetched";
     String LAST_STATUS = "lastStatus";
 
-    Fields URL_TUPLE_ALL = new Fields(URL, LAST_UPDATED, LAST_FETCHED, LAST_STATUS);
     Fields URL_TUPLE_KEY = new Fields(URL);
     Fields URL_TUPLE_VALUES = new Fields(LAST_UPDATED, LAST_FETCHED, LAST_STATUS);
+
+    String FETCH = "fetch";
+    String SCORE = "score";
+    String CONTENT = "content";
 
 }
