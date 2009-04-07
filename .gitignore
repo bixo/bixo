@@ -6,3 +6,5 @@ build
 build-eclipse
 build.properties
 build.sh
+*.iml
+*.dot
