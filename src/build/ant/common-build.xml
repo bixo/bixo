@@ -1,3 +1,24 @@
+<!--
+Copyright (c) 1997-2009 101tec Inc.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy 
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights 
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+copies of the Software, and to permit persons to whom the Software is 
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in 
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+-->
 <project name="katta-common-build" xmlns:ivy="antlib:org.apache.ivy.ant">
 
 	<property file="${root.dir}/src/build/ant/build.properties" />
@@ -87,6 +108,19 @@
 		</javac>
 	</target>
 
+	<target name="checkstyle" depends="resolve">
+		<ivy:cachepath pathid="checkstyle.path.id" conf="checkstyle" />
+		<taskdef resource="checkstyletask.properties" classpathref="checkstyle.path.id" />
+
+		<checkstyle config="src/build/checkstyle/checkstyle.xml">
+			<fileset dir="${main.src.dir}" includes="**/*.java" />
+			<fileset dir="${test.src.dir}" includes="**/*.java" />
+			<formatter type="plain" />
+			<formatter type="xml" toFile="${build.dir}/checkstyle_errors.xml" />
+		</checkstyle>
+
+	</target>
+
 	<target name="test" depends="compile-test" description="--> run tests">
 		<delete dir="${build.dir.test-reports}" />
 		<mkdir dir="${build.dir.test-reports}" />
@@ -156,7 +190,7 @@
 
 	<target name="jar" depends="compile">
 		<ivy:cachepath pathid="svnant.path.id" conf="ant" />
-	
+
 		<tstamp>
 			<format property="timestamp" pattern="MMM dd yyyy, HH:mm:ss" />
 		</tstamp>
