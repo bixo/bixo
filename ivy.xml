@@ -65,7 +65,7 @@ SOFTWARE.
     <dependency org="org.cascading" name="cascading-test" rev="1.0.6" conf="test"/>
 
     <!-- Cascading -->
-    <dependency org="org.cascading" name="cascading-core" rev="1.0.6" conf="compile,job"/>
+    <dependency org="org.cascading" name="cascading-core" rev="1.0.8" conf="compile,job"/>
     <dependency org="jgrapht" name="jgrapht" rev="jdk1.6" conf="compile,job"/>
     <dependency org="cascading.jdbc" name="cascading-jdbc" rev="0.0.1" conf="compile,job"/>
 
