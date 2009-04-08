@@ -22,20 +22,31 @@
  */
 package bixo.fetcher;
 
-public class FetchStatusCode {
-    // TODO KKr - define enum type (FetchStatusCode?) and use that here, versus raw int
-    private int _code;
+public enum FetchStatusCode {
 
-    public FetchStatusCode(int code) {
-        _code = code;
+    NEVER_FETCHED, FETCHED, ERROR;
+
+    public static FetchStatusCode fromOrdinal(int i) {
+        if (i < 0 || i >= FetchStatusCode.values().length) {
+            throw new IndexOutOfBoundsException("Invalid ordinal");
+        }
+        return FetchStatusCode.values()[i];
     }
 
-    public int getCode() {
-        return _code;
-    }
+    // TODO KKr - define enum type (FetchStatusCode?) and use that here, versus
+    // raw int
+    // private int _code;
+    //
+    // public FetchStatusCode(int code) {
+    // _code = code;
+    // }
+    //
+    // public int getCode() {
+    // return _code;
+    // }
+    //
+    // public void setCode(int code) {
+    // _code = code;
+    // }
 
-    public void setCode(int code) {
-        _code = code;
-    }
-    
 }

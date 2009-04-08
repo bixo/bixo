@@ -73,7 +73,7 @@ public class FakeHttpFetcher implements IHttpFetcher {
                 }
             }
             
-            FetchStatusCode status = new FetchStatusCode(statusCode);
+            FetchStatusCode status = FetchStatusCode.fromOrdinal(statusCode);
             FetchContent content = new FetchContent(url, url, System.currentTimeMillis(), new byte[contentSize], "text/html");
             
             // Now we want to delay for as long as it would take to fill in the data.
@@ -82,7 +82,7 @@ public class FakeHttpFetcher implements IHttpFetcher {
             return new FetchResult(status, content);
         } catch (Throwable t) {
             LOGGER.error("Exception: " + t.getMessage(), t);
-            return new FetchResult(new FetchStatusCode(-1), new FetchContent(url, url, System.currentTimeMillis(), null, null));
+            return new FetchResult(FetchStatusCode.ERROR, new FetchContent(url, url, System.currentTimeMillis(), null, null));
         }
     }
 

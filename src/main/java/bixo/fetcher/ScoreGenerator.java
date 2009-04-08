@@ -24,10 +24,10 @@ package bixo.fetcher;
 
 import java.io.Serializable;
 
-import bixo.items.UrlItem;
+import bixo.tuple.UrlTuple;
 
 public interface ScoreGenerator extends Serializable {
 
-    double generateScore(UrlItem urlItem);
+    double generateScore(UrlTuple urlTuple);
 
 }

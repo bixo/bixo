@@ -24,7 +24,7 @@ package bixo.fetcher;
 
 import org.apache.log4j.Logger;
 
-import bixo.items.FetchItem;
+import bixo.tuple.FetchTuple;
 
 public class FetcherRunnable implements Runnable {
     private static Logger LOGGER = Logger.getLogger(FetcherRunnable.class);
@@ -42,7 +42,7 @@ public class FetcherRunnable implements Runnable {
     @Override
     public void run() {
         
-        for (FetchItem item : _items) {
+        for (FetchTuple item : _items) {
             try {
                 FetchResult result = _httpFetcher.get(item.getUrl());
                 LOGGER.trace("Fetched " + result);

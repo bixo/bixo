@@ -23,7 +23,7 @@
 package bixo.fetcher.impl;
 
 import bixo.fetcher.ScoreGenerator;
-import bixo.items.UrlItem;
+import bixo.tuple.UrlTuple;
 
 public class LastFetchScoreGenerator implements ScoreGenerator {
     private final long _now;
@@ -35,8 +35,8 @@ public class LastFetchScoreGenerator implements ScoreGenerator {
     }
 
     @Override
-    public double generateScore(UrlItem urlItem) {
-        long lastFetched = urlItem.getLastFetched();
+    public double generateScore(UrlTuple urlTuple) {
+        long lastFetched = urlTuple.getLastFetched();
         if (lastFetched == 0) {
             return 1d;
         }

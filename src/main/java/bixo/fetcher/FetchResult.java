@@ -41,6 +41,6 @@ public class FetchResult {
     
     public String toString() {
         int size = _content.getContent() == null ? 0 : _content.getContent().length;
-        return String.format("%s (status code %d, size %d)", _content.getFetchedUrl(), _statusCode.getCode(), size);
+        return String.format("%s (status code %s, size %d)", _content.getFetchedUrl(), _statusCode.toString(), size);
     }
 }

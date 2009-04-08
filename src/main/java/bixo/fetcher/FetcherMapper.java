@@ -29,8 +29,8 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import bixo.items.FetchItem;
-import bixo.items.UrlItem;
+import bixo.tuple.FetchTuple;
+import bixo.tuple.UrlTuple;
 
 import cascading.tuple.Tuple;
 import cascading.util.Util;
@@ -55,16 +55,16 @@ public class FetcherMapper implements Mapper<Tuple, Tuple, Tuple, Tuple> {
     @Override
     public void map(Tuple key, Tuple value, OutputCollector<Tuple, Tuple> collector, Reporter reporter) throws IOException {
         // TODO KKr - try/catch so if (for example) we get a MalformedURLException we don't kill the job?
-        UrlItem urlItem = new UrlItem(value);
+        UrlTuple urlTuple = new UrlTuple(value);
 
         // get Grouping Key
-        Tuple groupingKey = new Tuple(_groupingKeyGenerator.getGroupingKey(urlItem));
+        Tuple groupingKey = new Tuple(_groupingKeyGenerator.getGroupingKey(urlTuple));
 
         // calculate a score,
-        double score = _scoreGenerator.generateScore(urlItem);
+        double score = _scoreGenerator.generateScore(urlTuple);
         // create a fetchItem tuple.
-        FetchItem fetchItem = new FetchItem(urlItem.getUrl(), score);
-        collector.collect(groupingKey, fetchItem.toTuple());
+        FetchTuple fetchTuple = new FetchTuple(urlTuple.getUrl(), score);
+        collector.collect(groupingKey, fetchTuple.toTuple());
     }
 
     @Override

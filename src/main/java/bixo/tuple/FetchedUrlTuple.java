@@ -20,9 +20,29 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.tuple;
 
-public enum FetchStatus {
-    NEVER_FETCHED
+import bixo.Constants;
+import bixo.fetcher.FetchStatusCode;
+import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntry;
+
+public class FetchedUrlTuple {
+
+    private static Fields FIELDS = new Fields(Constants.URL, Constants.FETCH_STATUS);
+    private TupleEntry _tupleEntry;
+
+    public FetchedUrlTuple() {
+        _tupleEntry = new TupleEntry(FIELDS, Tuple.size(FIELDS.size()));
+    }
+
+    public FetchedUrlTuple(String url, FetchStatusCode status) {
+        _tupleEntry = new TupleEntry(FIELDS, new Tuple(url, status.ordinal()));
+    }
+
+    public Tuple toTuple() {
+        return _tupleEntry.getTuple();
+    }
 
 }

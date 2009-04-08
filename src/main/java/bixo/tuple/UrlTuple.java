@@ -20,43 +20,40 @@
  * SOFTWARE.
  *
  */
-package bixo.items;
+package bixo.tuple;
 
 import bixo.Constants;
-import bixo.fetcher.FetchStatus;
+import bixo.fetcher.FetchStatusCode;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntry;
 
 /**
  * Just a wrapper around tuple with getter and setter for the known fields
  * 
  */
-public class UrlItem {
+public class UrlTuple {
 
-    private final Tuple _tuple;
+    private TupleEntry _tupleEntry;
     public static Fields FIELDS = new Fields(Constants.URL, Constants.LAST_UPDATED, Constants.LAST_FETCHED, Constants.LAST_STATUS);
 
-    public UrlItem(String url, long lastUpdated, long lastFetched, FetchStatus status) {
-        _tuple = new Tuple();
-        _tuple.add(url);
-        _tuple.add(lastUpdated);
-        _tuple.add(lastFetched);
-        _tuple.add(status.ordinal());
+    public UrlTuple(String url, long lastUpdated, long lastFetched, FetchStatusCode status) {
+        _tupleEntry = new TupleEntry(FIELDS, new Tuple(url, lastUpdated, lastFetched, status.ordinal()));
     }
 
-    public UrlItem(Tuple tuple) {
-        _tuple = tuple;
+    public UrlTuple(Tuple tuple) {
+        _tupleEntry = new TupleEntry(FIELDS, tuple);
     }
 
     public String getUrl() {
-        return _tuple.getString(FIELDS.getPos(Constants.URL));
+        return _tupleEntry.getString(Constants.URL);
     }
 
     public long getLastFetched() {
-        return _tuple.getLong(FIELDS.getPos(Constants.LAST_FETCHED));
+        return _tupleEntry.getLong(Constants.LAST_FETCHED);
     }
 
     public Tuple toTuple() {
-        return _tuple;
+        return _tupleEntry.getTuple();
     }
 }

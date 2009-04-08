@@ -26,7 +26,7 @@ import java.net.MalformedURLException;
 import java.util.Random;
 
 import junit.framework.TestCase;
-import bixo.items.FetchItem;
+import bixo.tuple.FetchTuple;
 
 public class FetcherQueueTest extends TestCase {
     public final void testMaxURLs() throws MalformedURLException {
@@ -66,7 +66,7 @@ public class FetcherQueueTest extends TestCase {
             totalItems += items.size();
 
             assertTrue(items.get(0).getScore() <= curScore);
-            for (FetchItem item : items) {
+            for (FetchTuple item : items) {
                 assertTrue(item.getScore() <= curScore);
                 curScore = item.getScore();
             }

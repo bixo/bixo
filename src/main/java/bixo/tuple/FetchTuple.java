@@ -20,52 +20,51 @@
  * SOFTWARE.
  *
  */
-package bixo.items;
+package bixo.tuple;
 
 import bixo.Constants;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntry;
 
-public class FetchItem implements Comparable<FetchItem> {
+public class FetchTuple implements Comparable<FetchTuple> {
 
     private static Fields FIELDS = new Fields(Constants.URL, Constants.SCORE);
-    private Tuple _tuple;
-    private double _score;
-    
-    public FetchItem(String url, double score) {
-        _tuple = new Tuple();
-        _tuple.add(url);
-        _tuple.add(score);
-        _score = score;
+    private TupleEntry _tupleEntry;
+
+    public FetchTuple(String url, double score) {
+        _tupleEntry = new TupleEntry(FIELDS, new Tuple(url, score));
     }
 
-    public FetchItem(Tuple tuple) {
-        _tuple = tuple;
+    public FetchTuple(Tuple tuple) {
+        _tupleEntry = new TupleEntry(FIELDS, tuple);
     }
 
     public String getUrl() {
-        return _tuple.getString(FIELDS.getPos(Constants.URL));
+        return _tupleEntry.getString(Constants.URL);
     }
 
     public double getScore() {
-        return _tuple.getDouble(FIELDS.getPos(Constants.SCORE));
+        return _tupleEntry.getDouble(Constants.SCORE);
     }
 
     public Tuple toTuple() {
-        return _tuple;
+        return _tupleEntry.getTuple();
     }
 
     @Override
-    public int compareTo(FetchItem o) {
+    public int compareTo(FetchTuple o) {
         // Sort in reverse order, such that higher scores are first.
-        if (_score > o._score) {
+        if (getScore()> o.getScore()) {
             return -1;
-        } else if (_score < o._score) {
+        } else if (getScore()< o.getScore()) {
             return 1;
         } else {
             // TODO KKr - sort by URL, so that if we do a batch fetch, we're
             // fetching pages from the same area of the website.
-            return 0;
+            
+            // TODO SG adding a simple sting comparison for now. 
+            return getUrl().compareTo(o.getUrl());
         }
     }
 

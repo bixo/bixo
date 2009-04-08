@@ -32,8 +32,8 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 
-import bixo.items.FetchedContentItem;
-import bixo.items.FetchedUrlItem;
+import bixo.tuple.FetchedContentTuple;
+import bixo.tuple.FetchedUrlTuple;
 
 import cascading.tuple.Tuple;
 
@@ -69,10 +69,10 @@ public class FetchCollector implements Closeable {
     
     public void collect(FetchResult result) throws IOException {
         String url = result.getContent().getBaseUrl();
-        FetchedUrlItem fetchedItem = new FetchedUrlItem(url, result.getStatusCode());
+        FetchedUrlTuple fetchedItem = new FetchedUrlTuple(url, result.getStatusCode());
         _statusCollector.collect(new Tuple(), fetchedItem.toTuple());
         
-        FetchedContentItem contentItem = new FetchedContentItem(url, result.getContent());
+        FetchedContentTuple contentItem = new FetchedContentTuple(url, result.getContent());
         _contentCollector.collect(new Tuple(), contentItem.toTuple());
     }
 

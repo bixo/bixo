@@ -20,32 +20,15 @@
  * SOFTWARE.
  *
  */
-package bixo.items;
 
-import org.apache.commons.codec.binary.Base64;
+package bixo;
 
-import bixo.Constants;
-import bixo.fetcher.FetchContent;
-import cascading.tuple.Fields;
-import cascading.tuple.Tuple;
+import cascading.pipe.SubAssembly;
 
-public class FetchedContentItem {
+public class BixoFetcher extends SubAssembly {
 
-    private Tuple _tuple;
-    private static Fields FIELDS = new Fields(Constants.URL, Constants.CONTENT);
-
-    public FetchedContentItem() {
-        _tuple = new Tuple();
-    }
-
-    public FetchedContentItem(String url, FetchContent content) {
-        _tuple = new Tuple();
-        _tuple.add(url);
-        _tuple.add(new String(Base64.encodeBase64(content.getContent())));
-    }
-
-    public Tuple toTuple() {
-        return _tuple;
+    public BixoFetcher() {
+        // TODO Auto-generated constructor stub
     }
 
 }

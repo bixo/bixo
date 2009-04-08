@@ -28,13 +28,13 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import bixo.items.FetchItem;
+import bixo.tuple.FetchTuple;
 
 public class FetcherQueue implements IFetchItemProvider {
     private static Logger LOGGER = Logger.getLogger(FetcherQueue.class);
     
     private String _domain;
-    private List<FetchItem> _queue;
+    private List<FetchTuple> _queue;
     private FetcherPolicy _policy;
     private int _numActiveFetchers;
     private long _nextFetchTime;
@@ -48,7 +48,7 @@ public class FetcherQueue implements IFetchItemProvider {
         _numActiveFetchers = 0;
         _nextFetchTime = System.currentTimeMillis();
         _sorted = true;
-        _queue = new ArrayList<FetchItem>();
+        _queue = new ArrayList<FetchTuple>();
     }
 
 
@@ -59,10 +59,10 @@ public class FetcherQueue implements IFetchItemProvider {
      * @param score - domain-relative score of the URL (high values => higher priority)
      * @return - true if we queued the URL
      */
-    public boolean offer(String url, double score, FetchItem fetchItem) {
+    public boolean offer(String url, double score, FetchTuple fetchTuple) {
         if (_queue.size() < _maxURLs) {
             trace("adding url to unfilled queue", url);
-            _queue.add(new FetchItem(url, score));
+            _queue.add(new FetchTuple(url, score));
             _sorted = false;
             return true;
         }
@@ -78,22 +78,22 @@ public class FetcherQueue implements IFetchItemProvider {
             // new item at the right location.
             trace("adding url to full queue", url);
             _queue.remove(_queue.size() - 1);
-            if (fetchItem == null) {
-                fetchItem = new FetchItem(url, score);
+            if (fetchTuple == null) {
+                fetchTuple = new FetchTuple(url, score);
             }
             
-            int index = Collections.binarySearch(_queue, fetchItem);
+            int index = Collections.binarySearch(_queue, fetchTuple);
             if (index < 0) {
                 index = -(index + 1);
             }
             
-            _queue.add(index, fetchItem);
+            _queue.add(index, fetchTuple);
             return true;
         }
     }
 
-    public boolean offer(FetchItem fetchItem) {
-        return offer(fetchItem.getUrl(), fetchItem.getScore(), fetchItem);
+    public boolean offer(FetchTuple fetchTuple) {
+        return offer(fetchTuple.getUrl(), fetchTuple.getScore(), fetchTuple);
     }
     
     public boolean offer(String url, double score) {

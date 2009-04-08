@@ -27,15 +27,15 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import bixo.fetcher.GroupingKeyGenerator;
-import bixo.items.UrlItem;
+import bixo.tuple.UrlTuple;
 import bixo.utils.DomainNames;
 
 public class PLDGrouping implements GroupingKeyGenerator {
 
     @Override
-    public String getGroupingKey(UrlItem urlItem) throws IOException {
+    public String getGroupingKey(UrlTuple urlTuple) throws IOException {
         try {
-            return DomainNames.getPLD(new URL(urlItem.getUrl()));
+            return DomainNames.getPLD(new URL(urlTuple.getUrl()));
         } catch (MalformedURLException e) {
             throw new IOException("Unable to parse url string into URL object.", e);
         }

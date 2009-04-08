@@ -29,8 +29,8 @@ import org.apache.hadoop.fs.Path;
 
 import bixo.Constants;
 import bixo.HadoopConfigured;
-import bixo.items.UrlItem;
 import bixo.parser.TextUrlParser;
+import bixo.tuple.UrlTuple;
 import bixo.utils.TimeStampUtil;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -59,21 +59,21 @@ public class UrlImporter extends HadoopConfigured {
         // if db exists we want to merge dbs
 
         Path newDb = new Path(workingFolder, Constants.URL_DB + "-new-" + TimeStampUtil.nowWithUnderLine());
-        Tap importSink = new Hfs(new SequenceFile(UrlItem.FIELDS), newDb.toUri().toASCIIString(), true);
+        Tap importSink = new Hfs(new SequenceFile(UrlTuple.FIELDS), newDb.toUri().toASCIIString(), true);
         // create tmp db
         importUrls(inputPath, importSink);
 
         if (dbexists) {
             // merge both together
 
-            Tap oldDbTap = new Hfs(new SequenceFile(UrlItem.FIELDS), workingFolder + "/" + Constants.URL_DB);
+            Tap oldDbTap = new Hfs(new SequenceFile(UrlTuple.FIELDS), workingFolder + "/" + Constants.URL_DB);
 
-            Tap newDbTap = new Hfs(new SequenceFile(UrlItem.FIELDS), newDb.toUri().toASCIIString());
+            Tap newDbTap = new Hfs(new SequenceFile(UrlTuple.FIELDS), newDb.toUri().toASCIIString());
 
             MultiTap source = new MultiTap(oldDbTap, newDbTap);
 
             Path mergeDb = new Path(workingFolder, Constants.URL_DB + "-merged-" + TimeStampUtil.nowWithUnderLine());
-            Tap mergeSink = new Hfs(new SequenceFile(UrlItem.FIELDS), mergeDb.toUri().toASCIIString(), true);
+            Tap mergeSink = new Hfs(new SequenceFile(UrlTuple.FIELDS), mergeDb.toUri().toASCIIString(), true);
 
             Pipe pipe = new Pipe("urldb-merge");
             // we want the url with the latest update.

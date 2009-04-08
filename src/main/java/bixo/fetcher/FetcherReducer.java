@@ -31,7 +31,7 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.log4j.Logger;
 
-import bixo.items.FetchItem;
+import bixo.tuple.FetchTuple;
 import cascading.tuple.Tuple;
 
 public class FetcherReducer implements Reducer<Tuple, Tuple, Tuple, Tuple> {
@@ -63,7 +63,7 @@ public class FetcherReducer implements Reducer<Tuple, Tuple, Tuple, Tuple> {
         _lastReporter = reporter;
         
         try {
-            // <key> is the PLD grouper, while each entry from <values> is a FetchItem.
+            // <key> is the PLD grouper, while each entry from <values> is a FetchTuple.
             String domain = key.getString(0);
             FetcherPolicy policy = new FetcherPolicy();
             
@@ -73,7 +73,7 @@ public class FetcherReducer implements Reducer<Tuple, Tuple, Tuple, Tuple> {
             FetcherQueue queue = new FetcherQueue(domain, policy, maxURLs);
             
             while (values.hasNext()) {
-                FetchItem item = new FetchItem(values.next());
+                FetchTuple item = new FetchTuple(values.next());
                 queue.offer(item);
             }
             

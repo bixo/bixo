@@ -20,30 +20,35 @@
  * SOFTWARE.
  *
  */
-package bixo.items;
+package bixo.tuple;
+
+import org.apache.hadoop.io.BytesWritable;
 
 import bixo.Constants;
-import bixo.fetcher.FetchStatusCode;
+import bixo.fetcher.FetchContent;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntry;
 
-public class FetchedUrlItem {
+public class FetchedContentTuple {
 
-    private Tuple _tuple;
-    private static Fields FIELDS = new Fields(Constants.URL, Constants.STATUS);
+    private static Fields FIELDS = new Fields(Constants.URL, Constants.CONTENT);
+    private TupleEntry _tupleEntry;
 
-    public FetchedUrlItem() {
-        _tuple = new Tuple();
+    public FetchedContentTuple() {
+        _tupleEntry = new TupleEntry();
     }
 
-    public FetchedUrlItem(String url, FetchStatusCode status) {
-        _tuple = new Tuple();
-        _tuple.add(url);
-        _tuple.add(status.getCode());
+    public FetchedContentTuple(String url, FetchContent content) {
+        byte[] bytes = content.getContent();
+        if (bytes == null) {
+            bytes = new byte[0];
+        }
+        _tupleEntry = new TupleEntry(FIELDS, new Tuple(url, new BytesWritable()));
     }
 
     public Tuple toTuple() {
-        return _tuple;
+        return _tupleEntry.getTuple();
     }
 
 }

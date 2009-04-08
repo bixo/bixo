@@ -23,8 +23,8 @@
 package bixo.parser;
 
 import bixo.Constants;
-import bixo.fetcher.FetchStatus;
-import bixo.items.UrlItem;
+import bixo.fetcher.FetchStatusCode;
+import bixo.tuple.UrlTuple;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
@@ -38,11 +38,11 @@ public class TextUrlParser extends BaseOperation<String> implements Function<Str
     private UrlFilter[] _urlFilters = new UrlFilter[0];
 
     public TextUrlParser() {
-        super(UrlItem.FIELDS);
+        super(UrlTuple.FIELDS);
     }
 
     public TextUrlParser(UrlFilter... urlFilters) {
-        super(UrlItem.FIELDS);
+        super(UrlTuple.FIELDS);
         if (urlFilters != null) {
             _urlFilters = urlFilters;
         }
@@ -61,6 +61,6 @@ public class TextUrlParser extends BaseOperation<String> implements Function<Str
             }
         }
         // emit link with default values
-        call.getOutputCollector().add(new Tuple(url, System.currentTimeMillis(), 0, FetchStatus.NEVER_FETCHED.ordinal()));
+        call.getOutputCollector().add(new Tuple(url, System.currentTimeMillis(), 0, FetchStatusCode.NEVER_FETCHED.ordinal()));
     }
 }
