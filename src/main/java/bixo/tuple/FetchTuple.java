@@ -55,17 +55,22 @@ public class FetchTuple implements Comparable<FetchTuple> {
     @Override
     public int compareTo(FetchTuple o) {
         // Sort in reverse order, such that higher scores are first.
-        if (getScore()> o.getScore()) {
+        if (getScore() > o.getScore()) {
             return -1;
-        } else if (getScore()< o.getScore()) {
+        } else if (getScore() < o.getScore()) {
             return 1;
         } else {
             // TODO KKr - sort by URL, so that if we do a batch fetch, we're
             // fetching pages from the same area of the website.
-            
-            // TODO SG adding a simple sting comparison for now. 
+
+            // TODO SG adding a simple sting comparison for now.
             return getUrl().compareTo(o.getUrl());
         }
+    }
+
+    @Override
+    public String toString() {
+        return getUrl() + "(" + getScore() + ")";
     }
 
 }
