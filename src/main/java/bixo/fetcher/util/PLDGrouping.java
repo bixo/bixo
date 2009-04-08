@@ -20,30 +20,25 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher.impl;
+package bixo.fetcher.util;
 
-import bixo.fetcher.ScoreGenerator;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import bixo.tuple.UrlTuple;
+import bixo.utils.DomainNames;
 
-public class LastFetchScoreGenerator implements ScoreGenerator {
-    private final long _now;
-    private final long _interval;
-
-    public LastFetchScoreGenerator(long now, long interval) {
-        _now = now;
-        _interval = interval;
-    }
+@SuppressWarnings("serial")
+public class PLDGrouping implements GroupingKeyGenerator {
 
     @Override
-    public double generateScore(UrlTuple urlTuple) {
-        long lastFetched = urlTuple.getLastFetched();
-        if (lastFetched == 0) {
-            return 1d;
+    public String getGroupingKey(UrlTuple urlTuple) throws IOException {
+        try {
+            return DomainNames.getPLD(new URL(urlTuple.getUrl()));
+        } catch (MalformedURLException e) {
+            throw new IOException("Unable to parse url string into URL object.", e);
         }
-        long offset = _now - lastFetched;
-        if (offset >= _interval) {
-            return 1d;
-        }
-        return (double) offset / _interval;
     }
+
 }

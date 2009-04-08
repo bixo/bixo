@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.fetcher.mr;
 
 import java.io.IOException;
 
@@ -31,17 +31,15 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.SequenceFileOutputFormat;
-import org.apache.log4j.Logger;
 
-import bixo.fetcher.impl.LastFetchScoreGenerator;
-import bixo.fetcher.impl.PLDGrouping;
+import bixo.fetcher.util.LastFetchScoreGenerator;
+import bixo.fetcher.util.PLDGrouping;
 import cascading.tuple.Tuple;
 import cascading.tuple.hadoop.TupleComparator;
 import cascading.tuple.hadoop.TupleSerialization;
 import cascading.util.Util;
 
 public class FetcherJob {
-    private static Logger LOG = Logger.getLogger(FetcherJob.class);
 
     public void run(String input, String output) throws IOException {
 

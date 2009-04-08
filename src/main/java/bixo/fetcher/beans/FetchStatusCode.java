@@ -20,27 +20,33 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.fetcher.beans;
 
-public class FetchResult {
-    private FetchStatusCode _statusCode;
-    private FetchContent _content;
-    
-    public FetchResult(FetchStatusCode statusCode, FetchContent content) {
-        _statusCode = statusCode;
-        _content = content;
-    }
+public enum FetchStatusCode {
 
-    public FetchStatusCode getStatusCode() {
-        return _statusCode;
+    NEVER_FETCHED, FETCHED, ERROR;
+
+    public static FetchStatusCode fromOrdinal(int i) {
+        if (i < 0 || i >= FetchStatusCode.values().length) {
+            throw new IndexOutOfBoundsException("Invalid ordinal");
+        }
+        return FetchStatusCode.values()[i];
     }
 
-    public FetchContent getContent() {
-        return _content;
-    }
-    
-    public String toString() {
-        int size = _content.getContent() == null ? 0 : _content.getContent().length;
-        return String.format("%s (status code %s, size %d)", _content.getFetchedUrl(), _statusCode.toString(), size);
-    }
+    // TODO KKr - define enum type (FetchStatusCode?) and use that here, versus
+    // raw int
+    // private int _code;
+    //
+    // public FetchStatusCode(int code) {
+    // _code = code;
+    // }
+    //
+    // public int getCode() {
+    // return _code;
+    // }
+    //
+    // public void setCode(int code) {
+    // _code = code;
+    // }
+
 }

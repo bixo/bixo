@@ -20,14 +20,32 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.fetcher.mr;
 
-import java.io.Serializable;
+import java.io.Closeable;
+import java.io.IOException;
 
-import bixo.tuple.UrlTuple;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.mapred.OutputCollector;
 
-public interface ScoreGenerator extends Serializable {
+import cascading.tuple.Tuple;
 
-    double generateScore(UrlTuple urlTuple);
+public class TupleCollector implements OutputCollector<Tuple, Tuple>, Closeable {
+    private SequenceFile.Writer _writer;
+    
+    public TupleCollector(SequenceFile.Writer writer) {
+        _writer = writer;
+    }
+    
+    @Override
+    public void collect(Tuple key, Tuple value) throws IOException {
+        _writer.append(key, value);
+        
+    }
+
+    @Override
+    public void close() throws IOException {
+        _writer.close();
+    }
 
 }

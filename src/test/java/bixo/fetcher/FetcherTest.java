@@ -28,6 +28,7 @@ import org.apache.hadoop.fs.FileUtil;
 import org.junit.Test;
 
 import bixo.Constants;
+import bixo.fetcher.mr.FetcherJob;
 import bixo.urldb.UrlImporter;
 import bixo.utils.TimeStampUtil;
 

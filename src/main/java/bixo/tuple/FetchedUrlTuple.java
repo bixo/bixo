@@ -23,7 +23,7 @@
 package bixo.tuple;
 
 import bixo.Constants;
-import bixo.fetcher.FetchStatusCode;
+import bixo.fetcher.beans.FetchStatusCode;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;

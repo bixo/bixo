@@ -20,14 +20,14 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher.impl;
+package bixo.fetcher.util;
 
 import junit.framework.Assert;
 
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import bixo.fetcher.impl.LastFetchScoreGenerator;
+import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.tuple.UrlTuple;
 
 public class LastFetchScoreGeneratorTest {

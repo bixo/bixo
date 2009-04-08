@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.fetcher.beans;
 
 public class FetchContent {
     private String _baseUrl;

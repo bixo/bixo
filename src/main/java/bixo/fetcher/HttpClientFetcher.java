@@ -34,6 +34,10 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
+import bixo.fetcher.beans.FetchContent;
+import bixo.fetcher.beans.FetchResult;
+import bixo.fetcher.beans.FetchStatusCode;
+
 public class HttpClientFetcher implements IHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(HttpClientFetcher.class);
     

@@ -27,6 +27,10 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
+import bixo.fetcher.beans.FetchContent;
+import bixo.fetcher.beans.FetchResult;
+import bixo.fetcher.beans.FetchStatusCode;
+
 public class FakeHttpFetcher implements IHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(FakeHttpFetcher.class);
     

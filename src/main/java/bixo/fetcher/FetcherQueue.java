@@ -28,6 +28,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import bixo.fetcher.beans.FetcherPolicy;
 import bixo.tuple.FetchTuple;
 
 public class FetcherQueue implements IFetchItemProvider {

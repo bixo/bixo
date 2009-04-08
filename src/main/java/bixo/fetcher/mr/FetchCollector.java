@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.fetcher.mr;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -32,6 +32,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 
+import bixo.fetcher.beans.FetchResult;
 import bixo.tuple.FetchedContentTuple;
 import bixo.tuple.FetchedUrlTuple;
 

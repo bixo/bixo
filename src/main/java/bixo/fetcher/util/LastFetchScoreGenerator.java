@@ -20,32 +20,30 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.fetcher.util;
 
-import java.io.Closeable;
-import java.io.IOException;
+import bixo.tuple.UrlTuple;
 
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.mapred.OutputCollector;
+@SuppressWarnings("serial")
+public class LastFetchScoreGenerator implements ScoreGenerator {
+    private final long _now;
+    private final long _interval;
 
-import cascading.tuple.Tuple;
-
-public class TupleCollector implements OutputCollector<Tuple, Tuple>, Closeable {
-    private SequenceFile.Writer _writer;
-    
-    public TupleCollector(SequenceFile.Writer writer) {
-        _writer = writer;
-    }
-    
-    @Override
-    public void collect(Tuple key, Tuple value) throws IOException {
-        _writer.append(key, value);
-        
+    public LastFetchScoreGenerator(long now, long interval) {
+        _now = now;
+        _interval = interval;
     }
 
     @Override
-    public void close() throws IOException {
-        _writer.close();
+    public double generateScore(UrlTuple urlTuple) {
+        long lastFetched = urlTuple.getLastFetched();
+        if (lastFetched == 0) {
+            return 1d;
+        }
+        long offset = _now - lastFetched;
+        if (offset >= _interval) {
+            return 1d;
+        }
+        return (double) offset / _interval;
     }
-
 }

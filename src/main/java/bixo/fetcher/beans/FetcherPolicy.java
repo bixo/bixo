@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.fetcher.beans;
 
 public class FetcherPolicy {
     public static final int NO_CRAWL_DELAY = 0;

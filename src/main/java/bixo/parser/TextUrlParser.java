@@ -23,7 +23,7 @@
 package bixo.parser;
 
 import bixo.Constants;
-import bixo.fetcher.FetchStatusCode;
+import bixo.fetcher.beans.FetchStatusCode;
 import bixo.tuple.UrlTuple;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;

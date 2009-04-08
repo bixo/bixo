@@ -35,6 +35,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 
+import bixo.fetcher.beans.FetcherPolicy;
+import bixo.fetcher.mr.FetchCollector;
 import bixo.utils.DomainNames;
 
 public class RunTestFetcher {

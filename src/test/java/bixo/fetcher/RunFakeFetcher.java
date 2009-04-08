@@ -28,6 +28,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 
+import bixo.fetcher.beans.FetcherPolicy;
+import bixo.fetcher.mr.FetchCollector;
+
 public class RunFakeFetcher {
     
     public static void main(String[] args) {

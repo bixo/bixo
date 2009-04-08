@@ -20,25 +20,28 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher.impl;
+package bixo.fetcher.beans;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 
-import bixo.fetcher.GroupingKeyGenerator;
-import bixo.tuple.UrlTuple;
-import bixo.utils.DomainNames;
-
-public class PLDGrouping implements GroupingKeyGenerator {
-
-    @Override
-    public String getGroupingKey(UrlTuple urlTuple) throws IOException {
-        try {
-            return DomainNames.getPLD(new URL(urlTuple.getUrl()));
-        } catch (MalformedURLException e) {
-            throw new IOException("Unable to parse url string into URL object.", e);
-        }
+public class FetchResult {
+    private FetchStatusCode _statusCode;
+    private FetchContent _content;
+    
+    public FetchResult(FetchStatusCode statusCode, FetchContent content) {
+        _statusCode = statusCode;
+        _content = content;
     }
 
+    public FetchStatusCode getStatusCode() {
+        return _statusCode;
+    }
+
+    public FetchContent getContent() {
+        return _content;
+    }
+    
+    public String toString() {
+        int size = _content.getContent() == null ? 0 : _content.getContent().length;
+        return String.format("%s (status code %s, size %d)", _content.getFetchedUrl(), _statusCode.toString(), size);
+    }
 }

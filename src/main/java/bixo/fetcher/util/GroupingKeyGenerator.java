@@ -20,33 +20,13 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.fetcher.util;
 
-public enum FetchStatusCode {
+import java.io.IOException;
+import java.io.Serializable;
 
-    NEVER_FETCHED, FETCHED, ERROR;
+import bixo.tuple.UrlTuple;
 
-    public static FetchStatusCode fromOrdinal(int i) {
-        if (i < 0 || i >= FetchStatusCode.values().length) {
-            throw new IndexOutOfBoundsException("Invalid ordinal");
-        }
-        return FetchStatusCode.values()[i];
-    }
-
-    // TODO KKr - define enum type (FetchStatusCode?) and use that here, versus
-    // raw int
-    // private int _code;
-    //
-    // public FetchStatusCode(int code) {
-    // _code = code;
-    // }
-    //
-    // public int getCode() {
-    // return _code;
-    // }
-    //
-    // public void setCode(int code) {
-    // _code = code;
-    // }
-
+public interface GroupingKeyGenerator extends Serializable{
+    public String getGroupingKey(UrlTuple urlTuple) throws IOException;
 }

@@ -24,6 +24,8 @@ package bixo.fetcher;
 
 import org.apache.log4j.Logger;
 
+import bixo.fetcher.beans.FetchResult;
+import bixo.fetcher.mr.FetchCollector;
 import bixo.tuple.FetchTuple;
 
 public class FetcherRunnable implements Runnable {

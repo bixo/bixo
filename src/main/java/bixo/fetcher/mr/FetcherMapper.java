@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.fetcher.mr;
 
 import java.io.IOException;
 
@@ -29,6 +29,8 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
+import bixo.fetcher.util.GroupingKeyGenerator;
+import bixo.fetcher.util.ScoreGenerator;
 import bixo.tuple.FetchTuple;
 import bixo.tuple.UrlTuple;
 

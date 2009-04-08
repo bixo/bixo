@@ -26,6 +26,7 @@ import java.net.MalformedURLException;
 import java.util.Random;
 
 import junit.framework.TestCase;
+import bixo.fetcher.beans.FetcherPolicy;
 import bixo.tuple.FetchTuple;
 
 public class FetcherQueueTest extends TestCase {

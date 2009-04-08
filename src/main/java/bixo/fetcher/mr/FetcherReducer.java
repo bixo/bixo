@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.fetcher.mr;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -31,6 +31,11 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.log4j.Logger;
 
+import bixo.fetcher.FetcherManager;
+import bixo.fetcher.FetcherQueue;
+import bixo.fetcher.FetcherQueueMgr;
+import bixo.fetcher.HttpClientFactory;
+import bixo.fetcher.beans.FetcherPolicy;
 import bixo.tuple.FetchTuple;
 import cascading.tuple.Tuple;
 

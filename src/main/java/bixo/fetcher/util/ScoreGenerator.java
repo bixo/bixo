@@ -20,13 +20,14 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.fetcher.util;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 import bixo.tuple.UrlTuple;
 
-public interface GroupingKeyGenerator extends Serializable{
-    public String getGroupingKey(UrlTuple urlTuple) throws IOException;
+public interface ScoreGenerator extends Serializable {
+
+    double generateScore(UrlTuple urlTuple);
+
 }

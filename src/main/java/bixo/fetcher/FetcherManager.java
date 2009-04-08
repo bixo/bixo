@@ -28,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
+import bixo.fetcher.mr.FetchCollector;
+
 /**
  * Manage the set of threads that one task spawns to fetch pages.
  * 
@@ -70,6 +72,7 @@ public class FetcherManager implements Runnable {
 	        
 	        // Don't bother trying to add more things to the queue if that would only throw
 	        // a RejectedExecutionException.
+	        // TODO SG, Ken dont you want to sleep some secs in case the queue is full? You just add load to the queue in running this loop heavily.
 	        if (_pool.getQueue().remainingCapacity() > 0) {
 	            items = _provider.poll();
 	        }

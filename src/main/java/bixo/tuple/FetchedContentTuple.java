@@ -25,7 +25,7 @@ package bixo.tuple;
 import org.apache.hadoop.io.BytesWritable;
 
 import bixo.Constants;
-import bixo.fetcher.FetchContent;
+import bixo.fetcher.beans.FetchContent;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
