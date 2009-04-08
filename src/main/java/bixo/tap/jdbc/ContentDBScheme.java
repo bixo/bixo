@@ -26,34 +26,31 @@ import cascading.jdbc.JDBCScheme;
 /**
  *
  */
-public class URLDBScheme extends JDBCScheme
+public class ContentDBScheme extends JDBCScheme
   {
   public static final String URL = "url";
-  public static final String HOST = "host";
-  public static final String LAST_FETCH_TIME = "last_fetch_time";
-  public static final String LAST_FETCH_SIGNATURE = "last_fetch_signature";
-  public static final String LAST_CHANGED_TIME = "last_changed_time";
-  public static final String LAST_STATUS_TIME = "last_status_time";
-  public static final String LAST_STATUS = "last_status";
+  public static final String FETCH_TIME = "fetch_time";
+  public static final String HEADERS_RAW = "headers_raw";
+  public static final String CONTENT_RAW = "content_raw";
 
-  public static final String[] COLUMN_NAMES = {URL, HOST, LAST_FETCH_TIME, LAST_FETCH_SIGNATURE, LAST_CHANGED_TIME, LAST_STATUS_TIME, LAST_STATUS};
+  public static final String[] COLUMN_NAMES = {URL, FETCH_TIME, HEADERS_RAW, CONTENT_RAW};
 
-  public static final Class[] COLUMN_TYPES = {String.class, String.class, long.class, String.class, long.class, long.class, int.class};
+  public static final Class[] COLUMN_TYPES = {String.class, long.class, String.class, String.class};
 
-  public static final URLDBScheme DEFAULT_SCHEME = new URLDBScheme();
+  public static final ContentDBScheme DEFAULT_SCHEME = new ContentDBScheme();
 
 
-  public URLDBScheme()
+  public ContentDBScheme()
     {
-    super( COLUMN_NAMES, HOST + "," + URL );
+    super( COLUMN_NAMES, URL + ", " + FETCH_TIME );
     }
 
-  public URLDBScheme( String[] columns, String orderBy )
+  public ContentDBScheme( String[] columns, String orderBy )
     {
     super( columns, orderBy );
     }
 
-  public URLDBScheme( String[] columns )
+  public ContentDBScheme( String[] columns )
     {
     super( columns );
     }

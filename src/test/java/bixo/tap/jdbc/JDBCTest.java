@@ -33,7 +33,9 @@ import org.hsqldb.Server;
  */
 public class JDBCTest extends ClusterTestCase
   {
-  String inputFile = "src/test-data/urldb.10.txt.gz";
+  String inputURLDBFile = "src/test-data/urldb.10.txt.gz";
+  String inputContentDBFile = "src/test-data/contentdb.10.txt.gz";
+
   String outputPath = "build/test-data/jdbctest/";
 
   private Server server;
@@ -64,12 +66,11 @@ public class JDBCTest extends ClusterTestCase
 
   public void testURLDBTap() throws IOException
     {
-    // create flow to read from local file and insert into HBase
-    Tap source = new Lfs( new TextLine(), inputFile );
+    Tap source = new Lfs( new TextLine(), inputURLDBFile );
 
     Pipe parsePipe = new Each( "insert", new Fields( "line" ), new RegexSplitter( new Fields( URLDBScheme.COLUMN_NAMES ), "\\t" ) );
 
-    parsePipe = new Each( parsePipe, new Identity( String.class, String.class, long.class, String.class, long.class, long.class, int.class ) );
+    parsePipe = new Each( parsePipe, new Identity( URLDBScheme.COLUMN_TYPES ) );
 
     String url = "jdbc:hsqldb:hsql://localhost/testing";
     String driver = "org.hsqldb.jdbcDriver";
@@ -88,6 +89,47 @@ public class JDBCTest extends ClusterTestCase
     Pipe copyPipe = new Each( "read", new Identity() );
 
     Flow copyFlow = new FlowConnector( getProperties() ).connect( urldbTap, sink, copyPipe );
+
+    copyFlow.complete();
+
+    validateLength( copyFlow, 10 );
+    }
+
+  public void testContentDBTap() throws IOException
+    {
+    Tap source = new Lfs( new TextLine(), inputContentDBFile );
+
+//    String[] fields = {"url", "fetch_time", "headers", "content"};
+    String[] fields = ContentDBScheme.COLUMN_NAMES;
+    Pipe parsePipe = new Each( "insert", new Fields( "line" ), new RegexSplitter( new Fields( fields ), "\\t" ) );
+
+//    String headerDecoder = "new String( org.apache.commons.codec.binary.Base64.decodeBase64( headers.getBytes() ) )";
+//    Function headerDecodeFunction = new ExpressionFunction( new Fields( ContentDBScheme.HEADERS_RAW ), headerDecoder, String.class );
+//    parsePipe = new Each( parsePipe, new Fields( "headers" ), headerDecodeFunction, Fields.ALL );
+//
+//    String contentDecode = "new String( org.apache.commons.codec.binary.Base64.decodeBase64( content.getBytes() ) )";
+//    Function contentDecodeFunction = new ExpressionFunction( new Fields( ContentDBScheme.CONTENT_RAW ), contentDecode, String.class );
+//    parsePipe = new Each( parsePipe, new Fields( "content" ), contentDecodeFunction, Fields.ALL );
+
+    parsePipe = new Each( parsePipe, new Fields( ContentDBScheme.COLUMN_NAMES ), new Identity( ContentDBScheme.COLUMN_TYPES ) );
+
+    String url = "jdbc:hsqldb:hsql://localhost/testing";
+    String driver = "org.hsqldb.jdbcDriver";
+
+    Tap contentDBTap = new ContentDBTap( url, driver, SinkMode.REPLACE );
+
+    Flow parseFlow = new FlowConnector( getProperties() ).connect( source, contentDBTap, parsePipe );
+
+    parseFlow.complete();
+
+    validateLength( parseFlow, 10 );
+
+    // create flow to read from hbase and save to local file
+    Tap sink = new Lfs( new TextLine(), outputPath + "contentdb", SinkMode.REPLACE );
+
+    Pipe copyPipe = new Each( "read", new Identity() );
+
+    Flow copyFlow = new FlowConnector( getProperties() ).connect( contentDBTap, sink, copyPipe );
 
     copyFlow.complete();
 
