@@ -83,7 +83,6 @@ public class JDBCTest extends ClusterTestCase
 
     validateLength( parseFlow, 10 );
 
-    // create flow to read from hbase and save to local file
     Tap sink = new Lfs( new TextLine(), outputPath + "urldb", SinkMode.REPLACE );
 
     Pipe copyPipe = new Each( "read", new Identity() );
@@ -124,7 +123,6 @@ public class JDBCTest extends ClusterTestCase
 
     validateLength( parseFlow, 10 );
 
-    // create flow to read from hbase and save to local file
     Tap sink = new Lfs( new TextLine(), outputPath + "contentdb", SinkMode.REPLACE );
 
     Pipe copyPipe = new Each( "read", new Identity() );
