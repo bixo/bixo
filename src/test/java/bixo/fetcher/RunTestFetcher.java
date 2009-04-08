@@ -37,6 +37,7 @@ import org.apache.hadoop.mapred.JobConf;
 
 import bixo.fetcher.beans.FetcherPolicy;
 import bixo.fetcher.mr.FetchCollector;
+import bixo.tuple.FetchTuple;
 import bixo.utils.DomainNames;
 
 public class RunTestFetcher {
@@ -79,7 +80,7 @@ public class RunTestFetcher {
                 List<String> urls = domainMap.get(pld);
                 System.out.println("Adding " + urls.size() + " URLs for " + pld);
                 for (String url : urls) {
-                    queue.offer(url, 0.5f);
+                    queue.offer(new FetchTuple(url, 0.5f));
                 }
                 
                 queueMgr.offer(queue);
