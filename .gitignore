@@ -6,3 +6,4 @@ build
 build-eclipse
 build.properties
 build.sh
+extras/webgraph/eu-2005.*

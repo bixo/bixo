@@ -33,7 +33,9 @@ import org.mortbay.http.HttpResponse;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
-public class HandlerTest extends LocalhostServerTest {
+import bixo.fetcher.simulation.SimulationWebServer;
+
+public class HandlerTest extends SimulationWebServer {
 
     @Test
     public void testSimpleOpen() throws Exception {

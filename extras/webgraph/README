@@ -1,0 +1,23 @@
+Acknowledge:
+
+@inproceedings{BoVWFI,
+  author ="Paolo Boldi and Sebastiano Vigna",
+  title = "The {W}eb{G}raph Framework {I}: {C}ompression Techniques",
+  year = 2004,
+  booktitle="Proc. of the Thirteenth International World Wide Web Conference (WWW 2004)",
+  address="Manhattan, USA",
+  pages="595--601",
+  publisher="ACM Press"
+}
+If the graphs you are using were gathered by UbiCrawler, please acknowledge the usage of UbiCrawler by quoting the following paper:
+
+@article{
+BCSU3,
+  author="Paolo Boldi and Bruno Codenotti and Massimo Santini and Sebastiano Vigna",
+  title="UbiCrawler: A Scalable Fully Distributed Web Crawler",
+  journal="Software: Practice \& Experience",
+  year=2004,
+  volume=34,
+  number=8,
+  pages="711--726"
+}
