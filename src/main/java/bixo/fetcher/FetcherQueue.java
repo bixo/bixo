@@ -28,13 +28,14 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import bixo.items.FetchItem;
+import bixo.fetcher.beans.FetcherPolicy;
+import bixo.tuple.FetchTuple;
 
 public class FetcherQueue implements IFetchItemProvider {
     private static Logger LOGGER = Logger.getLogger(FetcherQueue.class);
     
     private String _domain;
-    private List<FetchItem> _queue;
+    private List<FetchTuple> _queue;
     private FetcherPolicy _policy;
     private int _numActiveFetchers;
     private long _nextFetchTime;
@@ -48,7 +49,7 @@ public class FetcherQueue implements IFetchItemProvider {
         _numActiveFetchers = 0;
         _nextFetchTime = System.currentTimeMillis();
         _sorted = true;
-        _queue = new ArrayList<FetchItem>();
+        _queue = new ArrayList<FetchTuple>();
     }
 
 
@@ -59,10 +60,10 @@ public class FetcherQueue implements IFetchItemProvider {
      * @param score - domain-relative score of the URL (high values => higher priority)
      * @return - true if we queued the URL
      */
-    public boolean offer(String url, double score, FetchItem fetchItem) {
+    public boolean offer(FetchTuple fetchTuple) {
         if (_queue.size() < _maxURLs) {
-            trace("adding url to unfilled queue", url);
-            _queue.add(new FetchItem(url, score));
+            trace("adding url to unfilled queue", fetchTuple.toString());
+            _queue.add(fetchTuple);
             _sorted = false;
             return true;
         }
@@ -70,36 +71,25 @@ public class FetcherQueue implements IFetchItemProvider {
         // Since we have to insert, make sure the list is ordered first.
         sort();
 
-        if (score <= _queue.get(_queue.size() - 1).getScore()) {
-            trace("rejecting url due to low score", url);
+        if (fetchTuple.getScore() <= _queue.get(_queue.size() - 1).getScore()) {
+            trace("rejecting url due to low score", fetchTuple.toString());
             return false;
         } else {
             // Get rid of last (lowest score) item in queue, then insert
             // new item at the right location.
-            trace("adding url to full queue", url);
+            trace("adding url to full queue", fetchTuple.toString());
             _queue.remove(_queue.size() - 1);
-            if (fetchItem == null) {
-                fetchItem = new FetchItem(url, score);
-            }
             
-            int index = Collections.binarySearch(_queue, fetchItem);
+            int index = Collections.binarySearch(_queue, fetchTuple);
             if (index < 0) {
                 index = -(index + 1);
             }
             
-            _queue.add(index, fetchItem);
+            _queue.add(index, fetchTuple);
             return true;
         }
     }
 
-    public boolean offer(FetchItem fetchItem) {
-        return offer(fetchItem.getUrl(), fetchItem.getScore(), fetchItem);
-    }
-    
-    public boolean offer(String url, double score) {
-        return offer(url, score, null);
-    }
-    
     /**
      * Tell the caller whether this queue is done (empty and all using threads done)
      * 

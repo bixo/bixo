@@ -26,17 +26,18 @@ import java.net.MalformedURLException;
 import java.util.Random;
 
 import junit.framework.TestCase;
-import bixo.items.FetchItem;
+import bixo.fetcher.beans.FetcherPolicy;
+import bixo.tuple.FetchTuple;
 
 public class FetcherQueueTest extends TestCase {
     public final void testMaxURLs() throws MalformedURLException {
         FetcherPolicy policy = new FetcherPolicy(30, 1, 1);
         FetcherQueue queue = new FetcherQueue("domain.com", policy, 1);
 
-        queue.offer("http://domain.com/page1", 0.0f);
+        queue.offer(new FetchTuple("http://domain.com/page1", 0.0f));
         String bestUrl = "http://domain.com/page2";
-        assertTrue(queue.offer(bestUrl, 1.0f));
-        assertFalse(queue.offer("http://domain.com/page3", 0.5f));
+        assertTrue(queue.offer(new FetchTuple(bestUrl, 1.0f)));
+        assertFalse(queue.offer(new FetchTuple("http://domain.com/page3", 0.5f)));
 
         FetchList items = queue.poll();
         assertNotNull(items);
@@ -55,7 +56,7 @@ public class FetcherQueueTest extends TestCase {
         Random rand = new Random(1L);
 
         for (int i = 0; i < 1000; i++) {
-            queue.offer("http://domain.com/page" + rand.nextInt(), rand.nextFloat());
+            queue.offer(new FetchTuple("http://domain.com/page" + rand.nextInt(), rand.nextFloat()));
         }
 
         double curScore = 2.0;
@@ -66,7 +67,7 @@ public class FetcherQueueTest extends TestCase {
             totalItems += items.size();
 
             assertTrue(items.get(0).getScore() <= curScore);
-            for (FetchItem item : items) {
+            for (FetchTuple item : items) {
                 assertTrue(item.getScore() <= curScore);
                 curScore = item.getScore();
             }
@@ -84,8 +85,8 @@ public class FetcherQueueTest extends TestCase {
         policy.setCrawlDelay(1);
         policy.setRequestsPerConnect(1);
         FetcherQueue queue = new FetcherQueue("domain.com", policy, 100);
-        queue.offer("http://domain.com/page1", 0.5f);
-        queue.offer("http://domain.com/page2", 0.0f);
+        queue.offer(new FetchTuple("http://domain.com/page1", 0.5f));
+        queue.offer(new FetchTuple("http://domain.com/page2", 0.0f));
 
         FetchList items = queue.poll();
         assertNotNull(items);

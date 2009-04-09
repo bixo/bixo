@@ -28,6 +28,10 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 
+import bixo.fetcher.beans.FetcherPolicy;
+import bixo.fetcher.mr.FetchCollector;
+import bixo.tuple.FetchTuple;
+
 public class RunFakeFetcher {
     
     public static void main(String[] args) {
@@ -55,7 +59,7 @@ public class RunFakeFetcher {
 
                 for (int j = 0; j < 20; j++) {
                     String file = "/page-" + j + ".html";
-                    queue.offer("http://www." + host + file, rand.nextFloat());
+                    queue.offer(new FetchTuple("http://www." + host + file, rand.nextFloat()));
                 }
                 
                 while (!queueMgr.offer(queue)) {

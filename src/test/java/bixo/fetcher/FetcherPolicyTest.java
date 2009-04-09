@@ -22,6 +22,7 @@
  */
 package bixo.fetcher;
 
+import bixo.fetcher.beans.FetcherPolicy;
 import junit.framework.TestCase;
 
 public class FetcherPolicyTest extends TestCase {
