@@ -22,12 +22,13 @@
  */
 package bixo.fetcher.util;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 import bixo.tuple.UrlTuple;
 
 public interface ScoreGenerator extends Serializable {
 
-    double generateScore(UrlTuple urlTuple);
+    double generateScore(UrlTuple urlTuple) throws IOException;
 
 }

@@ -44,4 +44,6 @@ public interface Constants {
     String FETCH_STATUS = "status";
     String CONTENT = "content";
 
+    String GROUPING_KEY = "groupingKey";
+
 }
