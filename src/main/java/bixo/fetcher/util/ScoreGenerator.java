@@ -25,10 +25,10 @@ package bixo.fetcher.util;
 import java.io.IOException;
 import java.io.Serializable;
 
-import bixo.tuple.UrlTuple;
+import bixo.tuple.UrlWithGroupKeyTuple;
 
 public interface ScoreGenerator extends Serializable {
 
-    double generateScore(UrlTuple urlTuple) throws IOException;
+    double generateScore(UrlWithGroupKeyTuple urlTuple) throws IOException;
 
 }

@@ -24,10 +24,10 @@ package bixo.fetcher;
 
 import java.util.LinkedList;
 
-import bixo.tuple.FetchTuple;
+import bixo.fetcher.beans.FetchItem;
 
 @SuppressWarnings("serial")
-public class FetchList extends LinkedList<FetchTuple> {
+public class FetchList extends LinkedList<FetchItem> {
     private FetcherQueue _fromQueue;
     
     public FetchList(FetcherQueue fromQueue) {
@@ -36,7 +36,7 @@ public class FetchList extends LinkedList<FetchTuple> {
         _fromQueue = fromQueue;
     }
     
-    public FetchList(FetcherQueue fromQueue, FetchTuple item) {
+    public FetchList(FetcherQueue fromQueue, FetchItem item) {
         super();
         
         _fromQueue = fromQueue;

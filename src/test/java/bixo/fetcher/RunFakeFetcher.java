@@ -28,27 +28,30 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 
+import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntryCollector;
+
+import bixo.fetcher.beans.FetchItem;
 import bixo.fetcher.beans.FetcherPolicy;
-import bixo.fetcher.mr.FetchCollector;
-import bixo.tuple.FetchTuple;
+import bixo.tuple.UrlWithScoreTuple;
 
 public class RunFakeFetcher {
-    
+
     public static void main(String[] args) {
-        
+
         try {
             JobConf conf = new JobConf();
             FileOutputFormat.setOutputPath(conf, new Path("build/test-data/RunFakeFetcher/working"));
 
-            FetchCollector collector = new FetchCollector(conf);
             FetcherQueueMgr queueMgr = new FetcherQueueMgr();
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new FakeHttpFetcherFactory(true, 10), collector);
-            
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new FakeHttpFetcherFactory(true, 10));
+
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");
             t.start();
-            
-            // Now start creating per-domain queues and passing them to the FetcherQueueMgr
+
+            // Now start creating per-domain queues and passing them to the
+            // FetcherQueueMgr
             FetcherPolicy policy = new FetcherPolicy();
             Random rand = new Random();
 
@@ -59,17 +62,24 @@ public class RunFakeFetcher {
 
                 for (int j = 0; j < 20; j++) {
                     String file = "/page-" + j + ".html";
-                    queue.offer(new FetchTuple("http://www." + host + file, rand.nextFloat()));
+
+                    UrlWithScoreTuple urlScore = new UrlWithScoreTuple();
+                    urlScore.setUrl("http://www." + host + file);
+                    urlScore.SetScore(rand.nextFloat());
+                    FetchItem fetchItem = new FetchItem(urlScore, new FakeCollector());
+
+                    queue.offer(fetchItem);
                 }
-                
+
                 while (!queueMgr.offer(queue)) {
                     // Spin until it's accepted.
                 }
             }
-            
+
             // We have a bunch of pages to "fetch". Spin until we're done.
-            while (!threadMgr.isDone()) {}
-            
+            while (!threadMgr.isDone()) {
+            }
+
             t.interrupt();
         } catch (Throwable t) {
             System.err.println("Exception: " + t.getMessage());
@@ -77,4 +87,14 @@ public class RunFakeFetcher {
             System.exit(-1);
         }
     }
+
+    private static class FakeCollector extends TupleEntryCollector {
+
+        @Override
+        protected void collect(Tuple tuple) {
+            System.out.println(tuple.toString());
+        }
+
+    }
+
 }

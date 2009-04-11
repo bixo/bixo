@@ -20,63 +20,74 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher.beans;
+package bixo.tuple;
 
-public class FetchContent {
-    private String _baseUrl;
-    private String _fetchedUrl;
-    private long _fetchTime;
-    
-    private byte[] _content;
-    private String _contentType;
-    
-    public FetchContent(String baseUrl, String fetchedUrl, long fetchTime, byte[] content, String contentType) {
-        _baseUrl = baseUrl;
-        _fetchedUrl = fetchedUrl;
-        _fetchTime = fetchTime;
-        _content = content;
-        _contentType = contentType;
+import org.apache.hadoop.io.BytesWritable;
+
+import bixo.Constants;
+import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntry;
+
+public class FetchContentTuple extends BaseTuple {
+
+    private static Fields FIELDS = new Fields(Constants.BASE_URL, Constants.FETECHED_URL, Constants.FETCH_TIME, Constants.CONTENT, Constants.CONTENT_TYPE);
+
+    public FetchContentTuple(String baseUrl, String fetchedUrl, long fetchTime, byte[] content, String contentType) {
+        super(new TupleEntry(FIELDS, Tuple.size(FIELDS.size())));
+        setBaseUrl(baseUrl);
+        setFetchedUrl(fetchedUrl);
+        setFetchTime(fetchTime);
+        setContent(content);
+        setContentType(contentType);
+    }
+
+    public FetchContentTuple(Tuple tuple) {
+        super(new TupleEntry(FIELDS, tuple));
     }
 
     public String getBaseUrl() {
-        return _baseUrl;
+        return getTupleEntry().getString(Constants.BASE_URL);
     }
 
     public void setBaseUrl(String baseUrl) {
-        _baseUrl = baseUrl;
+        getTupleEntry().set(Constants.BASE_URL, baseUrl);
     }
 
     public String getFetchedUrl() {
-        return _fetchedUrl;
+        return getTupleEntry().getString(Constants.FETECHED_URL);
     }
 
     public void setFetchedUrl(String fetchedUrl) {
-        _fetchedUrl = fetchedUrl;
+        getTupleEntry().set(Constants.FETECHED_URL, fetchedUrl);
     }
 
     public long getFetchTime() {
-        return _fetchTime;
+        return getTupleEntry().getLong(Constants.FETCH_TIME);
     }
 
     public void setFetchTime(long fetchTime) {
-        _fetchTime = fetchTime;
+        getTupleEntry().set(Constants.FETCH_TIME, fetchTime);
     }
 
     public byte[] getContent() {
-        return _content;
+        BytesWritable content = (BytesWritable) getTupleEntry().get(Constants.CONTENT);
+        return content.getBytes();
     }
 
     public void setContent(byte[] content) {
-        _content = content;
+        if (content == null) {
+            content = new byte[0];
+        }
+        getTupleEntry().set(Constants.CONTENT, new BytesWritable(content));
     }
 
     public String getContentType() {
-        return _contentType;
+        return getTupleEntry().getString(Constants.CONTENT_TYPE);
     }
 
     public void setContentType(String contentType) {
-        _contentType = contentType;
+        getTupleEntry().set(Constants.CONTENT_TYPE, contentType);
     }
-    
-    
+
 }

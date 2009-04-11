@@ -22,8 +22,8 @@
  */
 package bixo.fetcher;
 
-import bixo.fetcher.beans.FetchResult;
+import bixo.tuple.FetchResultTuple;
 
 public interface IHttpFetcher {
-    public FetchResult get(String url);
+    public FetchResultTuple get(String url);
 }

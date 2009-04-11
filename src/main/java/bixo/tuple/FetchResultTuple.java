@@ -22,55 +22,39 @@
  */
 package bixo.tuple;
 
-import bixo.Constants;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
+import bixo.Constants;
+import bixo.fetcher.beans.FetchStatusCode;
 
-public class FetchTuple implements Comparable<FetchTuple> {
+public class FetchResultTuple extends BaseTuple {
+    private static final Fields FIELDS = new Fields(Constants.FETCH_STATUS, Constants.FETCH_CONTENT);
 
-    private static Fields FIELDS = new Fields(Constants.URL, Constants.SCORE);
-    private TupleEntry _tupleEntry;
-
-    public FetchTuple(String url, double score) {
-        _tupleEntry = new TupleEntry(FIELDS, new Tuple(url, score));
+    public FetchResultTuple(FetchStatusCode statusCode, FetchContentTuple content) {
+        super(new TupleEntry(FIELDS, Tuple.size(FIELDS.size())));
+        setStatusCode(statusCode);
+        setFetchContent(content);
     }
 
-    public FetchTuple(Tuple tuple) {
-        _tupleEntry = new TupleEntry(FIELDS, tuple);
+    public void setFetchContent(FetchContentTuple content) {
+        getTupleEntry().set(Constants.FETCH_CONTENT, content.toTuple());
     }
 
-    public String getUrl() {
-        return _tupleEntry.getString(Constants.URL);
+    public FetchContentTuple getContent() {
+        return new FetchContentTuple((Tuple) getTupleEntry().get(Constants.FETCH_CONTENT));
     }
 
-    public double getScore() {
-        return _tupleEntry.getDouble(Constants.SCORE);
+    public void setStatusCode(FetchStatusCode statusCode) {
+        getTupleEntry().set(Constants.FETCH_STATUS, statusCode.ordinal());
     }
 
-    public Tuple toTuple() {
-        return _tupleEntry.getTuple();
+    public FetchStatusCode getStatusCode() {
+        return FetchStatusCode.fromOrdinal(getTupleEntry().getInteger(Constants.FETCH_STATUS));
     }
 
-    @Override
-    public int compareTo(FetchTuple o) {
-        // Sort in reverse order, such that higher scores are first.
-        if (getScore() > o.getScore()) {
-            return -1;
-        } else if (getScore() < o.getScore()) {
-            return 1;
-        } else {
-            // TODO KKr - sort by URL, so that if we do a batch fetch, we're
-            // fetching pages from the same area of the website.
-
-            // TODO SG adding a simple sting comparison for now.
-            return getUrl().compareTo(o.getUrl());
-        }
-    }
-
-    @Override
     public String toString() {
-        return getUrl() + "(" + getScore() + ")";
+        int size = getContent().getContent() == null ? 0 : getContent().getContent().length;
+        return String.format("%s (status code %s, size %d)", getContent().getFetchedUrl(), getStatusCode().toString(), size);
     }
-
 }

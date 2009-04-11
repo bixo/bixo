@@ -46,4 +46,14 @@ public interface Constants {
 
     String GROUPING_KEY = "groupingKey";
 
+    String FETCH_CONTENT = "fetchContent";
+
+    String BASE_URL = "baseUrl";
+
+    String FETECHED_URL = "fetchedUrl";
+
+    String FETCH_TIME = "fetchTime";
+
+    String CONTENT_TYPE = "contentType";
+
 }

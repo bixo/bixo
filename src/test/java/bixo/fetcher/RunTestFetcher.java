@@ -31,14 +31,16 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 
+import bixo.fetcher.beans.FetchItem;
 import bixo.fetcher.beans.FetcherPolicy;
-import bixo.fetcher.mr.FetchCollector;
-import bixo.tuple.FetchTuple;
+import bixo.tuple.UrlWithScoreTuple;
 import bixo.utils.DomainNames;
+import cascading.scheme.SequenceFile;
+import cascading.tap.Lfs;
+import cascading.tuple.Fields;
+import cascading.tuple.TupleEntryCollector;
 
 public class RunTestFetcher {
 
@@ -48,12 +50,12 @@ public class RunTestFetcher {
     public static void main(String[] args) {
         try {
             LineIterator iter = FileUtils.lineIterator(new File(args[0]), "UTF-8");
-            
+
             HashMap<String, List<String>> domainMap = new HashMap<String, List<String>>();
-            
+
             while (iter.hasNext()) {
                 String line = iter.nextLine();
-                
+
                 try {
                     URL url = new URL(line);
                     String pld = DomainNames.getPLD(url);
@@ -62,16 +64,21 @@ public class RunTestFetcher {
                         urls = new ArrayList<String>();
                         domainMap.put(pld, urls);
                     }
-                    
+
                     urls.add(url.toExternalForm());
                 } catch (MalformedURLException e) {
                     System.out.println("Invalid URL in input file: " + line);
                 }
             }
-            
+
             // Now we have the URLs, so create queues for processing.
             System.out.println("Unique PLDs: " + domainMap.size());
             
+            // setup output
+            JobConf conf = new JobConf();
+            String out = "build/test-data/RunTestFetcher/working";
+            TupleEntryCollector tupleEntryCollector = new Lfs(new SequenceFile(Fields.ALL), out, true).openForWrite(conf);
+
             FetcherQueueMgr queueMgr = new FetcherQueueMgr();
             FetcherPolicy policy = new FetcherPolicy();
 
@@ -80,23 +87,25 @@ public class RunTestFetcher {
                 List<String> urls = domainMap.get(pld);
                 System.out.println("Adding " + urls.size() + " URLs for " + pld);
                 for (String url : urls) {
-                    queue.offer(new FetchTuple(url, 0.5f));
+                    UrlWithScoreTuple urlScore = new UrlWithScoreTuple();
+                    urlScore.setUrl(url);
+                    urlScore.SetScore(0.5d);
+                    queue.offer(new FetchItem(urlScore , tupleEntryCollector));
                 }
-                
+
                 queueMgr.offer(queue);
             }
-            
-            // We've got all of the URLs set up for crawling.
-            JobConf conf = new JobConf();
-            FileOutputFormat.setOutputPath(conf, new Path("build/test-data/RunTestFetcher/working"));
-            FetchCollector collector = new FetchCollector(conf);
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFactory(10), collector);
+
+ 
+
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFactory(10));
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");
             t.start();
 
             // We have a bunch of pages to "fetch". Spin until we're done.
-            while (!threadMgr.isDone()) {}
+            while (!threadMgr.isDone()) {
+            }
             t.interrupt();
         } catch (Throwable t) {
             System.err.println("Exception: " + t.getMessage());

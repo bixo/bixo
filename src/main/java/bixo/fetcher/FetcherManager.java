@@ -28,8 +28,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
-import bixo.fetcher.mr.FetchCollector;
-
 /**
  * Manage the set of threads that one task spawns to fetch pages.
  * 
@@ -47,12 +45,12 @@ public class FetcherManager implements Runnable {
     private IFetchItemProvider _provider;
     private IHttpFetcherFactory _factory;
     private ThreadPoolExecutor _pool;
-    private FetchCollector _collector;
+//    private FetchCollector _collector;
     
-    public FetcherManager(IFetchItemProvider provider, IHttpFetcherFactory factory, FetchCollector collector) {
+    public FetcherManager(IFetchItemProvider provider, IHttpFetcherFactory factory) {
         _provider = provider;
         _factory = factory;
-        _collector = collector;
+//        _collector = collector;
         
         ArrayBlockingQueue<Runnable> queue = new ArrayBlockingQueue<Runnable>(_factory.getMaxThreads() * 2);
         _pool = new ThreadPoolExecutor(FETCH_THREAD_COUNT_CORE, _factory.getMaxThreads(), FETCH_IDLE_TIMEOUT, TimeUnit.SECONDS, queue);
@@ -83,7 +81,7 @@ public class FetcherManager implements Runnable {
 	            
 	            // Create a Runnable that has a way to fetch the URLs (the IHttpFetcher), and
 	            // the list of things to fetch (the <items>).
-	            FetcherRunnable command = new FetcherRunnable(_factory.newHttpFetcher(), _collector, items);
+	            FetcherRunnable command = new FetcherRunnable(_factory.newHttpFetcher(), items);
 	            _pool.execute(command);
 	        }
 	    }

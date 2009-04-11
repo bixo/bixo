@@ -36,30 +36,35 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 
 public class HttpClientFactory implements IHttpFetcherFactory {
-    private HttpClient _httpClient;
+    transient private HttpClient _httpClient;
     private int _maxThreads;
-    
+
     public HttpClientFactory(int maxThreads) {
         _maxThreads = maxThreads;
-        
+    }
+
+    private void init() {
         // Create and initialize HTTP parameters
         HttpParams params = new BasicHttpParams();
         ConnManagerParams.setMaxTotalConnections(params, _maxThreads);
         HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
 
-        // Create and initialize scheme registry 
+        // Create and initialize scheme registry
         SchemeRegistry schemeRegistry = new SchemeRegistry();
         schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-        
+
         // Create an HttpClient with the ThreadSafeClientConnManager.
         // This connection manager must be used if more than one thread will
         // be using the HttpClient.
         ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
         _httpClient = new DefaultHttpClient(cm, params);
     }
-    
+
     @Override
     public IHttpFetcher newHttpFetcher() {
+        if (_httpClient == null) {
+            init();
+        }
         return new HttpClientFetcher(_httpClient);
     }
 

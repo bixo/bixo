@@ -27,9 +27,9 @@ import java.util.Random;
 
 import org.apache.log4j.Logger;
 
-import bixo.fetcher.beans.FetchContent;
-import bixo.fetcher.beans.FetchResult;
 import bixo.fetcher.beans.FetchStatusCode;
+import bixo.tuple.FetchContentTuple;
+import bixo.tuple.FetchResultTuple;
 
 public class FakeHttpFetcher implements IHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(FakeHttpFetcher.class);
@@ -47,7 +47,7 @@ public class FakeHttpFetcher implements IHttpFetcher {
     }
     
     @Override
-    public FetchResult get(String url) {
+    public FetchResultTuple get(String url) {
         try {
             URL theUrl = new URL(url);
             
@@ -78,15 +78,15 @@ public class FakeHttpFetcher implements IHttpFetcher {
             }
             
             FetchStatusCode status = FetchStatusCode.fromOrdinal(statusCode);
-            FetchContent content = new FetchContent(url, url, System.currentTimeMillis(), new byte[contentSize], "text/html");
+            FetchContentTuple content = new FetchContentTuple(url, url, System.currentTimeMillis(), new byte[contentSize], "text/html");
             
             // Now we want to delay for as long as it would take to fill in the data.
             float duration = (float)contentSize/(float)bytesPerSecond;
             Thread.sleep((long)duration * 1000L);
-            return new FetchResult(status, content);
+            return new FetchResultTuple(status, content);
         } catch (Throwable t) {
             LOGGER.error("Exception: " + t.getMessage(), t);
-            return new FetchResult(FetchStatusCode.ERROR, new FetchContent(url, url, System.currentTimeMillis(), null, null));
+            return new FetchResultTuple(FetchStatusCode.ERROR, new FetchContentTuple(url, url, System.currentTimeMillis(), null, null));
         }
     }
 
