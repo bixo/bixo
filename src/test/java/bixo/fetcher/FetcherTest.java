@@ -28,11 +28,22 @@ import org.apache.hadoop.fs.FileUtil;
 import org.junit.Test;
 
 import bixo.Constants;
-import bixo.fetcher.mr.FetcherJob;
+import bixo.fetcher.cascading.FetchPipe;
+import bixo.fetcher.util.LastFetchScoreGenerator;
+import bixo.fetcher.util.PLDGrouping;
+import bixo.tuple.UrlTuple;
 import bixo.urldb.UrlImporter;
 import bixo.utils.TimeStampUtil;
+import cascading.flow.Flow;
+import cascading.flow.FlowConnector;
+import cascading.pipe.Pipe;
+import cascading.scheme.SequenceFile;
+import cascading.tap.Lfs;
+import cascading.tuple.Fields;
+import cascading.tuple.TupleEntryIterator;
 
 public class FetcherTest {
+    private static final long TEN_DAYS = 1000 * 60 * 60 * 24 * 10;
 
     @Test
     public void testRunFetcher() throws Exception {
@@ -46,12 +57,27 @@ public class FetcherTest {
             FileUtil.fullyDelete(new File(workingFolder));
             urlImporter.importUrls(inputPath, workingFolder);
         }
-        // now fetch those
 
-        FetcherJob fetcher = new FetcherJob();
-        String input = workingFolder + "/" + Constants.URL_DB;
+        String inputPath = workingFolder + "/" + Constants.URL_DB;
+        Lfs in = new Lfs(new SequenceFile(UrlTuple.FIELDS), inputPath, true);
+        String outPath = workingFolder + "/" + Constants.FETCH + TimeStampUtil.nowWithUnderLine();
+        Lfs out = new Lfs(new SequenceFile(Fields.ALL), outPath, true);
 
-        String fetchFolder = workingFolder + "/" + Constants.FETCH + TimeStampUtil.nowWithUnderLine();
-        fetcher.run(input, fetchFolder);
+        Pipe pipe = new Pipe("urlSource");
+
+        PLDGrouping grouping = new PLDGrouping();
+        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
+        IHttpFetcherFactory factory = new HttpClientFactory(10);
+        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, factory);
+
+        FlowConnector flowConnector = new FlowConnector();
+
+        Flow flow = flowConnector.connect(in, out, fetchPipe);
+        flow.complete();
+        TupleEntryIterator openSink = flow.openSink();
+        while (openSink.hasNext()) {
+            System.out.println(openSink.next());
+        }
+
     }
 }

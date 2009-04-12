@@ -29,6 +29,7 @@ import org.mockito.Mockito;
 
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.tuple.UrlTuple;
+import bixo.tuple.UrlWithGroupKeyTuple;
 
 public class LastFetchScoreGeneratorTest {
 
@@ -36,7 +37,7 @@ public class LastFetchScoreGeneratorTest {
     public void testScore() throws Exception {
         long now = System.currentTimeMillis();
         LastFetchScoreGenerator generator = new LastFetchScoreGenerator(now, 10);
-        UrlTuple mock = Mockito.mock(UrlTuple.class);
+        UrlWithGroupKeyTuple mock = Mockito.mock(UrlWithGroupKeyTuple.class);
         Mockito.when(mock.getLastFetched()).thenReturn(0l);
         Assert.assertEquals(1.0, generator.generateScore(mock));
         Mockito.when(mock.getLastFetched()).thenReturn(now - 11);

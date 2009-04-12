@@ -28,21 +28,16 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
-public class FetchedUrlTuple {
+public class FetchedUrlTuple extends BaseTuple {
 
     private static Fields FIELDS = new Fields(Constants.URL, Constants.FETCH_STATUS);
-    private TupleEntry _tupleEntry;
 
     public FetchedUrlTuple() {
-        _tupleEntry = new TupleEntry(FIELDS, Tuple.size(FIELDS.size()));
+        super(new TupleEntry(FIELDS, Tuple.size(FIELDS.size())));
     }
 
     public FetchedUrlTuple(String url, FetchStatusCode status) {
-        _tupleEntry = new TupleEntry(FIELDS, new Tuple(url, status.ordinal()));
-    }
-
-    public Tuple toTuple() {
-        return _tupleEntry.getTuple();
+        super(new TupleEntry(FIELDS, new Tuple(url, status.ordinal())));
     }
 
 }

@@ -22,8 +22,10 @@
  */
 package bixo.fetcher;
 
-public interface IHttpFetcherFactory {
+import java.io.Serializable;
+
+public interface IHttpFetcherFactory extends Serializable {
     IHttpFetcher newHttpFetcher();
-    
+
     int getMaxThreads();
 }

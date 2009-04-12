@@ -32,28 +32,52 @@ import cascading.tuple.TupleEntry;
  * Just a wrapper around tuple with getter and setter for the known fields
  * 
  */
-public class UrlTuple {
+public class UrlTuple extends BaseTuple {
 
-    private TupleEntry _tupleEntry;
     public static Fields FIELDS = new Fields(Constants.URL, Constants.LAST_UPDATED, Constants.LAST_FETCHED, Constants.LAST_STATUS);
 
-    public UrlTuple(String url, long lastUpdated, long lastFetched, FetchStatusCode status) {
-        _tupleEntry = new TupleEntry(FIELDS, new Tuple(url, lastUpdated, lastFetched, status.ordinal()));
+    public UrlTuple() {
+        super(new TupleEntry(FIELDS, Tuple.size(FIELDS.size())));
+    }
+
+    public UrlTuple(TupleEntry tupleEntry) {
+        super(tupleEntry);
     }
 
     public UrlTuple(Tuple tuple) {
-        _tupleEntry = new TupleEntry(FIELDS, tuple);
+        super(new TupleEntry(FIELDS, tuple));
     }
 
     public String getUrl() {
-        return _tupleEntry.getString(Constants.URL);
+        return getTupleEntry().getString(Constants.URL);
+    }
+
+    public void setUrl(String url) {
+        getTupleEntry().set(Constants.URL, url);
+    }
+
+    public long getLastUpdated() {
+        return getTupleEntry().getLong(Constants.LAST_UPDATED);
+    }
+
+    public void setLastUpdated(long timeStamp) {
+        getTupleEntry().set(Constants.LAST_UPDATED, timeStamp);
     }
 
     public long getLastFetched() {
-        return _tupleEntry.getLong(Constants.LAST_FETCHED);
+        return getTupleEntry().getLong(Constants.LAST_FETCHED);
     }
 
-    public Tuple toTuple() {
-        return _tupleEntry.getTuple();
+    public void setLastFetched(long timeStamp) {
+        getTupleEntry().set(Constants.LAST_FETCHED, timeStamp);
     }
+
+    public FetchStatusCode getLastStatus() {
+        return FetchStatusCode.fromOrdinal(getTupleEntry().getInteger(Constants.LAST_STATUS));
+    }
+
+    public void setLastStatus(FetchStatusCode statusCode) {
+        getTupleEntry().set(Constants.LAST_STATUS, statusCode.ordinal());
+    }
+
 }

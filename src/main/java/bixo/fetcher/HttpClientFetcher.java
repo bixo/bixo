@@ -34,9 +34,9 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
-import bixo.fetcher.beans.FetchContent;
-import bixo.fetcher.beans.FetchResult;
 import bixo.fetcher.beans.FetchStatusCode;
+import bixo.tuple.FetchContentTuple;
+import bixo.tuple.FetchResultTuple;
 
 public class HttpClientFetcher implements IHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(HttpClientFetcher.class);
@@ -51,7 +51,7 @@ public class HttpClientFetcher implements IHttpFetcher {
     
     
     @Override
-    public FetchResult get(String url) {
+    public FetchResultTuple get(String url) {
         HttpGet httpget = null;
         
         try {
@@ -62,14 +62,14 @@ public class HttpClientFetcher implements IHttpFetcher {
             byte[] bytes = EntityUtils.toByteArray(entity);
             // TODO KKr - handle redirects, real content type, what about charset? Do we need to capture HTTP headers?
             // TODO SG used the new enum here.Use different status than fetch if you neeed to.
-            return new FetchResult( FetchStatusCode.FETCHED, new FetchContent(url, url, System.currentTimeMillis(), bytes, null));
+            return new FetchResultTuple( FetchStatusCode.FETCHED, new FetchContentTuple(url, url, System.currentTimeMillis(), bytes, null));
         } catch (Throwable t) {
             safeAbort(httpget);
             
             LOGGER.debug("Exception while fetching url " + url + ": " + t.getMessage(), t);
             // TODO KKr - use real status for exception, include exception msg somehow.
             // TODO SG should we use FetchStatusCode.ERROR or NEVER_FTEHCED?
-            return new FetchResult(FetchStatusCode.ERROR, new FetchContent(url, url, System.currentTimeMillis(), null, null));
+            return new FetchResultTuple(FetchStatusCode.ERROR, new FetchContentTuple(url, url, System.currentTimeMillis(), null, null));
         }
 
     }

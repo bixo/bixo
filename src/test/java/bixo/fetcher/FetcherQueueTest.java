@@ -26,18 +26,34 @@ import java.net.MalformedURLException;
 import java.util.Random;
 
 import junit.framework.TestCase;
+import bixo.fetcher.beans.FetchItem;
 import bixo.fetcher.beans.FetcherPolicy;
-import bixo.tuple.FetchTuple;
+import bixo.tuple.UrlWithScoreTuple;
 
 public class FetcherQueueTest extends TestCase {
     public final void testMaxURLs() throws MalformedURLException {
         FetcherPolicy policy = new FetcherPolicy(30, 1, 1);
         FetcherQueue queue = new FetcherQueue("domain.com", policy, 1);
 
-        queue.offer(new FetchTuple("http://domain.com/page1", 0.0f));
+        UrlWithScoreTuple urlScore1 = new UrlWithScoreTuple();
+        urlScore1.setUrl("http://domain.com/page1");
+        urlScore1.SetScore(0.0d);
+        FetchItem fetchItem1 = new FetchItem(urlScore1, null);
+
+        UrlWithScoreTuple urlScore2 = new UrlWithScoreTuple();
+        urlScore2.setUrl("http://domain.com/page2");
+        urlScore2.SetScore(1.0d);
+        FetchItem fetchItem2 = new FetchItem(urlScore2, null);
+
+        UrlWithScoreTuple urlScore3 = new UrlWithScoreTuple();
+        urlScore3.setUrl("http://domain.com/page3");
+        urlScore3.SetScore(0.5d);
+        FetchItem fetchItem3 = new FetchItem(urlScore3, null);
+
+        queue.offer(fetchItem1);
         String bestUrl = "http://domain.com/page2";
-        assertTrue(queue.offer(new FetchTuple(bestUrl, 1.0f)));
-        assertFalse(queue.offer(new FetchTuple("http://domain.com/page3", 0.5f)));
+        assertTrue(queue.offer(fetchItem2));
+        assertFalse(queue.offer(fetchItem3));
 
         FetchList items = queue.poll();
         assertNotNull(items);
@@ -47,7 +63,6 @@ public class FetcherQueueTest extends TestCase {
         assertNull(queue.poll());
     }
 
-
     public final void testSortedUrls() throws MalformedURLException {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setCrawlDelay(0);
@@ -56,7 +71,12 @@ public class FetcherQueueTest extends TestCase {
         Random rand = new Random(1L);
 
         for (int i = 0; i < 1000; i++) {
-            queue.offer(new FetchTuple("http://domain.com/page" + rand.nextInt(), rand.nextFloat()));
+            UrlWithScoreTuple urlScore = new UrlWithScoreTuple();
+            urlScore.setUrl("http://domain.com/page" + rand.nextInt());
+            urlScore.SetScore(rand.nextFloat());
+            FetchItem fetchItem = new FetchItem(urlScore, null);
+
+            queue.offer(fetchItem);
         }
 
         double curScore = 2.0;
@@ -67,7 +87,7 @@ public class FetcherQueueTest extends TestCase {
             totalItems += items.size();
 
             assertTrue(items.get(0).getScore() <= curScore);
-            for (FetchTuple item : items) {
+            for (FetchItem item : items) {
                 assertTrue(item.getScore() <= curScore);
                 curScore = item.getScore();
             }
@@ -79,14 +99,24 @@ public class FetcherQueueTest extends TestCase {
         assertNull(queue.poll());
     }
 
-
     public final void testTimeLimit() throws MalformedURLException, InterruptedException {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setCrawlDelay(1);
         policy.setRequestsPerConnect(1);
         FetcherQueue queue = new FetcherQueue("domain.com", policy, 100);
-        queue.offer(new FetchTuple("http://domain.com/page1", 0.5f));
-        queue.offer(new FetchTuple("http://domain.com/page2", 0.0f));
+
+        UrlWithScoreTuple urlScore1 = new UrlWithScoreTuple();
+        urlScore1.setUrl("http://domain.com/page1");
+        urlScore1.SetScore(0.5d);
+        FetchItem fetchItem1 = new FetchItem(urlScore1, null);
+
+        UrlWithScoreTuple urlScore2 = new UrlWithScoreTuple();
+        urlScore2.setUrl("http://domain.com/page2");
+        urlScore2.SetScore(0.0d);
+        FetchItem fetchItem2 = new FetchItem(urlScore2, null);
+
+        queue.offer(fetchItem1);
+        queue.offer(fetchItem2);
 
         FetchList items = queue.poll();
         assertNotNull(items);
@@ -96,5 +126,6 @@ public class FetcherQueueTest extends TestCase {
         assertNotNull(queue.poll());
     }
 
-    // TODO KKr - add test for multiple threads hitting the queue at the same time.
+    // TODO KKr - add test for multiple threads hitting the queue at the same
+    // time.
 }
