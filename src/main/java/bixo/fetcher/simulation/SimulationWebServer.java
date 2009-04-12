@@ -28,9 +28,9 @@ import org.mortbay.http.HttpServer;
 
 public abstract class SimulationWebServer {
 
-    public HttpServer startServer(HttpHandler handler, int por) throws Exception {
+    public HttpServer startServer(HttpHandler handler, int port) throws Exception {
         HttpServer server = new HttpServer();
-        server.addListener(":" + por);
+        server.addListener(":" + port);
         HttpContext context = server.getContext("/");
         context.addHandler(handler);
         server.start();
