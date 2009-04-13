@@ -56,4 +56,6 @@ public interface Constants {
 
     String CONTENT_TYPE = "contentType";
 
+    String STATUS = "status";
+
 }

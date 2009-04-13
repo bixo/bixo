@@ -37,11 +37,24 @@ public class FetchResultTuple extends BaseTuple {
         setFetchContent(content);
     }
 
+    public FetchResultTuple(Tuple tuple) {
+        super(new TupleEntry(FIELDS, tuple));
+    }
+
     public void setFetchContent(FetchContentTuple content) {
+
         getTupleEntry().set(Constants.FETCH_CONTENT, content.toTuple());
+        Comparable comparable = getTupleEntry().get(Constants.FETCH_CONTENT);
+        if (!(comparable instanceof Tuple)) {
+            throw new IllegalArgumentException("this never happen, so this is ok");
+        }
     }
 
     public FetchContentTuple getContent() {
+        Comparable comparable = getTupleEntry().get(Constants.FETCH_CONTENT);
+        if (!(comparable instanceof Tuple)) {
+            throw new IllegalArgumentException("Why does this happen than?");// this happens all the time so I guess something is wrong during deserialization of the tuple
+        }
         return new FetchContentTuple((Tuple) getTupleEntry().get(Constants.FETCH_CONTENT));
     }
 

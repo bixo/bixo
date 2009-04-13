@@ -48,6 +48,15 @@ public class UrlTuple extends BaseTuple {
         super(new TupleEntry(FIELDS, tuple));
     }
 
+    public UrlTuple(String url, long lastUpdated, long lastFetched, FetchStatusCode status) {
+        super(new TupleEntry(FIELDS, Tuple.size(FIELDS.size())));
+        setUrl(url);
+        setLastUpdated(lastUpdated);
+        setLastFetched(lastFetched);
+        setLastStatus(status);
+        
+    }
+
     public String getUrl() {
         return getTupleEntry().getString(Constants.URL);
     }
