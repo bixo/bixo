@@ -61,6 +61,6 @@ public class TextUrlParser extends BaseOperation<String> implements Function<Str
             }
         }
         // emit link with default values
-        call.getOutputCollector().add(new Tuple(url, System.currentTimeMillis(), 0, FetchStatusCode.NEVER_FETCHED.ordinal()));
+        call.getOutputCollector().add(new UrlTuple(url, System.currentTimeMillis(), 0l, FetchStatusCode.NEVER_FETCHED).toTuple());
     }
 }
