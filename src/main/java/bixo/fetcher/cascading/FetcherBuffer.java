@@ -11,6 +11,7 @@ import bixo.fetcher.FetcherQueueMgr;
 import bixo.fetcher.IHttpFetcherFactory;
 import bixo.fetcher.beans.FetchItem;
 import bixo.fetcher.beans.FetcherPolicy;
+import bixo.tuple.FetchResultTuple;
 import bixo.tuple.UrlWithScoreTuple;
 import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.HadoopFlowProcess;
@@ -30,6 +31,7 @@ public class FetcherBuffer extends BaseOperation<String> implements cascading.op
     private IHttpFetcherFactory _fetcherFactory;
 
     public FetcherBuffer(IHttpFetcherFactory factory) {
+        super(FetchResultTuple.FIELDS);
         _fetcherFactory = factory;
     }
 

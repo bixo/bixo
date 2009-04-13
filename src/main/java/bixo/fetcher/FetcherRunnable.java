@@ -24,6 +24,8 @@ package bixo.fetcher;
 
 import org.apache.log4j.Logger;
 
+import cascading.tuple.TupleEntryCollector;
+
 import bixo.fetcher.beans.FetchItem;
 import bixo.tuple.FetchResultTuple;
 
@@ -53,7 +55,10 @@ public class FetcherRunnable implements Runnable {
             try {
                 FetchResultTuple result = _httpFetcher.get(item.getUrl());
                 LOGGER.trace("Fetched " + result);
-                item.getCollector().add(result.toTuple());
+                TupleEntryCollector collector = item.getCollector();
+                synchronized (collector) {
+                    collector.add(result.toTuple());
+                }
                 // _collector.collect(result);
             } catch (Throwable t) {
                 LOGGER.error("Exception: " + t.getMessage(), t);
