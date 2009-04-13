@@ -29,7 +29,7 @@ import bixo.Constants;
 import bixo.fetcher.beans.FetchStatusCode;
 
 public class FetchResultTuple extends BaseTuple {
-    private static final Fields FIELDS = new Fields(Constants.FETCH_STATUS, Constants.FETCH_CONTENT);
+    public static final Fields FIELDS = new Fields(Constants.FETCH_STATUS, Constants.FETCH_CONTENT);
 
     public FetchResultTuple(FetchStatusCode statusCode, FetchContentTuple content) {
         super(new TupleEntry(FIELDS, Tuple.size(FIELDS.size())));

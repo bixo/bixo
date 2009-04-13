@@ -15,11 +15,13 @@ import cascading.scheme.Scheme;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Hfs;
 import cascading.tap.Tap;
+import cascading.tap.hadoop.TapCollector;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
+import cascading.tuple.Tuples;
 
 @SuppressWarnings("serial")
 public class FetchOutputTap extends Hfs {
@@ -40,22 +42,28 @@ public class FetchOutputTap extends Hfs {
 
     @Override
     public TupleEntryCollector openForWrite(JobConf conf) throws IOException {
-        String contentPath = new Path(getPath(), Constants.CONTENT).toUri().toString();
-        Hfs content = new Hfs(getScheme(), contentPath, isReplace());
 
         String statusPath = new Path(getPath(), Constants.STATUS).toUri().toString();
         Hfs status = new Hfs(getScheme(), statusPath, isReplace());
+        status.sinkInit(conf);
+        TapCollector statusCollector = new TapCollector(status, conf);
+        
+        String contentPath = new Path(getPath(), Constants.CONTENT).toUri().toString();
+        Hfs content = new Hfs(getScheme(), contentPath, isReplace());
+        content.sinkInit(conf);
+        TapCollector contentCollector = new TapCollector(content, conf);
+        
 
-        return new DualTupleEntryCollector(status.openForWrite(conf), content.openForWrite(conf));
+        return new DualTupleEntryCollector(statusCollector, contentCollector);
 
     }
 
     public static class DualTupleEntryCollector extends TupleEntryCollector implements OutputCollector {
 
-        private final TupleEntryCollector _statusCollector;
-        private final TupleEntryCollector _contentCollector;
+        private final TapCollector _statusCollector;
+        private final TapCollector _contentCollector;
 
-        public DualTupleEntryCollector(TupleEntryCollector statusCollector, TupleEntryCollector contentCollector) {
+        public DualTupleEntryCollector(TapCollector statusCollector, TapCollector contentCollector) {
             _statusCollector = statusCollector;
             _contentCollector = contentCollector;
         }
@@ -68,7 +76,6 @@ public class FetchOutputTap extends Hfs {
             FetchContentTuple content = fetchResultTuple.getContent();
             _statusCollector.add(new UrlTuple(content.getFetchedUrl(), content.getFetchTime(), System.currentTimeMillis(), statusCode).toTuple());
             _contentCollector.add(content.toTuple());
-
         }
 
         @Override
@@ -79,10 +86,7 @@ public class FetchOutputTap extends Hfs {
 
         @Override
         public void collect(Object key, Object value) throws IOException {
-//            collect((Tuple) value);
-            System.out.println(value);
             collect((Tuple) value);
-
         }
     }
 
@@ -90,17 +94,13 @@ public class FetchOutputTap extends Hfs {
 
         public MySchema(Fields all) {
             super(all);
-        }
 
-        @Override
-        public void sinkInit(Tap tap, JobConf conf) {
-            // TODO Auto-generated method stub
-            super.sinkInit(tap, conf);
         }
 
         @Override
         public void sink(TupleEntry tupleEntry, OutputCollector outputCollector) throws IOException {
-            super.sink(tupleEntry, outputCollector);
+            Tuple result = getSinkFields() != null ? tupleEntry.selectTuple(getSinkFields()) : tupleEntry.getTuple();
+            outputCollector.collect(Tuples.NULL, result);
         }
 
     }
