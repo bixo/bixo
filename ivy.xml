@@ -97,7 +97,8 @@ SOFTWARE.
 		<dependency org="sux4j" name="sux4j" rev="1.0.3" conf="compile" />
 
 		<dependency org="org.apache" name="log4j" rev="1.2.13" conf="compile, instrument" />
-
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.4.3" conf="compile, instrument" />
+		<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.4.3" conf="instrument" />
     </dependencies>
 
 </ivy-module>
