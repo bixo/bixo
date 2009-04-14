@@ -63,6 +63,8 @@ public class HttpClientFetcher implements IHttpFetcher {
             httpget = new HttpGet(new URI(url));
             // FUTURE KKr - support If-Modified-Since header
             if (host != null) {
+                // Set the host explicitly, in case we're using IP addresses, so that
+                // domain handling works on the target server.
                 // TODO KKr - use constant for this.
                 httpget.addHeader("Host", host);
             }
@@ -79,7 +81,7 @@ public class HttpClientFetcher implements IHttpFetcher {
         } catch (Throwable t) {
             safeAbort(httpget);
             
-            LOGGER.debug("Exception while fetching url " + url + ": " + t.getMessage(), t);
+            LOGGER.debug("Exception while fetching url " + url, t);
             // TODO KKr - use real status for exception, include exception msg somehow.
             // TODO SG should we use FetchStatusCode.ERROR or NEVER_FTEHCED?
             return new FetchResultTuple(FetchStatusCode.ERROR, new FetchContentTuple(url, url, System.currentTimeMillis(), null, null));
