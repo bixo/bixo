@@ -12,8 +12,6 @@
 
 package bixo.tap.jdbc;
 
-import java.io.IOException;
-
 import cascading.ClusterTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -28,79 +26,79 @@ import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import org.hsqldb.Server;
 
+import java.io.IOException;
+
 /**
  *
  */
-public class JDBCTest extends ClusterTestCase
-  {
-  String inputURLDBFile = "src/test-data/urldb.10.txt.gz";
-  String inputContentDBFile = "src/test-data/contentdb.10.txt.gz";
+public class JDBCTest extends ClusterTestCase {
+    String inputURLDBFile = "src/test-data/urldb.10.txt.gz";
+    String inputContentDBFile = "src/test-data/contentdb.10.txt.gz";
 
-  String outputPath = "build/test-data/jdbctest/";
+    String outputPath = "build/test-data/jdbctest/";
 
-  private Server server;
+    private Server server;
 
-  public JDBCTest()
-    {
-    super( "jbdc tap test", false );
+    public JDBCTest() {
+        super("jbdc tap test", false);
     }
 
-  @Override
-  public void setUp() throws IOException
-    {
-    super.setUp();
+    @Override
+    public void setUp() throws IOException {
+        super.setUp();
 
-    server = new Server();
-    server.setDatabasePath( 0, "build/db/testing" );
-    server.setDatabaseName( 0, "testing" );
-    server.start();
+        server = new Server();
+        server.setDatabasePath(0, "build/db/testing");
+        server.setDatabaseName(0, "testing");
+        server.start();
     }
 
-  @Override
-  public void tearDown() throws IOException
-    {
-    super.tearDown();
+    @Override
+    public void tearDown() throws IOException {
+        super.tearDown();
 
-    server.stop();
+        try {
+            server.stop();
+        } catch (Exception e) {
+            // ignore
+        }
     }
 
-  public void testURLDBTap() throws IOException
-    {
-    Tap source = new Lfs( new TextLine(), inputURLDBFile );
+    public void testURLDBTap() throws IOException {
+        Tap source = new Lfs(new TextLine(), inputURLDBFile);
 
-    Pipe parsePipe = new Each( "insert", new Fields( "line" ), new RegexSplitter( new Fields( URLDBScheme.COLUMN_NAMES ), "\\t" ) );
+        Pipe parsePipe = new Each("insert", new Fields("line"), new RegexSplitter(new Fields(URLDBScheme.COLUMN_NAMES), "\\t"));
 
-    parsePipe = new Each( parsePipe, new Identity( URLDBScheme.COLUMN_TYPES ) );
+        parsePipe = new Each(parsePipe, new Identity(URLDBScheme.COLUMN_TYPES));
 
-    String url = "jdbc:hsqldb:hsql://localhost/testing";
-    String driver = "org.hsqldb.jdbcDriver";
+        String url = "jdbc:hsqldb:hsql://localhost/testing";
+        String driver = "org.hsqldb.jdbcDriver";
 
-    Tap urldbTap = new URLDBTap( url, driver, SinkMode.REPLACE );
+        Tap urldbTap = new URLDBTap(url, driver, SinkMode.REPLACE);
 
-    Flow parseFlow = new FlowConnector( getProperties() ).connect( source, urldbTap, parsePipe );
+        Flow parseFlow = new FlowConnector(getProperties()).connect(source, urldbTap, parsePipe);
 
-    parseFlow.complete();
+        parseFlow.complete();
 
-    validateLength( parseFlow, 10 );
+        validateLength(parseFlow, 10);
 
-    Tap sink = new Lfs( new TextLine(), outputPath + "urldb", SinkMode.REPLACE );
+        Tap sink = new Lfs(new TextLine(), outputPath + "urldb", SinkMode.REPLACE);
 
-    Pipe copyPipe = new Each( "read", new Identity() );
+        Pipe copyPipe = new Each("read", new Identity());
 
-    Flow copyFlow = new FlowConnector( getProperties() ).connect( urldbTap, sink, copyPipe );
+        Flow copyFlow = new FlowConnector(getProperties()).connect(urldbTap, sink, copyPipe);
 
-    copyFlow.complete();
+        copyFlow.complete();
 
-    validateLength( copyFlow, 10 );
+        validateLength(copyFlow, 10);
     }
 
-  public void testContentDBTap() throws IOException
-    {
-    Tap source = new Lfs( new TextLine(), inputContentDBFile );
+    public void testContentDBTap() throws IOException {
+        Tap source = new Lfs(new TextLine(), inputContentDBFile);
 
 //    String[] fields = {"url", "fetch_time", "headers", "content"};
-    String[] fields = ContentDBScheme.COLUMN_NAMES;
-    Pipe parsePipe = new Each( "insert", new Fields( "line" ), new RegexSplitter( new Fields( fields ), "\\t" ) );
+        String[] fields = ContentDBScheme.COLUMN_NAMES;
+        Pipe parsePipe = new Each("insert", new Fields("line"), new RegexSplitter(new Fields(fields), "\\t"));
 
 //    String headerDecoder = "new String( org.apache.commons.codec.binary.Base64.decodeBase64( headers.getBytes() ) )";
 //    Function headerDecodeFunction = new ExpressionFunction( new Fields( ContentDBScheme.HEADERS_RAW ), headerDecoder, String.class );
@@ -110,28 +108,28 @@ public class JDBCTest extends ClusterTestCase
 //    Function contentDecodeFunction = new ExpressionFunction( new Fields( ContentDBScheme.CONTENT_RAW ), contentDecode, String.class );
 //    parsePipe = new Each( parsePipe, new Fields( "content" ), contentDecodeFunction, Fields.ALL );
 
-    parsePipe = new Each( parsePipe, new Fields( ContentDBScheme.COLUMN_NAMES ), new Identity( ContentDBScheme.COLUMN_TYPES ) );
+        parsePipe = new Each(parsePipe, new Fields(ContentDBScheme.COLUMN_NAMES), new Identity(ContentDBScheme.COLUMN_TYPES));
 
-    String url = "jdbc:hsqldb:hsql://localhost/testing";
-    String driver = "org.hsqldb.jdbcDriver";
+        String url = "jdbc:hsqldb:hsql://localhost/testing";
+        String driver = "org.hsqldb.jdbcDriver";
 
-    Tap contentDBTap = new ContentDBTap( url, driver, SinkMode.REPLACE );
+        Tap contentDBTap = new ContentDBTap(url, driver, SinkMode.REPLACE);
 
-    Flow parseFlow = new FlowConnector( getProperties() ).connect( source, contentDBTap, parsePipe );
+        Flow parseFlow = new FlowConnector(getProperties()).connect(source, contentDBTap, parsePipe);
 
-    parseFlow.complete();
+        parseFlow.complete();
 
-    validateLength( parseFlow, 10 );
+        validateLength(parseFlow, 10);
 
-    Tap sink = new Lfs( new TextLine(), outputPath + "contentdb", SinkMode.REPLACE );
+        Tap sink = new Lfs(new TextLine(), outputPath + "contentdb", SinkMode.REPLACE);
 
-    Pipe copyPipe = new Each( "read", new Identity() );
+        Pipe copyPipe = new Each("read", new Identity());
 
-    Flow copyFlow = new FlowConnector( getProperties() ).connect( contentDBTap, sink, copyPipe );
+        Flow copyFlow = new FlowConnector(getProperties()).connect(contentDBTap, sink, copyPipe);
 
-    copyFlow.complete();
+        copyFlow.complete();
 
-    validateLength( copyFlow, 10 );
+        validateLength(copyFlow, 10);
     }
 
-  }
+}
