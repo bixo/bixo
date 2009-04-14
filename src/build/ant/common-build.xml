@@ -19,7 +19,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 -->
-<project name="katta-common-build" xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="bixo-common-build" xmlns:ivy="antlib:org.apache.ivy.ant">
 
 	<property file="${root.dir}/src/build/ant/build.properties" />
 
