@@ -26,35 +26,31 @@ import cascading.jdbc.JDBCScheme;
 /**
  *
  */
-public class URLDBScheme extends JDBCScheme
-  {
-  public static final String URL = "url";
-  public static final String HOST = "host";
-  public static final String LAST_FETCH_TIME = "last_fetch_time";
-  public static final String LAST_FETCH_SIGNATURE = "last_fetch_signature";
-  public static final String LAST_CHANGED_TIME = "last_changed_time";
-  public static final String LAST_STATUS_TIME = "last_status_time";
-  public static final String LAST_STATUS = "last_status";
+public class URLDBScheme extends JDBCScheme {
+    public static final String URL = "url";
+    public static final String HOST = "host";
+    public static final String LAST_FETCH_TIME = "last_fetch_time";
+    public static final String LAST_FETCH_SIGNATURE = "last_fetch_signature";
+    public static final String LAST_CHANGED_TIME = "last_changed_time";
+    public static final String LAST_STATUS_TIME = "last_status_time";
+    public static final String LAST_STATUS = "last_status";
 
-  public static final String[] COLUMN_NAMES = {URL, HOST, LAST_FETCH_TIME, LAST_FETCH_SIGNATURE, LAST_CHANGED_TIME, LAST_STATUS_TIME, LAST_STATUS};
+    public static final String[] COLUMN_NAMES = {URL, HOST, LAST_FETCH_TIME, LAST_FETCH_SIGNATURE, LAST_CHANGED_TIME, LAST_STATUS_TIME, LAST_STATUS};
 
-  public static final Class[] COLUMN_TYPES = {String.class, String.class, long.class, String.class, long.class, long.class, int.class};
+    public static final Class[] COLUMN_TYPES = {String.class, String.class, long.class, String.class, long.class, long.class, int.class};
 
-  public static final URLDBScheme DEFAULT_SCHEME = new URLDBScheme();
+    public static final URLDBScheme DEFAULT_SCHEME = new URLDBScheme();
 
 
-  public URLDBScheme()
-    {
-    super( COLUMN_NAMES, HOST + "," + URL );
+    public URLDBScheme() {
+        super(COLUMN_NAMES, HOST + "," + URL);
     }
 
-  public URLDBScheme( String[] columns, String orderBy )
-    {
-    super( columns, orderBy );
+    public URLDBScheme(String[] columns, String orderBy) {
+        super(columns, orderBy);
     }
 
-  public URLDBScheme( String[] columns )
-    {
-    super( columns );
+    public URLDBScheme(String[] columns) {
+        super(columns);
     }
-  }
+}

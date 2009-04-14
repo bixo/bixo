@@ -26,32 +26,28 @@ import cascading.jdbc.JDBCScheme;
 /**
  *
  */
-public class ContentDBScheme extends JDBCScheme
-  {
-  public static final String URL = "url";
-  public static final String FETCH_TIME = "fetch_time";
-  public static final String HEADERS_RAW = "headers_raw";
-  public static final String CONTENT_RAW = "content_raw";
+public class ContentDBScheme extends JDBCScheme {
+    public static final String URL = "url";
+    public static final String FETCH_TIME = "fetch_time";
+    public static final String HEADERS_RAW = "headers_raw";
+    public static final String CONTENT_RAW = "content_raw";
 
-  public static final String[] COLUMN_NAMES = {URL, FETCH_TIME, HEADERS_RAW, CONTENT_RAW};
+    public static final String[] COLUMN_NAMES = {URL, FETCH_TIME, HEADERS_RAW, CONTENT_RAW};
 
-  public static final Class[] COLUMN_TYPES = {String.class, long.class, String.class, String.class};
+    public static final Class[] COLUMN_TYPES = {String.class, long.class, String.class, String.class};
 
-  public static final ContentDBScheme DEFAULT_SCHEME = new ContentDBScheme();
+    public static final ContentDBScheme DEFAULT_SCHEME = new ContentDBScheme();
 
 
-  public ContentDBScheme()
-    {
-    super( COLUMN_NAMES, URL + ", " + FETCH_TIME );
+    public ContentDBScheme() {
+        super(COLUMN_NAMES, URL + ", " + FETCH_TIME);
     }
 
-  public ContentDBScheme( String[] columns, String orderBy )
-    {
-    super( columns, orderBy );
+    public ContentDBScheme(String[] columns, String orderBy) {
+        super(columns, orderBy);
     }
 
-  public ContentDBScheme( String[] columns )
-    {
-    super( columns );
+    public ContentDBScheme(String[] columns) {
+        super(columns);
     }
-  }
+}

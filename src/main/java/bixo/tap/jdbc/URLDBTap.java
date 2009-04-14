@@ -30,50 +30,44 @@ import cascading.tap.SinkMode;
  * <p/>
  * Other data will undoubtedly be added, but this is a start.
  */
-public class URLDBTap extends JDBCTap
-  {
+public class URLDBTap extends JDBCTap {
 
-  public static final URLTableDesc DEFAULT_TABLE_DESC = new URLTableDesc();
+    public static final URLTableDesc DEFAULT_TABLE_DESC = new URLTableDesc();
 
-  public static class URLTableDesc extends TableDesc
-    {
-    public static final String TABLE_NAME = "urldb";
+    public static class URLTableDesc extends TableDesc {
+        public static final String TABLE_NAME = "urldb";
 
-    public static final String[] COLUMN_NAMES = URLDBScheme.COLUMN_NAMES;
+        public static final String[] COLUMN_NAMES = URLDBScheme.COLUMN_NAMES;
 
-    public static final String[] COLUMN_DEFS = {"VARCHAR(100) NOT NULL",  // URL
-                                                "VARCHAR(100) NOT NULL",   // HOST
-                                                "BIGINT",                    // LAST_FETCH_TIME
-                                                "VARCHAR(100)",            // LAST_FETCH_SIGNATURE
-                                                "BIGINT",                    // LAST_CHANGED_TIME
-                                                "BIGINT",                    // LAST_STATUS_TIME
-                                                "INT"                      // LAST_STATUS
-    };
-    public static final String PRIMARY_KEY = URLDBScheme.URL;
+        public static final String[] COLUMN_DEFS = {
+                "VARCHAR(100) NOT NULL",  // URL
+                "VARCHAR(100) NOT NULL",  // HOST
+                "BIGINT",                 // LAST_FETCH_TIME
+                "VARCHAR(100)",           // LAST_FETCH_SIGNATURE
+                "BIGINT",                 // LAST_CHANGED_TIME
+                "BIGINT",                 // LAST_STATUS_TIME
+                "INT"                     // LAST_STATUS
+        };
+        public static final String PRIMARY_KEY = URLDBScheme.URL;
 
-    public URLTableDesc()
-      {
-      super( TABLE_NAME, COLUMN_NAMES, COLUMN_DEFS, PRIMARY_KEY );
-      }
+        public URLTableDesc() {
+            super(TABLE_NAME, COLUMN_NAMES, COLUMN_DEFS, PRIMARY_KEY);
+        }
     }
 
-  public URLDBTap( String connectionUrl, String driverClassName, SinkMode sinkMode )
-    {
-    super( connectionUrl, driverClassName, DEFAULT_TABLE_DESC, URLDBScheme.DEFAULT_SCHEME, sinkMode );
+    public URLDBTap(String connectionUrl, String driverClassName, SinkMode sinkMode) {
+        super(connectionUrl, driverClassName, DEFAULT_TABLE_DESC, URLDBScheme.DEFAULT_SCHEME, sinkMode);
     }
 
-  public URLDBTap( String connectionUrl, String driverClassName )
-    {
-    super( connectionUrl, driverClassName, DEFAULT_TABLE_DESC, URLDBScheme.DEFAULT_SCHEME );
+    public URLDBTap(String connectionUrl, String driverClassName) {
+        super(connectionUrl, driverClassName, DEFAULT_TABLE_DESC, URLDBScheme.DEFAULT_SCHEME);
     }
 
-  public URLDBTap( String connectionUrl, String driverClassName, TableDesc tableDesc, JDBCScheme jdbcScheme, SinkMode sinkMode )
-    {
-    super( connectionUrl, driverClassName, tableDesc, jdbcScheme, sinkMode );
+    public URLDBTap(String connectionUrl, String driverClassName, TableDesc tableDesc, JDBCScheme jdbcScheme, SinkMode sinkMode) {
+        super(connectionUrl, driverClassName, tableDesc, jdbcScheme, sinkMode);
     }
 
-  public URLDBTap( String connectionUrl, String driverClassName, TableDesc tableDesc, JDBCScheme jdbcScheme )
-    {
-    super( connectionUrl, driverClassName, tableDesc, jdbcScheme );
+    public URLDBTap(String connectionUrl, String driverClassName, TableDesc tableDesc, JDBCScheme jdbcScheme) {
+        super(connectionUrl, driverClassName, tableDesc, jdbcScheme);
     }
-  }
+}
