@@ -33,15 +33,7 @@ public class FetcherRunnable implements Runnable {
     private static Logger LOGGER = Logger.getLogger(FetcherRunnable.class);
 
     private IHttpFetcher _httpFetcher;
-    // private FetchCollector _collector;
     private FetchList _items;
-
-    // public FetcherRunnable(IHttpFetcher httpFetcher, FetchCollector
-    // collector, FetchList items) {
-    // _httpFetcher = httpFetcher;
-    // _collector = collector;
-    // _items = items;
-    // }
 
     public FetcherRunnable(IHttpFetcher httpFetcher, FetchList items) {
         _httpFetcher = httpFetcher;
@@ -51,15 +43,18 @@ public class FetcherRunnable implements Runnable {
     @Override
     public void run() {
 
+        // FUTURE KKr - when fetching the last item, send a Connection: close
+        // header to let the server know it doesn't need to keep the socket open.
         for (FetchItem item : _items) {
             try {
                 FetchResultTuple result = _httpFetcher.get(item.getUrl());
                 LOGGER.trace("Fetched " + result);
                 TupleEntryCollector collector = item.getCollector();
+                
+                // Cascading collectors aren't thread-safe.
                 synchronized (collector) {
                     collector.add(result.toTuple());
                 }
-                // _collector.collect(result);
             } catch (Throwable t) {
                 LOGGER.error("Exception: " + t.getMessage(), t);
             }

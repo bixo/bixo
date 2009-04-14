@@ -26,4 +26,5 @@ import bixo.tuple.FetchResultTuple;
 
 public interface IHttpFetcher {
     public FetchResultTuple get(String url);
+    public FetchResultTuple get(String url, String host);
 }

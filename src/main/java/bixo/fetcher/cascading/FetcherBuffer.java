@@ -40,9 +40,6 @@ public class FetcherBuffer extends BaseOperation<String> implements cascading.op
     @Override
     public void prepare(FlowProcess flowProcess, OperationCall<String> operationCall) {
         super.prepare(flowProcess, operationCall);
-        // JobConf jobConf = ((HadoopFlowProcess) flowProcess).getJobConf();
-        // _collector = new FetchCollector(jobConf);
-
         _queueMgr = new FetcherQueueMgr();
         // TODO KKr- configure max threads in conf?
 
@@ -58,6 +55,7 @@ public class FetcherBuffer extends BaseOperation<String> implements cascading.op
     public void operate(FlowProcess process, BufferCall<String> buffCall) {
         Iterator<TupleEntry> values = buffCall.getArgumentsIterator();
         TupleEntry group = buffCall.getGroup();
+        // TODO KKr - talk to Chris about ugly casting issue.
         Reporter reporter = ((HadoopFlowProcess) process).getReporter();
 
         try {
@@ -69,6 +67,12 @@ public class FetcherBuffer extends BaseOperation<String> implements cascading.op
             // TODO KKr - base maxURLs on fetcher policy, target end of fetch
             int maxURLs = 10;
 
+            // TODO KKr - if domain isn't already an IP address, we want to
+            // covert URLs to IP addresses and segment that way, as otherwise
+            // keep-alive doesn't buy us much if (as on large sites) xxx.domain
+            // can go to different servers. Which means breaking it up here
+            // into sorted lists, and creating a queue with the list of items
+            // to be fetched (moving list logic elsewhere??)
             FetcherQueue queue = new FetcherQueue(domain, policy, maxURLs);
 
             while (values.hasNext()) {
@@ -76,11 +80,14 @@ public class FetcherBuffer extends BaseOperation<String> implements cascading.op
                 queue.offer(item);
             }
 
+            // We're going to spin here until the queue manager decides that we
+            // have available space for this next queue.
+            // TODO KKr - have timeout here based on target fetch duration.
             while (!_queueMgr.offer(queue)) {
                 reporter.progress();
             }
         } catch (Throwable t) {
-            LOG.error("Exception during reduce: " + t.getMessage(), t);
+            LOG.error("Exception during reduce", t);
         }
 
     }
@@ -101,11 +108,9 @@ public class FetcherBuffer extends BaseOperation<String> implements cascading.op
         }
 
         _fetcherThread.interrupt();
-        // try {
-        // _collector.close();
-        // } catch (IOException e) {
-        // throw new RuntimeException("Unable to close collector", e);
-        // }
+        
+        // TODO KKr - shut down FetcherManager, so that it can do...
+        // httpclient.getConnectionManager().shutdown();
     }
 
 }

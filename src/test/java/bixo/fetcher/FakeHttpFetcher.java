@@ -48,6 +48,11 @@ public class FakeHttpFetcher implements IHttpFetcher {
     
     @Override
     public FetchResultTuple get(String url) {
+        return get(url, null);
+    }
+
+    @Override
+    public FetchResultTuple get(String url, String host) {
         try {
             URL theUrl = new URL(url);
             
@@ -89,5 +94,6 @@ public class FakeHttpFetcher implements IHttpFetcher {
             return new FetchResultTuple(FetchStatusCode.ERROR, new FetchContentTuple(url, url, System.currentTimeMillis(), null, null));
         }
     }
+
 
 }

@@ -49,16 +49,29 @@ public class HttpClientFetcher implements IHttpFetcher {
         _httpContext = new BasicHttpContext();
     }
     
-    
     @Override
     public FetchResultTuple get(String url) {
+        return get(url, null);
+    }
+    
+    @Override
+    public FetchResultTuple get(String url, String host) {
         HttpGet httpget = null;
         
         try {
             LOGGER.trace("Fetching " + url);
             httpget = new HttpGet(new URI(url));
+            // FUTURE KKr - support If-Modified-Since header
+            if (host != null) {
+                // TODO KKr - use constant for this.
+                httpget.addHeader("Host", host);
+            }
+            
+            // TODO KKr - should we be using a response handler here?
             HttpResponse response = _httpClient.execute(httpget, _httpContext);
             HttpEntity entity = response.getEntity();
+            
+            // TODO KKr - limit to max length, based on conf
             byte[] bytes = EntityUtils.toByteArray(entity);
             // TODO KKr - handle redirects, real content type, what about charset? Do we need to capture HTTP headers?
             // TODO SG used the new enum here.Use different status than fetch if you neeed to.

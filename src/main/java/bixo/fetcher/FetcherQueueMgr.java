@@ -25,7 +25,7 @@ package bixo.fetcher;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * Manage a set of FetcherQueue objects, one per URL grouping (either PLD or IP)
+ * Manage a set of FetcherQueue objects, one per URL grouping (either domain or IP address)
  *
  */
 public class FetcherQueueMgr implements IFetchItemProvider {
@@ -87,9 +87,6 @@ public class FetcherQueueMgr implements IFetchItemProvider {
 				// Don't put it back in the queue, as there's nothing left to
 				// do with it.
 			} else {
-				// TODO KKr - use the multi-item queue.poll call to get back
-				// a list of items...might just always change it to return
-				// back multi-set.
 				result = queue.poll();
 				_queues.add(queue);
 				if (result != null) {

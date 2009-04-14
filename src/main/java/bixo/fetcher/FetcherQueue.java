@@ -54,10 +54,9 @@ public class FetcherQueue implements IFetchItemProvider {
 
 
     /**
-     * Using queue terminology, offer up <url> as something to be queued.
+     * Using queue terminology, offer up <fetchItem> as something to be queued.
      * 
-     * @param url - URL that we'd like to have fetched. Must be valid format.
-     * @param score - domain-relative score of the URL (high values => higher priority)
+     * @param fetchItem - item that we'd like to have fetched. Must be valid format.
      * @return - true if we queued the URL
      */
     public boolean offer(FetchItem fetchItem) {

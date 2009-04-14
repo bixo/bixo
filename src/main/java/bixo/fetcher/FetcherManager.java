@@ -70,29 +70,43 @@ public class FetcherManager implements Runnable {
 	        
 	        // Don't bother trying to add more things to the queue if that would only throw
 	        // a RejectedExecutionException.
-	        // TODO SG, Ken dont you want to sleep some secs in case the queue is full? You just add load to the queue in running this loop heavily.
 	        if (_pool.getQueue().remainingCapacity() > 0) {
 	            items = _provider.poll();
 	        }
 	        
 	        // If we decided to check for IURLs, and we got a set to fetch from one domain...
 	        if (items != null) {
-	            LOGGER.trace(String.format("Pulled %d items from the %s domain queue", items.size(), items.getDomain()));
+	            if (LOGGER.isTraceEnabled()) {
+	                LOGGER.trace(String.format("Pulled %d items from the %s domain queue", items.size(), items.getDomain()));
+	            }
 	            
 	            // Create a Runnable that has a way to fetch the URLs (the IHttpFetcher), and
 	            // the list of things to fetch (the <items>).
 	            FetcherRunnable command = new FetcherRunnable(_factory.newHttpFetcher(), items);
 	            _pool.execute(command);
+	        } else {
+	            safeSleep(1000);
 	        }
 	    }
 	    
 	    _pool.shutdown();
 	    while (!_pool.isShutdown()) {
-	        // Spin while waiting.
+            // Spin while waiting.
+	        safeSleep(1000);
 	        // TODO KKr - have timeout where we call _pool.terminate() to force
 	        // it to shut down.
 	    }
 	} // run
+	
+	
+	// TODO KKr - move to bixo utils?
+	private static void safeSleep(long duration) {
+	    try {
+	        Thread.sleep(duration);
+	    } catch (InterruptedException e) {
+	        // Ignore
+	    }
+	}
 	
 	
 	/**
