@@ -15,6 +15,8 @@ package bixo.tap.jdbc;
 import cascading.ClusterTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
+import cascading.jdbc.JDBCScheme;
+import cascading.jdbc.JDBCTap;
 import cascading.operation.Identity;
 import cascading.operation.regex.RegexSplitter;
 import cascading.pipe.Each;
@@ -67,14 +69,16 @@ public class JDBCTest extends ClusterTestCase {
     public void testURLDBTap() throws IOException {
         Tap source = new Lfs(new TextLine(), inputURLDBFile);
 
-        Pipe parsePipe = new Each("insert", new Fields("line"), new RegexSplitter(new Fields(URLDBScheme.COLUMN_NAMES), "\\t"));
+        Pipe parsePipe = new Each("insert", new Fields("line"), new RegexSplitter(new Fields(SimpleURLTableDesc.COLUMN_NAMES), "\\t"));
 
-        parsePipe = new Each(parsePipe, new Identity(URLDBScheme.COLUMN_TYPES));
+        parsePipe = new Each(parsePipe, new Identity(SimpleURLTableDesc.COLUMN_TYPES));
 
         String url = "jdbc:hsqldb:hsql://localhost/testing";
         String driver = "org.hsqldb.jdbcDriver";
 
-        Tap urldbTap = new URLDBTap(url, driver, SinkMode.REPLACE);
+        String sortBy = SimpleURLTableDesc.HOST + "," + SimpleURLTableDesc.URL;
+        JDBCScheme urldbScheme = new JDBCScheme(SimpleURLTableDesc.COLUMN_NAMES, sortBy);
+        Tap urldbTap = new JDBCTap(url, driver, new SimpleURLTableDesc(), urldbScheme, SinkMode.REPLACE);
 
         Flow parseFlow = new FlowConnector(getProperties()).connect(source, urldbTap, parsePipe);
 
@@ -96,24 +100,17 @@ public class JDBCTest extends ClusterTestCase {
     public void testContentDBTap() throws IOException {
         Tap source = new Lfs(new TextLine(), inputContentDBFile);
 
-//    String[] fields = {"url", "fetch_time", "headers", "content"};
-        String[] fields = ContentDBScheme.COLUMN_NAMES;
+        String[] fields = SimpleContentTableDesc.COLUMN_NAMES;
         Pipe parsePipe = new Each("insert", new Fields("line"), new RegexSplitter(new Fields(fields), "\\t"));
 
-//    String headerDecoder = "new String( org.apache.commons.codec.binary.Base64.decodeBase64( headers.getBytes() ) )";
-//    Function headerDecodeFunction = new ExpressionFunction( new Fields( ContentDBScheme.HEADERS_RAW ), headerDecoder, String.class );
-//    parsePipe = new Each( parsePipe, new Fields( "headers" ), headerDecodeFunction, Fields.ALL );
-//
-//    String contentDecode = "new String( org.apache.commons.codec.binary.Base64.decodeBase64( content.getBytes() ) )";
-//    Function contentDecodeFunction = new ExpressionFunction( new Fields( ContentDBScheme.CONTENT_RAW ), contentDecode, String.class );
-//    parsePipe = new Each( parsePipe, new Fields( "content" ), contentDecodeFunction, Fields.ALL );
-
-        parsePipe = new Each(parsePipe, new Fields(ContentDBScheme.COLUMN_NAMES), new Identity(ContentDBScheme.COLUMN_TYPES));
+        parsePipe = new Each(parsePipe, new Fields(SimpleContentTableDesc.COLUMN_NAMES), new Identity(SimpleContentTableDesc.COLUMN_TYPES));
 
         String url = "jdbc:hsqldb:hsql://localhost/testing";
         String driver = "org.hsqldb.jdbcDriver";
 
-        Tap contentDBTap = new ContentDBTap(url, driver, SinkMode.REPLACE);
+        String sortBy = SimpleContentTableDesc.URL + ", " + SimpleContentTableDesc.FETCH_TIME;
+        JDBCScheme contentDBScheme = new JDBCScheme(SimpleContentTableDesc.COLUMN_NAMES, sortBy);
+        Tap contentDBTap = new JDBCTap(url, driver, new SimpleContentTableDesc(), contentDBScheme, SinkMode.REPLACE);
 
         Flow parseFlow = new FlowConnector(getProperties()).connect(source, contentDBTap, parsePipe);
 

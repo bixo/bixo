@@ -21,12 +21,22 @@
 
 package bixo.tap.jdbc;
 
-import cascading.jdbc.JDBCScheme;
+import cascading.jdbc.TableDesc;
 
 /**
- *
+ * Content Schema
+ * <p/>
+ * URL - http://www.mydomain.com/somepage.html?session=yyy
+ * Fetch time - <timestamp>
+ * Headers - Map<Key, Value> (strings from HTTP response)
+ * Content - byte[]
+ * <p/>
+ * This is the "raw" content. As such, it doesn't have a charset field, as that would be derived during the parse process (ie using http headers and potentially values from inside of the content).
+ * <p/>
+ * I think I'd want to add a download speed field, so that we could tune fetches by server responsiveness, but that's a future.
  */
-public class ContentDBScheme extends JDBCScheme {
+public class SimpleContentTableDesc extends TableDesc {
+
     public static final String URL = "url";
     public static final String FETCH_TIME = "fetch_time";
     public static final String HEADERS_RAW = "headers_raw";
@@ -36,18 +46,18 @@ public class ContentDBScheme extends JDBCScheme {
 
     public static final Class[] COLUMN_TYPES = {String.class, long.class, String.class, String.class};
 
-    public static final ContentDBScheme DEFAULT_SCHEME = new ContentDBScheme();
+    public static final String TABLE_NAME = "contentdb";
 
+    public static final String[] COLUMN_DEFS = {
+            "VARCHAR(100) NOT NULL",  // URL
+            "BIGINT",                 // FETCH_TIME
+            "VARCHAR(100)",           // HEADERS_RAW
+            "VARCHAR(100)"            // CONTENT_RAW
+    };
 
-    public ContentDBScheme() {
-        super(COLUMN_NAMES, URL + ", " + FETCH_TIME);
-    }
+    public static final String PRIMARY_KEY = SimpleURLTableDesc.URL;
 
-    public ContentDBScheme(String[] columns, String orderBy) {
-        super(columns, orderBy);
-    }
-
-    public ContentDBScheme(String[] columns) {
-        super(columns);
+    public SimpleContentTableDesc() {
+        super(TABLE_NAME, COLUMN_NAMES, COLUMN_DEFS, PRIMARY_KEY);
     }
 }
