@@ -29,10 +29,11 @@ import bixo.Constants;
 import bixo.fetcher.beans.FetchStatusCode;
 
 public class FetchResultTuple extends BaseTuple {
-    public static final Fields FIELDS = new Fields(Constants.FETCH_STATUS, Constants.FETCH_CONTENT);
+    public static final Fields FIELDS = new Fields( Constants.FETCH_STATUS, Constants.FETCH_CONTENT);
 
     public FetchResultTuple(FetchStatusCode statusCode, FetchContentTuple content) {
         super(new TupleEntry(FIELDS, Tuple.size(FIELDS.size())));
+//        setUrl(url);
         setStatusCode(statusCode);
         setFetchContent(content);
     }
@@ -41,20 +42,19 @@ public class FetchResultTuple extends BaseTuple {
         super(new TupleEntry(FIELDS, tuple));
     }
 
-    public void setFetchContent(FetchContentTuple content) {
+//    public String getUrl() {
+//        return getTupleEntry().getString(Constants.URL);
+//    }
+//
+//    public void setUrl(String fetchedUrl) {
+//        getTupleEntry().set(Constants.URL, fetchedUrl);
+//    }
 
+    public void setFetchContent(FetchContentTuple content) {
         getTupleEntry().set(Constants.FETCH_CONTENT, content.toTuple());
-        Comparable comparable = getTupleEntry().get(Constants.FETCH_CONTENT);
-        if (!(comparable instanceof Tuple)) {
-            throw new IllegalArgumentException("this never happen, so this is ok");
-        }
     }
 
     public FetchContentTuple getContent() {
-        Comparable comparable = getTupleEntry().get(Constants.FETCH_CONTENT);
-        if (!(comparable instanceof Tuple)) {
-            throw new IllegalArgumentException("Why does this happen than?");// this happens all the time so I guess something is wrong during deserialization of the tuple
-        }
         return new FetchContentTuple((Tuple) getTupleEntry().get(Constants.FETCH_CONTENT));
     }
 

@@ -4,7 +4,6 @@ import bixo.Constants;
 import bixo.fetcher.IHttpFetcherFactory;
 import bixo.fetcher.util.GroupingKeyGenerator;
 import bixo.fetcher.util.ScoreGenerator;
-import bixo.tuple.FetchResultTuple;
 import bixo.tuple.UrlWithGroupKeyTuple;
 import bixo.tuple.UrlWithScoreTuple;
 import cascading.pipe.Each;
@@ -23,7 +22,7 @@ public class FetchPipe extends SubAssembly {
         fetch = new Each(fetch, new GroupFunction(Constants.GROUPING_KEY, keyGenerator), UrlWithGroupKeyTuple.FIELDS);
         fetch = new Each(fetch, new ScoreFunction(scoreGenerator), UrlWithScoreTuple.FIELDS);
         fetch = new GroupBy(fetch, new Fields(Constants.GROUPING_KEY));
-        fetch = new Every(fetch, new FetcherBuffer(factory), FetchResultTuple.FIELDS);
+        fetch = new Every(fetch, new FetcherBuffer(factory), new Fields(Constants.URL, Constants.FETCH_STATUS, Constants.FETCH_CONTENT));
         setTails(fetch);
     }
 }

@@ -38,7 +38,7 @@ public class FetcherManager implements Runnable {
     private static Logger LOGGER = Logger.getLogger(FetcherManager.class);
     
     // TODO KKr - figure out how best to get these values, without having
-    // to pass around a conf everywhere.
+    // to pass around a _conf everywhere.
     private static final int FETCH_THREAD_COUNT_CORE = 10;
     private static final int FETCH_IDLE_TIMEOUT = 1;
 

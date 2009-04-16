@@ -51,7 +51,7 @@ public class FetcherRunnable implements Runnable {
                 LOGGER.trace("Fetched " + result);
                 TupleEntryCollector collector = item.getCollector();
                 
-                // Cascading collectors aren't thread-safe.
+                // Cascading _collectors aren't thread-safe.
                 synchronized (collector) {
                     collector.add(result.toTuple());
                 }

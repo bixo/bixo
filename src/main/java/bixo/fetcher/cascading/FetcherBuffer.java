@@ -41,7 +41,7 @@ public class FetcherBuffer extends BaseOperation<String> implements cascading.op
     public void prepare(FlowProcess flowProcess, OperationCall<String> operationCall) {
         super.prepare(flowProcess, operationCall);
         _queueMgr = new FetcherQueueMgr();
-        // TODO KKr- configure max threads in conf?
+        // TODO KKr- configure max threads in _conf?
 
         _fetcherMgr = new FetcherManager(_queueMgr, _fetcherFactory);
 

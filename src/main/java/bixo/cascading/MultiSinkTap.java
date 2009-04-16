@@ -48,14 +48,14 @@ public class MultiSinkTap extends SinkTap {
     /** Field LOG */
     private static final Logger LOG = Logger.getLogger(MultiSinkTap.class);
 
-    private Tap[] _taps;
+    private Tap[] _sinkTaps;
 
     public MultiSinkTap(Tap... taps) {
-        _taps = taps;
+        _sinkTaps = taps;
     }
 
     public Tap[] getTaps() {
-        return _taps;
+        return _sinkTaps;
     }
 
     @Override
@@ -121,11 +121,7 @@ public class MultiSinkTap extends SinkTap {
 
     @Override
     public void sink(TupleEntry tupleEntry, OutputCollector outputCollector) throws IOException {
-        // for( Tap tap : getTaps() )
-        // tap.sink( tupleEntry, outputCollector );
-
         outputCollector.collect(null, tupleEntry);
-
     }
 
     @Override
@@ -149,7 +145,7 @@ public class MultiSinkTap extends SinkTap {
 
     @Override
     public String toString() {
-        return "MultiSinkTap[" + (_taps == null ? null : Arrays.asList(_taps)) + ']';
+        return "MultiSinkTap[" + (_sinkTaps == null ? null : Arrays.asList(_sinkTaps)) + ']';
     }
 
     @Override
@@ -163,7 +159,7 @@ public class MultiSinkTap extends SinkTap {
 
         MultiSinkTap that = (MultiSinkTap) o;
 
-        if (!Arrays.equals(_taps, that._taps))
+        if (!Arrays.equals(_sinkTaps, that._sinkTaps))
             return false;
 
         return true;
@@ -172,7 +168,7 @@ public class MultiSinkTap extends SinkTap {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (_taps != null ? Arrays.hashCode(_taps) : 0);
+        result = 31 * result + (_sinkTaps != null ? Arrays.hashCode(_sinkTaps) : 0);
         return result;
 
     }
@@ -198,6 +194,8 @@ public class MultiSinkTap extends SinkTap {
 
         @Override
         public void close() {
+            // TODO sg right now cascading calls this before the fetcherBuffer cleanup is called. that why we see some NPEs at the moment. 
+            // Chris works on a fix.
             super.close();
 
             try {

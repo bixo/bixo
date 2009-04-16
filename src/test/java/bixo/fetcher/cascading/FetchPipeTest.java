@@ -3,6 +3,8 @@ package bixo.fetcher.cascading;
 import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 
+import bixo.Constants;
+import bixo.cascading.MultiSinkTap;
 import bixo.fetcher.FakeHttpFetcherFactory;
 import bixo.fetcher.IHttpFetcherFactory;
 import bixo.fetcher.beans.FetchStatusCode;
@@ -13,7 +15,10 @@ import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;
 import cascading.scheme.SequenceFile;
+import cascading.scheme.TextLine;
+import cascading.tap.Hfs;
 import cascading.tap.Lfs;
+import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
@@ -33,16 +38,16 @@ public class FetchPipeTest {
         Lfs in = new Lfs(new SequenceFile(UrlTuple.FIELDS), "build/test-data/FetchPipeTest/in", true);
         Lfs out = new Lfs(new SequenceFile(Fields.ALL), "build/test-data/FetchPipeTest/out", true);
 
-//        TupleEntryCollector write = in.openForWrite(new JobConf());
-//        for (int i = 0; i < 1000; i++) {
-//            UrlTuple url = new UrlTuple();
-//            url.setUrl("http://" + i);
-//            url.setLastFetched(0);
-//            url.setLastUpdated(0);
-//            url.setLastStatus(FetchStatusCode.NEVER_FETCHED);
-//            write.add(url.toTuple());
-//        }
-//        write.close();
+        TupleEntryCollector write = in.openForWrite(new JobConf());
+        for (int i = 0; i < 1000; i++) {
+            UrlTuple url = new UrlTuple();
+            url.setUrl("http://" + i);
+            url.setLastFetched(0);
+            url.setLastUpdated(0);
+            url.setLastStatus(FetchStatusCode.NEVER_FETCHED);
+            write.add(url.toTuple());
+        }
+        write.close();
         FlowConnector flowConnector = new FlowConnector();
 
         // Flow flow = flowConnector.connect(in, out, fetchPipe);
@@ -55,8 +60,14 @@ public class FetchPipeTest {
 
         // Lfs dualLfs = new Lfs(new SequenceFile(Fields.ALL),
         // "build/test-data/FetchPipeTest/dual", true);
-        FetchOutputTap outputTap = new FetchOutputTap("build/test-data/FetchPipeTest/dual", true);
-        Flow flow = flowConnector.connect(in, outputTap, fetchPipe);
+
+        String outputPath = "build/test-data/FetchPipeTest/dual";
+        Tap status = new Hfs(new TextLine(new Fields(Constants.URL, Constants.FETCH_STATUS), new Fields(Constants.URL, Constants.FETCH_STATUS)), outputPath + "/status", true);
+        Tap content = new Hfs(new TextLine(new Fields(Constants.URL, Constants.CONTENT), new Fields(Constants.URL, Constants.FETCH_CONTENT)), outputPath + "/content", true);
+
+        Tap sink = new MultiSinkTap(status, content);
+
+        Flow flow = flowConnector.connect(in, sink, fetchPipe);
         flow.complete();
 
     }

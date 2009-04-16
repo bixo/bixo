@@ -73,11 +73,11 @@ public class HttpClientFetcher implements IHttpFetcher {
             HttpResponse response = _httpClient.execute(httpget, _httpContext);
             HttpEntity entity = response.getEntity();
             
-            // TODO KKr - limit to max length, based on conf
+            // TODO KKr - limit to max length, based on _conf
             byte[] bytes = EntityUtils.toByteArray(entity);
             // TODO KKr - handle redirects, real content type, what about charset? Do we need to capture HTTP headers?
             // TODO SG used the new enum here.Use different status than fetch if you neeed to.
-            return new FetchResultTuple( FetchStatusCode.FETCHED, new FetchContentTuple(url, url, System.currentTimeMillis(), bytes, null));
+            return new FetchResultTuple(FetchStatusCode.FETCHED, new FetchContentTuple(url, url, System.currentTimeMillis(), bytes, null));
         } catch (Throwable t) {
             safeAbort(httpget);
             
