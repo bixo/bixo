@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.parser;
+package bixo.urldb;
 
 /**
  * Filter or normalize urls

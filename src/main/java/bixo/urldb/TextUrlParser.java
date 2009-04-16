@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.parser;
+package bixo.urldb;
 
 import bixo.Constants;
 import bixo.fetcher.beans.FetchStatusCode;

@@ -29,7 +29,6 @@ import org.apache.hadoop.fs.Path;
 
 import bixo.Constants;
 import bixo.HadoopConfigured;
-import bixo.parser.TextUrlParser;
 import bixo.tuple.UrlTuple;
 import bixo.utils.TimeStampUtil;
 import cascading.flow.Flow;
