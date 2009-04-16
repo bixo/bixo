@@ -61,13 +61,13 @@ public class SimpleURLTableDesc extends TableDesc {
     public static final String TABLE_NAME = "urldb";
 
     public static final String[] COLUMN_DEFS = {
-            "VARCHAR(100) NOT NULL",  // URL
-            "VARCHAR(100) NOT NULL",  // HOST
-            "BIGINT",                 // LAST_FETCH_TIME
-            "VARCHAR(100)",           // LAST_FETCH_SIGNATURE
-            "BIGINT",                 // LAST_CHANGED_TIME
-            "BIGINT",                 // LAST_STATUS_TIME
-            "INT"                     // LAST_STATUS
+            "VARCHAR NOT NULL",  // URL
+            "VARCHAR NOT NULL",  // HOST
+            "BIGINT",            // LAST_FETCH_TIME
+            "VARCHAR",           // LAST_FETCH_SIGNATURE
+            "BIGINT",            // LAST_CHANGED_TIME
+            "BIGINT",            // LAST_STATUS_TIME
+            "INT"                // LAST_STATUS
     };
     public static final String PRIMARY_KEY = URL;
 

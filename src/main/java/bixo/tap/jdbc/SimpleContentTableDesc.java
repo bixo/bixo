@@ -49,10 +49,10 @@ public class SimpleContentTableDesc extends TableDesc {
     public static final String TABLE_NAME = "contentdb";
 
     public static final String[] COLUMN_DEFS = {
-            "VARCHAR(100) NOT NULL",  // URL
-            "BIGINT",                 // FETCH_TIME
-            "VARCHAR(100)",           // HEADERS_RAW
-            "VARCHAR(100)"            // CONTENT_RAW
+            "VARCHAR NOT NULL",  // URL
+            "BIGINT",            // FETCH_TIME
+            "VARCHAR",           // HEADERS_RAW
+            "VARCHAR"            // CONTENT_RAW
     };
 
     public static final String PRIMARY_KEY = SimpleURLTableDesc.URL;
