@@ -95,6 +95,12 @@ SOFTWARE.
 		<dependency org="jsap" name="jsap" rev="2.0" conf="compile" />
 		<dependency org="sux4j" name="sux4j" rev="1.0.3" conf="compile" />
 
+		<!-- parsing -->
+		<dependency org="com.ibm" name="icu4j" rev="4.0.1" conf="compile,job" />
+		<dependency org="org.cyberneko" name="nekohtml" rev="0.9.4" conf="compile,job" />
+		<dependency org="org.apache" name="xerces" rev="2.6.2" conf="compile,job" />
+		<dependency org="org.apache" name="xerces-apis" rev="2.6.2" conf="compile,job" />
+		
 		<!-- logging -->
 		<dependency org="org.apache" name="log4j" rev="1.2.13" conf="compile, instrument" />
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.4.3" conf="compile, instrument" />
