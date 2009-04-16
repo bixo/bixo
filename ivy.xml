@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 -->
 <ivy-module version="2.0">
-	<info organisation="101tec" module="bixo" />
+    <info organisation="101tec" module="bixo"/>
 
     <!-- project configuration
     -->
@@ -52,53 +52,51 @@ SOFTWARE.
 
         <dependency org="org.apache" name="commons-io" rev="1.3.2" conf="test"/>
 
-        <dependency org="org.cascading" name="cascading-test" rev="1.0.8" conf="test" />
+        <dependency org="org.cascading" name="cascading-test" rev="1.0.8" conf="test"/>
 
-		<!-- coverage -->
-		<dependency org="net.sourceforge.cobertura" name="cobertura" rev="1.9.1" conf="instrument" />
-		<dependency org="org.asm" name="asm" rev="3.0" conf="instrument" />
-		<dependency org="org.asm" name="asm-tree" rev="3.0" conf="instrument" />
-		<dependency org="org.jakarta-oro" name="jakarta-oro" rev="2.0.8" conf="instrument" />
-		<!-- as well as log4j -->
+        <!-- coverage -->
+        <dependency org="net.sourceforge.cobertura" name="cobertura" rev="1.9.1" conf="instrument"/>
+        <dependency org="org.asm" name="asm" rev="3.0" conf="instrument"/>
+        <dependency org="org.asm" name="asm-tree" rev="3.0" conf="instrument"/>
+        <dependency org="org.jakarta-oro" name="jakarta-oro" rev="2.0.8" conf="instrument"/>
+        <!-- as well as log4j -->
 
         <!-- checkstyle -->
         <dependency org="net.sf.checkstyle" name="checkstyle-all" rev="5.0-beta2" conf="checkstyle"/>
 
-		 <!-- Cascading -->
-        <dependency org="org.cascading" name="cascading-core" rev="1.0.8" conf="compile,job" />
-        <dependency org="jgrapht" name="jgrapht" rev="jdk1.6" conf="compile,job" />
-        <dependency org="cascading.jdbc" name="cascading-jdbc" rev="0.0.2" conf="compile,job"/>
+        <!-- Cascading -->
+        <dependency org="org.cascading" name="cascading-core" rev="1.0.8" conf="compile,job"/>
+        <dependency org="jgrapht" name="jgrapht" rev="jdk1.6" conf="compile,job"/>
 
         <!-- Hadoop -->
         <dependency org="org.apache.hadoop" name="hadoop-core" rev="0.19.0" conf="compile"/>
         <dependency org="org.apache.hadoop" name="hadoop-test" rev="0.19.0" conf="compile"/>
         <dependency org="commons-http" name="commons-httpclient" rev="3.0.1" conf="compile"/>
-        <dependency org="hsqldb" name="hsqldb" rev="1.8.0.10" conf="compile, job"/>
-		<!-- TODO find out if we really need all of this -->
-		<dependency org="jetty" name="jetty" rev="5.1.4" conf="compile" />
-		<dependency org="jsp-api" name="jsp-api" rev="2.0" conf="compile" />
-		<dependency org="servlet-api" name="servlet-api" rev="2.4" conf="compile" />
-		<dependency org="jasper" name="jasper-compiler" rev="x" conf="compile" />
-		<dependency org="jasper" name="jasper-runtime" rev="x" conf="compile" />
+        <!-- TODO find out if we really need all of this -->
+        <dependency org="jetty" name="jetty" rev="5.1.4" conf="compile"/>
+        <dependency org="jsp-api" name="jsp-api" rev="2.0" conf="compile"/>
+        <dependency org="servlet-api" name="servlet-api" rev="2.4" conf="compile"/>
+        <dependency org="jasper" name="jasper-compiler" rev="x" conf="compile"/>
+        <dependency org="jasper" name="jasper-runtime" rev="x" conf="compile"/>
 
-		<!-- httpclient -->
-		<dependency org="httpComponents" name="httpclient" rev="4.0-beta2" conf="compile,job" />
-		<dependency org="httpComponents" name="httpcore" rev="4.0" conf="compile,job" />
-		<dependency org="apache-commons" name="commons-logging" rev="1.1.1" conf="compile,job" />
-		<dependency org="apache-commons" name="commons-codec" rev="1.3" conf="compile,job" />
+        <!-- httpclient -->
+        <dependency org="httpComponents" name="httpclient" rev="4.0-beta2" conf="compile,job"/>
+        <dependency org="httpComponents" name="httpcore" rev="4.0" conf="compile,job"/>
+        <dependency org="apache-commons" name="commons-logging" rev="1.1.1" conf="compile,job"/>
+        <dependency org="apache-commons" name="commons-codec" rev="1.3" conf="compile,job"/>
 
-		<!-- webgraph -->
-		<dependency org="webgraph" name="webgraph" rev="2.4.2" conf="compile" />
-		<dependency org="colt" name="colt" rev="1.2.0" conf="compile" />
-		<dependency org="dsiutils" name="dsiutils" rev="1.0.7" conf="compile" />
-		<dependency org="fastutil5" name="fastutil5" rev="5.1.5" conf="compile" />
-		<dependency org="jsap" name="jsap" rev="2.0" conf="compile" />
-		<dependency org="sux4j" name="sux4j" rev="1.0.3" conf="compile" />
+        <!-- webgraph -->
+        <dependency org="webgraph" name="webgraph" rev="2.4.2" conf="compile"/>
+        <dependency org="colt" name="colt" rev="1.2.0" conf="compile"/>
+        <dependency org="dsiutils" name="dsiutils" rev="1.0.7" conf="compile"/>
+        <dependency org="fastutil5" name="fastutil5" rev="5.1.5" conf="compile"/>
+        <dependency org="jsap" name="jsap" rev="2.0" conf="compile"/>
+        <dependency org="sux4j" name="sux4j" rev="1.0.3" conf="compile"/>
 
-		<!-- logging -->
-		<dependency org="org.apache" name="log4j" rev="1.2.13" conf="compile, instrument" />
-		<dependency org="org.slf4j" name="slf4j-api" rev="1.4.3" conf="compile, instrument" />
-		<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.4.3" conf="instrument" />
+        <!-- logging -->
+        <dependency org="org.apache" name="log4j" rev="1.2.13" conf="compile, instrument"/>
+        <dependency org="org.slf4j" name="slf4j-api" rev="1.4.3" conf="compile, instrument"/>
+        <dependency org="org.slf4j" name="slf4j-log4j12" rev="1.4.3" conf="instrument"/>
     </dependencies>
 
 </ivy-module>
