@@ -21,7 +21,6 @@ import cascading.tap.Lfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntryCollector;
-import cascading.tuple.TupleEntryIterator;
 
 public class FetchPipeTest {
 
@@ -36,7 +35,6 @@ public class FetchPipeTest {
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, factory);
 
         Lfs in = new Lfs(new SequenceFile(UrlTuple.FIELDS), "build/test-data/FetchPipeTest/in", true);
-        Lfs out = new Lfs(new SequenceFile(Fields.ALL), "build/test-data/FetchPipeTest/out", true);
 
         TupleEntryCollector write = in.openForWrite(new JobConf());
         for (int i = 0; i < 1000; i++) {

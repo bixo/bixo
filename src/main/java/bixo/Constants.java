@@ -58,4 +58,8 @@ public interface Constants {
 
     String STATUS = "status";
 
+    String TEXT = "text";
+
+    String OUT_LINKS = "out_links";
+
 }
