@@ -106,6 +106,10 @@
         <dependency org="org.apache" name="log4j" rev="1.2.13" conf="compile, instrument" />
         <dependency org="org.slf4j" name="slf4j-api" rev="1.4.3" conf="compile, instrument" />
         <dependency org="org.slf4j" name="slf4j-log4j12" rev="1.4.3" conf="instrument" />
+        
+        <!-- lucene -->
+        <dependency org="org.apache.lucene" name="lucene-core" rev="2.4.1" conf="compile,job" />
+        
     </dependencies>
 
 </ivy-module>

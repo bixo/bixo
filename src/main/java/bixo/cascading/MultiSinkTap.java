@@ -145,7 +145,7 @@ public class MultiSinkTap extends SinkTap {
 
     @Override
     public String toString() {
-        return "MultiSinkTap[" + (_sinkTaps == null ? null : Arrays.asList(_sinkTaps)) + ']';
+        return "IndexSinkTap[" + (_sinkTaps == null ? null : Arrays.asList(_sinkTaps)) + ']';
     }
 
     @Override
