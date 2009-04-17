@@ -29,6 +29,7 @@ import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
 import cascading.tuple.Fields;
 
+@SuppressWarnings("serial")
 public class ParserPipe extends SubAssembly {
 
     public ParserPipe(Pipe fetcherPipe, IParserFactory factory) {

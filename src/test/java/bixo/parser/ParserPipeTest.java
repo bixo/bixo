@@ -11,6 +11,9 @@ import org.archive.io.ArchiveRecordHeader;
 import org.junit.Test;
 
 import bixo.Constants;
+import bixo.content.parser.html.HtmlParser;
+import bixo.content.parser.html.Outlink;
+import bixo.content.parser.html.Parse;
 import bixo.fetcher.beans.FetchStatusCode;
 import bixo.tuple.FetchContentTuple;
 import bixo.tuple.FetchResultTuple;
@@ -26,11 +29,12 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
 public class ParserPipeTest extends CascadingTestCase {
+    
     @Test
     public void testParserPipe() throws Exception {
 
         Pipe pipe = new Pipe("parse_source");
-        ParserPipe parserPipe = new ParserPipe(pipe, new FakeParserFactor());
+        ParserPipe parserPipe = new ParserPipe(pipe, new DefaultParserFactory());
         Lfs in = new Lfs(new SequenceFile(new Fields(Constants.URL).append(FetchResultTuple.FIELDS)), "build/test-data/ParserPipeTest/in", true);
         Lfs out = new Lfs(new SequenceFile(ParseResultTuple.FIELDS), "build/test-data/ParserPipeTest/out", true);
 
@@ -63,6 +67,40 @@ public class ParserPipeTest extends CascadingTestCase {
 
     }
 
+    @SuppressWarnings("serial")
+    public static class DefaultParserFactory implements IParserFactory {
+
+        @Override
+        public IParser newParser() {
+            return new IParser() {
+                private HtmlParser _parser;
+                
+                @Override
+                public ParseResultTuple parse(FetchContentTuple contentTuple) {
+                    if (_parser == null) {
+                        _parser = new HtmlParser();
+                    }
+                    
+                    Parse parse = _parser.getParse(contentTuple).get(contentTuple.getBaseUrl());
+                    
+                    Outlink[] outlinks = parse.getData().getOutlinks();
+                    String[] stringLinks = new String[outlinks.length];
+                    
+                    int i = 0;
+                    for (Outlink outlink : outlinks) {
+                        stringLinks[i++] = outlink.getToUrl();
+                    }
+                    
+                    return new ParseResultTuple(parse.getText(), stringLinks);
+                }
+                
+            };
+        }
+        
+    }
+    
+   
+    @SuppressWarnings("serial")
     public static class FakeParserFactor implements IParserFactory {
 
         @Override
