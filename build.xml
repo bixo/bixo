@@ -141,7 +141,7 @@ SOFTWARE.
 	<!-- Generating eclipse file                                            -->
 	<!-- ================================================================== -->
 
-	<target name="eclipse" depends="resolve">
+	<target name="eclipse" depends="resolve, clean-eclipse">
 
 		<ivy:cachepath pathid="eclipse.path.id" conf="eclipse" />
 		<ivy:cachepath pathid="test.path.id" conf="test" />
