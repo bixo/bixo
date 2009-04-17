@@ -1,49 +1,49 @@
 <!--
-Copyright (c) 1997-2009 101tec Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+    Copyright (c) 1997-2009 101tec Inc.
+    
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+    
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+    
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
 -->
 <ivy-module version="2.0">
-	<info organisation="101tec" module="bixo" />
+    <info organisation="101tec" module="bixo" />
 
-	<!-- project configuration
+    <!-- project configuration
     -->
-	<configurations>
-		<conf name="ant" description="for ant usage" />
-		<conf name="eclipse" description="to generate eclipse config files" />
-		<conf name="compile" description="source compile" />
-		<conf name="test" extends="compile" description="compile plus test jars" />
-		<conf name="instrument" description="code coverage" />
-		<conf name="checkstyle" description="code style checking" />
-		<conf name="job" description="jars that go into the hadoop job jar" />
-	</configurations>
+    <configurations>
+        <conf name="ant" description="for ant usage" />
+        <conf name="eclipse" description="to generate eclipse config files" />
+        <conf name="compile" description="source compile" />
+        <conf name="test" extends="compile" description="compile plus test jars" />
+        <conf name="instrument" description="code coverage" />
+        <conf name="checkstyle" description="code style checking" />
+        <conf name="job" description="jars that go into the hadoop job jar" />
+    </configurations>
 
 
-	<!-- dependencies -->
-	<!-- e.g.:   <dependency org="apache" name="commons-collections" rev="3.1" conf="cc-impl->default"/> -->
+    <!-- dependencies -->
+    <!-- e.g.:   <dependency org="apache" name="commons-collections" rev="3.1" conf="cc-impl->default" /> -->
 
-	<dependencies defaultconfmapping="*->default">
+    <dependencies defaultconfmapping="*->default">
 
-		<!-- Ant -->
-		<dependency org="ant-eclipse" name="ant-eclipse" rev="1.0-jvm1.2" conf="eclipse" />
+        <!-- Ant -->
+        <dependency org="ant-eclipse" name="ant-eclipse" rev="1.0-jvm1.2" conf="eclipse" />
 
-		<!-- Testing -->
+        <!-- Testing -->
         <dependency org="org.junit" name="junit" rev="4.5" conf="test" />
 
         <dependency org="org.mockito" name="mockito-core" rev="1.7" conf="test" />
@@ -57,51 +57,55 @@ SOFTWARE.
         <!-- test parsing -->
         <dependency org="org.archive" name="heritrix" rev="1.14.3" conf="test" />
 
-		<!-- coverage -->
-		<dependency org="net.sourceforge.cobertura" name="cobertura" rev="1.9.1" conf="instrument" />
-		<dependency org="org.asm" name="asm" rev="3.0" conf="instrument" />
-		<dependency org="org.asm" name="asm-tree" rev="3.0" conf="instrument" />
-		<dependency org="org.jakarta-oro" name="jakarta-oro" rev="2.0.8" conf="instrument" />
-		<!-- as well as log4j -->
+        <!-- coverage -->
+        <dependency org="net.sourceforge.cobertura" name="cobertura" rev="1.9.1" conf="instrument" />
+        <dependency org="org.asm" name="asm" rev="3.0" conf="instrument" />
+        <dependency org="org.asm" name="asm-tree" rev="3.0" conf="instrument" />
+        <dependency org="org.jakarta-oro" name="jakarta-oro" rev="2.0.8" conf="instrument" />
+        <!-- as well as log4j -->
 
-		<!-- checkstyle -->
-		<dependency org="net.sf.checkstyle" name="checkstyle-all" rev="5.0-beta2" conf="checkstyle" />
+        <!-- checkstyle -->
+        <dependency org="net.sf.checkstyle" name="checkstyle-all" rev="5.0-beta2" conf="checkstyle" />
 
-		 <!-- Cascading -->
+        <!-- Cascading -->
         <dependency org="org.cascading" name="cascading-core" rev="1.0.8" conf="compile,job" />
         <dependency org="jgrapht" name="jgrapht" rev="jdk1.6" conf="compile,job" />
-        <dependency org="cascading.jdbc" name="cascading-jdbc" rev="0.0.1" conf="compile,job"/>
 
-		<!-- Hadoop -->
-		<dependency org="org.apache.hadoop" name="hadoop-core" rev="0.19.0" conf="compile" />
-		<dependency org="org.apache.hadoop" name="hadoop-test" rev="0.19.0" conf="compile" />
-		<dependency org="commons-http" name="commons-httpclient" rev="3.0.1" conf="compile" />
-        <dependency org="hsqldb" name="hsqldb" rev="1.8.0.10" conf="compile, job"/>
-		<!-- TODO find out if we really need all of this -->
-		<dependency org="jetty" name="jetty" rev="5.1.4" conf="compile" />
-		<dependency org="jsp-api" name="jsp-api" rev="2.0" conf="compile" />
-		<dependency org="servlet-api" name="servlet-api" rev="2.4" conf="compile" />
-		<dependency org="jasper" name="jasper-compiler" rev="x" conf="compile" />
-		<dependency org="jasper" name="jasper-runtime" rev="x" conf="compile" />
+        <!-- Hadoop -->
+        <dependency org="org.apache.hadoop" name="hadoop-core" rev="0.19.0" conf="compile" />
+        <dependency org="org.apache.hadoop" name="hadoop-test" rev="0.19.0" conf="compile" />
+        <dependency org="commons-http" name="commons-httpclient" rev="3.0.1" conf="compile" />
+        <!-- TODO find out if we really need all of this -->
+        <dependency org="jetty" name="jetty" rev="5.1.4" conf="compile" />
+        <dependency org="jsp-api" name="jsp-api" rev="2.0" conf="compile" />
+        <dependency org="servlet-api" name="servlet-api" rev="2.4" conf="compile" />
+        <dependency org="jasper" name="jasper-compiler" rev="x" conf="compile" />
+        <dependency org="jasper" name="jasper-runtime" rev="x" conf="compile" />
 
-		<!-- httpclient -->
-		<dependency org="httpComponents" name="httpclient" rev="4.0-beta2" conf="compile,job" />
-		<dependency org="httpComponents" name="httpcore" rev="4.0" conf="compile,job" />
-		<dependency org="apache-commons" name="commons-logging" rev="1.1.1" conf="compile,job" />
-		<dependency org="apache-commons" name="commons-codec" rev="1.3" conf="compile,job" />
+        <!-- httpclient -->
+        <dependency org="httpComponents" name="httpclient" rev="4.0-beta2" conf="compile,job" />
+        <dependency org="httpComponents" name="httpcore" rev="4.0" conf="compile,job" />
+        <dependency org="apache-commons" name="commons-logging" rev="1.1.1" conf="compile,job" />
+        <dependency org="apache-commons" name="commons-codec" rev="1.3" conf="compile,job" />
 
-		<!-- webgraph -->
-		<dependency org="webgraph" name="webgraph" rev="2.4.2" conf="compile" />
-		<dependency org="colt" name="colt" rev="1.2.0" conf="compile" />
-		<dependency org="dsiutils" name="dsiutils" rev="1.0.7" conf="compile" />
-		<dependency org="fastutil5" name="fastutil5" rev="5.1.5" conf="compile" />
-		<dependency org="jsap" name="jsap" rev="2.0" conf="compile" />
-		<dependency org="sux4j" name="sux4j" rev="1.0.3" conf="compile" />
+        <!-- webgraph -->
+        <dependency org="webgraph" name="webgraph" rev="2.4.2" conf="compile" />
+        <dependency org="colt" name="colt" rev="1.2.0" conf="compile" />
+        <dependency org="dsiutils" name="dsiutils" rev="1.0.7" conf="compile" />
+        <dependency org="fastutil5" name="fastutil5" rev="5.1.5" conf="compile" />
+        <dependency org="jsap" name="jsap" rev="2.0" conf="compile" />
+        <dependency org="sux4j" name="sux4j" rev="1.0.3" conf="compile" />
 
-		<!-- logging -->
-		<dependency org="org.apache" name="log4j" rev="1.2.13" conf="compile, instrument" />
-		<dependency org="org.slf4j" name="slf4j-api" rev="1.4.3" conf="compile, instrument" />
-		<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.4.3" conf="instrument" />
+        <!-- parsing -->
+        <dependency org="com.ibm" name="icu4j" rev="4.0.1" conf="compile,job" />
+        <dependency org="org.cyberneko" name="nekohtml" rev="0.9.4" conf="compile,job" />
+        <dependency org="org.apache" name="xerces" rev="2.6.2" conf="compile,job" />
+        <dependency org="org.apache" name="xerces-apis" rev="2.6.2" conf="compile,job" />
+
+        <!-- logging -->
+        <dependency org="org.apache" name="log4j" rev="1.2.13" conf="compile, instrument" />
+        <dependency org="org.slf4j" name="slf4j-api" rev="1.4.3" conf="compile, instrument" />
+        <dependency org="org.slf4j" name="slf4j-log4j12" rev="1.4.3" conf="instrument" />
     </dependencies>
 
 </ivy-module>
