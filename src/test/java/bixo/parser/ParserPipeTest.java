@@ -1,6 +1,7 @@
 package bixo.parser;
 
-import java.io.ByteArrayOutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Iterator;
 
 import org.apache.hadoop.mapred.JobConf;
@@ -44,43 +45,58 @@ public class ParserPipeTest extends CascadingTestCase {
         Iterator<ArchiveRecord> iterator = archiveReader.iterator();
         int max = 300;
         int count = 0;
+        int validRecords = 0;
         while (count++ < max && iterator.hasNext()) {
             ArchiveRecord archiveRecord = (ArchiveRecord) iterator.next();
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            archiveRecord.dump(outputStream);
             ArchiveRecordHeader header = archiveRecord.getHeader();
             String url = header.getUrl();
-            String mimetype = header.getMimetype();
-            FetchContentTuple content = new FetchContentTuple(url, url, System.currentTimeMillis(), outputStream.toByteArray(), mimetype);
-            Tuple tuple = Tuple.size(3);
-            tuple.set(0, url);
-            tuple.set(1, FetchStatusCode.FETCHED.ordinal());
-            tuple.set(2, content.toTuple());
-            write.add(tuple);
+            
+            String protocol = "";
+            try {
+                protocol = new URL(url).getProtocol();
+            } catch (MalformedURLException e) {
+                // Ignore and skip
+            }
+            
+            if (protocol.equals("http")) {
+                validRecords += 1;
+                int contentOffset = header.getContentBegin();
+                long totalLength = header.getLength();
+                int contentLength = (int)totalLength - contentOffset;
+                
+                archiveRecord.skip(contentOffset);
+                byte[] content = new byte[contentLength];
+                archiveRecord.read(content);
+                
+                String mimetype = header.getMimetype();
+                FetchContentTuple contentTuple = new FetchContentTuple(url, url, System.currentTimeMillis(), content, mimetype);
+                Tuple tuple = Tuple.size(3);
+                tuple.set(0, url);
+                tuple.set(1, FetchStatusCode.FETCHED.ordinal());
+                tuple.set(2, contentTuple.toTuple());
+                write.add(tuple);
+            }
         }
 
         write.close();
         FlowConnector flowConnector = new FlowConnector();
         Flow flow = flowConnector.connect(in, out, parserPipe);
         flow.complete();
-        validateLength(flow, max);
+        validateLength(flow, validRecords);
 
     }
 
     @SuppressWarnings("serial")
     public static class DefaultParserFactory implements IParserFactory {
 
+        private static HtmlParser _parser = new HtmlParser();
+        
         @Override
         public IParser newParser() {
             return new IParser() {
-                private HtmlParser _parser;
                 
                 @Override
                 public ParseResultTuple parse(FetchContentTuple contentTuple) {
-                    if (_parser == null) {
-                        _parser = new HtmlParser();
-                    }
-                    
                     Parse parse = _parser.getParse(contentTuple).get(contentTuple.getBaseUrl());
                     
                     Outlink[] outlinks = parse.getData().getOutlinks();

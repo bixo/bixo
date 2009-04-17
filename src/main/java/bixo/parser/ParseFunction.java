@@ -6,6 +6,7 @@ import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
+import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
@@ -21,7 +22,7 @@ public class ParseFunction extends BaseOperation<ParseResultTuple> implements Fu
     public void operate(FlowProcess flowProcess, FunctionCall<ParseResultTuple> functionCall) {
         IParser parser = _factory.newParser();
         TupleEntry arguments = functionCall.getArguments();
-        FetchContentTuple contentTuple = new FetchContentTuple(arguments.getTuple());
+        FetchContentTuple contentTuple = new FetchContentTuple((Tuple)arguments.getTuple().get(2));
         ParseResultTuple parseResult = parser.parse(contentTuple);
         functionCall.getOutputCollector().add(parseResult.toTuple());
     }
