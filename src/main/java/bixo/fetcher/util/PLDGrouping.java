@@ -30,7 +30,7 @@ import bixo.tuple.UrlTuple;
 import bixo.utils.DomainNames;
 
 @SuppressWarnings("serial")
-public class PLDGrouping implements GroupingKeyGenerator {
+public class PLDGrouping implements IGroupingKeyGenerator {
 
     @Override
     public String getGroupingKey(UrlTuple urlTuple) throws IOException {

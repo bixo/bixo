@@ -1,13 +1,13 @@
 package bixo.tuple;
 
-import bixo.Constants;
+import bixo.IConstants;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 public class UrlWithGroupKeyTuple extends UrlTuple {
 
-    public static final Fields FIELDS = new Fields(Constants.GROUPING_KEY, Constants.URL, Constants.LAST_UPDATED, Constants.LAST_FETCHED, Constants.LAST_STATUS);
+    public static final Fields FIELDS = new Fields(IConstants.GROUPING_KEY, IConstants.URL, IConstants.LAST_UPDATED, IConstants.LAST_FETCHED, IConstants.LAST_STATUS);
 
     public UrlWithGroupKeyTuple(Tuple tuple) {
         super(new TupleEntry(FIELDS, tuple));
@@ -18,7 +18,7 @@ public class UrlWithGroupKeyTuple extends UrlTuple {
     }
 
     public String getGroupingKet() {
-        return getTupleEntry().getString(Constants.GROUPING_KEY);
+        return getTupleEntry().getString(IConstants.GROUPING_KEY);
     }
 
 }

@@ -3,7 +3,7 @@ package bixo.fetcher.cascading;
 import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 
-import bixo.Constants;
+import bixo.IConstants;
 import bixo.cascading.MultiSinkTap;
 import bixo.fetcher.FakeHttpFetcherFactory;
 import bixo.fetcher.IHttpFetcherFactory;
@@ -60,8 +60,8 @@ public class FetchPipeTest {
         // "build/test-data/FetchPipeTest/dual", true);
 
         String outputPath = "build/test-data/FetchPipeTest/dual";
-        Tap status = new Hfs(new TextLine(new Fields(Constants.URL, Constants.FETCH_STATUS), new Fields(Constants.URL, Constants.FETCH_STATUS)), outputPath + "/status", true);
-        Tap content = new Hfs(new TextLine(new Fields(Constants.URL, Constants.CONTENT), new Fields(Constants.URL, Constants.FETCH_CONTENT)), outputPath + "/content", true);
+        Tap status = new Hfs(new TextLine(new Fields(IConstants.URL, IConstants.FETCH_STATUS), new Fields(IConstants.URL, IConstants.FETCH_STATUS)), outputPath + "/status", true);
+        Tap content = new Hfs(new TextLine(new Fields(IConstants.URL, IConstants.CONTENT), new Fields(IConstants.URL, IConstants.FETCH_CONTENT)), outputPath + "/content", true);
 
         Tap sink = new MultiSinkTap(status, content);
 

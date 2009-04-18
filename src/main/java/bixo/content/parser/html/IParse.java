@@ -20,7 +20,7 @@ package bixo.content.parser.html;
 /** The result of parsing a page's raw content.
  * @see Parser#getParse(Content)
  */
-public interface Parse {
+public interface IParse {
   
   /** The textual content of the page. This is indexed, searched, and used when
    * generating snippets.*/ 

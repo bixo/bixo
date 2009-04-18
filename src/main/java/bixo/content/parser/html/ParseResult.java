@@ -28,15 +28,15 @@ import org.apache.hadoop.io.Text;
 
 /**
  * A utility class that stores result of a parse. Internally
- * a ParseResult stores &lt;{@link Text}, {@link Parse}&gt; pairs.
+ * a ParseResult stores &lt;{@link Text}, {@link IParse}&gt; pairs.
  * <p>Parsers may return multiple results, which correspond to parts
  * or other associated documents related to the original URL.</p>
  * <p>There will be usually one parse result that corresponds directly
  * to the original URL, and possibly many (or none) results that correspond
  * to derived URLs (or sub-URLs).
  */
-public class ParseResult implements Iterable<Map.Entry<Text, Parse>> {
-    private Map<Text, Parse> parseMap;
+public class ParseResult implements Iterable<Map.Entry<Text, IParse>> {
+    private Map<Text, IParse> parseMap;
     private String originalUrl;
 
     public static final Log LOG = LogFactory.getLog(ParseResult.class);
@@ -47,18 +47,18 @@ public class ParseResult implements Iterable<Map.Entry<Text, Parse>> {
      * have been obtained.
      */
     public ParseResult(String originalUrl) {
-        parseMap = new HashMap<Text, Parse>();
+        parseMap = new HashMap<Text, IParse>();
         this.originalUrl = originalUrl;
     }
 
     /**
      * Convenience method for obtaining {@link ParseResult} from a single
-     * {@link Parse} output.
+     * {@link IParse} output.
      * @param url canonical url
      * @param parse single parse output
      * @return result containing the single parse output
      */
-    public static ParseResult createParseResult(String url, Parse parse) {
+    public static ParseResult createParseResult(String url, IParse parse) {
         ParseResult parseResult = new ParseResult(url);
         parseResult.put(new Text(url), new ParseText(parse.getText()), parse.getData());
         return parseResult;
@@ -84,7 +84,7 @@ public class ParseResult implements Iterable<Map.Entry<Text, Parse>> {
      * @param key sub-url under which the parse output is stored.
      * @return parse output corresponding to this sub-url, or null.
      */
-    public Parse get(String key) {
+    public IParse get(String key) {
         return get(new Text(key));
     }
 
@@ -93,7 +93,7 @@ public class ParseResult implements Iterable<Map.Entry<Text, Parse>> {
      * @param key sub-url under which the parse output is stored.
      * @return parse output corresponding to this sub-url, or null.
      */
-    public Parse get(Text key) {
+    public IParse get(Text key) {
         return parseMap.get(key);
     }
 
@@ -120,7 +120,7 @@ public class ParseResult implements Iterable<Map.Entry<Text, Parse>> {
     /**
      * Iterate over all entries in the &lt;url, Parse&gt; map.
      */
-    public Iterator<Entry<Text, Parse>> iterator() {
+    public Iterator<Entry<Text, IParse>> iterator() {
         return parseMap.entrySet().iterator();
     }
 
@@ -130,8 +130,8 @@ public class ParseResult implements Iterable<Map.Entry<Text, Parse>> {
      * cannot be reversed.
      */
     public void filter() {
-        for(Iterator<Entry<Text, Parse>> i = iterator(); i.hasNext();) {
-            Entry<Text, Parse> entry = i.next();
+        for(Iterator<Entry<Text, IParse>> i = iterator(); i.hasNext();) {
+            Entry<Text, IParse> entry = i.next();
             if (!entry.getValue().getData().getStatus().isSuccess()) {
                 LOG.warn(entry.getKey() + " is not parsed successfully, filtering");
                 i.remove();
@@ -145,8 +145,8 @@ public class ParseResult implements Iterable<Map.Entry<Text, Parse>> {
      * Parse success is determined by {@link ParseStatus#isSuccess()}
      */
     public boolean isSuccess() {
-        for(Iterator<Entry<Text, Parse>> i = iterator(); i.hasNext();) {
-            Entry<Text, Parse> entry = i.next();
+        for(Iterator<Entry<Text, IParse>> i = iterator(); i.hasNext();) {
+            Entry<Text, IParse> entry = i.next();
             if (!entry.getValue().getData().getStatus().isSuccess()) {
                 return false;
             }

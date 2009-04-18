@@ -25,7 +25,7 @@ package bixo.fetcher.util;
 import bixo.tuple.UrlWithGroupKeyTuple;
 
 @SuppressWarnings("serial")
-public class LastFetchScoreGenerator implements ScoreGenerator {
+public class LastFetchScoreGenerator implements IScoreGenerator {
     private final long _now;
     private final long _interval;
 

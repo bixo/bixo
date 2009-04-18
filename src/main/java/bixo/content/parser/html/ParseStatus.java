@@ -144,7 +144,7 @@ public class ParseStatus {
   /** A convenience method. Creates an empty Parse instance,
    * which returns this status.
    */
-  public Parse getEmptyParse() {
+  public IParse getEmptyParse() {
     return new EmptyParseImpl(this);
   }
   
@@ -214,7 +214,7 @@ public class ParseStatus {
     return true;
   }
   
-  private static class EmptyParseImpl implements Parse {
+  private static class EmptyParseImpl implements IParse {
     
     private ParseData data = null;
     

@@ -22,7 +22,7 @@
  */
 package bixo.tuple;
 
-import bixo.Constants;
+import bixo.IConstants;
 import bixo.fetcher.beans.FetchStatusCode;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
@@ -30,7 +30,7 @@ import cascading.tuple.TupleEntry;
 
 public class FetchedUrlTuple extends BaseTuple {
 
-    private static Fields FIELDS = new Fields(Constants.URL, Constants.FETCH_STATUS);
+    private static Fields FIELDS = new Fields(IConstants.URL, IConstants.FETCH_STATUS);
 
     public FetchedUrlTuple() {
         super(new TupleEntry(FIELDS, Tuple.size(FIELDS.size())));

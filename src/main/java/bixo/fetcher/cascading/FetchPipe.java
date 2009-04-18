@@ -1,9 +1,9 @@
 package bixo.fetcher.cascading;
 
-import bixo.Constants;
+import bixo.IConstants;
 import bixo.fetcher.IHttpFetcherFactory;
-import bixo.fetcher.util.GroupingKeyGenerator;
-import bixo.fetcher.util.ScoreGenerator;
+import bixo.fetcher.util.IGroupingKeyGenerator;
+import bixo.fetcher.util.IScoreGenerator;
 import bixo.tuple.UrlWithGroupKeyTuple;
 import bixo.tuple.UrlWithScoreTuple;
 import cascading.pipe.Each;
@@ -16,13 +16,13 @@ import cascading.tuple.Fields;
 @SuppressWarnings("serial")
 public class FetchPipe extends SubAssembly {
 
-    public FetchPipe(Pipe urlProvider, GroupingKeyGenerator keyGenerator, ScoreGenerator scoreGenerator, IHttpFetcherFactory factory) {
+    public FetchPipe(Pipe urlProvider, IGroupingKeyGenerator keyGenerator, IScoreGenerator scoreGenerator, IHttpFetcherFactory factory) {
         Pipe fetch = new Pipe("fetch_pipe", urlProvider);
 
-        fetch = new Each(fetch, new GroupFunction(Constants.GROUPING_KEY, keyGenerator), UrlWithGroupKeyTuple.FIELDS);
+        fetch = new Each(fetch, new GroupFunction(IConstants.GROUPING_KEY, keyGenerator), UrlWithGroupKeyTuple.FIELDS);
         fetch = new Each(fetch, new ScoreFunction(scoreGenerator), UrlWithScoreTuple.FIELDS);
-        fetch = new GroupBy(fetch, new Fields(Constants.GROUPING_KEY));
-        fetch = new Every(fetch, new FetcherBuffer(factory), new Fields(Constants.URL, Constants.FETCH_STATUS, Constants.FETCH_CONTENT));
+        fetch = new GroupBy(fetch, new Fields(IConstants.GROUPING_KEY));
+        fetch = new Every(fetch, new FetcherBuffer(factory), new Fields(IConstants.URL, IConstants.FETCH_STATUS, IConstants.FETCH_CONTENT));
         setTails(fetch);
     }
 }

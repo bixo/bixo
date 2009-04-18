@@ -22,7 +22,7 @@
  */
 package bixo.tuple;
 
-import bixo.Constants;
+import bixo.IConstants;
 import bixo.fetcher.beans.FetchStatusCode;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
@@ -34,7 +34,7 @@ import cascading.tuple.TupleEntry;
  */
 public class UrlTuple extends BaseTuple {
 
-    public static Fields FIELDS = new Fields(Constants.URL, Constants.LAST_UPDATED, Constants.LAST_FETCHED, Constants.LAST_STATUS);
+    public static Fields FIELDS = new Fields(IConstants.URL, IConstants.LAST_UPDATED, IConstants.LAST_FETCHED, IConstants.LAST_STATUS);
 
     public UrlTuple() {
         super(new TupleEntry(FIELDS, Tuple.size(FIELDS.size())));
@@ -58,35 +58,35 @@ public class UrlTuple extends BaseTuple {
     }
 
     public String getUrl() {
-        return getTupleEntry().getString(Constants.URL);
+        return getTupleEntry().getString(IConstants.URL);
     }
 
     public void setUrl(String url) {
-        getTupleEntry().set(Constants.URL, url);
+        getTupleEntry().set(IConstants.URL, url);
     }
 
     public long getLastUpdated() {
-        return getTupleEntry().getLong(Constants.LAST_UPDATED);
+        return getTupleEntry().getLong(IConstants.LAST_UPDATED);
     }
 
     public void setLastUpdated(long timeStamp) {
-        getTupleEntry().set(Constants.LAST_UPDATED, timeStamp);
+        getTupleEntry().set(IConstants.LAST_UPDATED, timeStamp);
     }
 
     public long getLastFetched() {
-        return getTupleEntry().getLong(Constants.LAST_FETCHED);
+        return getTupleEntry().getLong(IConstants.LAST_FETCHED);
     }
 
     public void setLastFetched(long timeStamp) {
-        getTupleEntry().set(Constants.LAST_FETCHED, timeStamp);
+        getTupleEntry().set(IConstants.LAST_FETCHED, timeStamp);
     }
 
     public FetchStatusCode getLastStatus() {
-        return FetchStatusCode.fromOrdinal(getTupleEntry().getInteger(Constants.LAST_STATUS));
+        return FetchStatusCode.fromOrdinal(getTupleEntry().getInteger(IConstants.LAST_STATUS));
     }
 
     public void setLastStatus(FetchStatusCode statusCode) {
-        getTupleEntry().set(Constants.LAST_STATUS, statusCode.ordinal());
+        getTupleEntry().set(IConstants.LAST_STATUS, statusCode.ordinal());
     }
 
 }

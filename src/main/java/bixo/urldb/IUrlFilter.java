@@ -26,7 +26,7 @@ package bixo.urldb;
  * Filter or normalize urls
  * 
  */
-public interface UrlFilter {
+public interface IUrlFilter {
 
     /**
      * Return a normalized string or null if the url does not pass the filter

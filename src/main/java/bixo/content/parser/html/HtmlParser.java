@@ -54,7 +54,7 @@ public class HtmlParser {
     public HtmlParser() {
         // TODO KKr - set these from conf
         this.defaultCharEncoding = "windows-1252";
-        this.cachingPolicy = BixoMetaKeys.CACHING_FORBIDDEN_CONTENT;
+        this.cachingPolicy = IBixoMetaKeys.CACHING_FORBIDDEN_CONTENT;
 
         this.utils = new DOMContentUtils();
     }
@@ -189,8 +189,8 @@ public class HtmlParser {
 
         // TODO KKr - how do we want to handle parse meta-data?
         if (metaTags.getNoCache()) {             // not okay to cache
-            for (Map.Entry<org.apache.hadoop.io.Text, Parse> entry : parseResult) 
-                entry.getValue().getData().getParseMeta().set(BixoMetaKeys.CACHING_FORBIDDEN_KEY, 
+            for (Map.Entry<org.apache.hadoop.io.Text, IParse> entry : parseResult) 
+                entry.getValue().getData().getParseMeta().set(IBixoMetaKeys.CACHING_FORBIDDEN_KEY, 
                                 cachingPolicy);
         }
         return parseResult;

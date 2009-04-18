@@ -24,7 +24,7 @@ package bixo.content.parser.html;
  * @author Chris Mattmann
  * @author J&eacute;r&ocirc;me Charron
  */
-public interface BixoMetaKeys {
+public interface IBixoMetaKeys {
     public static final String ORIGINAL_CHAR_ENCODING_KEY = "bixo.charencoding.original";
 
     public static final String CHAR_ENCODING_FOR_CONVERSION_KEY = "bixo.charencoding.for_conversion";

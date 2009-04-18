@@ -21,14 +21,14 @@ package bixo.content.parser.html;
 /** The result of parsing a page's raw content.
  * @see Parser#getParse(Content)
  */
-public class ParseImpl implements Parse {
+public class ParseImpl implements IParse {
   private ParseText text;
   private ParseData data;
   private boolean isCanonical;
 
   public ParseImpl() {}
 
-  public ParseImpl(Parse parse) {
+  public ParseImpl(IParse parse) {
     this(new ParseText(parse.getText()), parse.getData(), true);
   }
 

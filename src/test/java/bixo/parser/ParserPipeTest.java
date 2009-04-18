@@ -11,10 +11,10 @@ import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.junit.Test;
 
-import bixo.Constants;
+import bixo.IConstants;
 import bixo.content.parser.html.HtmlParser;
 import bixo.content.parser.html.Outlink;
-import bixo.content.parser.html.Parse;
+import bixo.content.parser.html.IParse;
 import bixo.fetcher.beans.FetchStatusCode;
 import bixo.tuple.FetchContentTuple;
 import bixo.tuple.FetchResultTuple;
@@ -36,7 +36,7 @@ public class ParserPipeTest extends CascadingTestCase {
 
         Pipe pipe = new Pipe("parse_source");
         ParserPipe parserPipe = new ParserPipe(pipe, new DefaultParserFactory());
-        Lfs in = new Lfs(new SequenceFile(new Fields(Constants.URL).append(FetchResultTuple.FIELDS)), "build/test-data/ParserPipeTest/in", true);
+        Lfs in = new Lfs(new SequenceFile(new Fields(IConstants.URL).append(FetchResultTuple.FIELDS)), "build/test-data/ParserPipeTest/in", true);
         Lfs out = new Lfs(new SequenceFile(ParseResultTuple.FIELDS), "build/test-data/ParserPipeTest/out", true);
 
         TupleEntryCollector write = in.openForWrite(new JobConf());
@@ -97,7 +97,7 @@ public class ParserPipeTest extends CascadingTestCase {
                 
                 @Override
                 public ParseResultTuple parse(FetchContentTuple contentTuple) {
-                    Parse parse = _parser.getParse(contentTuple).get(contentTuple.getBaseUrl());
+                    IParse parse = _parser.getParse(contentTuple).get(contentTuple.getBaseUrl());
                     
                     Outlink[] outlinks = parse.getData().getOutlinks();
                     String[] stringLinks = new String[outlinks.length];

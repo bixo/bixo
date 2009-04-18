@@ -27,6 +27,6 @@ import java.io.Serializable;
 
 import bixo.tuple.UrlTuple;
 
-public interface GroupingKeyGenerator extends Serializable{
+public interface IGroupingKeyGenerator extends Serializable{
     public String getGroupingKey(UrlTuple urlTuple) throws IOException;
 }

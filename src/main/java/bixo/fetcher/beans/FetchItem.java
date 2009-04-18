@@ -22,14 +22,14 @@
  */
 package bixo.fetcher.beans;
 
-import bixo.Constants;
+import bixo.IConstants;
 import bixo.tuple.UrlWithScoreTuple;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntryCollector;
 
 public class FetchItem implements Comparable<FetchItem> {
 
-    private static Fields FIELDS = new Fields(Constants.URL, Constants.SCORE);
+    private static Fields FIELDS = new Fields(IConstants.URL, IConstants.SCORE);
     private TupleEntryCollector _collector;
     private final UrlWithScoreTuple _urlWithScoreTuple;
 

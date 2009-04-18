@@ -27,7 +27,7 @@ import java.io.Serializable;
 
 import bixo.tuple.UrlWithGroupKeyTuple;
 
-public interface ScoreGenerator extends Serializable {
+public interface IScoreGenerator extends Serializable {
 
     double generateScore(UrlWithGroupKeyTuple urlTuple) throws IOException;
 

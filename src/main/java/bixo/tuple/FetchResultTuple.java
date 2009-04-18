@@ -25,11 +25,11 @@ package bixo.tuple;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
-import bixo.Constants;
+import bixo.IConstants;
 import bixo.fetcher.beans.FetchStatusCode;
 
 public class FetchResultTuple extends BaseTuple {
-    public static final Fields FIELDS = new Fields( Constants.FETCH_STATUS, Constants.FETCH_CONTENT);
+    public static final Fields FIELDS = new Fields( IConstants.FETCH_STATUS, IConstants.FETCH_CONTENT);
 
     public FetchResultTuple(FetchStatusCode statusCode, FetchContentTuple content) {
         super(new TupleEntry(FIELDS, Tuple.size(FIELDS.size())));
@@ -51,19 +51,19 @@ public class FetchResultTuple extends BaseTuple {
 //    }
 
     public void setFetchContent(FetchContentTuple content) {
-        getTupleEntry().set(Constants.FETCH_CONTENT, content.toTuple());
+        getTupleEntry().set(IConstants.FETCH_CONTENT, content.toTuple());
     }
 
     public FetchContentTuple getContent() {
-        return new FetchContentTuple((Tuple) getTupleEntry().get(Constants.FETCH_CONTENT));
+        return new FetchContentTuple((Tuple) getTupleEntry().get(IConstants.FETCH_CONTENT));
     }
 
     public void setStatusCode(FetchStatusCode statusCode) {
-        getTupleEntry().set(Constants.FETCH_STATUS, statusCode.ordinal());
+        getTupleEntry().set(IConstants.FETCH_STATUS, statusCode.ordinal());
     }
 
     public FetchStatusCode getStatusCode() {
-        return FetchStatusCode.fromOrdinal(getTupleEntry().getInteger(Constants.FETCH_STATUS));
+        return FetchStatusCode.fromOrdinal(getTupleEntry().getInteger(IConstants.FETCH_STATUS));
     }
 
     public String toString() {

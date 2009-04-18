@@ -2,8 +2,8 @@ package bixo.fetcher.cascading;
 
 import java.io.IOException;
 
-import bixo.Constants;
-import bixo.fetcher.util.GroupingKeyGenerator;
+import bixo.IConstants;
+import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.tuple.UrlTuple;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
@@ -15,10 +15,10 @@ import cascading.tuple.Tuple;
 @SuppressWarnings("serial")
 public class GroupFunction extends BaseOperation<String> implements Function<String> {
 
-    private final GroupingKeyGenerator _generator;
+    private final IGroupingKeyGenerator _generator;
 
-    public GroupFunction(String fieldName, GroupingKeyGenerator generator) {
-        super(new Fields(Constants.GROUPING_KEY));
+    public GroupFunction(String fieldName, IGroupingKeyGenerator generator) {
+        super(new Fields(IConstants.GROUPING_KEY));
         _generator = generator;
     }
 

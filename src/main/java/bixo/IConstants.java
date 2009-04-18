@@ -24,7 +24,7 @@ package bixo;
 
 import cascading.tuple.Fields;
 
-public interface Constants {
+public interface IConstants {
 
     String URL_DB = "url_db";
 

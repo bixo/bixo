@@ -2,8 +2,8 @@ package bixo.fetcher.cascading;
 
 import java.io.IOException;
 
-import bixo.Constants;
-import bixo.fetcher.util.ScoreGenerator;
+import bixo.IConstants;
+import bixo.fetcher.util.IScoreGenerator;
 import bixo.tuple.UrlWithGroupKeyTuple;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
@@ -14,10 +14,10 @@ import cascading.tuple.Tuple;
 
 public class ScoreFunction extends BaseOperation<Double> implements Function<Double> {
 
-    private final ScoreGenerator _scoreGenerator;
+    private final IScoreGenerator _scoreGenerator;
 
-    public ScoreFunction(ScoreGenerator scoreGenerator) {
-        super(new Fields(Constants.SCORE));
+    public ScoreFunction(IScoreGenerator scoreGenerator) {
+        super(new Fields(IConstants.SCORE));
         _scoreGenerator = scoreGenerator;
     }
 

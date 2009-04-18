@@ -22,7 +22,7 @@
  */
 package bixo.parser;
 
-import bixo.Constants;
+import bixo.IConstants;
 import bixo.tuple.ParseResultTuple;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
@@ -34,7 +34,7 @@ public class ParserPipe extends SubAssembly {
 
     public ParserPipe(Pipe fetcherPipe, IParserFactory factory) {
         Pipe parsePipe = new Pipe("parse_pipe", fetcherPipe);
-        parsePipe = new Each(parsePipe, new ParseFunction(factory), new Fields(Constants.URL).append(ParseResultTuple.FIELDS));
+        parsePipe = new Each(parsePipe, new ParseFunction(factory), new Fields(IConstants.URL).append(ParseResultTuple.FIELDS));
         setTails(parsePipe);
     }
 

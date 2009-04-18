@@ -26,7 +26,7 @@ package bixo.content.parser.html;
  * @author Chris Mattmann
  * @author J&eacute;r&ocirc;me Charron
  */
-public interface HttpHeaders {
+public interface IHttpHeaders {
 
   public final static String CONTENT_ENCODING = "Content-Encoding";
   

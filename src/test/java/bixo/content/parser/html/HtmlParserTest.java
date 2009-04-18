@@ -30,7 +30,7 @@ public class HtmlParserTest extends TestCase {
         HtmlParser parser = new HtmlParser();
         ParseResult parse = parser.getParse(content);
         
-        Parse p = parse.get(path.toExternalForm());
+        IParse p = parse.get(path.toExternalForm());
         assertNotNull(p);
         
         File parsedTextFile = new File(HtmlParserTest.class.getResource("/" + "simple-page.txt").getFile());

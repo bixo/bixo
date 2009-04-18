@@ -22,7 +22,7 @@
  */
 package bixo.urldb;
 
-import bixo.Constants;
+import bixo.IConstants;
 import bixo.fetcher.beans.FetchStatusCode;
 import bixo.tuple.UrlTuple;
 import cascading.flow.FlowProcess;
@@ -35,13 +35,13 @@ import cascading.tuple.TupleEntry;
 @SuppressWarnings("serial")
 public class TextUrlParser extends BaseOperation<String> implements Function<String> {
 
-    private UrlFilter[] _urlFilters = new UrlFilter[0];
+    private IUrlFilter[] _urlFilters = new IUrlFilter[0];
 
     public TextUrlParser() {
         super(UrlTuple.FIELDS);
     }
 
-    public TextUrlParser(UrlFilter... urlFilters) {
+    public TextUrlParser(IUrlFilter... urlFilters) {
         super(UrlTuple.FIELDS);
         if (urlFilters != null) {
             _urlFilters = urlFilters;
@@ -51,9 +51,9 @@ public class TextUrlParser extends BaseOperation<String> implements Function<Str
     @Override
     public void operate(FlowProcess process, FunctionCall<String> call) {
         TupleEntry arguments = call.getArguments();
-        String url = (String) arguments.get(Constants.LINE);
+        String url = (String) arguments.get(IConstants.LINE);
 
-        for (UrlFilter filter : _urlFilters) {
+        for (IUrlFilter filter : _urlFilters) {
             url = filter.filter(url);
             if (url == null) {
                 // ignore this url

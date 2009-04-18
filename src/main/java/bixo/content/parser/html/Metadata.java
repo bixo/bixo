@@ -29,7 +29,7 @@ import java.util.Properties;
  * @author J&eacute;r&ocirc;me Charron
  *
  */
-public class Metadata implements HttpHeaders, BixoMetaKeys {
+public class Metadata implements IHttpHeaders, IBixoMetaKeys {
 
     /**
      * A map of all metadata attributes.

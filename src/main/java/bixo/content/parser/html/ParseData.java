@@ -21,7 +21,7 @@ import java.util.Arrays;
 
 
 /** Data extracted from a page's content.
- * @see Parse#getData()
+ * @see IParse#getData()
  */
 public final class ParseData {
     public static final String DIR_NAME = "parse_data";
