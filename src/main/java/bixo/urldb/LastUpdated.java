@@ -32,10 +32,16 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
+@SuppressWarnings("serial")
 public class LastUpdated extends BaseOperation<Tuple> implements Aggregator<Tuple> {
 
     public LastUpdated(Fields fields) {
         super(fields);
+    }
+
+    @Override
+    public void start(FlowProcess flowProcess, AggregatorCall<Tuple> aggregatorCall) {
+        aggregatorCall.setContext(null);
     }
 
     @Override
@@ -57,11 +63,6 @@ public class LastUpdated extends BaseOperation<Tuple> implements Aggregator<Tupl
     @Override
     public void complete(FlowProcess flowProcess, AggregatorCall<Tuple> aggregatorCall) {
         aggregatorCall.getOutputCollector().add(aggregatorCall.getContext());
-    }
-
-    @Override
-    public void start(FlowProcess flowProcess, AggregatorCall<Tuple> aggregatorCall) {
-        aggregatorCall.setContext(null);
     }
 
 }

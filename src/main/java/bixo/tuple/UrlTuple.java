@@ -22,6 +22,8 @@
  */
 package bixo.tuple;
 
+import java.net.URL;
+
 import bixo.IConstants;
 import bixo.fetcher.beans.FetchStatusCode;
 import cascading.tuple.Fields;
@@ -65,6 +67,10 @@ public class UrlTuple extends BaseTuple {
         getTupleEntry().set(IConstants.URL, url);
     }
 
+    public void setUrl(URL url) {
+        setUrl(url.toExternalForm());
+    }
+    
     public long getLastUpdated() {
         return getTupleEntry().getLong(IConstants.LAST_UPDATED);
     }

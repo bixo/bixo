@@ -27,14 +27,13 @@ import java.io.IOException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import bixo.IConstants;
 import bixo.HadoopConfigured;
+import bixo.IConstants;
 import bixo.tuple.UrlTuple;
 import bixo.utils.TimeStampUtil;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.operation.Aggregator;
-import cascading.operation.Function;
 import cascading.operation.aggregator.Last;
 import cascading.pipe.Each;
 import cascading.pipe.Every;
@@ -47,6 +46,7 @@ import cascading.tap.Hfs;
 import cascading.tap.MultiTap;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
 
 public class UrlImporter extends HadoopConfigured {
 
@@ -77,8 +77,7 @@ public class UrlImporter extends HadoopConfigured {
             Pipe pipe = new Pipe("urldb-merge");
             // we want the url with the latest update.
             pipe = new GroupBy(pipe, new Fields(IConstants.URL));
-            //
-            Aggregator last = new LastUpdated(IConstants.URL_TUPLE_VALUES);
+            Aggregator<Tuple> last = new LastUpdated(IConstants.URL_TUPLE_VALUES);
             pipe = new Every(pipe, IConstants.URL_TUPLE_VALUES, last);
 
             FlowConnector flowConnector = new FlowConnector();
@@ -111,7 +110,7 @@ public class UrlImporter extends HadoopConfigured {
 
         Pipe assembly = new Pipe("url-import");
 
-        Function function = new TextUrlParser(null);
+        TextUrlParser function = new TextUrlParser((IUrlFilter)null);
         assembly = new Each(assembly, new Fields("line"), function);
 
         assembly = new GroupBy(assembly, IConstants.URL_TUPLE_KEY);
