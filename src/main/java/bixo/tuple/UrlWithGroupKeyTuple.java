@@ -17,7 +17,7 @@ public class UrlWithGroupKeyTuple extends UrlTuple {
         super(tupleEntry);
     }
 
-    public String getGroupingKet() {
+    public String getGroupingKey() {
         return getTupleEntry().getString(IConstants.GROUPING_KEY);
     }
 

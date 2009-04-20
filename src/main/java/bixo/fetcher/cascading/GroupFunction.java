@@ -18,6 +18,7 @@ public class GroupFunction extends BaseOperation<String> implements Function<Str
     private final IGroupingKeyGenerator _generator;
 
     public GroupFunction(String fieldName, IGroupingKeyGenerator generator) {
+        // TODO SGr - shouldn't <fieldName> be used to call new Fields(), vs. GROUPING_KEY?
         super(new Fields(IConstants.GROUPING_KEY));
         _generator = generator;
     }
