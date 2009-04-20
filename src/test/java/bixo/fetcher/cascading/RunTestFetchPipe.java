@@ -66,6 +66,7 @@ public class RunTestFetchPipe {
      */
     public static void main(String[] args) {
         try {
+            // URL path = RunTestFetchPipe.class.getResource("/" + "sample-urls-small.txt");
             URL path = RunTestFetchPipe.class.getResource("/" + args[0]);
             if (path == null) {
                 System.err.println("File not found on classpath: " + args[0]);
@@ -73,7 +74,7 @@ public class RunTestFetchPipe {
             }
             
             File inputFile = new File(path.getFile());
-            Tap in = new Lfs(new TextLine(), inputFile.getCanonicalPath());
+            Tap in = new Hfs(new TextLine(), inputFile.getCanonicalPath());
             
             Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFunction());
             
