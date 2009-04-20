@@ -45,12 +45,10 @@ public class FetcherManager implements Runnable {
     private IFetchItemProvider _provider;
     private IHttpFetcherFactory _factory;
     private ThreadPoolExecutor _pool;
-//    private FetchCollector _collector;
     
     public FetcherManager(IFetchItemProvider provider, IHttpFetcherFactory factory) {
         _provider = provider;
         _factory = factory;
-//        _collector = collector;
         
         ArrayBlockingQueue<Runnable> queue = new ArrayBlockingQueue<Runnable>(_factory.getMaxThreads() * 2);
         _pool = new ThreadPoolExecutor(FETCH_THREAD_COUNT_CORE, _factory.getMaxThreads(), FETCH_IDLE_TIMEOUT, TimeUnit.SECONDS, queue);
@@ -65,36 +63,40 @@ public class FetcherManager implements Runnable {
 	    // Keep running until we're interrupted. Since the provider might be getting loaded with
 	    // URLs as a rate different from our consumption, we could be ahead or behind, so we can't
 	    // just terminate when there's nothing left to be fetched...more could be on the way.
-	    while (!Thread.interrupted()) {
-	        FetchList items = null;
-	        
-	        // Don't bother trying to add more things to the queue if that would only throw
-	        // a RejectedExecutionException.
-	        if (_pool.getQueue().remainingCapacity() > 0) {
-	            items = _provider.poll();
-	        }
-	        
-	        // If we decided to check for IURLs, and we got a set to fetch from one domain...
-	        if (items != null) {
-	            if (LOGGER.isTraceEnabled()) {
-	                LOGGER.trace(String.format("Pulled %d items from the %s domain queue", items.size(), items.getDomain()));
+	    try {
+	        while (true) {
+	            FetchList items = null;
+
+	            // Don't bother trying to add more things to the queue if that would only throw
+	            // a RejectedExecutionException.
+	            if (_pool.getQueue().remainingCapacity() > 0) {
+	                items = _provider.poll();
 	            }
-	            
-	            // Create a Runnable that has a way to fetch the URLs (the IHttpFetcher), and
-	            // the list of things to fetch (the <items>).
-	            FetcherRunnable command = new FetcherRunnable(_factory.newHttpFetcher(), items);
-	            _pool.execute(command);
-	        } else {
-	            safeSleep(1000);
+
+	            // If we decided to check for IURLs, and we got a set to fetch from one domain...
+	            if (items != null) {
+	                if (LOGGER.isTraceEnabled()) {
+	                    LOGGER.trace(String.format("Pulled %d items from the %s domain queue", items.size(), items.getDomain()));
+	                }
+
+	                // Create a Runnable that has a way to fetch the URLs (the IHttpFetcher), and
+	                // the list of things to fetch (the <items>).
+	                FetcherRunnable command = new FetcherRunnable(_factory.newHttpFetcher(), items);
+	                _pool.execute(command);
+	            } else {
+	                Thread.sleep(1000L);
+	            }
 	        }
-	    }
-	    
-	    _pool.shutdown();
-	    while (!_pool.isShutdown()) {
-            // Spin while waiting.
-	        safeSleep(1000);
-	        // TODO KKr - have timeout where we call _pool.terminate() to force
-	        // it to shut down.
+	    } catch (InterruptedException e) {
+	        // ignore this one
+	    } finally {
+	        _pool.shutdown();
+	        while (!_pool.isShutdown()) {
+	            // Spin while waiting.
+	            safeSleep(1000);
+	            // TODO KKr - have timeout where we call _pool.terminate() to force
+	            // it to shut down.
+	        }
 	    }
 	} // run
 	
@@ -110,7 +112,7 @@ public class FetcherManager implements Runnable {
 	
 	
 	/**
-	 * Give the caller who set up this manager a way to tell if it's appropatie to
+	 * Give the caller who set up this manager a way to tell if it's appropriate to
 	 * interrupt the fetching process because we're done.
 	 * 
 	 * @return - true if we're done fetched everything that was in process, and
@@ -119,5 +121,6 @@ public class FetcherManager implements Runnable {
 	public boolean isDone() {
 	    return (_pool.getActiveCount() == 0) && _provider.isEmpty();
 	} // isDone
+	
 	
 }

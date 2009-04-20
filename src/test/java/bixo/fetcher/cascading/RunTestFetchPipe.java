@@ -8,7 +8,7 @@ import org.apache.log4j.Logger;
 
 import bixo.IConstants;
 import bixo.cascading.MultiSinkTap;
-import bixo.fetcher.FakeHttpFetcherFactory;
+import bixo.fetcher.HttpClientFactory;
 import bixo.fetcher.IHttpFetcherFactory;
 import bixo.fetcher.beans.FetchStatusCode;
 import bixo.fetcher.util.LastFetchScoreGenerator;
@@ -28,8 +28,8 @@ import cascading.tap.Lfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
-public class RunFakeFetchPipe {
-    private static final Logger LOGGER = Logger.getLogger(RunFakeFetchPipe.class);
+public class RunTestFetchPipe {
+    private static final Logger LOGGER = Logger.getLogger(RunTestFetchPipe.class);
     
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
 
@@ -66,7 +66,7 @@ public class RunFakeFetchPipe {
      */
     public static void main(String[] args) {
         try {
-            URL path = RunFakeFetchPipe.class.getResource("/" + args[0]);
+            URL path = RunTestFetchPipe.class.getResource("/" + args[0]);
             if (path == null) {
                 System.err.println("File not found on classpath: " + args[0]);
                 System.exit(-1);
@@ -79,11 +79,11 @@ public class RunFakeFetchPipe {
             
             PLDGrouping grouping = new PLDGrouping();
             LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
-            IHttpFetcherFactory factory = new FakeHttpFetcherFactory(true, 10);
+            IHttpFetcherFactory factory = new HttpClientFactory(10);
             FetchPipe fetchPipe = new FetchPipe(importPipe, grouping, scoring, factory);
             
             // Create the output, which is a dual file sink tap.
-            String outputPath = "build/test-data/RunFakeFetchPipe/dual";
+            String outputPath = "build/test-data/RunTestFetchPipe/dual";
             Tap status = new Hfs(new TextLine(new Fields(IConstants.URL, IConstants.FETCH_STATUS), new Fields(IConstants.URL, IConstants.FETCH_STATUS)), outputPath + "/status", true);
             Tap content = new Hfs(new TextLine(new Fields(IConstants.URL, IConstants.CONTENT), new Fields(IConstants.URL, IConstants.FETCH_CONTENT)), outputPath + "/content", true);
             Tap sink = new MultiSinkTap(status, content);
@@ -93,7 +93,7 @@ public class RunFakeFetchPipe {
             Flow flow = flowConnector.connect(in, sink, fetchPipe);
             flow.complete();
         } catch (Throwable t) {
-            System.err.println("Exception running fake fetch pipe assembly: " + t.getMessage());
+            System.err.println("Exception running test fetch pipe assembly: " + t.getMessage());
             t.printStackTrace(System.err);
             System.exit(-1);
         }

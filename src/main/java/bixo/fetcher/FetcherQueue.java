@@ -99,16 +99,6 @@ public class FetcherQueue implements IFetchItemProvider {
     }
 
 
-    /**
-     * We're done trying to fetch <items>
-     * @param items - items previously returned from call to poll()
-     */
-    public synchronized void release(FetchList items) {
-        trace("Release fetchlist", items.get(0).getUrl());
-        _numActiveFetchers -= 1;
-    }
-
-
     /* (non-Javadoc)
      * @see bixo.fetcher.IFetchItemProvider#poll()
      */
@@ -137,6 +127,20 @@ public class FetcherQueue implements IFetchItemProvider {
             return null;
         }
     } // poll
+
+    
+    /**
+     * We're done trying to fetch <items>
+     * @param items - items previously returned from call to poll()
+     */
+    public synchronized void release(FetchList items) {
+        if (LOGGER.isTraceEnabled()) {
+            trace("Releasing  fetchlist (" + items.size() + ")", items.get(0).getUrl());
+        }
+        
+        _numActiveFetchers -= 1;
+    }
+
 
 
     private void sort() {
