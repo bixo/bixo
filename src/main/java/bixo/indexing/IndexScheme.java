@@ -17,6 +17,8 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Index;
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 
@@ -32,16 +34,26 @@ public class IndexScheme extends Scheme {
     private static final String ANALYZER = "bixo.analyzer";
     private static final String MAX_FIELD_LENGTH = "bix.maxFieldLength";
     private static final String SINK_FIELDS = "bixo.fields";
+    private static final String INDEX = "bixo.index";
+    private static final String STORE = "bixo.store";
     private Class<? extends Analyzer> _analyzer;
     private int _maxFieldLeng;
+    private Store[] _store;
+    private Index[] _index;
 
-    public IndexScheme(Fields fieldsToIndex, Class<? extends Analyzer> analyzer, int maxFieldLength) {
+    public IndexScheme(Fields fieldsToIndex, Store[] store, Index[] index, Class<? extends Analyzer> analyzer, int maxFieldLength) {
         if (fieldsToIndex.size() == 0) {
             throw new IllegalArgumentException("At least one field need to be specified by name");
+        }
+
+        if (fieldsToIndex.size() != store.length || fieldsToIndex.size() != index.length) {
+            throw new IllegalArgumentException("store[] and index[] need to have same length as fieldsToIndex");
         }
         setSinkFields(fieldsToIndex);
         _analyzer = analyzer;
         _maxFieldLeng = maxFieldLength;
+        _store = store;
+        _index = index;
     }
 
     @Override
@@ -52,7 +64,8 @@ public class IndexScheme extends Scheme {
         conf.set(SINK_FIELDS, Util.serializeBase64(getSinkFields()));
         conf.setClass(ANALYZER, _analyzer, Analyzer.class);
         conf.setInt(MAX_FIELD_LENGTH, _maxFieldLeng);
-
+        conf.set(INDEX, Util.serializeBase64(_index));
+        conf.set(STORE, Util.serializeBase64(_store));
     }
 
     @Override
@@ -82,6 +95,8 @@ public class IndexScheme extends Scheme {
         public RecordWriter<Tuple, Tuple> getRecordWriter(final FileSystem fs, final JobConf conf, final String name, Progressable progressable) throws IOException {
 
             Analyzer analyzer = (Analyzer) ReflectionUtils.newInstance(conf.getClass(ANALYZER, Analyzer.class), conf);
+            final Index[] index = (Index[]) Util.deserializeBase64(conf.get(INDEX));
+            final Store[] store = (Store[]) Util.deserializeBase64(conf.get(STORE));
 
             int maxFieldLength = conf.getInt(MAX_FIELD_LENGTH, MaxFieldLength.UNLIMITED.getLimit());
             final Fields sinkFields = (Fields) Util.deserializeBase64(conf.get(SINK_FIELDS));
@@ -126,8 +141,7 @@ public class IndexScheme extends Scheme {
                     for (int i = 0; i < size; i++) {
                         String name = (String) sinkFields.get(i);
                         Comparable comparable = value.get(i);
-                        // TODO sg we want to make all this configurable...
-                        doc.add(new Field(name, "" + comparable.toString(), Field.Store.YES, Field.Index.TOKENIZED));
+                        doc.add(new Field(name, "" + comparable.toString(), store[i], index[i]));
                     }
                     indexWriter.addDocument(doc);
                 }

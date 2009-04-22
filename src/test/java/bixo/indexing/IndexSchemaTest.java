@@ -8,6 +8,9 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Index;
+import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.MultiReader;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
@@ -33,7 +36,8 @@ public class IndexSchemaTest {
     public void testIndexSink() throws Exception {
         String out = "build/test-data/IndexSchemaTest/testIndexSink/out";
 
-        Lfs lfs = new Lfs(new IndexScheme(new Fields("text"), StandardAnalyzer.class, MaxFieldLength.UNLIMITED.getLimit()), out, SinkMode.REPLACE);
+        Lfs lfs = new Lfs(new IndexScheme(new Fields("text"), new Store[] { Store.NO }, new Index[] { Index.NOT_ANALYZED }, StandardAnalyzer.class, MaxFieldLength.UNLIMITED.getLimit()), out,
+                        SinkMode.REPLACE);
         TupleEntryCollector writer = lfs.openForWrite(new JobConf());
 
         for (int i = 0; i < 100; i++) {
@@ -59,7 +63,8 @@ public class IndexSchemaTest {
 
         String out = "build/test-data/IndexSchemaTest/testPipeIntoIndex/out";
         FileUtil.fullyDelete(new File(out));
-        Lfs indexSinkTap = new Lfs(new IndexScheme(new Fields("text"), KeywordAnalyzer.class, MaxFieldLength.UNLIMITED.getLimit()), out, SinkMode.REPLACE);
+        Lfs indexSinkTap = new Lfs(new IndexScheme(new Fields("text"), new Store[] { Store.NO }, new Index[] { Index.NOT_ANALYZED }, KeywordAnalyzer.class, MaxFieldLength.UNLIMITED.getLimit()), out,
+                        SinkMode.REPLACE);
         Flow flow = new FlowConnector().connect(lfs, indexSinkTap, new Pipe("somePipe"));
         flow.complete();
 
