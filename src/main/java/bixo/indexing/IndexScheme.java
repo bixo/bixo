@@ -36,7 +36,10 @@ public class IndexScheme extends Scheme {
     private int _maxFieldLeng;
 
     public IndexScheme(Fields fieldsToIndex, Class<? extends Analyzer> analyzer, int maxFieldLength) {
-        super(fieldsToIndex);
+        if (fieldsToIndex.size() == 0) {
+            throw new IllegalArgumentException("At least one field need to be specified by name");
+        }
+        setSinkFields(fieldsToIndex);
         _analyzer = analyzer;
         _maxFieldLeng = maxFieldLength;
     }
