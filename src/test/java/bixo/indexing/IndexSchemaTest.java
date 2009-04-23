@@ -1,8 +1,22 @@
 package bixo.indexing;
 
+import java.io.File;
+
+import junit.framework.Assert;
+
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.Field.Index;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.MultiReader;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.TopDocs;
 import org.junit.Test;
 
 import bixo.tuple.ParseResultTuple;
@@ -22,7 +36,8 @@ public class IndexSchemaTest {
     public void testIndexSink() throws Exception {
         String out = "build/test-data/IndexSchemaTest/testIndexSink/out";
 
-        Lfs lfs = new Lfs(new IndexScheme(new Fields("text"), StandardAnalyzer.class, MaxFieldLength.UNLIMITED.getLimit()), out, SinkMode.REPLACE);
+        Lfs lfs = new Lfs(new IndexScheme(new Fields("text"), new Store[] { Store.NO }, new Index[] { Index.NOT_ANALYZED }, StandardAnalyzer.class, MaxFieldLength.UNLIMITED.getLimit()), out,
+                        SinkMode.REPLACE);
         TupleEntryCollector writer = lfs.openForWrite(new JobConf());
 
         for (int i = 0; i < 100; i++) {
@@ -41,14 +56,32 @@ public class IndexSchemaTest {
         Lfs lfs = new Lfs(new SequenceFile(new Fields("text", "outlinks")), in, SinkMode.REPLACE);
         TupleEntryCollector write = lfs.openForWrite(new JobConf());
         for (int i = 0; i < 10000; i++) {
-            ParseResultTuple resultTuple = new ParseResultTuple("text", new String[0]);
+            ParseResultTuple resultTuple = new ParseResultTuple("text" + i, new String[0]);
             write.add(resultTuple.toTuple());
         }
         write.close();
 
         String out = "build/test-data/IndexSchemaTest/testPipeIntoIndex/out";
-        Lfs indexSinkTap = new Lfs(new IndexScheme(new Fields("text"), StandardAnalyzer.class, MaxFieldLength.UNLIMITED.getLimit()), out, SinkMode.REPLACE);
+        FileUtil.fullyDelete(new File(out));
+        Lfs indexSinkTap = new Lfs(new IndexScheme(new Fields("text"), new Store[] { Store.NO }, new Index[] { Index.NOT_ANALYZED }, KeywordAnalyzer.class, MaxFieldLength.UNLIMITED.getLimit()), out,
+                        SinkMode.REPLACE);
         Flow flow = new FlowConnector().connect(lfs, indexSinkTap, new Pipe("somePipe"));
         flow.complete();
+
+        File file = new File(out);
+        File[] listFiles = file.listFiles();
+        IndexReader[] indexReaders = new IndexReader[listFiles.length];
+
+        for (int i = 0; i < listFiles.length; i++) {
+            File indexFile = listFiles[i];
+            indexReaders[i] = IndexReader.open(indexFile);
+        }
+
+        QueryParser parser = new QueryParser("text", new KeywordAnalyzer());
+        IndexSearcher searcher = new IndexSearcher(new MultiReader(indexReaders));
+        for (int i = 0; i < 10000; i++) {
+            TopDocs search = searcher.search(parser.parse("text" + i), 1);
+            Assert.assertEquals(1, search.totalHits);
+        }
     }
 }
