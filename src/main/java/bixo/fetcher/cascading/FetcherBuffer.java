@@ -20,8 +20,8 @@ import cascading.operation.BufferCall;
 import cascading.operation.OperationCall;
 import cascading.tuple.TupleEntry;
 
-@SuppressWarnings("serial")
-public class FetcherBuffer extends BaseOperation<String> implements cascading.operation.Buffer<String> {
+@SuppressWarnings({ "serial", "unchecked" })
+public class FetcherBuffer extends BaseOperation implements cascading.operation.Buffer {
 
     private static Logger LOG = Logger.getLogger(FetcherBuffer.class);
     private FetcherManager _fetcherMgr;
@@ -38,7 +38,7 @@ public class FetcherBuffer extends BaseOperation<String> implements cascading.op
     // private FetchCollector _collector;
 
     @Override
-    public void prepare(FlowProcess flowProcess, OperationCall<String> operationCall) {
+    public void prepare(FlowProcess flowProcess, OperationCall operationCall) {
         super.prepare(flowProcess, operationCall);
         _queueMgr = new FetcherQueueMgr();
         // TODO KKr- configure max threads in _conf?
@@ -52,12 +52,12 @@ public class FetcherBuffer extends BaseOperation<String> implements cascading.op
     }
 
     @Override
-    public void operate(FlowProcess process, BufferCall<String> buffCall) {
+    public void operate(FlowProcess process, BufferCall buffCall) {
         Iterator<TupleEntry> values = buffCall.getArgumentsIterator();
         TupleEntry group = buffCall.getGroup();
-        // TODO KKr - talk to Chris about ugly casting issue.
+        // FUTURE KKr - use up-coming Cascading setStatus() call so we don't need reporter.
         Reporter reporter = ((HadoopFlowProcess) process).getReporter();
-
+        
         try {
             // <key> is the PLD grouper, while each entry from <values> is a
             // FetchItem.
@@ -93,7 +93,7 @@ public class FetcherBuffer extends BaseOperation<String> implements cascading.op
     }
 
     @Override
-    public void cleanup(FlowProcess flowProcess, OperationCall<String> operationCall) {
+    public void cleanup(FlowProcess flowProcess, OperationCall operationCall) {
 
         Reporter reporter = ((HadoopFlowProcess) flowProcess).getReporter();
         while (!_fetcherMgr.isDone()) {
