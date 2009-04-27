@@ -24,8 +24,13 @@ package bixo.fetcher;
 
 import java.io.Serializable;
 
+import bixo.fetcher.beans.FetcherPolicy;
+
 public interface IHttpFetcherFactory extends Serializable {
     IHttpFetcher newHttpFetcher();
 
+    FetcherPolicy getFetcherPolicy();
+    void setFetcherPolicy(FetcherPolicy fetcherPolicy);
+    
     int getMaxThreads();
 }

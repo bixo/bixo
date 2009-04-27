@@ -22,16 +22,15 @@
  */
 package bixo.fetcher;
 
-import org.apache.log4j.Logger;
+import org.apache.log4j.Level;
 
+import bixo.cascading.BixoFlowProcess;
+import bixo.fetcher.beans.FetchItem;
+import bixo.fetcher.beans.FetchStatusCode;
+import bixo.tuple.FetchResultTuple;
 import cascading.tuple.TupleEntryCollector;
 
-import bixo.fetcher.beans.FetchItem;
-import bixo.tuple.FetchResultTuple;
-
 public class FetcherRunnable implements Runnable {
-    private static Logger LOGGER = Logger.getLogger(FetcherRunnable.class);
-
     private IHttpFetcher _httpFetcher;
     private FetchList _items;
 
@@ -42,26 +41,46 @@ public class FetcherRunnable implements Runnable {
 
     @Override
     public void run() {
+        BixoFlowProcess process = _items.getProcess();
 
         // FUTURE KKr - when fetching the last item, send a Connection: close
         // header to let the server know it doesn't need to keep the socket open.
         for (FetchItem item : _items) {
+            boolean fetching = false;
+            
             try {
+                fetching = true;
+                process.increment(FetcherCounters.URLS_FETCHING, 1);
                 FetchResultTuple result = _httpFetcher.get(item.getUrl());
-                LOGGER.trace("Fetched " + result);
-                TupleEntryCollector collector = item.getCollector();
+                process.decrement(FetcherCounters.URLS_FETCHING, 1);
+                fetching = false;
+                
+                if (result.getStatusCode() == FetchStatusCode.FETCHED) {
+                    process.increment(FetcherCounters.URLS_FETCHED, 1);
+                    process.setStatus(Level.TRACE, "Fetched " + result);
+                } else {
+                    process.increment(FetcherCounters.URLS_FAILED, 1);
+                    process.setStatus(Level.ERROR, "Failed to fetch " + result);
+                }
                 
                 // Cascading _collectors aren't thread-safe.
+                TupleEntryCollector collector = _items.getCollector();
                 synchronized (collector) {
                     collector.add(result.toTuple());
                 }
             } catch (Throwable t) {
-                LOGGER.error("Exception: " + t.getMessage(), t);
+                if (fetching) {
+                    process.decrement(FetcherCounters.URLS_FETCHING, 1);
+                }
+                
+                process.increment(FetcherCounters.URLS_FAILED, 1);
+                process.setStatus("Failed to fetch " + item, t);
             }
         }
 
         // All done fetching these items, so we're no longer hitting this
         // domain.
+        
         _items.finished();
     }
 

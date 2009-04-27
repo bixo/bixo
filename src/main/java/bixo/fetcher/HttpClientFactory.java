@@ -38,19 +38,27 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 
+import bixo.fetcher.beans.FetcherPolicy;
+
 @SuppressWarnings("serial")
 public class HttpClientFactory implements IHttpFetcherFactory {
     transient private HttpClient _httpClient;
     private int _maxThreads;
     private HttpVersion _httpVersion;
+    private FetcherPolicy _fetcherPolicy;
     
-    public HttpClientFactory(int maxThreads, HttpVersion httpVersion) {
+    public HttpClientFactory(int maxThreads, HttpVersion httpVersion, FetcherPolicy fetcherPolicy) {
+        _fetcherPolicy = fetcherPolicy;
         _maxThreads = maxThreads;
         _httpVersion = httpVersion;
     }
     
     public HttpClientFactory(int maxThreads) {
-        this(maxThreads, HttpVersion.HTTP_1_1);
+        this(maxThreads, HttpVersion.HTTP_1_1, new FetcherPolicy());
+    }
+
+    public HttpClientFactory(int maxThreads, FetcherPolicy fetcherPolicy) {
+        this(maxThreads, HttpVersion.HTTP_1_1, fetcherPolicy);
     }
 
     private void init() {
@@ -98,12 +106,22 @@ public class HttpClientFactory implements IHttpFetcherFactory {
             init();
         }
         
-        return new HttpClientFetcher(_httpClient);
+        return new HttpClientFetcher(_httpClient, _fetcherPolicy);
     }
 
     @Override
     public int getMaxThreads() {
         return _maxThreads;
+    }
+
+    @Override
+    public FetcherPolicy getFetcherPolicy() {
+        return _fetcherPolicy;
+    }
+
+    @Override
+    public void setFetcherPolicy(FetcherPolicy fetcherPolicy) {
+        _fetcherPolicy = fetcherPolicy;
     }
 
 }

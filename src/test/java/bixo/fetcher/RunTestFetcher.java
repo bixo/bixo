@@ -33,6 +33,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
 import org.apache.hadoop.mapred.JobConf;
 
+import bixo.cascading.BixoFlowProcess;
 import bixo.fetcher.beans.FetchItem;
 import bixo.fetcher.beans.FetcherPolicy;
 import bixo.tuple.UrlWithScoreTuple;
@@ -83,14 +84,14 @@ public class RunTestFetcher {
             FetcherPolicy policy = new FetcherPolicy();
 
             for (String pld : domainMap.keySet()) {
-                FetcherQueue queue = new FetcherQueue(pld, policy, 100);
+                FetcherQueue queue = new FetcherQueue(pld, policy, 100, new BixoFlowProcess(), tupleEntryCollector);
                 List<String> urls = domainMap.get(pld);
                 System.out.println("Adding " + urls.size() + " URLs for " + pld);
                 for (String url : urls) {
                     UrlWithScoreTuple urlScore = new UrlWithScoreTuple();
                     urlScore.setUrl(url);
                     urlScore.SetScore(0.5d);
-                    queue.offer(new FetchItem(urlScore , tupleEntryCollector));
+                    queue.offer(new FetchItem(urlScore));
                 }
 
                 queueMgr.offer(queue);
@@ -98,7 +99,7 @@ public class RunTestFetcher {
 
  
 
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFactory(10));
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFactory(10), new BixoFlowProcess());
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");
             t.start();

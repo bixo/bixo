@@ -14,12 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package bixo.content.parser.html;
+package bixo.utils;
 
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+
+import bixo.fetcher.util.IHttpHeaders;
+import bixo.parser.html.IBixoMetaKeys;
 
 
 /**

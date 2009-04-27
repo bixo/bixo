@@ -9,6 +9,8 @@ import java.util.Collections;
 
 import org.apache.http.HttpVersion;
 
+import bixo.fetcher.beans.FetcherPolicy;
+
 public class TryKeepAlive {
     private static final String[] APACHE_URLS = {
         "http://camel.apache.org/components.html",
@@ -89,7 +91,7 @@ public class TryKeepAlive {
     private static long tryNoKeepaliveHttp10(String[] urls) {
         long startTime = System.currentTimeMillis();
         for (String uri : urls) {
-            HttpClientFactory factory = new HttpClientFactory(1, HttpVersion.HTTP_1_0);
+            HttpClientFactory factory = new HttpClientFactory(1, HttpVersion.HTTP_1_0, new FetcherPolicy());
             IHttpFetcher fetcher = factory.newHttpFetcher();
             fetcher.get(uri);
         }
@@ -98,7 +100,7 @@ public class TryKeepAlive {
     }
     
     private static long tryHttp10(String[] urls) {
-        HttpClientFactory factory = new HttpClientFactory(1, HttpVersion.HTTP_1_0);
+        HttpClientFactory factory = new HttpClientFactory(1, HttpVersion.HTTP_1_0, new FetcherPolicy());
 
         long startTime = System.currentTimeMillis();
         for (String uri : urls) {
@@ -110,7 +112,7 @@ public class TryKeepAlive {
     }
     
     private static long tryHttp11(String[] urls) {
-        HttpClientFactory factory = new HttpClientFactory(10, HttpVersion.HTTP_1_1);
+        HttpClientFactory factory = new HttpClientFactory(10, HttpVersion.HTTP_1_1, new FetcherPolicy());
         long startTime = System.currentTimeMillis();
         IHttpFetcher fetcher = factory.newHttpFetcher();
         for (String uri : urls) {
@@ -126,7 +128,7 @@ public class TryKeepAlive {
             ipUrls.add(convertUrlToIP(url));
         }
 
-        HttpClientFactory factory = new HttpClientFactory(10, HttpVersion.HTTP_1_1);
+        HttpClientFactory factory = new HttpClientFactory(10, HttpVersion.HTTP_1_1, new FetcherPolicy());
         long startTime = System.currentTimeMillis();
         IHttpFetcher fetcher = factory.newHttpFetcher();
         for (UrlWithHost url : ipUrls) {
@@ -145,7 +147,7 @@ public class TryKeepAlive {
         
         Collections.sort(ipUrls);
         
-        HttpClientFactory factory = new HttpClientFactory(10, HttpVersion.HTTP_1_1);
+        HttpClientFactory factory = new HttpClientFactory(10, HttpVersion.HTTP_1_1, new FetcherPolicy());
         long startTime = System.currentTimeMillis();
         IHttpFetcher fetcher = factory.newHttpFetcher();
         for (UrlWithHost url : ipUrls) {

@@ -22,23 +22,38 @@
  */
 package bixo.fetcher;
 
+import bixo.fetcher.beans.FetcherPolicy;
+
+@SuppressWarnings("serial")
 public class FakeHttpFetcherFactory implements IHttpFetcherFactory {
     private boolean _randomFetching;
     private int _maxThreads;
+    private FetcherPolicy _fetcherPolicy;
     
     public FakeHttpFetcherFactory(boolean randomFetching, int maxThreads) {
         _randomFetching = randomFetching;
         _maxThreads = maxThreads;
+        _fetcherPolicy = new FetcherPolicy();
     }
     
     @Override
     public IHttpFetcher newHttpFetcher() {
-        return new FakeHttpFetcher(_randomFetching);
+        return new FakeHttpFetcher(_randomFetching, _fetcherPolicy);
     }
 
     @Override
     public int getMaxThreads() {
         return _maxThreads;
+    }
+
+    @Override
+    public FetcherPolicy getFetcherPolicy() {
+        return _fetcherPolicy;
+    }
+
+    @Override
+    public void setFetcherPolicy(FetcherPolicy fetcherPolicy) {
+        _fetcherPolicy = fetcherPolicy;
     }
 
 }

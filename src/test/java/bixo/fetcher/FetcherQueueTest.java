@@ -26,29 +26,30 @@ import java.net.MalformedURLException;
 import java.util.Random;
 
 import junit.framework.TestCase;
+import bixo.cascading.BixoFlowProcess;
 import bixo.fetcher.beans.FetchItem;
 import bixo.fetcher.beans.FetcherPolicy;
 import bixo.tuple.UrlWithScoreTuple;
 
 public class FetcherQueueTest extends TestCase {
     public final void testMaxURLs() throws MalformedURLException {
-        FetcherPolicy policy = new FetcherPolicy(30, 1, 1);
-        FetcherQueue queue = new FetcherQueue("domain.com", policy, 1);
+        FetcherPolicy policy = new FetcherPolicy(30, 1, 1, FetcherPolicy.NO_MIN_RESPONSE_RATE);
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, 1, new BixoFlowProcess(), null);
 
         UrlWithScoreTuple urlScore1 = new UrlWithScoreTuple();
         urlScore1.setUrl("http://domain.com/page1");
         urlScore1.SetScore(0.0d);
-        FetchItem fetchItem1 = new FetchItem(urlScore1, null);
+        FetchItem fetchItem1 = new FetchItem(urlScore1);
 
         UrlWithScoreTuple urlScore2 = new UrlWithScoreTuple();
         urlScore2.setUrl("http://domain.com/page2");
         urlScore2.SetScore(1.0d);
-        FetchItem fetchItem2 = new FetchItem(urlScore2, null);
+        FetchItem fetchItem2 = new FetchItem(urlScore2);
 
         UrlWithScoreTuple urlScore3 = new UrlWithScoreTuple();
         urlScore3.setUrl("http://domain.com/page3");
         urlScore3.SetScore(0.5d);
-        FetchItem fetchItem3 = new FetchItem(urlScore3, null);
+        FetchItem fetchItem3 = new FetchItem(urlScore3);
 
         queue.offer(fetchItem1);
         String bestUrl = "http://domain.com/page2";
@@ -67,14 +68,14 @@ public class FetcherQueueTest extends TestCase {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setCrawlDelay(0);
 
-        FetcherQueue queue = new FetcherQueue("domain.com", policy, 100);
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, 100, new BixoFlowProcess(), null);
         Random rand = new Random(1L);
 
         for (int i = 0; i < 1000; i++) {
             UrlWithScoreTuple urlScore = new UrlWithScoreTuple();
             urlScore.setUrl("http://domain.com/page" + rand.nextInt());
             urlScore.SetScore(rand.nextFloat());
-            FetchItem fetchItem = new FetchItem(urlScore, null);
+            FetchItem fetchItem = new FetchItem(urlScore);
 
             queue.offer(fetchItem);
         }
@@ -103,17 +104,17 @@ public class FetcherQueueTest extends TestCase {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setCrawlDelay(1);
         policy.setRequestsPerConnect(1);
-        FetcherQueue queue = new FetcherQueue("domain.com", policy, 100);
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, 100, new BixoFlowProcess(), null);
 
         UrlWithScoreTuple urlScore1 = new UrlWithScoreTuple();
         urlScore1.setUrl("http://domain.com/page1");
         urlScore1.SetScore(0.5d);
-        FetchItem fetchItem1 = new FetchItem(urlScore1, null);
+        FetchItem fetchItem1 = new FetchItem(urlScore1);
 
         UrlWithScoreTuple urlScore2 = new UrlWithScoreTuple();
         urlScore2.setUrl("http://domain.com/page2");
         urlScore2.SetScore(0.0d);
-        FetchItem fetchItem2 = new FetchItem(urlScore2, null);
+        FetchItem fetchItem2 = new FetchItem(urlScore2);
 
         queue.offer(fetchItem1);
         queue.offer(fetchItem2);

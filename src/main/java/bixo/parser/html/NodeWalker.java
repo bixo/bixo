@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package bixo.content.parser.html;
+package bixo.parser.html;
 
 import java.util.Stack;
 

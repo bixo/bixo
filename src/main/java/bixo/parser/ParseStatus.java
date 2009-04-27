@@ -19,7 +19,10 @@
  * Author: Andrzej Bialecki &lt;ab@getopt.org&gt;
  *
  */
-package bixo.content.parser.html;
+package bixo.parser;
+
+import bixo.parser.html.Outlink;
+import bixo.utils.Metadata;
 
 /**
  * @author Andrzej Bialecki &lt;ab@getopt.org&gt;

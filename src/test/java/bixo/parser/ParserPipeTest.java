@@ -12,10 +12,9 @@ import org.archive.io.ArchiveRecordHeader;
 import org.junit.Test;
 
 import bixo.IConstants;
-import bixo.content.parser.html.HtmlParser;
-import bixo.content.parser.html.Outlink;
-import bixo.content.parser.html.IParse;
 import bixo.fetcher.beans.FetchStatusCode;
+import bixo.parser.html.HtmlParser;
+import bixo.parser.html.Outlink;
 import bixo.tuple.FetchContentTuple;
 import bixo.tuple.FetchResultTuple;
 import bixo.tuple.ParseResultTuple;

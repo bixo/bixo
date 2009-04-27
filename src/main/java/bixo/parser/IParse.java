@@ -15,41 +15,20 @@
  * limitations under the License.
  */
 
-package bixo.content.parser.html;
-
+package bixo.parser;
 
 /** The result of parsing a page's raw content.
  * @see Parser#getParse(Content)
  */
-public class ParseImpl implements IParse {
-  private ParseText text;
-  private ParseData data;
-  private boolean isCanonical;
-
-  public ParseImpl() {}
-
-  public ParseImpl(IParse parse) {
-    this(new ParseText(parse.getText()), parse.getData(), true);
-  }
-
-  public ParseImpl(String text, ParseData data) {
-    this(new ParseText(text), data, true);
-  }
+public interface IParse {
   
-  public ParseImpl(ParseText text, ParseData data) {
-    this(text, data, true);
-  }
+  /** The textual content of the page. This is indexed, searched, and used when
+   * generating snippets.*/ 
+  String getText();
 
-  public ParseImpl(ParseText text, ParseData data, boolean isCanonical) {
-    this.text = text;
-    this.data = data;
-    this.isCanonical = isCanonical;
-  }
-
-  public String getText() { return text.getText(); }
-
-  public ParseData getData() { return data; }
-
-  public boolean isCanonical() { return isCanonical; }
+  /** Other data extracted from the page. */
+  ParseData getData();
   
+  /** Indicates if the parse is coming from a url or a sub-url */
+  boolean isCanonical();
 }

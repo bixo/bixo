@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package bixo.content.parser.html;
+package bixo.parser.html;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -33,7 +33,14 @@ import org.apache.html.dom.*;
 
 import org.apache.log4j.Logger;
 
+import bixo.parser.IParse;
+import bixo.parser.ParseData;
+import bixo.parser.ParseImpl;
+import bixo.parser.ParseResult;
+import bixo.parser.ParseStatus;
 import bixo.tuple.FetchContentTuple;
+import bixo.utils.EncodingDetector;
+import bixo.utils.Metadata;
 
 public class HtmlParser {
     public static final Logger LOGGER = Logger.getLogger(HtmlParser.class);

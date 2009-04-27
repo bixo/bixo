@@ -15,20 +15,34 @@
  * limitations under the License.
  */
 
-package bixo.content.parser.html;
+package bixo.parser;
 
-/** The result of parsing a page's raw content.
- * @see Parser#getParse(Content)
+
+/* The text conversion of page's content, stored using gzip compression.
+ * @see Parse#getText()
  */
-public interface IParse {
-  
-  /** The textual content of the page. This is indexed, searched, and used when
-   * generating snippets.*/ 
-  String getText();
+public final class ParseText {
+  public ParseText() {}
+  private String text;
+    
+  public ParseText(String text){
+    this.text = text;
+  }
 
-  /** Other data extracted from the page. */
-  ParseData getData();
-  
-  /** Indicates if the parse is coming from a url or a sub-url */
-  boolean isCanonical();
+  //
+  // Accessor methods
+  //
+  public String getText()  { return text; }
+
+  public boolean equals(Object o) {
+    if (!(o instanceof ParseText))
+      return false;
+    ParseText other = (ParseText)o;
+    return this.text.equals(other.text);
+  }
+
+  public String toString() {
+    return text;
+  }
+
 }

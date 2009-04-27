@@ -20,6 +20,9 @@ public class BaseTuple {
 
     @Override
     public String toString() {
+        // TODO KKr - currently cascading will print out unlimited amounts of data for the tuple, which
+        // sucks when you're watching on the console. Limit the total data, and do a better job of screening
+        // out invalid character codes, as currently he'll try to print control codes (which clear the console)
         return getTupleEntry().toString();
     }
 

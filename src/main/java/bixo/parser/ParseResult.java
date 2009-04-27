@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package bixo.content.parser.html;
+package bixo.parser;
 
 import java.util.HashMap;
 import java.util.Iterator;

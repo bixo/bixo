@@ -15,9 +15,12 @@
  * limitations under the License.
  */
 
-package bixo.content.parser.html;
+package bixo.parser;
 
 import java.util.Arrays;
+
+import bixo.parser.html.Outlink;
+import bixo.utils.Metadata;
 
 
 /** Data extracted from a page's content.

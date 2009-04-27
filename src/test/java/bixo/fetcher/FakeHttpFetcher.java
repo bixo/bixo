@@ -28,6 +28,7 @@ import java.util.Random;
 import org.apache.log4j.Logger;
 
 import bixo.fetcher.beans.FetchStatusCode;
+import bixo.fetcher.beans.FetcherPolicy;
 import bixo.tuple.FetchContentTuple;
 import bixo.tuple.FetchResultTuple;
 
@@ -35,14 +36,16 @@ public class FakeHttpFetcher implements IHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(FakeHttpFetcher.class);
     
     private boolean _randomFetching;
+    private FetcherPolicy _fetcherPolicy;
     private Random _rand;
     
     public FakeHttpFetcher() {
-        this(true);
+        this(true, new FetcherPolicy());
     }
     
-    public FakeHttpFetcher(boolean randomFetching) {
+    public FakeHttpFetcher(boolean randomFetching, FetcherPolicy fetcherPolicy) {
         _randomFetching = randomFetching;
+        _fetcherPolicy = fetcherPolicy;
         _rand = new Random();
     }
     
@@ -56,13 +59,13 @@ public class FakeHttpFetcher implements IHttpFetcher {
         try {
             URL theUrl = new URL(url);
             
-            int statusCode = 0;
+            int statusCode = 200;
             int contentSize = 10000;
             int bytesPerSecond = 100000;
             
             if (_randomFetching) {
                 contentSize = Math.max(0, (int)(_rand.nextGaussian() * 5000.0) + 10000) + 100;
-                bytesPerSecond = Math.max(0, (int)(_rand.nextGaussian() * 50000.0) + 100000) + 1000;
+                bytesPerSecond = Math.max(0, (int)(_rand.nextGaussian() * 25000.0) + 50000) + 1000;
             } else {
                 String query = theUrl.getQuery();
                 if (query != null) {
@@ -82,13 +85,14 @@ public class FakeHttpFetcher implements IHttpFetcher {
                 }
             }
             
-            FetchStatusCode status = FetchStatusCode.fromOrdinal(statusCode);
+            FetchStatusCode status = statusCode == 200 ? FetchStatusCode.FETCHED : FetchStatusCode.ERROR;
             FetchContentTuple content = new FetchContentTuple(url, url, System.currentTimeMillis(), new byte[contentSize], "text/html");
             
             // Now we want to delay for as long as it would take to fill in the data.
             float duration = (float)contentSize/(float)bytesPerSecond;
-            Thread.sleep((long)duration * 1000L);
-            return new FetchResultTuple( status, content);
+            LOGGER.trace(String.format("Fake fetching %d bytes at %d bps (%fs) from %s", contentSize, bytesPerSecond, duration, url));
+            Thread.sleep((long)(duration * 1000.0));
+            return new FetchResultTuple(status, content);
         } catch (Throwable t) {
             LOGGER.error("Exception: " + t.getMessage(), t);
             return new FetchResultTuple(FetchStatusCode.ERROR, new FetchContentTuple(url, url, System.currentTimeMillis(), null, null));

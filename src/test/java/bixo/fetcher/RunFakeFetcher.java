@@ -27,24 +27,28 @@ import java.util.Random;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.log4j.Logger;
 
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
+import bixo.cascading.BixoFlowProcess;
 import bixo.fetcher.beans.FetchItem;
 import bixo.fetcher.beans.FetcherPolicy;
 import bixo.tuple.UrlWithScoreTuple;
 
 public class RunFakeFetcher {
-
+    private static final Logger LOGGER = Logger.getLogger(RunFakeFetcher.class);
+    
     public static void main(String[] args) {
 
         try {
             JobConf conf = new JobConf();
             FileOutputFormat.setOutputPath(conf, new Path("build/test-data/RunFakeFetcher/working"));
 
+            BixoFlowProcess flowProcess = new BixoFlowProcess();
             FetcherQueueMgr queueMgr = new FetcherQueueMgr();
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new FakeHttpFetcherFactory(true, 10));
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new FakeHttpFetcherFactory(true, 4), flowProcess);
 
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");
@@ -52,21 +56,26 @@ public class RunFakeFetcher {
 
             // Now start creating per-domain queues and passing them to the
             // FetcherQueueMgr
-            FetcherPolicy policy = new FetcherPolicy();
             Random rand = new Random();
 
             for (int i = 0; i < 10; i++) {
                 String host = "domain-" + i + ".com";
-                policy.setCrawlDelay(1 + rand.nextInt(10));
-                FetcherQueue queue = new FetcherQueue(host, policy, 100 - (i * 10));
+                int capacity = 100 - (i * 10);
+                int delay = 0 + rand.nextInt(5);
 
-                for (int j = 0; j < 20; j++) {
+                LOGGER.trace(String.format("Creating queue for %s with delay %d and capacity %d", host, delay, capacity));
+
+                FetcherPolicy policy = new FetcherPolicy();
+                policy.setCrawlDelay(delay);
+                FetcherQueue queue = new FetcherQueue(host, policy, capacity, flowProcess, new FakeCollector());
+
+                for (int j = 0; j < 5; j++) {
                     String file = "/page-" + j + ".html";
 
                     UrlWithScoreTuple urlScore = new UrlWithScoreTuple();
                     urlScore.setUrl("http://www." + host + file);
                     urlScore.SetScore(rand.nextFloat());
-                    FetchItem fetchItem = new FetchItem(urlScore, new FakeCollector());
+                    FetchItem fetchItem = new FetchItem(urlScore);
 
                     queue.offer(fetchItem);
                 }
@@ -81,6 +90,8 @@ public class RunFakeFetcher {
             }
 
             t.interrupt();
+            
+            flowProcess.dumpCounters();
         } catch (Throwable t) {
             System.err.println("Exception: " + t.getMessage());
             t.printStackTrace(System.err);
@@ -92,7 +103,9 @@ public class RunFakeFetcher {
 
         @Override
         protected void collect(Tuple tuple) {
-            System.out.println(tuple.toString());
+            // TODO KKr - reenable this when we have a better toString for the tuple, where it limits the
+            // amount of data and avoids printing control characters.
+            // System.out.println(tuple.toString());
         }
 
     }

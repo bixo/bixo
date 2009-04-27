@@ -24,22 +24,30 @@ package bixo.fetcher;
 
 import java.util.LinkedList;
 
+import cascading.tuple.TupleEntryCollector;
+
+import bixo.cascading.BixoFlowProcess;
 import bixo.fetcher.beans.FetchItem;
 
 @SuppressWarnings("serial")
 public class FetchList extends LinkedList<FetchItem> {
     private FetcherQueue _fromQueue;
+    private BixoFlowProcess _process;
+    private TupleEntryCollector _collector;
     
-    public FetchList(FetcherQueue fromQueue) {
+    public FetchList(FetcherQueue fromQueue, BixoFlowProcess process, TupleEntryCollector collector) {
         super();
-        
         _fromQueue = fromQueue;
+        _process = process;
+        _collector = collector;
     }
-    
-    public FetchList(FetcherQueue fromQueue, FetchItem item) {
+
+    public FetchList(FetcherQueue fromQueue, BixoFlowProcess process, TupleEntryCollector collector, FetchItem item) {
         super();
         
         _fromQueue = fromQueue;
+        _process = process;
+        _collector = collector;
         add(item);
     }
     
@@ -50,4 +58,13 @@ public class FetchList extends LinkedList<FetchItem> {
     public String getDomain() {
         return _fromQueue.getDomain();
     }
+
+    public BixoFlowProcess getProcess() {
+        return _process;
+    }
+
+    public TupleEntryCollector getCollector() {
+        return _collector;
+    }
+    
 }

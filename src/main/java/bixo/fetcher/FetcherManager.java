@@ -28,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
+import bixo.cascading.BixoFlowProcess;
+
 /**
  * Manage the set of threads that one task spawns to fetch pages.
  * 
@@ -35,7 +37,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class FetcherManager implements Runnable {
-    private static Logger LOGGER = Logger.getLogger(FetcherManager.class);
+    private static final Logger LOGGER = Logger.getLogger(FetcherManager.class);
     
     // TODO KKr - figure out how best to get these values, without having
     // to pass around a _conf everywhere.
@@ -45,13 +47,16 @@ public class FetcherManager implements Runnable {
     private IFetchItemProvider _provider;
     private IHttpFetcherFactory _factory;
     private ThreadPoolExecutor _pool;
+    private BixoFlowProcess _process;
     
-    public FetcherManager(IFetchItemProvider provider, IHttpFetcherFactory factory) {
+    public FetcherManager(IFetchItemProvider provider, IHttpFetcherFactory factory, BixoFlowProcess process) {
         _provider = provider;
         _factory = factory;
-        
+        _process = process;
+
         ArrayBlockingQueue<Runnable> queue = new ArrayBlockingQueue<Runnable>(_factory.getMaxThreads() * 2);
-        _pool = new ThreadPoolExecutor(FETCH_THREAD_COUNT_CORE, _factory.getMaxThreads(), FETCH_IDLE_TIMEOUT, TimeUnit.SECONDS, queue);
+        _pool = new ThreadPoolExecutor(Math.min(FETCH_THREAD_COUNT_CORE, _factory.getMaxThreads()),
+                        _factory.getMaxThreads(), FETCH_IDLE_TIMEOUT, TimeUnit.SECONDS, queue);
     }
     
     
@@ -64,27 +69,38 @@ public class FetcherManager implements Runnable {
 	    // URLs as a rate different from our consumption, we could be ahead or behind, so we can't
 	    // just terminate when there's nothing left to be fetched...more could be on the way.
 	    try {
+	        long nextStatusTime = 0;
+	        
 	        while (true) {
 	            FetchList items = null;
 
+	            long curTime = System.currentTimeMillis();
+	            if (curTime >= nextStatusTime) {
+	                nextStatusTime = curTime + (200);
+	                
+	                _process.setStatus(String.format("Fetching %d URLs", _process.getCounter(FetcherCounters.URLS_FETCHING)));
+	            }
+	            
 	            // Don't bother trying to add more things to the queue if that would only throw
 	            // a RejectedExecutionException.
 	            if (_pool.getQueue().remainingCapacity() > 0) {
+	                LOGGER.trace("Pool has capacity, requesting a FetchList from the provider");
 	                items = _provider.poll();
+	            } else {
+	                LOGGER.trace("Pool at capacity");
 	            }
 
 	            // If we decided to check for IURLs, and we got a set to fetch from one domain...
 	            if (items != null) {
-	                if (LOGGER.isTraceEnabled()) {
-	                    LOGGER.trace(String.format("Pulled %d items from the %s domain queue", items.size(), items.getDomain()));
-	                }
-
+                    LOGGER.trace(String.format("Creating a FetcherRunnable for %d items from %s", items.size(), items.getDomain()));
+                    
 	                // Create a Runnable that has a way to fetch the URLs (the IHttpFetcher), and
 	                // the list of things to fetch (the <items>).
 	                FetcherRunnable command = new FetcherRunnable(_factory.newHttpFetcher(), items);
 	                _pool.execute(command);
 	            } else {
-	                Thread.sleep(1000L);
+                    LOGGER.trace("Nothing to fetch, sleeping");
+	                Thread.sleep(100);
 	            }
 	        }
 	    } catch (InterruptedException e) {

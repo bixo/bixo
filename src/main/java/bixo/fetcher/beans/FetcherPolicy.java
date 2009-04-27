@@ -22,26 +22,35 @@
  */
 package bixo.fetcher.beans;
 
-public class FetcherPolicy {
+import java.io.Serializable;
+
+@SuppressWarnings("serial")
+public class FetcherPolicy implements Serializable {
     public static final int NO_CRAWL_DELAY = 0;
+    public static final int NO_MIN_RESPONSE_RATE = 0;
+    
     public static final int DEFAULT_CRAWL_DELAY = 30;
     public static final int DEFAULT_THREADS_PER_HOST = 1;
     public static final int DEFAULT_REQUESTS_PER_CONNECTION = 1;
-
+    public static final int DEFAULT_MIN_RESPONSE_RATE = NO_MIN_RESPONSE_RATE;
+    
     private int _crawlDelay;			// Delay between requests, in seconds.
     private int _threadsPerHost;		// > 1 => ignore crawl delay
     private int _requestsPerConnection;	// > 1 => using keep-alive.
+    private int _minResponseRate;        // lower bounds on bytes-per-second
+    
     // TODO KKr - add RobotExclusion instance here
 
     public FetcherPolicy() {
-        this(DEFAULT_CRAWL_DELAY, DEFAULT_THREADS_PER_HOST, DEFAULT_REQUESTS_PER_CONNECTION);
+        this(DEFAULT_CRAWL_DELAY, DEFAULT_THREADS_PER_HOST, DEFAULT_REQUESTS_PER_CONNECTION, DEFAULT_MIN_RESPONSE_RATE);
     }
 
 
-    public FetcherPolicy(int crawlDelay, int threadsPerHost, int requestsPerConnection) {
+    public FetcherPolicy(int crawlDelay, int threadsPerHost, int requestsPerConnection, int minResponseRate) {
         _crawlDelay = crawlDelay;
         _threadsPerHost = threadsPerHost;
         _requestsPerConnection = requestsPerConnection;
+        _minResponseRate = minResponseRate;
     }
 
 
@@ -77,5 +86,16 @@ public class FetcherPolicy {
     public void setRequestsPerConnect(int requestsPerConnection) {
         _requestsPerConnection = requestsPerConnection;
     }
+
+
+    public int getMinResponseRate() {
+        return _minResponseRate;
+    }
+
+
+    public void setMinResponseRate(int minResponseRate) {
+        _minResponseRate = minResponseRate;
+    }
+    
 
 }

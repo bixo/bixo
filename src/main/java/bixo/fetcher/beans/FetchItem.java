@@ -25,17 +25,15 @@ package bixo.fetcher.beans;
 import bixo.IConstants;
 import bixo.tuple.UrlWithScoreTuple;
 import cascading.tuple.Fields;
-import cascading.tuple.TupleEntryCollector;
 
 public class FetchItem implements Comparable<FetchItem> {
-
+    // TODO SGr - what is this to be used for?
     private static Fields FIELDS = new Fields(IConstants.URL, IConstants.SCORE);
-    private TupleEntryCollector _collector;
+    
     private final UrlWithScoreTuple _urlWithScoreTuple;
 
-    public FetchItem(UrlWithScoreTuple urlWithScoreTuple, TupleEntryCollector outputCollector) {
+    public FetchItem(UrlWithScoreTuple urlWithScoreTuple) {
         _urlWithScoreTuple = urlWithScoreTuple;
-        _collector = outputCollector;
     }
 
     public String getUrl() {
@@ -65,10 +63,6 @@ public class FetchItem implements Comparable<FetchItem> {
     @Override
     public String toString() {
         return getUrl() + "(" + getScore() + ")";
-    }
-
-    public TupleEntryCollector getCollector() {
-        return _collector;
     }
 
 }

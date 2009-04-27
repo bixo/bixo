@@ -27,7 +27,7 @@ import junit.framework.TestCase;
 
 public class FetcherPolicyTest extends TestCase {
 	public final void testNoCrawlDelay() {
-		FetcherPolicy policy = new FetcherPolicy(10, 1, 1);
+		FetcherPolicy policy = new FetcherPolicy(10, 1, 1, 1000);
 		assertEquals(10, policy.getCrawlDelay());
 		
 		policy.setThreadsPerHost(2);
@@ -35,8 +35,9 @@ public class FetcherPolicyTest extends TestCase {
 	}
 	
 	public final void testBean() {
-		FetcherPolicy policy = new FetcherPolicy(10, 1, 2);
+		FetcherPolicy policy = new FetcherPolicy(10, 1, 2, 2000);
 		assertEquals(10, policy.getCrawlDelay());
+		assertEquals(2000, policy.getMinResponseRate());
 		assertEquals(1, policy.getThreadsPerHost());
 		assertEquals(2, policy.getRequestsPerConnection());
 	}

@@ -24,7 +24,7 @@ package bixo.fetcher.beans;
 
 public enum FetchStatusCode {
 
-    NEVER_FETCHED, FETCHED, ERROR;
+    NEVER_FETCHED, FETCHED, ABORTED, ERROR;
 
     public static FetchStatusCode fromOrdinal(int i) {
         if (i < 0 || i >= FetchStatusCode.values().length) {
@@ -32,21 +32,5 @@ public enum FetchStatusCode {
         }
         return FetchStatusCode.values()[i];
     }
-
-    // TODO KKr - define enum type (FetchStatusCode?) and use that here, versus
-    // raw int
-    // private int _code;
-    //
-    // public FetchStatusCode(int code) {
-    // _code = code;
-    // }
-    //
-    // public int getCode() {
-    // return _code;
-    // }
-    //
-    // public void setCode(int code) {
-    // _code = code;
-    // }
 
 }

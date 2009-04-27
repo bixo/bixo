@@ -28,6 +28,9 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import cascading.tuple.TupleEntryCollector;
+
+import bixo.cascading.BixoFlowProcess;
 import bixo.fetcher.beans.FetchItem;
 import bixo.fetcher.beans.FetcherPolicy;
 
@@ -37,19 +40,28 @@ public class FetcherQueue implements IFetchItemProvider {
     private String _domain;
     private List<FetchItem> _queue;
     private FetcherPolicy _policy;
+    private BixoFlowProcess _process;
+    private TupleEntryCollector _collector;
     private int _numActiveFetchers;
     private long _nextFetchTime;
     private int _maxURLs;
     private boolean _sorted;
 
-    public FetcherQueue(String domain, FetcherPolicy policy, int maxURLs) {
+    public FetcherQueue(String domain, FetcherPolicy policy, int maxURLs, BixoFlowProcess process, TupleEntryCollector collector) {
         _domain = domain;
         _policy = policy;
         _maxURLs = maxURLs;
+        _process = process;
+        _collector = collector;
+
         _numActiveFetchers = 0;
         _nextFetchTime = System.currentTimeMillis();
         _sorted = true;
         _queue = new ArrayList<FetchItem>();
+
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format("Setting up queue for %s with next fetch time of %d", _domain, _nextFetchTime));
+        }
     }
 
 
@@ -61,7 +73,6 @@ public class FetcherQueue implements IFetchItemProvider {
      */
     public boolean offer(FetchItem fetchItem) {
         if (_queue.size() < _maxURLs) {
-            trace("adding url to unfilled queue", fetchItem.toString());
             _queue.add(fetchItem);
             _sorted = false;
             return true;
@@ -71,12 +82,10 @@ public class FetcherQueue implements IFetchItemProvider {
         sort();
 
         if (fetchItem.getScore() <= _queue.get(_queue.size() - 1).getScore()) {
-            trace("rejecting url due to low score", fetchItem.toString());
             return false;
         } else {
             // Get rid of last (lowest score) item in queue, then insert
             // new item at the right location.
-            trace("adding url to full queue", fetchItem.toString());
             _queue.remove(_queue.size() - 1);
             
             int index = Collections.binarySearch(_queue, fetchItem);
@@ -105,39 +114,49 @@ public class FetcherQueue implements IFetchItemProvider {
     public synchronized FetchList poll() {
         // Based on our fetch policy, decide if we can return back one ore more URLs to
         // be fetched.
+        FetchList result = null;
+        
         if (_queue.size() == 0) {
-            return null;
+            // Nothing to return
         } else if (_policy.getThreadsPerHost() > 1) {
             // If we're not being polite, then the only limit is the
             // number of threads per host.
             if (_numActiveFetchers < _policy.getThreadsPerHost()) {
                 _numActiveFetchers += 1;
                 // TODO KKr - return up to the limit of our policy.
-                return new FetchList(this, _queue.remove(0));
-            } else {
-                return null;
+                result = new FetchList(this, _process, _collector, _queue.remove(0));
             }
         } else if ((_numActiveFetchers == 0) && (System.currentTimeMillis() >= _nextFetchTime)) {
             // TODO KKr - add support for _requestsPerConnection > 1 (keep-alive), by returning
             // up to that many URLs in a sequence.
             _numActiveFetchers += 1;
             _nextFetchTime = System.currentTimeMillis() + (_policy.getCrawlDelay() * 1000L);
-            return new FetchList(this, _queue.remove(0));
-        } else {
-            return null;
+            result = new FetchList(this, _process, _collector, _queue.remove(0));
+            
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Return list for %s with next fetch time of %d", _domain, _nextFetchTime));
+            }
         }
+        
+        if (result != null) {
+            _process.increment(FetcherCounters.LISTS_FETCHING, 1);
+        }
+        
+        return result;
     } // poll
 
+    
+    public int size() {
+        return _queue.size();
+    }
+    
     
     /**
      * We're done trying to fetch <items>
      * @param items - items previously returned from call to poll()
      */
     public synchronized void release(FetchList items) {
-        if (LOGGER.isTraceEnabled()) {
-            trace("Releasing  fetchlist (" + items.size() + ")", items.get(0).getUrl());
-        }
-        
+        _process.decrement(FetcherCounters.LISTS_FETCHING, 1);
         _numActiveFetchers -= 1;
     }
 
@@ -147,12 +166,6 @@ public class FetcherQueue implements IFetchItemProvider {
         if (!_sorted) {
             _sorted = true;
             Collections.sort(_queue);
-        }
-    }
-    
-    private void trace(String msg, String url) {
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("(%s) %s: %s", _domain, msg, url));
         }
     }
     

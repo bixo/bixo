@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package bixo.content.parser.html;
+package bixo.parser.html;
 
 import java.net.URL;
 import java.net.MalformedURLException;

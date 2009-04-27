@@ -11,6 +11,10 @@ import junit.framework.TestCase;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
+import bixo.parser.IParse;
+import bixo.parser.ParseResult;
+import bixo.parser.html.HtmlParser;
+import bixo.parser.html.Outlink;
 import bixo.tuple.FetchContentTuple;
 
 

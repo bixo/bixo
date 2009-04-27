@@ -2,9 +2,10 @@ package bixo.fetcher.cascading;
 
 import java.util.Iterator;
 
-import org.apache.hadoop.mapred.Reporter;
 import org.apache.log4j.Logger;
 
+import bixo.cascading.BixoFlowProcess;
+import bixo.fetcher.FetcherCounters;
 import bixo.fetcher.FetcherManager;
 import bixo.fetcher.FetcherQueue;
 import bixo.fetcher.FetcherQueueMgr;
@@ -22,12 +23,12 @@ import cascading.tuple.TupleEntry;
 
 @SuppressWarnings({ "serial", "unchecked" })
 public class FetcherBuffer extends BaseOperation implements cascading.operation.Buffer {
-
-    private static Logger LOG = Logger.getLogger(FetcherBuffer.class);
+    private static Logger LOGGER = Logger.getLogger(FetcherBuffer.class);
+    
     private FetcherManager _fetcherMgr;
     private FetcherQueueMgr _queueMgr;
     private Thread _fetcherThread;
-
+    private BixoFlowProcess _flowProcess;
     private IHttpFetcherFactory _fetcherFactory;
 
     public FetcherBuffer(IHttpFetcherFactory factory) {
@@ -35,28 +36,30 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
         _fetcherFactory = factory;
     }
 
-    // private FetchCollector _collector;
-
     @Override
     public void prepare(FlowProcess flowProcess, OperationCall operationCall) {
         super.prepare(flowProcess, operationCall);
+        
+        // FUTURE KKr - use Cascading process vs creating our own, once it supports
+        // logging in local mode, and a setStatus() call.
+        // TODO KKr - check for a serialized external reporter in the process, add
+        // it if it exists.
+        _flowProcess = new BixoFlowProcess((HadoopFlowProcess)flowProcess);
+        
         _queueMgr = new FetcherQueueMgr();
         // TODO KKr- configure max threads in _conf?
 
-        _fetcherMgr = new FetcherManager(_queueMgr, _fetcherFactory);
+        _fetcherMgr = new FetcherManager(_queueMgr, _fetcherFactory, _flowProcess);
 
         _fetcherThread = new Thread(_fetcherMgr);
         _fetcherThread.setName("Fetcher manager");
         _fetcherThread.start();
-
     }
 
     @Override
     public void operate(FlowProcess process, BufferCall buffCall) {
         Iterator<TupleEntry> values = buffCall.getArgumentsIterator();
         TupleEntry group = buffCall.getGroup();
-        // FUTURE KKr - use up-coming Cascading setStatus() call so we don't need reporter.
-        Reporter reporter = ((HadoopFlowProcess) process).getReporter();
         
         try {
             // <key> is the PLD grouper, while each entry from <values> is a
@@ -73,33 +76,38 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
             // can go to different servers. Which means breaking it up here
             // into sorted lists, and creating a queue with the list of items
             // to be fetched (moving list logic elsewhere??)
-            FetcherQueue queue = new FetcherQueue(domain, policy, maxURLs);
+            FetcherQueue queue = new FetcherQueue(domain, policy, maxURLs, _flowProcess, buffCall.getOutputCollector());
 
+            int skipped = 0;
             while (values.hasNext()) {
-                FetchItem item = new FetchItem(new UrlWithScoreTuple(values.next().getTuple()), buffCall.getOutputCollector());
-                queue.offer(item);
+                FetchItem item = new FetchItem(new UrlWithScoreTuple(values.next().getTuple()));
+                if (!queue.offer(item)) {
+                    skipped += 1;
+                }
             }
 
+            _flowProcess.increment(FetcherCounters.URLS_QUEUED, queue.size());
+            _flowProcess.increment(FetcherCounters.URLS_SKIPPED, skipped);
+            
             // We're going to spin here until the queue manager decides that we
             // have available space for this next queue.
             // TODO KKr - have timeout here based on target fetch duration.
             while (!_queueMgr.offer(queue)) {
-                reporter.progress();
+                process.keepAlive();
             }
+            
+            _flowProcess.increment(FetcherCounters.ADDED_DOMAIN_QUEUE, 1);
         } catch (Throwable t) {
-            LOG.error("Exception during reduce", t);
+            LOGGER.error("Exception during reduce", t);
         }
 
     }
 
     @Override
-    public void cleanup(FlowProcess flowProcess, OperationCall operationCall) {
-
-        Reporter reporter = ((HadoopFlowProcess) flowProcess).getReporter();
+    public void cleanup(FlowProcess process, OperationCall operationCall) {
         while (!_fetcherMgr.isDone()) {
-            if (reporter != null) {
-                reporter.progress();
-            }
+            process.keepAlive();
+            
             try {
                 Thread.sleep(1000L);
             } catch (InterruptedException e) {
@@ -107,10 +115,18 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
 
         }
 
+        // TODO KKr - this need to interrupt the fetcher thread feels awkward. I'd rather have
+        // a FetcherManager.create() factory method that returns a FetcherMgr, but also starts
+        // up the thread. Not sure how to terminate the thread in that case, unless I no flip
+        // things around and don't make the FetchManager be runnable, but rather have a run
+        // method that spawns a thread and immediately returns.
         _fetcherThread.interrupt();
         
         // TODO KKr - shut down FetcherManager, so that it can do...
         // httpclient.getConnectionManager().shutdown();
+        
+        // Write out counter info we've collected, in case we're running in local mode.
+        _flowProcess.dumpCounters();
     }
 
 }
