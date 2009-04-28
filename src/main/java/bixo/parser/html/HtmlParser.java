@@ -34,15 +34,17 @@ import org.apache.html.dom.*;
 import org.apache.log4j.Logger;
 
 import bixo.parser.IParse;
+import bixo.parser.IParser;
 import bixo.parser.ParseData;
 import bixo.parser.ParseImpl;
 import bixo.parser.ParseResult;
 import bixo.parser.ParseStatus;
 import bixo.tuple.FetchContentTuple;
+import bixo.tuple.ParseResultTuple;
 import bixo.utils.EncodingDetector;
 import bixo.utils.Metadata;
 
-public class HtmlParser {
+public class HtmlParser implements IParser {
     public static final Logger LOGGER = Logger.getLogger(HtmlParser.class);
 
     // I used 1000 bytes at first, but  found that some documents have 
@@ -230,13 +232,14 @@ public class HtmlParser {
         res.appendChild(frag);
 
         try {
-            while(true) {
+            while (true) {
                 frag = doc.createDocumentFragment();
                 parser.parse(input, frag);
                 if (!frag.hasChildNodes()) break;
-                if (LOGGER.isInfoEnabled()) {
-                    LOGGER.info(" - new frag, " + frag.getChildNodes().getLength() + " nodes.");
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace(" - new frag, " + frag.getChildNodes().getLength() + " nodes.");
                 }
+                
                 res.appendChild(frag);
             }
         } catch (Exception e) {
@@ -244,6 +247,24 @@ public class HtmlParser {
         }
         
         return res;
+    }
+
+    
+    @Override
+    public ParseResultTuple parse(FetchContentTuple contentTuple) {
+        ParseResult result = getParse(contentTuple);
+        
+        IParse p = result.get(contentTuple.getBaseUrl());
+        
+        Outlink[] outlinks = p.getData().getOutlinks();
+        String[] slinks = new String[outlinks.length];
+        
+        int i = 0;
+        for (Outlink outlink : outlinks) {
+            slinks[i++] = outlink.getToUrl();
+        }
+        
+        return new ParseResultTuple(p.getText(), slinks);
     }
 
 }

@@ -8,6 +8,8 @@ import cascading.tuple.TupleEntry;
 public class ParseResultTuple extends BaseTuple {
     public static Fields FIELDS = new Fields(IConstants.TEXT, IConstants.OUT_LINKS);
 
+    // TODO SGr - I think we need this to be Outlink[], so that we get the anchor text
+    // as well as the URL text.
     public ParseResultTuple(String text, String[] outLinks) {
         super(new TupleEntry(FIELDS, Tuple.size(FIELDS.size())));
         setText(text);
