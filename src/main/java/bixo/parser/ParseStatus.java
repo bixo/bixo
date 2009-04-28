@@ -21,7 +21,7 @@
  */
 package bixo.parser;
 
-import bixo.parser.html.Outlink;
+import bixo.tuple.Outlink;
 import bixo.utils.Metadata;
 
 /**

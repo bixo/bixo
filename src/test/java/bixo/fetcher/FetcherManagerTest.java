@@ -5,10 +5,10 @@ import org.junit.Test;
 import org.mortbay.http.HttpServer;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.fetcher.beans.FetchItem;
+import bixo.fetcher.beans.FetchQueueEntry;
 import bixo.fetcher.beans.FetcherPolicy;
 import bixo.fetcher.simulation.SimulationWebServer;
-import bixo.tuple.UrlWithScoreTuple;
+import bixo.tuple.ScoredUrlDatum;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
@@ -67,12 +67,12 @@ public class FetcherManagerTest extends SimulationWebServer {
                 for (int j = 0; j < 2; j++) {
                     String file = "/page-" + j + ".html";
 
-                    UrlWithScoreTuple urlScore = new UrlWithScoreTuple();
+                    ScoredUrlDatum urlScore = new ScoredUrlDatum();
                     urlScore.setUrl("http://localhost:8089" + file);
                     urlScore.SetScore(1.0f - (float)j);
-                    FetchItem fetchItem = new FetchItem(urlScore);
+                    FetchQueueEntry fetchQueueEntry = new FetchQueueEntry(urlScore);
 
-                    queue.offer(fetchItem);
+                    queue.offer(fetchQueueEntry);
                 }
 
                 while (!queueMgr.offer(queue)) {

@@ -24,7 +24,7 @@ package bixo.urldb;
 
 import bixo.IConstants;
 import bixo.fetcher.beans.FetchStatusCode;
-import bixo.tuple.UrlTuple;
+import bixo.tuple.UrlDatum;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
@@ -37,11 +37,11 @@ public class TextUrlParser extends BaseOperation<String> implements Function<Str
     private IUrlFilter[] _urlFilters = new IUrlFilter[0];
 
     public TextUrlParser() {
-        super(UrlTuple.FIELDS);
+        super(UrlDatum.getFields());
     }
 
     public TextUrlParser(IUrlFilter... urlFilters) {
-        super(UrlTuple.FIELDS);
+        super(UrlDatum.getFields());
         if (urlFilters != null) {
             _urlFilters = urlFilters;
         }
@@ -60,6 +60,6 @@ public class TextUrlParser extends BaseOperation<String> implements Function<Str
             }
         }
         // emit link with default values
-        call.getOutputCollector().add(new UrlTuple(url, System.currentTimeMillis(), 0l, FetchStatusCode.NEVER_FETCHED).toTuple());
+        call.getOutputCollector().add(new UrlDatum(url, System.currentTimeMillis(), 0l, FetchStatusCode.NEVER_FETCHED, null).toTuple());
     }
 }

@@ -22,8 +22,7 @@
  */
 package bixo.parser;
 
-import bixo.IConstants;
-import bixo.tuple.ParseResultTuple;
+import bixo.tuple.ParsedDatum;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
@@ -33,8 +32,14 @@ import cascading.tuple.Fields;
 public class ParserPipe extends SubAssembly {
 
     public ParserPipe(Pipe fetcherPipe, IParserFactory factory) {
+        this(fetcherPipe, factory, new Fields());
+    }
+
+    public ParserPipe(Pipe fetcherPipe, IParserFactory factory, Fields metaDataField) {
         Pipe parsePipe = new Pipe("parse_pipe", fetcherPipe);
-        parsePipe = new Each(parsePipe, new ParseFunction(factory), new Fields(IConstants.URL).append(ParseResultTuple.FIELDS));
+
+        Fields parsedFields = ParsedDatum.getFields().append(metaDataField);
+        parsePipe = new Each(parsePipe, new ParseFunction(ParsedDatum.getFields(), metaDataField, factory), parsedFields);
         setTails(parsePipe);
     }
 

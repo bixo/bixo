@@ -22,7 +22,7 @@
  */
 package bixo.fetcher.util;
 
-import bixo.tuple.UrlWithGroupKeyTuple;
+import bixo.tuple.GroupedUrlDatum;
 
 @SuppressWarnings("serial")
 public class LastFetchScoreGenerator implements IScoreGenerator {
@@ -35,7 +35,7 @@ public class LastFetchScoreGenerator implements IScoreGenerator {
     }
 
     @Override
-    public double generateScore(UrlWithGroupKeyTuple urlTuple) {
+    public double generateScore(GroupedUrlDatum urlTuple) {
         long lastFetched = urlTuple.getLastFetched();
         if (lastFetched == 0) {
             return 1d;

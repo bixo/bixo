@@ -34,9 +34,9 @@ import org.apache.commons.io.LineIterator;
 import org.apache.hadoop.mapred.JobConf;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.fetcher.beans.FetchItem;
+import bixo.fetcher.beans.FetchQueueEntry;
 import bixo.fetcher.beans.FetcherPolicy;
-import bixo.tuple.UrlWithScoreTuple;
+import bixo.tuple.ScoredUrlDatum;
 import bixo.utils.DomainNames;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Lfs;
@@ -88,10 +88,10 @@ public class RunTestFetcher {
                 List<String> urls = domainMap.get(pld);
                 System.out.println("Adding " + urls.size() + " URLs for " + pld);
                 for (String url : urls) {
-                    UrlWithScoreTuple urlScore = new UrlWithScoreTuple();
+                    ScoredUrlDatum urlScore = new ScoredUrlDatum();
                     urlScore.setUrl(url);
                     urlScore.SetScore(0.5d);
-                    queue.offer(new FetchItem(urlScore));
+                    queue.offer(new FetchQueueEntry(urlScore));
                 }
 
                 queueMgr.offer(queue);

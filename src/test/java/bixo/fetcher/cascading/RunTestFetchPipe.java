@@ -13,7 +13,8 @@ import bixo.fetcher.IHttpFetcherFactory;
 import bixo.fetcher.beans.FetchStatusCode;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
-import bixo.tuple.UrlTuple;
+import bixo.tuple.BaseDatum;
+import bixo.tuple.UrlDatum;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -38,7 +39,7 @@ public class RunTestFetchPipe {
     private static class CreateUrlFunction extends BaseOperation<String> implements Function<String> {
         
         public CreateUrlFunction() {
-            super(UrlTuple.FIELDS);
+            super(BaseDatum.FIELDS);
         }
         
         @Override
@@ -47,13 +48,13 @@ public class RunTestFetchPipe {
             try {
                 URL url = new URL(urlAsString);
                 
-                UrlTuple urlTuple = new UrlTuple();
-                urlTuple.setUrl(url);
-                urlTuple.setLastFetched(0);
-                urlTuple.setLastUpdated(0);
-                urlTuple.setLastStatus(FetchStatusCode.NEVER_FETCHED);
+                UrlDatum urlDatum = new UrlDatum();
+                urlDatum.setUrl(url);
+                urlDatum.setLastFetched(0);
+                urlDatum.setLastUpdated(0);
+                urlDatum.setLastStatus(FetchStatusCode.NEVER_FETCHED);
                 
-                funcCall.getOutputCollector().add(urlTuple.toTuple());
+                funcCall.getOutputCollector().add(urlDatum.toTuple());
             } catch (MalformedURLException e) {
                 LOGGER.warn("Invalid URL: " + urlAsString);
                 // throw new RuntimeException("Invalid URL: " + urlAsString, e);

@@ -25,6 +25,8 @@ import java.util.HashMap;
 
 import org.w3c.dom.*;
 
+import bixo.tuple.Outlink;
+
 /**
  * A collection of methods for extracting content from DOM trees.
  * 

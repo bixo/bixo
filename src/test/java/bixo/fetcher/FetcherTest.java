@@ -31,7 +31,7 @@ import bixo.IConstants;
 import bixo.fetcher.cascading.FetchPipe;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
-import bixo.tuple.UrlTuple;
+import bixo.tuple.BaseDatum;
 import bixo.urldb.UrlImporter;
 import bixo.utils.TimeStampUtil;
 import cascading.flow.Flow;
@@ -59,7 +59,7 @@ public class FetcherTest {
         }
 
         String inputPath = workingFolder + "/" + IConstants.URL_DB;
-        Lfs in = new Lfs(new SequenceFile(UrlTuple.FIELDS), inputPath, true);
+        Lfs in = new Lfs(new SequenceFile(BaseDatum.FIELDS), inputPath, true);
         String outPath = workingFolder + "/" + IConstants.FETCH + TimeStampUtil.nowWithUnderLine();
         Lfs out = new Lfs(new SequenceFile(Fields.ALL), outPath, true);
 

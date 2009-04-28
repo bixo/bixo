@@ -27,29 +27,29 @@ import java.util.Random;
 
 import junit.framework.TestCase;
 import bixo.cascading.BixoFlowProcess;
-import bixo.fetcher.beans.FetchItem;
+import bixo.fetcher.beans.FetchQueueEntry;
 import bixo.fetcher.beans.FetcherPolicy;
-import bixo.tuple.UrlWithScoreTuple;
+import bixo.tuple.ScoredUrlDatum;
 
 public class FetcherQueueTest extends TestCase {
     public final void testMaxURLs() throws MalformedURLException {
         FetcherPolicy policy = new FetcherPolicy(30, 1, 1, FetcherPolicy.NO_MIN_RESPONSE_RATE);
         FetcherQueue queue = new FetcherQueue("domain.com", policy, 1, new BixoFlowProcess(), null);
 
-        UrlWithScoreTuple urlScore1 = new UrlWithScoreTuple();
+        ScoredUrlDatum urlScore1 = new ScoredUrlDatum();
         urlScore1.setUrl("http://domain.com/page1");
         urlScore1.SetScore(0.0d);
-        FetchItem fetchItem1 = new FetchItem(urlScore1);
+        FetchQueueEntry fetchItem1 = new FetchQueueEntry(urlScore1);
 
-        UrlWithScoreTuple urlScore2 = new UrlWithScoreTuple();
+        ScoredUrlDatum urlScore2 = new ScoredUrlDatum();
         urlScore2.setUrl("http://domain.com/page2");
         urlScore2.SetScore(1.0d);
-        FetchItem fetchItem2 = new FetchItem(urlScore2);
+        FetchQueueEntry fetchItem2 = new FetchQueueEntry(urlScore2);
 
-        UrlWithScoreTuple urlScore3 = new UrlWithScoreTuple();
+        ScoredUrlDatum urlScore3 = new ScoredUrlDatum();
         urlScore3.setUrl("http://domain.com/page3");
         urlScore3.SetScore(0.5d);
-        FetchItem fetchItem3 = new FetchItem(urlScore3);
+        FetchQueueEntry fetchItem3 = new FetchQueueEntry(urlScore3);
 
         queue.offer(fetchItem1);
         String bestUrl = "http://domain.com/page2";
@@ -72,12 +72,12 @@ public class FetcherQueueTest extends TestCase {
         Random rand = new Random(1L);
 
         for (int i = 0; i < 1000; i++) {
-            UrlWithScoreTuple urlScore = new UrlWithScoreTuple();
+            ScoredUrlDatum urlScore = new ScoredUrlDatum();
             urlScore.setUrl("http://domain.com/page" + rand.nextInt());
             urlScore.SetScore(rand.nextFloat());
-            FetchItem fetchItem = new FetchItem(urlScore);
+            FetchQueueEntry fetchQueueEntry = new FetchQueueEntry(urlScore);
 
-            queue.offer(fetchItem);
+            queue.offer(fetchQueueEntry);
         }
 
         double curScore = 2.0;
@@ -88,7 +88,7 @@ public class FetcherQueueTest extends TestCase {
             totalItems += items.size();
 
             assertTrue(items.get(0).getScore() <= curScore);
-            for (FetchItem item : items) {
+            for (FetchQueueEntry item : items) {
                 assertTrue(item.getScore() <= curScore);
                 curScore = item.getScore();
             }
@@ -106,15 +106,15 @@ public class FetcherQueueTest extends TestCase {
         policy.setRequestsPerConnect(1);
         FetcherQueue queue = new FetcherQueue("domain.com", policy, 100, new BixoFlowProcess(), null);
 
-        UrlWithScoreTuple urlScore1 = new UrlWithScoreTuple();
+        ScoredUrlDatum urlScore1 = new ScoredUrlDatum();
         urlScore1.setUrl("http://domain.com/page1");
         urlScore1.SetScore(0.5d);
-        FetchItem fetchItem1 = new FetchItem(urlScore1);
+        FetchQueueEntry fetchItem1 = new FetchQueueEntry(urlScore1);
 
-        UrlWithScoreTuple urlScore2 = new UrlWithScoreTuple();
+        ScoredUrlDatum urlScore2 = new ScoredUrlDatum();
         urlScore2.setUrl("http://domain.com/page2");
         urlScore2.SetScore(0.0d);
-        FetchItem fetchItem2 = new FetchItem(urlScore2);
+        FetchQueueEntry fetchItem2 = new FetchQueueEntry(urlScore2);
 
         queue.offer(fetchItem1);
         queue.offer(fetchItem2);
@@ -134,20 +134,20 @@ public class FetcherQueueTest extends TestCase {
         
         FetcherQueue queue = new FetcherQueue("domain.com", policy, 100, new BixoFlowProcess(), null);
 
-        UrlWithScoreTuple urlScore1 = new UrlWithScoreTuple();
+        ScoredUrlDatum urlScore1 = new ScoredUrlDatum();
         urlScore1.setUrl("http://domain.com/page1");
         urlScore1.SetScore(1.0d);
-        FetchItem fetchItem1 = new FetchItem(urlScore1);
+        FetchQueueEntry fetchItem1 = new FetchQueueEntry(urlScore1);
 
-        UrlWithScoreTuple urlScore2 = new UrlWithScoreTuple();
+        ScoredUrlDatum urlScore2 = new ScoredUrlDatum();
         urlScore2.setUrl("http://domain.com/page2");
         urlScore2.SetScore(0.5d);
-        FetchItem fetchItem2 = new FetchItem(urlScore2);
+        FetchQueueEntry fetchItem2 = new FetchQueueEntry(urlScore2);
 
-        UrlWithScoreTuple urlScore3 = new UrlWithScoreTuple();
+        ScoredUrlDatum urlScore3 = new ScoredUrlDatum();
         urlScore3.setUrl("http://domain.com/page3");
         urlScore3.SetScore(0.2d);
-        FetchItem fetchItem3 = new FetchItem(urlScore3);
+        FetchQueueEntry fetchItem3 = new FetchQueueEntry(urlScore3);
 
         assertTrue(queue.offer(fetchItem1));
         assertTrue(queue.offer(fetchItem2));

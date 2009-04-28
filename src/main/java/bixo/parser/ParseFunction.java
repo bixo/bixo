@@ -1,29 +1,31 @@
 package bixo.parser;
 
-import bixo.tuple.FetchContentTuple;
-import bixo.tuple.ParseResultTuple;
+import bixo.tuple.FetchedDatum;
+import bixo.tuple.ParsedDatum;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
-import cascading.tuple.Tuple;
+import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
-public class ParseFunction extends BaseOperation<ParseResultTuple> implements Function<ParseResultTuple> {
+public class ParseFunction extends BaseOperation<ParsedDatum> implements Function<ParsedDatum> {
 
     private IParserFactory _factory;
+    private Fields _metaDataFields;
 
-    public ParseFunction(IParserFactory factory) {
-        super(ParseResultTuple.FIELDS);
+    public ParseFunction(Fields parsedFields, Fields metaDataFields, IParserFactory factory) {
+        super(parsedFields.append(metaDataFields));
+        _metaDataFields = metaDataFields;
         _factory = factory;
     }
 
-    public void operate(FlowProcess flowProcess, FunctionCall<ParseResultTuple> functionCall) {
+    public void operate(FlowProcess flowProcess, FunctionCall<ParsedDatum> functionCall) {
         IParser parser = _factory.newParser();
         TupleEntry arguments = functionCall.getArguments();
-        FetchContentTuple contentTuple = new FetchContentTuple((Tuple)arguments.getTuple().get(2));
-        ParseResultTuple parseResult = parser.parse(contentTuple);
+        FetchedDatum fetchedDatum = FetchedDatum.fromTuple(arguments.getTuple(), _metaDataFields);
+        ParsedDatum parseResult = parser.parse(fetchedDatum);
         functionCall.getOutputCollector().add(parseResult.toTuple());
     }
 }

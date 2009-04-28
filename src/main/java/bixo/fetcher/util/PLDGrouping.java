@@ -26,16 +26,16 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import bixo.tuple.UrlTuple;
+import bixo.tuple.UrlDatum;
 import bixo.utils.DomainNames;
 
 @SuppressWarnings("serial")
 public class PLDGrouping implements IGroupingKeyGenerator {
 
     @Override
-    public String getGroupingKey(UrlTuple urlTuple) throws IOException {
+    public String getGroupingKey(UrlDatum urlDatum) throws IOException {
         try {
-            return DomainNames.getPLD(new URL(urlTuple.getUrl()));
+            return DomainNames.getPLD(new URL(urlDatum.getUrl()));
         } catch (MalformedURLException e) {
             throw new IOException("Unable to parse url string into URL object.", e);
         }

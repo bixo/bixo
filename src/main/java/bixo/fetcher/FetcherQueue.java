@@ -31,14 +31,14 @@ import org.apache.log4j.Logger;
 import cascading.tuple.TupleEntryCollector;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.fetcher.beans.FetchItem;
 import bixo.fetcher.beans.FetcherPolicy;
+import bixo.tuple.ScoredUrlDatum;
 
 public class FetcherQueue implements IFetchItemProvider {
     private static Logger LOGGER = Logger.getLogger(FetcherQueue.class);
     
     private String _domain;
-    private List<FetchItem> _queue;
+    private List<ScoredUrlDatum> _queue;
     private FetcherPolicy _policy;
     private BixoFlowProcess _process;
     private TupleEntryCollector _collector;
@@ -57,7 +57,7 @@ public class FetcherQueue implements IFetchItemProvider {
         _numActiveFetchers = 0;
         _nextFetchTime = System.currentTimeMillis();
         _sorted = true;
-        _queue = new ArrayList<FetchItem>();
+        _queue = new ArrayList<bixo.tuple.ScoredUrlDatum>();
 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("Setting up queue for %s with next fetch time of %d", _domain, _nextFetchTime));
@@ -68,15 +68,15 @@ public class FetcherQueue implements IFetchItemProvider {
     /**
      * Using queue terminology, offer up <fetchItem> as something to be queued.
      * 
-     * @param fetchItem - item that we'd like to have fetched. Must be valid format.
+     * @param ScoredUrlDatum - item that we'd like to have fetched. Must be valid format.
      * @return - true if we queued the URL
      */
-    public boolean offer(FetchItem fetchItem) {
+    public boolean offer(ScoredUrlDatum ScoredUrlDatum) {
         // TODO KKr - add lock that prevents anyone from adding new items after we've
         // started polling.
         
         if (_queue.size() < _maxURLs) {
-            _queue.add(fetchItem);
+            _queue.add(ScoredUrlDatum);
             _sorted = false;
             return true;
         }
@@ -84,19 +84,19 @@ public class FetcherQueue implements IFetchItemProvider {
         // Since we have to insert, make sure the list is ordered first.
         sort();
 
-        if (fetchItem.getScore() <= _queue.get(_queue.size() - 1).getScore()) {
+        if (ScoredUrlDatum.getScore() <= _queue.get(_queue.size() - 1).getScore()) {
             return false;
         } else {
             // Get rid of last (lowest score) item in queue, then insert
             // new item at the right location.
             _queue.remove(_queue.size() - 1);
             
-            int index = Collections.binarySearch(_queue, fetchItem);
+            int index = Collections.binarySearch(_queue, ScoredUrlDatum);
             if (index < 0) {
                 index = -(index + 1);
             }
             
-            _queue.add(index, fetchItem);
+            _queue.add(index, ScoredUrlDatum);
             return true;
         }
     }

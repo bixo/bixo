@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 import bixo.fetcher.beans.FetchStatusCode;
 import bixo.fetcher.beans.FetcherPolicy;
 import bixo.tuple.FetchContentTuple;
-import bixo.tuple.FetchResultTuple;
+import bixo.tuple.FetchedDatum;
 
 public class FakeHttpFetcher implements IHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(FakeHttpFetcher.class);
@@ -50,12 +50,12 @@ public class FakeHttpFetcher implements IHttpFetcher {
     }
     
     @Override
-    public FetchResultTuple get(String url) {
+    public FetchedDatum get(String url) {
         return get(url, null);
     }
 
     @Override
-    public FetchResultTuple get(String url, String host) {
+    public FetchedDatum get(String url, String host) {
         try {
             URL theUrl = new URL(url);
             
@@ -92,10 +92,10 @@ public class FakeHttpFetcher implements IHttpFetcher {
             float duration = (float)contentSize/(float)bytesPerSecond;
             LOGGER.trace(String.format("Fake fetching %d bytes at %d bps (%fs) from %s", contentSize, bytesPerSecond, duration, url));
             Thread.sleep((long)(duration * 1000.0));
-            return new FetchResultTuple(status, content);
+            return new FetchedDatum(status, content);
         } catch (Throwable t) {
             LOGGER.error("Exception: " + t.getMessage(), t);
-            return new FetchResultTuple(FetchStatusCode.ERROR, new FetchContentTuple(url, url, System.currentTimeMillis(), null, null, 0));
+            return new FetchedDatum(FetchStatusCode.ERROR, new FetchContentTuple(url, url, System.currentTimeMillis(), null, null, 0));
         }
     }
 

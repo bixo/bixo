@@ -10,7 +10,8 @@ import bixo.fetcher.IHttpFetcherFactory;
 import bixo.fetcher.beans.FetchStatusCode;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
-import bixo.tuple.UrlTuple;
+import bixo.tuple.BaseDatum;
+import bixo.tuple.UrlDatum;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;
@@ -29,11 +30,11 @@ public class FetchPipeTest {
     @Test
     public void testFetchPipe() throws Exception {
 
-        // First create a sequence file with 1000 UrlTuple tuples in it.
-        Lfs in = new Lfs(new SequenceFile(UrlTuple.FIELDS), "build/test-data/FetchPipeTest/in", true);
+        // First create a sequence file with 1000 UrlDatum tuples in it.
+        Lfs in = new Lfs(new SequenceFile(BaseDatum.FIELDS), "build/test-data/FetchPipeTest/in", true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
         for (int i = 0; i < 1000; i++) {
-            UrlTuple url = new UrlTuple();
+            UrlDatum url = new UrlDatum();
             url.setUrl("http://" + i);
             url.setLastFetched(0);
             url.setLastUpdated(0);

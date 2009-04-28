@@ -19,7 +19,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TopDocs;
 import org.junit.Test;
 
-import bixo.tuple.ParseResultTuple;
+import bixo.tuple.ParsedDatum;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;
@@ -56,7 +56,7 @@ public class IndexSchemaTest {
         Lfs lfs = new Lfs(new SequenceFile(new Fields("text", "outlinks")), in, SinkMode.REPLACE);
         TupleEntryCollector write = lfs.openForWrite(new JobConf());
         for (int i = 0; i < 10000; i++) {
-            ParseResultTuple resultTuple = new ParseResultTuple("text" + i, new String[0]);
+            ParsedDatum resultTuple = new ParsedDatum("text" + i, new String[0]);
             write.add(resultTuple.toTuple());
         }
         write.close();

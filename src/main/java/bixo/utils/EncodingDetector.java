@@ -24,7 +24,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import bixo.tuple.FetchContentTuple;
+import bixo.tuple.FetchedDatum;
 
 import com.ibm.icu.text.CharsetDetector;
 import com.ibm.icu.text.CharsetMatch;
@@ -151,10 +151,10 @@ public class EncodingDetector {
         clues = new ArrayList<EncodingClue>();
     }
 
-    public void autoDetectClues(FetchContentTuple content, String contentType, boolean filter) {
-        byte[] data = content.getContent();
+    public void autoDetectClues(FetchedDatum fetchedDatum, String contentType, boolean filter) {
+        byte[] data = fetchedDatum.getContent().getBytes();
 
-        if (minConfidence >= 0 && DETECTABLES.contains(content.getContentType())
+        if (minConfidence >= 0 && DETECTABLES.contains(fetchedDatum.getContentType())
                         && data.length > MIN_LENGTH) {
             CharsetMatch[] matches = null;
 
@@ -205,7 +205,7 @@ public class EncodingDetector {
      *
      * @return Guessed encoding or defaultValue
      */
-    public String guessEncoding(FetchContentTuple content, String defaultValue) {
+    public String guessEncoding(FetchedDatum fetchedDatum, String defaultValue) {
         /*
          * This algorithm could be replaced by something more sophisticated;
          * ideally we would gather a bunch of data on where various clues
@@ -214,7 +214,7 @@ public class EncodingDetector {
          * to generate a better heuristic.
          */
 
-        String base = content.getBaseUrl();
+        String base = fetchedDatum.getBaseUrl();
 
         if (LOGGER.isTraceEnabled()) {
             findDisagreements(base, clues);

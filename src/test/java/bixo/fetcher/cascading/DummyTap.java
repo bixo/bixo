@@ -11,7 +11,7 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 
-import bixo.tuple.UrlTuple;
+import bixo.tuple.BaseDatum;
 import cascading.flow.Flow;
 import cascading.scheme.Scheme;
 import cascading.scheme.SequenceFile;
@@ -84,7 +84,7 @@ public class DummyTap extends Tap {
         if (_inputData == null) {
             _inputData = _outPut;
         }
-        return new TupleEntryIterator(UrlTuple.FIELDS, _inputData.iterator());
+        return new TupleEntryIterator(BaseDatum.FIELDS, _inputData.iterator());
     }
 
     @Override

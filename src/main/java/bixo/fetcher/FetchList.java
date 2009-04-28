@@ -24,13 +24,12 @@ package bixo.fetcher;
 
 import java.util.LinkedList;
 
+import bixo.cascading.BixoFlowProcess;
+import bixo.tuple.ScoredUrlDatum;
 import cascading.tuple.TupleEntryCollector;
 
-import bixo.cascading.BixoFlowProcess;
-import bixo.fetcher.beans.FetchItem;
-
 @SuppressWarnings("serial")
-public class FetchList extends LinkedList<FetchItem> {
+public class FetchList extends LinkedList<ScoredUrlDatum> {
     private FetcherQueue _fromQueue;
     private BixoFlowProcess _process;
     private TupleEntryCollector _collector;
@@ -42,7 +41,7 @@ public class FetchList extends LinkedList<FetchItem> {
         _collector = collector;
     }
 
-    public FetchList(FetcherQueue fromQueue, BixoFlowProcess process, TupleEntryCollector collector, FetchItem item) {
+    public FetchList(FetcherQueue fromQueue, BixoFlowProcess process, TupleEntryCollector collector, ScoredUrlDatum item) {
         super();
         
         _fromQueue = fromQueue;

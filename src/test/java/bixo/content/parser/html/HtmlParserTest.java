@@ -16,9 +16,9 @@ import bixo.parser.IParserFactory;
 import bixo.parser.ParseResult;
 import bixo.parser.html.HtmlParser;
 import bixo.parser.html.HtmlParserFactory;
-import bixo.parser.html.Outlink;
 import bixo.tuple.FetchContentTuple;
-import bixo.tuple.ParseResultTuple;
+import bixo.tuple.Outlink;
+import bixo.tuple.ParsedDatum;
 
 
 public class HtmlParserTest {
@@ -61,7 +61,7 @@ public class HtmlParserTest {
         URL path = HtmlParserTest.class.getResource("/" + "simple-page.html");
         FetchContentTuple content = makeContentTuple(path);
         
-        ParseResultTuple result = parser.parse(content);
+        ParsedDatum result = parser.parse(content);
         File parsedTextFile = new File(HtmlParserTest.class.getResource("/" + "simple-page.txt").getFile());
         Assert.assertEquals(FileUtils.readFileToString(parsedTextFile, "utf-8"), result.getText());
         Assert.assertEquals(10, result.getOulinks().length);

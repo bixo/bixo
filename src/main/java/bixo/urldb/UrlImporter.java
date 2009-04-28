@@ -29,7 +29,7 @@ import org.apache.hadoop.fs.Path;
 
 import bixo.HadoopConfigured;
 import bixo.IConstants;
-import bixo.tuple.UrlTuple;
+import bixo.tuple.UrlDatum;
 import bixo.utils.TimeStampUtil;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -58,21 +58,21 @@ public class UrlImporter extends HadoopConfigured {
         // if db exists we want to merge dbs
 
         Path newDb = new Path(workingFolder, IConstants.URL_DB + "-new-" + TimeStampUtil.nowWithUnderLine());
-        Tap importSink = new Hfs(new SequenceFile(UrlTuple.FIELDS), newDb.toUri().toASCIIString(), true);
+        Tap importSink = new Hfs(new SequenceFile(UrlDatum.getFields()), newDb.toUri().toASCIIString(), true);
         // create tmp db
         importUrls(inputPath, importSink);
 
         if (dbexists) {
             // merge both together
 
-            Tap oldDbTap = new Hfs(new SequenceFile(UrlTuple.FIELDS), workingFolder + "/" + IConstants.URL_DB);
+            Tap oldDbTap = new Hfs(new SequenceFile(UrlDatum.getFields()), workingFolder + "/" + IConstants.URL_DB);
 
-            Tap newDbTap = new Hfs(new SequenceFile(UrlTuple.FIELDS), newDb.toUri().toASCIIString());
+            Tap newDbTap = new Hfs(new SequenceFile(UrlDatum.getFields()), newDb.toUri().toASCIIString());
 
             MultiTap source = new MultiTap(oldDbTap, newDbTap);
 
             Path mergeDb = new Path(workingFolder, IConstants.URL_DB + "-merged-" + TimeStampUtil.nowWithUnderLine());
-            Tap mergeSink = new Hfs(new SequenceFile(UrlTuple.FIELDS), mergeDb.toUri().toASCIIString(), true);
+            Tap mergeSink = new Hfs(new SequenceFile(UrlDatum.getFields()), mergeDb.toUri().toASCIIString(), true);
 
             Pipe pipe = new Pipe("urldb-merge");
             // we want the url with the latest update.
@@ -110,7 +110,7 @@ public class UrlImporter extends HadoopConfigured {
 
         Pipe assembly = new Pipe("url-import");
 
-        TextUrlParser function = new TextUrlParser((IUrlFilter[])null);
+        TextUrlParser function = new TextUrlParser((IUrlFilter[]) null);
         assembly = new Each(assembly, new Fields("line"), function);
 
         assembly = new GroupBy(assembly, IConstants.URL_TUPLE_KEY);

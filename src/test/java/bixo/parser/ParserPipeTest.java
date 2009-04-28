@@ -14,10 +14,10 @@ import org.junit.Test;
 import bixo.IConstants;
 import bixo.fetcher.beans.FetchStatusCode;
 import bixo.parser.html.HtmlParser;
-import bixo.parser.html.Outlink;
 import bixo.tuple.FetchContentTuple;
-import bixo.tuple.FetchResultTuple;
-import bixo.tuple.ParseResultTuple;
+import bixo.tuple.FetchedDatum;
+import bixo.tuple.Outlink;
+import bixo.tuple.ParsedDatum;
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -35,8 +35,8 @@ public class ParserPipeTest extends CascadingTestCase {
 
         Pipe pipe = new Pipe("parse_source");
         ParserPipe parserPipe = new ParserPipe(pipe, new DefaultParserFactory());
-        Lfs in = new Lfs(new SequenceFile(new Fields(IConstants.URL).append(FetchResultTuple.FIELDS)), "build/test-data/ParserPipeTest/in", true);
-        Lfs out = new Lfs(new SequenceFile(ParseResultTuple.FIELDS), "build/test-data/ParserPipeTest/out", true);
+        Lfs in = new Lfs(new SequenceFile(new Fields(IConstants.URL).append(FetchResultDatum.FetchedDatum)), "build/test-data/ParserPipeTest/in", true);
+        Lfs out = new Lfs(new SequenceFile(ParsedDatum.FIELDS), "build/test-data/ParserPipeTest/out", true);
 
         TupleEntryCollector write = in.openForWrite(new JobConf());
 
@@ -96,7 +96,7 @@ public class ParserPipeTest extends CascadingTestCase {
             return new IParser() {
                 
                 @Override
-                public ParseResultTuple parse(FetchContentTuple contentTuple) {
+                public ParsedDatum parse(FetchContentTuple contentTuple) {
                     IParse parse = _parser.getParse(contentTuple).get(contentTuple.getBaseUrl());
                     
                     Outlink[] outlinks = parse.getData().getOutlinks();
@@ -107,7 +107,7 @@ public class ParserPipeTest extends CascadingTestCase {
                         stringLinks[i++] = outlink.getToUrl();
                     }
                     
-                    return new ParseResultTuple(parse.getText(), stringLinks);
+                    return new ParsedDatum(parse.getText(), stringLinks);
                 }
                 
             };
@@ -124,8 +124,8 @@ public class ParserPipeTest extends CascadingTestCase {
             return new IParser() {
 
                 @Override
-                public ParseResultTuple parse(FetchContentTuple contentTuple) {
-                    return new ParseResultTuple("someText", new String[0]);
+                public ParsedDatum parse(FetchContentTuple contentTuple) {
+                    return new ParsedDatum("someText", new String[0]);
                 }
 
             };

@@ -14,7 +14,7 @@ import org.mortbay.http.handler.AbstractHttpHandler;
 import bixo.fetcher.beans.FetchStatusCode;
 import bixo.fetcher.beans.FetcherPolicy;
 import bixo.fetcher.simulation.SimulationWebServer;
-import bixo.tuple.FetchResultTuple;
+import bixo.tuple.FetchedDatum;
 
 
 public class HttpClientFetcherTest extends SimulationWebServer {
@@ -33,7 +33,7 @@ public class HttpClientFetcherTest extends SimulationWebServer {
         HttpClientFactory factory = new HttpClientFactory(1, policy);
         IHttpFetcher fetcher = factory.newHttpFetcher();
         
-        FetchResultTuple result = fetcher.get("http://localhost:8089/test.html");
+        FetchedDatum result = fetcher.get("http://localhost:8089/test.html");
         server.stop();
 
         // Since our SlowResponseHandler is returning 10000 bytes in 1 second, we should
@@ -54,7 +54,7 @@ public class HttpClientFetcherTest extends SimulationWebServer {
         HttpClientFactory factory = new HttpClientFactory(1, policy);
         IHttpFetcher fetcher = factory.newHttpFetcher();
         
-        FetchResultTuple result = fetcher.get("http://localhost:8089/test.html");
+        FetchedDatum result = fetcher.get("http://localhost:8089/test.html");
         server.stop();
 
         FetchStatusCode statusCode = result.getStatusCode();

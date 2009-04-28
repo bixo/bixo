@@ -22,9 +22,9 @@
  */
 package bixo.fetcher;
 
-import bixo.tuple.FetchResultTuple;
+import bixo.tuple.FetchedDatum;
+import bixo.tuple.ScoredUrlDatum;
 
 public interface IHttpFetcher {
-    public FetchResultTuple get(String url);
-    public FetchResultTuple get(String url, String host);
+    public FetchedDatum get(ScoredUrlDatum scoredUrl);
 }
