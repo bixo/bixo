@@ -127,6 +127,45 @@ public class FetcherQueueTest extends TestCase {
         assertNotNull(queue.poll());
     }
 
+    public final void testMultipleRequestsPerConnection() throws InterruptedException {
+        FetcherPolicy policy = new FetcherPolicy();
+        policy.setCrawlDelay(1);
+        policy.setRequestsPerConnect(2);
+        
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, 100, new BixoFlowProcess(), null);
+
+        UrlWithScoreTuple urlScore1 = new UrlWithScoreTuple();
+        urlScore1.setUrl("http://domain.com/page1");
+        urlScore1.SetScore(1.0d);
+        FetchItem fetchItem1 = new FetchItem(urlScore1);
+
+        UrlWithScoreTuple urlScore2 = new UrlWithScoreTuple();
+        urlScore2.setUrl("http://domain.com/page2");
+        urlScore2.SetScore(0.5d);
+        FetchItem fetchItem2 = new FetchItem(urlScore2);
+
+        UrlWithScoreTuple urlScore3 = new UrlWithScoreTuple();
+        urlScore3.setUrl("http://domain.com/page3");
+        urlScore3.SetScore(0.2d);
+        FetchItem fetchItem3 = new FetchItem(urlScore3);
+
+        assertTrue(queue.offer(fetchItem1));
+        assertTrue(queue.offer(fetchItem2));
+        assertTrue(queue.offer(fetchItem3));
+
+        FetchList items = queue.poll();
+        assertNotNull(items);
+        assertEquals(2, items.size());
+        queue.release(items);
+        
+        assertNull(queue.poll());
+        Thread.sleep(2 * policy.getCrawlDelay() * 1000L);
+        
+        items = queue.poll();
+        assertNotNull(items);
+        assertEquals(1, items.size());
+    }
+    
     // TODO KKr - add test for multiple threads hitting the queue at the same
     // time.
 }

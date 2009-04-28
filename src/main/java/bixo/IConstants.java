@@ -54,6 +54,8 @@ public interface IConstants {
 
     String FETCH_TIME = "fetchTime";
 
+    String FETCH_RATE = "fetchRate";
+    
     String CONTENT_TYPE = "contentType";
 
     String STATUS = "status";

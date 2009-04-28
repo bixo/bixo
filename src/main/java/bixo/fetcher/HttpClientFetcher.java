@@ -110,6 +110,7 @@ public class HttpClientFetcher implements IHttpFetcher {
             // FUTURE KKr - use content-type to exclude/include data, as that's a more accurate
             // way to skip unwanted content versus relying on suffix. 
             byte[] content = null;
+            long readRate = 0;
             HttpEntity entity = response.getEntity();
             
             if (entity != null) {
@@ -133,7 +134,7 @@ public class HttpClientFetcher implements IHttpFetcher {
                         
                         // Assume read time is at least one microsecond, to avoid DBZ exception.
                         long totalReadTime = Math.max(1, System.currentTimeMillis() - readStartTime);
-                        long readRate = (totalRead * 1000L) / totalReadTime;
+                        readRate = (totalRead * 1000L) / totalReadTime;
                         
                         // Don't bail on the first read cycle, as we can get a hiccup starting out.
                         // Also don't bail if we've read everything we need.
@@ -161,7 +162,7 @@ public class HttpClientFetcher implements IHttpFetcher {
             
             // Note that getContentType can return null
             String contentType = entity.getContentType().getValue();
-            FetchContentTuple contentTuple = new FetchContentTuple(url, url, System.currentTimeMillis(), content, contentType);
+            FetchContentTuple contentTuple = new FetchContentTuple(url, url, System.currentTimeMillis(), content, contentType, (int)readRate);
             
             // TODO KKr - handle redirects, real content type, what about charset? Do we need to capture HTTP headers?
             // TODO SG used the new enum here.Use different status than fetch if you need to.
@@ -172,7 +173,7 @@ public class HttpClientFetcher implements IHttpFetcher {
             LOGGER.debug("Exception while fetching url " + url, t);
             // TODO KKr - use real status for exception, include exception msg somehow.
             // TODO SG should we use FetchStatusCode.ERROR or NEVER_FTEHCED?
-            return new FetchResultTuple(FetchStatusCode.ERROR, new FetchContentTuple(url, url, System.currentTimeMillis(), null, null));
+            return new FetchResultTuple(FetchStatusCode.ERROR, new FetchContentTuple(url, url, System.currentTimeMillis(), null, null, 0));
         }
     }
 

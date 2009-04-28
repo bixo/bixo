@@ -11,5 +11,9 @@ public enum FetcherCounters {
     URLS_FETCHING,
     URLS_FETCHED,
     URLS_ABORTED,
-    URLS_FAILED
+    URLS_FAILED,
+    
+    FETCHED_BYTES,          // Total bytes of fetched content.
+    FETCHED_TIME            // Total time in milliseconds spent fetching
+    
 }

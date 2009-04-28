@@ -72,6 +72,9 @@ public class FetcherQueue implements IFetchItemProvider {
      * @return - true if we queued the URL
      */
     public boolean offer(FetchItem fetchItem) {
+        // TODO KKr - add lock that prevents anyone from adding new items after we've
+        // started polling.
+        
         if (_queue.size() < _maxURLs) {
             _queue.add(fetchItem);
             _sorted = false;
@@ -127,11 +130,15 @@ public class FetcherQueue implements IFetchItemProvider {
                 result = new FetchList(this, _process, _collector, _queue.remove(0));
             }
         } else if ((_numActiveFetchers == 0) && (System.currentTimeMillis() >= _nextFetchTime)) {
-            // TODO KKr - add support for _requestsPerConnection > 1 (keep-alive), by returning
-            // up to that many URLs in a sequence.
             _numActiveFetchers += 1;
-            _nextFetchTime = System.currentTimeMillis() + (_policy.getCrawlDelay() * 1000L);
-            result = new FetchList(this, _process, _collector, _queue.remove(0));
+            
+            int numURLs = Math.min(_queue.size(), _policy.getRequestsPerConnection());
+            result = new FetchList(this, _process, _collector);
+            for (int i = 0; i < numURLs; i++) {
+                result.add(_queue.remove(0));
+            }
+            
+            _nextFetchTime = System.currentTimeMillis() + (numURLs * _policy.getCrawlDelay() * 1000L);
             
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("Return list for %s with next fetch time of %d", _domain, _nextFetchTime));

@@ -31,11 +31,21 @@ public class FetchItem implements Comparable<FetchItem> {
     private static Fields FIELDS = new Fields(IConstants.URL, IConstants.SCORE);
     
     private final UrlWithScoreTuple _urlWithScoreTuple;
-
+    private final String _host;
+    
     public FetchItem(UrlWithScoreTuple urlWithScoreTuple) {
-        _urlWithScoreTuple = urlWithScoreTuple;
+        this(urlWithScoreTuple, null);
     }
 
+    public FetchItem(UrlWithScoreTuple urlWithScoreTuple, String host) {
+        _urlWithScoreTuple = urlWithScoreTuple;
+        _host = host;
+    }
+
+    public String getHost() {
+        return _host;
+    }
+    
     public String getUrl() {
         return _urlWithScoreTuple.getUrl();
     }

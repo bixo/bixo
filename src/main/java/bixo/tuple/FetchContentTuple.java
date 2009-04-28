@@ -31,15 +31,16 @@ import cascading.tuple.TupleEntry;
 
 public class FetchContentTuple extends BaseTuple {
 
-    private static Fields FIELDS = new Fields(IConstants.BASE_URL, IConstants.FETECHED_URL, IConstants.FETCH_TIME, IConstants.CONTENT, IConstants.CONTENT_TYPE);
+    private static Fields FIELDS = new Fields(IConstants.BASE_URL, IConstants.FETECHED_URL, IConstants.FETCH_TIME, IConstants.CONTENT, IConstants.CONTENT_TYPE, IConstants.FETCH_RATE);
 
-    public FetchContentTuple(String baseUrl, String fetchedUrl, long fetchTime, byte[] content, String contentType) {
+    public FetchContentTuple(String baseUrl, String fetchedUrl, long fetchTime, byte[] content, String contentType, int fetchRate) {
         super(new TupleEntry(FIELDS, Tuple.size(FIELDS.size())));
         setBaseUrl(baseUrl);
         setFetchedUrl(fetchedUrl);
         setFetchTime(fetchTime);
         setContent(content);
         setContentType(contentType);
+        setFetchRate(fetchRate);
     }
 
     public FetchContentTuple(Tuple tuple) {
@@ -90,4 +91,11 @@ public class FetchContentTuple extends BaseTuple {
         getTupleEntry().set(IConstants.CONTENT_TYPE, contentType);
     }
 
+    public int getFetchRate() {
+        return getTupleEntry().getInteger(IConstants.FETCH_RATE);
+    }
+
+    public void setFetchRate(int fetchRate) {
+        getTupleEntry().set(IConstants.FETCH_RATE, fetchRate);
+    }
 }

@@ -51,12 +51,16 @@ public class FetcherRunnable implements Runnable {
             try {
                 fetching = true;
                 process.increment(FetcherCounters.URLS_FETCHING, 1);
-                FetchResultTuple result = _httpFetcher.get(item.getUrl());
+                long startTime = System.currentTimeMillis();
+                FetchResultTuple result = _httpFetcher.get(item.getUrl(), item.getHost());
+                long deltaTime = System.currentTimeMillis() - startTime;
                 process.decrement(FetcherCounters.URLS_FETCHING, 1);
+                process.increment(FetcherCounters.FETCHED_TIME, (int)deltaTime);
                 fetching = false;
                 
                 if (result.getStatusCode() == FetchStatusCode.FETCHED) {
                     process.increment(FetcherCounters.URLS_FETCHED, 1);
+                    process.increment(FetcherCounters.FETCHED_BYTES, result.getContent().getContent().length);
                     process.setStatus(Level.TRACE, "Fetched " + result);
                 } else {
                     process.increment(FetcherCounters.URLS_FAILED, 1);

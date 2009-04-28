@@ -86,7 +86,7 @@ public class FakeHttpFetcher implements IHttpFetcher {
             }
             
             FetchStatusCode status = statusCode == 200 ? FetchStatusCode.FETCHED : FetchStatusCode.ERROR;
-            FetchContentTuple content = new FetchContentTuple(url, url, System.currentTimeMillis(), new byte[contentSize], "text/html");
+            FetchContentTuple content = new FetchContentTuple(url, url, System.currentTimeMillis(), new byte[contentSize], "text/html", bytesPerSecond);
             
             // Now we want to delay for as long as it would take to fill in the data.
             float duration = (float)contentSize/(float)bytesPerSecond;
@@ -95,7 +95,7 @@ public class FakeHttpFetcher implements IHttpFetcher {
             return new FetchResultTuple(status, content);
         } catch (Throwable t) {
             LOGGER.error("Exception: " + t.getMessage(), t);
-            return new FetchResultTuple(FetchStatusCode.ERROR, new FetchContentTuple(url, url, System.currentTimeMillis(), null, null));
+            return new FetchResultTuple(FetchStatusCode.ERROR, new FetchContentTuple(url, url, System.currentTimeMillis(), null, null, 0));
         }
     }
 

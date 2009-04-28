@@ -23,6 +23,8 @@
 package bixo.fetcher;
 
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -54,7 +56,7 @@ public class FetcherManager implements Runnable {
         _factory = factory;
         _process = process;
 
-        ArrayBlockingQueue<Runnable> queue = new ArrayBlockingQueue<Runnable>(_factory.getMaxThreads() * 2);
+        SynchronousQueue<Runnable> queue = new SynchronousQueue<Runnable>(true);
         _pool = new ThreadPoolExecutor(Math.min(FETCH_THREAD_COUNT_CORE, _factory.getMaxThreads()),
                         _factory.getMaxThreads(), FETCH_IDLE_TIMEOUT, TimeUnit.SECONDS, queue);
     }
@@ -70,34 +72,36 @@ public class FetcherManager implements Runnable {
 	    // just terminate when there's nothing left to be fetched...more could be on the way.
 	    try {
 	        long nextStatusTime = 0;
+	        FetcherRunnable nextRunnable = null;
 	        
 	        while (true) {
-	            FetchList items = null;
-
+	            // See if we should update our status
 	            long curTime = System.currentTimeMillis();
 	            if (curTime >= nextStatusTime) {
 	                nextStatusTime = curTime + (200);
 	                
-	                _process.setStatus(String.format("Fetching %d URLs", _process.getCounter(FetcherCounters.URLS_FETCHING)));
+	                _process.setStatus(String.format("Fetching %d URLs from %d domains",
+	                                _process.getCounter(FetcherCounters.URLS_FETCHING),
+	                                _process.getCounter(FetcherCounters.LISTS_FETCHING)));
 	            }
 	            
-	            // Don't bother trying to add more things to the queue if that would only throw
-	            // a RejectedExecutionException.
-	            if (_pool.getQueue().remainingCapacity() > 0) {
-	                LOGGER.trace("Pool has capacity, requesting a FetchList from the provider");
-	                items = _provider.poll();
-	            } else {
-	                LOGGER.trace("Pool at capacity");
+	            // See if we should set up the next thing to fetch
+	            if (nextRunnable == null) {
+	                FetchList items = _provider.poll();
+	                if (items != null) {
+	                    LOGGER.trace(String.format("Creating a FetcherRunnable for %d items from %s", items.size(), items.getDomain()));
+	                    nextRunnable = new FetcherRunnable(_factory.newHttpFetcher(), items);
+	                }
 	            }
-
-	            // If we decided to check for IURLs, and we got a set to fetch from one domain...
-	            if (items != null) {
-                    LOGGER.trace(String.format("Creating a FetcherRunnable for %d items from %s", items.size(), items.getDomain()));
-                    
-	                // Create a Runnable that has a way to fetch the URLs (the IHttpFetcher), and
-	                // the list of things to fetch (the <items>).
-	                FetcherRunnable command = new FetcherRunnable(_factory.newHttpFetcher(), items);
-	                _pool.execute(command);
+	            
+	            if (nextRunnable != null) {
+	                try {
+	                    _pool.execute(nextRunnable);
+	                    nextRunnable = null;
+	                } catch (RejectedExecutionException e) {
+	                    LOGGER.trace("No spare capacity for fetching, sleeping");
+	                    Thread.sleep(100);
+	                }
 	            } else {
                     LOGGER.trace("Nothing to fetch, sleeping");
 	                Thread.sleep(100);

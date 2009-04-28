@@ -3,6 +3,8 @@ package bixo.cascading;
 import org.junit.Assert;
 import org.junit.Test;
 
+import bixo.fetcher.FetcherCounters;
+
 public class BixoFlowProcessTest {
     
     private enum TestCounter {
@@ -24,6 +26,11 @@ public class BixoFlowProcessTest {
     
     @Test
     public void testHadoopCounter() {
+        
+        Enum counter = FetcherCounters.URLS_FETCHING;
+        String groupName = counter.getDeclaringClass().getName();
+        String counterName = counter.toString();
+        System.out.println(groupName + " / " + counterName);
         // TODO KKr - how to test "real" Hadoop counters? Need to be running in non-local
         // mode, with a real Cascading flow.
     }

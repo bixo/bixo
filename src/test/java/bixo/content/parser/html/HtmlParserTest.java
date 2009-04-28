@@ -29,7 +29,7 @@ public class HtmlParserTest extends TestCase {
         in.readFully(bytes);
         
         FetchContentTuple content = new FetchContentTuple(path.toExternalForm(), path.toExternalForm(),
-                        System.currentTimeMillis(), bytes, "text/html");
+                        System.currentTimeMillis(), bytes, "text/html", 0);
         
         HtmlParser parser = new HtmlParser();
         ParseResult parse = parser.getParse(content);

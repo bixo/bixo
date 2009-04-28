@@ -63,12 +63,13 @@ public class ParserPipeTest extends CascadingTestCase {
                 long totalLength = header.getLength();
                 int contentLength = (int)totalLength - contentOffset;
                 
+                long startTime = System.currentTimeMillis();
                 archiveRecord.skip(contentOffset);
                 byte[] content = new byte[contentLength];
                 archiveRecord.read(content);
-                
+
                 String mimetype = header.getMimetype();
-                FetchContentTuple contentTuple = new FetchContentTuple(url, url, System.currentTimeMillis(), content, mimetype);
+                FetchContentTuple contentTuple = new FetchContentTuple(url, url, System.currentTimeMillis(), content, mimetype, 0);
                 Tuple tuple = Tuple.size(3);
                 tuple.set(0, url);
                 tuple.set(1, FetchStatusCode.FETCHED.ordinal());

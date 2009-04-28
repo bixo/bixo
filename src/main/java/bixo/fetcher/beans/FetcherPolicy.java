@@ -31,7 +31,7 @@ public class FetcherPolicy implements Serializable {
     
     public static final int DEFAULT_CRAWL_DELAY = 30;
     public static final int DEFAULT_THREADS_PER_HOST = 1;
-    public static final int DEFAULT_REQUESTS_PER_CONNECTION = 1;
+    public static final int DEFAULT_REQUESTS_PER_CONNECTION = 10;
     public static final int DEFAULT_MIN_RESPONSE_RATE = NO_MIN_RESPONSE_RATE;
     
     private int _crawlDelay;			// Delay between requests, in seconds.

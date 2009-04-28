@@ -24,18 +24,14 @@ package bixo.fetcher;
 
 import java.util.Random;
 
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
-
-import cascading.tuple.Tuple;
-import cascading.tuple.TupleEntryCollector;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.fetcher.beans.FetchItem;
 import bixo.fetcher.beans.FetcherPolicy;
 import bixo.tuple.UrlWithScoreTuple;
+import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntryCollector;
 
 public class RunFakeFetcher {
     private static final Logger LOGGER = Logger.getLogger(RunFakeFetcher.class);
@@ -43,9 +39,6 @@ public class RunFakeFetcher {
     public static void main(String[] args) {
 
         try {
-            JobConf conf = new JobConf();
-            FileOutputFormat.setOutputPath(conf, new Path("build/test-data/RunFakeFetcher/working"));
-
             BixoFlowProcess flowProcess = new BixoFlowProcess();
             FetcherQueueMgr queueMgr = new FetcherQueueMgr();
             FetcherManager threadMgr = new FetcherManager(queueMgr, new FakeHttpFetcherFactory(true, 4), flowProcess);

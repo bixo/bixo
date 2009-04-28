@@ -153,7 +153,8 @@ public class BixoFlowProcess extends FlowProcess {
     public void increment(Enum counter, int amount) {
         _baseProcess.increment(counter, amount);
         
-        if (_isLocal) {
+        // TODO KKr - decide if I really want to track stuff locally
+        if (true || _isLocal) {
             synchronized (_localCounters) {
                 if (_localCounters.get(counter) == null) {
                     _localCounters.put(counter, new AtomicInteger());
@@ -171,12 +172,14 @@ public class BixoFlowProcess extends FlowProcess {
 
     
     public void decrement(Enum counter, int amount) {
+        // TODO KKr - figure out if negative values work for Hadoop counters
         increment(counter, -amount);
     }
     
     
     public int getCounter(Enum counter) {
-        if (_isLocal) {
+        // TODO KKr - figure out if I want to use my local counter here
+        if (true || _isLocal) {
             AtomicInteger count = _localCounters.get(counter);
             if (count != null) {
                 return count.get();
@@ -187,6 +190,10 @@ public class BixoFlowProcess extends FlowProcess {
             // TODO KKr - verify that this is the right way to get a counter value, especially the part of
             // mapping from the Enum to the group/name pair needed for reporter.getCounter().
             Reporter reporter = ((HadoopFlowProcess)_baseProcess).getReporter();
+            
+            // TODO KKr - on EC2, it looks like counter.getDeclaringClass() returns null, as I get a NPE here
+            // and I've verified that reporter is not null. But looking at the Enum source, I don't see how
+            // that could be unless counter.getClass().getSuperclass() returns null.
             Counter hadoopCounter = reporter.getCounter(counter.getDeclaringClass().getName(), counter.toString());
             if (hadoopCounter != null) {
                 return (int)hadoopCounter.getCounter();
