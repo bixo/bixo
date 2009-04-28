@@ -109,6 +109,10 @@ public class BixoFlowProcess extends FlowProcess {
     }
     
     
+    /**
+     * A no-argument constructor for use during testing, when we don't have a real
+     * Cascading FlowProcess to use.
+     */
     public BixoFlowProcess() {
         init(new FakeFlowProcess(), new LoggingFlowReporter());
     }

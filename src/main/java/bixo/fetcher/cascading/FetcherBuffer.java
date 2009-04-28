@@ -47,8 +47,6 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
         _flowProcess = new BixoFlowProcess((HadoopFlowProcess)flowProcess);
         
         _queueMgr = new FetcherQueueMgr();
-        // TODO KKr- configure max threads in _conf?
-
         _fetcherMgr = new FetcherManager(_queueMgr, _fetcherFactory, _flowProcess);
 
         _fetcherThread = new Thread(_fetcherMgr);
