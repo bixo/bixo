@@ -27,8 +27,8 @@ import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
-public class Bixo {
-    private static final Logger LOGGER = Logger.getLogger(Bixo.class);
+public class SimpleCrawlTool {
+    private static final Logger LOGGER = Logger.getLogger(SimpleCrawlTool.class);
 
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
 
@@ -54,7 +54,7 @@ public class Bixo {
     public static void main(String[] args) {
         try {
             File inputFile = null;
-            URL path = Bixo.class.getResource("/" + args[0]);
+            URL path = SimpleCrawlTool.class.getResource("/" + args[0]);
             if (path == null) {
                 inputFile = new File(args[0]);
             } else {
@@ -76,7 +76,7 @@ public class Bixo {
             FetchPipe fetchPipe = new FetchPipe(importPipe, grouping, scoring, factory);
 
             // Create the output, which is a dual file sink tap.
-            String outputPath = "build/test-data/Bixo/dual";
+            String outputPath = "build/test-data/SimpleCrawlTool/dual";
             Tap status = new Hfs(new TextLine(new Fields(IFieldNames.URL, IFieldNames.FETCH_STATUS), new Fields(IFieldNames.URL, IFieldNames.FETCH_STATUS)), outputPath + "/status", true);
             Tap content = new Hfs(new TextLine(new Fields(IFieldNames.URL, IFieldNames.CONTENT), new Fields(IFieldNames.URL, IFieldNames.FETCH_CONTENT)), outputPath + "/content", true);
             Tap sink = new MultiSinkTap(status, content);

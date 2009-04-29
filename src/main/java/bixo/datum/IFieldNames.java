@@ -22,7 +22,8 @@
  */
 package bixo.datum;
 
-import cascading.tuple.Fields;
+
+// TODO group fieldnames by classes that use them.
 
 public interface IFieldNames {
 
@@ -35,8 +36,6 @@ public interface IFieldNames {
     String LAST_UPDATED = "lastUpdated";
     String LAST_FETCHED = "lastFetched";
     String LAST_STATUS = "lastStatus";
-
-//    Fields URL_TUPLE_VALUES = new Fields(LAST_UPDATED, LAST_FETCHED, LAST_STATUS);
 
     String FETCH = "fetch";
     String SCORE = "score";
