@@ -14,6 +14,8 @@ import org.mortbay.http.handler.AbstractHttpHandler;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
+import bixo.fetcher.http.HttpClientFactory;
+import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.SimulationWebServer;
 
 

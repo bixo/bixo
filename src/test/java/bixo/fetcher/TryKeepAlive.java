@@ -10,6 +10,8 @@ import java.util.Collections;
 import org.apache.http.HttpVersion;
 
 import bixo.config.FetcherPolicy;
+import bixo.fetcher.http.HttpClientFactory;
+import bixo.fetcher.http.IHttpFetcher;
 
 public class TryKeepAlive {
     private static final String[] APACHE_URLS = {

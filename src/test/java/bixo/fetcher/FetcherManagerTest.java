@@ -8,6 +8,8 @@ import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.beans.FetchQueueEntry;
+import bixo.fetcher.http.HttpClientFactory;
+import bixo.fetcher.http.IHttpFetcherFactory;
 import bixo.fetcher.simulation.SimulationWebServer;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;

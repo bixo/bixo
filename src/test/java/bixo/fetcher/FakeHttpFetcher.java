@@ -31,6 +31,7 @@ import bixo.config.FetcherPolicy;
 import bixo.datum.FetchContentTuple;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
+import bixo.fetcher.http.IHttpFetcher;
 
 public class FakeHttpFetcher implements IHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(FakeHttpFetcher.class);

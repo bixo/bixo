@@ -28,6 +28,7 @@ import bixo.cascading.BixoFlowProcess;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
+import bixo.fetcher.http.IHttpFetcher;
 import cascading.tuple.TupleEntryCollector;
 
 public class FetcherRunnable implements Runnable {

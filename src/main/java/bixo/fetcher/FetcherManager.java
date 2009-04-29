@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
+import bixo.fetcher.http.IHttpFetcherFactory;
 
 /**
  * Manage the set of threads that one task spawns to fetch pages.

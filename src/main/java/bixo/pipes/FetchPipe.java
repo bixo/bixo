@@ -4,7 +4,7 @@ import bixo.IConstants;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.IHttpFetcherFactory;
+import bixo.fetcher.http.IHttpFetcherFactory;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
 import bixo.operations.FetcherBuffer;

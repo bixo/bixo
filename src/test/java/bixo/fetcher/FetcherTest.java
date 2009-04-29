@@ -29,6 +29,8 @@ import org.junit.Test;
 
 import bixo.IConstants;
 import bixo.datum.BaseDatum;
+import bixo.fetcher.http.HttpClientFactory;
+import bixo.fetcher.http.IHttpFetcherFactory;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.pipes.FetchPipe;

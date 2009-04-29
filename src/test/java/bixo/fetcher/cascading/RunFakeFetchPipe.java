@@ -12,7 +12,7 @@ import bixo.datum.BaseDatum;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.FakeHttpFetcherFactory;
-import bixo.fetcher.IHttpFetcherFactory;
+import bixo.fetcher.http.IHttpFetcherFactory;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.pipes.FetchPipe;

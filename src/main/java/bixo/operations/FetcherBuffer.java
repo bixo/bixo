@@ -11,7 +11,7 @@ import bixo.fetcher.FetcherCounters;
 import bixo.fetcher.FetcherManager;
 import bixo.fetcher.FetcherQueue;
 import bixo.fetcher.FetcherQueueMgr;
-import bixo.fetcher.IHttpFetcherFactory;
+import bixo.fetcher.http.IHttpFetcherFactory;
 import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
