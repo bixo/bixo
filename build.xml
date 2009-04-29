@@ -89,7 +89,6 @@ SOFTWARE.
 		<!-- create target directory -->
 		<mkdir dir="${build.dir.dist}" />
 		<mkdir dir="${build.dir.dist}/bin" />
-		<mkdir dir="${build.dir.dist}/conf" />
 		<mkdir dir="${build.dir.dist}/docs" />
 		<mkdir dir="${build.dir.dist}/docs/javadoc" />
 		<mkdir dir="${build.dir.dist}/docs/reports" />
@@ -99,10 +98,6 @@ SOFTWARE.
 		<!-- copy launch script to target -->
 		<copy todir="${build.dir.dist}/bin">
 			<fileset dir="${basedir}/bin" />
-		</copy>
-		<!-- copy  conf to target dir  -->
-		<copy todir="${build.dir.dist}/conf">
-			<fileset dir="${basedir}/conf" />
 		</copy>
 		<!-- copy  javadoc to target dir  -->
 		<copy todir="${build.dir.dist}/docs/javadoc">
@@ -157,7 +152,6 @@ SOFTWARE.
 			<classpath>
 				<container path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6" />
 
-				<source path="${basedir}/conf" output="${build.dir.main-classes}" />
 			    <source path="${basedir}/src/main/java" output="${build.dir.main-classes}" />
 				<source path="${basedir}/src/test/java" output="${build.dir.test-classes}" />
 				<source path="${basedir}/src/test/resources" output="${build.dir.test-classes}" />
