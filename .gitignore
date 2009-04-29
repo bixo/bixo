@@ -8,4 +8,6 @@ build.properties
 build.sh
 *.iml
 *.dot
+trash
+extras/webgraph/tmp
 extras/webgraph/eu-2005.*
