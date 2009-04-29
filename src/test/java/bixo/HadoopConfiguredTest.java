@@ -31,6 +31,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.junit.Assert;
 import org.junit.Test;
 
+import bixo.utils.HadoopConfigured;
+
 import cascading.ClusterTestCase;
 import cascading.flow.MultiMapReducePlanner;
 

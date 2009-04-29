@@ -27,9 +27,11 @@ import java.io.IOException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import bixo.HadoopConfigured;
 import bixo.IConstants;
 import bixo.datum.UrlDatum;
+import bixo.operations.LastUpdated;
+import bixo.operations.TextUrlParser;
+import bixo.utils.HadoopConfigured;
 import bixo.utils.TimeStampUtil;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
