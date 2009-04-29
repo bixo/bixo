@@ -25,7 +25,7 @@ package bixo.fetcher.util;
 import java.io.IOException;
 import java.io.Serializable;
 
-import bixo.tuple.GroupedUrlDatum;
+import bixo.datum.GroupedUrlDatum;
 
 public interface IScoreGenerator extends Serializable {
 

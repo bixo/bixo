@@ -12,12 +12,13 @@ import org.archive.io.ArchiveRecordHeader;
 import org.junit.Test;
 
 import bixo.IConstants;
-import bixo.fetcher.beans.FetchStatusCode;
+import bixo.datum.FetchContentTuple;
+import bixo.datum.FetchStatusCode;
+import bixo.datum.FetchedDatum;
+import bixo.datum.Outlink;
+import bixo.datum.ParsedDatum;
 import bixo.parser.html.HtmlParser;
-import bixo.tuple.FetchContentTuple;
-import bixo.tuple.FetchedDatum;
-import bixo.tuple.Outlink;
-import bixo.tuple.ParsedDatum;
+import bixo.pipes.ParserPipe;
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;

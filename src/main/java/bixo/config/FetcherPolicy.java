@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher.beans;
+package bixo.config;
 
 import java.io.Serializable;
 

@@ -24,7 +24,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import bixo.tuple.FetchedDatum;
+import bixo.datum.FetchedDatum;
 
 import com.ibm.icu.text.CharsetDetector;
 import com.ibm.icu.text.CharsetMatch;

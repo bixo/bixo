@@ -1,17 +1,17 @@
-package bixo.fetcher.cascading;
+package bixo.operations;
 
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
+import bixo.config.FetcherPolicy;
+import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.FetcherCounters;
 import bixo.fetcher.FetcherManager;
 import bixo.fetcher.FetcherQueue;
 import bixo.fetcher.FetcherQueueMgr;
 import bixo.fetcher.IHttpFetcherFactory;
-import bixo.fetcher.beans.FetcherPolicy;
-import bixo.tuple.ScoredUrlDatum;
 import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;

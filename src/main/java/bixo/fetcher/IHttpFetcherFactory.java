@@ -24,7 +24,7 @@ package bixo.fetcher;
 
 import java.io.Serializable;
 
-import bixo.fetcher.beans.FetcherPolicy;
+import bixo.config.FetcherPolicy;
 
 public interface IHttpFetcherFactory extends Serializable {
     IHttpFetcher newHttpFetcher();

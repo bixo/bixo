@@ -1,10 +1,10 @@
-package bixo.fetcher.cascading;
+package bixo.operations;
 
 import java.io.IOException;
 
 import bixo.cascading.NullContext;
+import bixo.datum.UrlDatum;
 import bixo.fetcher.util.IGroupingKeyGenerator;
-import bixo.tuple.UrlDatum;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;

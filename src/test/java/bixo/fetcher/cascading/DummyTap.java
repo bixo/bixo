@@ -11,7 +11,7 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 
-import bixo.tuple.BaseDatum;
+import bixo.datum.BaseDatum;
 import cascading.flow.Flow;
 import cascading.scheme.Scheme;
 import cascading.scheme.SequenceFile;

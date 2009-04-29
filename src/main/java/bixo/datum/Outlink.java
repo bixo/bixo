@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package bixo.tuple;
+package bixo.datum;
 
 import java.net.MalformedURLException;
 

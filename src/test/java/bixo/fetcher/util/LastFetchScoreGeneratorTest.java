@@ -27,9 +27,9 @@ import junit.framework.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import bixo.datum.GroupedUrlDatum;
+import bixo.datum.UrlDatum;
 import bixo.fetcher.util.LastFetchScoreGenerator;
-import bixo.tuple.UrlDatum;
-import bixo.tuple.GroupedUrlDatum;
 
 public class LastFetchScoreGeneratorTest {
 

@@ -31,8 +31,8 @@ import org.apache.log4j.Logger;
 import cascading.tuple.TupleEntryCollector;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.fetcher.beans.FetcherPolicy;
-import bixo.tuple.ScoredUrlDatum;
+import bixo.config.FetcherPolicy;
+import bixo.datum.ScoredUrlDatum;
 
 public class FetcherQueue implements IFetchItemProvider {
     private static Logger LOGGER = Logger.getLogger(FetcherQueue.class);
@@ -57,7 +57,7 @@ public class FetcherQueue implements IFetchItemProvider {
         _numActiveFetchers = 0;
         _nextFetchTime = System.currentTimeMillis();
         _sorted = true;
-        _queue = new ArrayList<bixo.tuple.ScoredUrlDatum>();
+        _queue = new ArrayList<bixo.datum.ScoredUrlDatum>();
 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("Setting up queue for %s with next fetch time of %d", _domain, _nextFetchTime));

@@ -5,10 +5,10 @@ import org.junit.Test;
 import org.mortbay.http.HttpServer;
 
 import bixo.cascading.BixoFlowProcess;
+import bixo.config.FetcherPolicy;
+import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.beans.FetchQueueEntry;
-import bixo.fetcher.beans.FetcherPolicy;
 import bixo.fetcher.simulation.SimulationWebServer;
-import bixo.tuple.ScoredUrlDatum;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 

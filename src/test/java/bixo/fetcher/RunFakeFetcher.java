@@ -27,9 +27,9 @@ import java.util.Random;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
+import bixo.config.FetcherPolicy;
+import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.beans.FetchQueueEntry;
-import bixo.fetcher.beans.FetcherPolicy;
-import bixo.tuple.ScoredUrlDatum;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 

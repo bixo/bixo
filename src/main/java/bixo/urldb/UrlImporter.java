@@ -29,7 +29,7 @@ import org.apache.hadoop.fs.Path;
 
 import bixo.HadoopConfigured;
 import bixo.IConstants;
-import bixo.tuple.UrlDatum;
+import bixo.datum.UrlDatum;
 import bixo.utils.TimeStampUtil;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;

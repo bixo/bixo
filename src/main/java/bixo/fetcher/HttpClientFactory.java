@@ -38,7 +38,7 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 
-import bixo.fetcher.beans.FetcherPolicy;
+import bixo.config.FetcherPolicy;
 
 @SuppressWarnings("serial")
 public class HttpClientFactory implements IHttpFetcherFactory {

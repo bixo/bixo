@@ -25,9 +25,9 @@ package bixo.fetcher;
 import org.apache.log4j.Level;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.fetcher.beans.FetchStatusCode;
-import bixo.tuple.FetchedDatum;
-import bixo.tuple.ScoredUrlDatum;
+import bixo.datum.FetchStatusCode;
+import bixo.datum.FetchedDatum;
+import bixo.datum.ScoredUrlDatum;
 import cascading.tuple.TupleEntryCollector;
 
 public class FetcherRunnable implements Runnable {

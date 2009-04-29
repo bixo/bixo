@@ -9,7 +9,7 @@ import java.util.Collections;
 
 import org.apache.http.HttpVersion;
 
-import bixo.fetcher.beans.FetcherPolicy;
+import bixo.config.FetcherPolicy;
 
 public class TryKeepAlive {
     private static final String[] APACHE_URLS = {

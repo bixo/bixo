@@ -34,9 +34,9 @@ import org.apache.commons.io.LineIterator;
 import org.apache.hadoop.mapred.JobConf;
 
 import bixo.cascading.BixoFlowProcess;
+import bixo.config.FetcherPolicy;
+import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.beans.FetchQueueEntry;
-import bixo.fetcher.beans.FetcherPolicy;
-import bixo.tuple.ScoredUrlDatum;
 import bixo.utils.DomainNames;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Lfs;

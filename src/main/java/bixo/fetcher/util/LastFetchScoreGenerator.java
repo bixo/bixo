@@ -22,7 +22,7 @@
  */
 package bixo.fetcher.util;
 
-import bixo.tuple.GroupedUrlDatum;
+import bixo.datum.GroupedUrlDatum;
 
 @SuppressWarnings("serial")
 public class LastFetchScoreGenerator implements IScoreGenerator {

@@ -1,12 +1,15 @@
-package bixo.fetcher.cascading;
+package bixo.pipes;
 
 import bixo.IConstants;
+import bixo.datum.FetchedDatum;
+import bixo.datum.GroupedUrlDatum;
+import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.IHttpFetcherFactory;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
-import bixo.tuple.FetchedDatum;
-import bixo.tuple.GroupedUrlDatum;
-import bixo.tuple.ScoredUrlDatum;
+import bixo.operations.FetcherBuffer;
+import bixo.operations.GroupFunction;
+import bixo.operations.ScoreFunction;
 import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;

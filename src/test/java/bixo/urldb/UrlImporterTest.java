@@ -29,7 +29,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 
 import bixo.IConstants;
-import bixo.tuple.BaseDatum;
+import bixo.datum.BaseDatum;
 import cascading.CascadingTestCase;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Hfs;

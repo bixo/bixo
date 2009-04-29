@@ -1,7 +1,9 @@
-package bixo.parser;
+package bixo.operations;
 
-import bixo.tuple.FetchedDatum;
-import bixo.tuple.ParsedDatum;
+import bixo.datum.FetchedDatum;
+import bixo.datum.ParsedDatum;
+import bixo.parser.IParser;
+import bixo.parser.IParserFactory;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;

@@ -19,7 +19,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TopDocs;
 import org.junit.Test;
 
-import bixo.tuple.ParsedDatum;
+import bixo.datum.ParsedDatum;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;

@@ -27,9 +27,9 @@ import java.util.Random;
 
 import junit.framework.TestCase;
 import bixo.cascading.BixoFlowProcess;
+import bixo.config.FetcherPolicy;
+import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.beans.FetchQueueEntry;
-import bixo.fetcher.beans.FetcherPolicy;
-import bixo.tuple.ScoredUrlDatum;
 
 public class FetcherQueueTest extends TestCase {
     public final void testMaxURLs() throws MalformedURLException {

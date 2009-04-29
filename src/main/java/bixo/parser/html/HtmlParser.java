@@ -33,15 +33,15 @@ import org.apache.html.dom.*;
 
 import org.apache.log4j.Logger;
 
+import bixo.datum.FetchedDatum;
+import bixo.datum.Outlink;
+import bixo.datum.ParsedDatum;
 import bixo.parser.IParse;
 import bixo.parser.IParser;
 import bixo.parser.ParseData;
 import bixo.parser.ParseImpl;
 import bixo.parser.ParseResult;
 import bixo.parser.ParseStatus;
-import bixo.tuple.FetchedDatum;
-import bixo.tuple.Outlink;
-import bixo.tuple.ParsedDatum;
 import bixo.utils.EncodingDetector;
 import bixo.utils.Metadata;
 

@@ -22,8 +22,8 @@
  */
 package bixo.fetcher;
 
-import bixo.tuple.FetchedDatum;
-import bixo.tuple.ScoredUrlDatum;
+import bixo.datum.FetchedDatum;
+import bixo.datum.ScoredUrlDatum;
 
 public interface IHttpFetcher {
     public FetchedDatum get(ScoredUrlDatum scoredUrl);

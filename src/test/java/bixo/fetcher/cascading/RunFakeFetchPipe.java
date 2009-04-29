@@ -8,13 +8,14 @@ import org.apache.log4j.Logger;
 
 import bixo.IConstants;
 import bixo.cascading.MultiSinkTap;
+import bixo.datum.BaseDatum;
+import bixo.datum.FetchStatusCode;
+import bixo.datum.UrlDatum;
 import bixo.fetcher.FakeHttpFetcherFactory;
 import bixo.fetcher.IHttpFetcherFactory;
-import bixo.fetcher.beans.FetchStatusCode;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
-import bixo.tuple.BaseDatum;
-import bixo.tuple.UrlDatum;
+import bixo.pipes.FetchPipe;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;

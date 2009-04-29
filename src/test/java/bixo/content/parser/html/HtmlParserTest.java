@@ -10,15 +10,15 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import bixo.datum.FetchContentTuple;
+import bixo.datum.Outlink;
+import bixo.datum.ParsedDatum;
 import bixo.parser.IParse;
 import bixo.parser.IParser;
 import bixo.parser.IParserFactory;
 import bixo.parser.ParseResult;
 import bixo.parser.html.HtmlParser;
 import bixo.parser.html.HtmlParserFactory;
-import bixo.tuple.FetchContentTuple;
-import bixo.tuple.Outlink;
-import bixo.tuple.ParsedDatum;
 
 
 public class HtmlParserTest {

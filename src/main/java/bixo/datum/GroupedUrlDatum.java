@@ -1,10 +1,9 @@
-package bixo.tuple;
+package bixo.datum;
 
 import java.util.Arrays;
 import java.util.Map;
 
 import bixo.IConstants;
-import bixo.fetcher.beans.FetchStatusCode;
 import bixo.util.FieldUtil;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;

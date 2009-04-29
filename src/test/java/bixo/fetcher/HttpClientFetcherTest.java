@@ -11,10 +11,10 @@ import org.mortbay.http.HttpResponse;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
-import bixo.fetcher.beans.FetchStatusCode;
-import bixo.fetcher.beans.FetcherPolicy;
+import bixo.config.FetcherPolicy;
+import bixo.datum.FetchStatusCode;
+import bixo.datum.FetchedDatum;
 import bixo.fetcher.simulation.SimulationWebServer;
-import bixo.tuple.FetchedDatum;
 
 
 public class HttpClientFetcherTest extends SimulationWebServer {

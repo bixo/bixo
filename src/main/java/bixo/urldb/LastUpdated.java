@@ -23,7 +23,7 @@
 package bixo.urldb;
 
 import bixo.IConstants;
-import bixo.tuple.UrlDatum;
+import bixo.datum.UrlDatum;
 import cascading.flow.FlowProcess;
 import cascading.operation.Aggregator;
 import cascading.operation.AggregatorCall;

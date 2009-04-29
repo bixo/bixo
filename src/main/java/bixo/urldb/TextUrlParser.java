@@ -23,8 +23,8 @@
 package bixo.urldb;
 
 import bixo.IConstants;
-import bixo.fetcher.beans.FetchStatusCode;
-import bixo.tuple.UrlDatum;
+import bixo.datum.FetchStatusCode;
+import bixo.datum.UrlDatum;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;

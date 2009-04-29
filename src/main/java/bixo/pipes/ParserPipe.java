@@ -20,9 +20,11 @@
  * SOFTWARE.
  *
  */
-package bixo.parser;
+package bixo.pipes;
 
-import bixo.tuple.ParsedDatum;
+import bixo.datum.ParsedDatum;
+import bixo.operations.ParseFunction;
+import bixo.parser.IParserFactory;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;

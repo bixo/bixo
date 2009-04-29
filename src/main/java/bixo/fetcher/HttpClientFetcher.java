@@ -38,11 +38,11 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 
-import bixo.fetcher.beans.FetchStatusCode;
-import bixo.fetcher.beans.FetcherPolicy;
+import bixo.config.FetcherPolicy;
+import bixo.datum.FetchStatusCode;
+import bixo.datum.FetchedDatum;
+import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.http.HttpHeaders;
-import bixo.tuple.FetchedDatum;
-import bixo.tuple.ScoredUrlDatum;
 
 public class HttpClientFetcher implements IHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(HttpClientFetcher.class);

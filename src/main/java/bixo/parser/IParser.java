@@ -1,7 +1,7 @@
 package bixo.parser;
 
-import bixo.tuple.FetchedDatum;
-import bixo.tuple.ParsedDatum;
+import bixo.datum.FetchedDatum;
+import bixo.datum.ParsedDatum;
 
 public interface IParser {
 

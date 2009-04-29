@@ -1,4 +1,4 @@
-package bixo.tuple;
+package bixo.datum;
 
 import java.util.Map;
 

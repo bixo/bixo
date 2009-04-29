@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import bixo.tuple.UrlDatum;
+import bixo.datum.UrlDatum;
 import bixo.utils.DomainNames;
 
 @SuppressWarnings("serial")

@@ -25,7 +25,7 @@ package bixo.fetcher;
 import java.util.LinkedList;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.tuple.ScoredUrlDatum;
+import bixo.datum.ScoredUrlDatum;
 import cascading.tuple.TupleEntryCollector;
 
 @SuppressWarnings("serial")

@@ -22,7 +22,7 @@
  */
 package bixo.fetcher;
 
-import bixo.fetcher.beans.FetcherPolicy;
+import bixo.config.FetcherPolicy;
 
 @SuppressWarnings("serial")
 public class FakeHttpFetcherFactory implements IHttpFetcherFactory {

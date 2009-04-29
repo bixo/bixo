@@ -21,7 +21,7 @@
  */
 package bixo.parser;
 
-import bixo.tuple.Outlink;
+import bixo.datum.Outlink;
 import bixo.utils.Metadata;
 
 /**

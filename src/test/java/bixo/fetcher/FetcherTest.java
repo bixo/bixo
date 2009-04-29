@@ -28,10 +28,10 @@ import org.apache.hadoop.fs.FileUtil;
 import org.junit.Test;
 
 import bixo.IConstants;
-import bixo.fetcher.cascading.FetchPipe;
+import bixo.datum.BaseDatum;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
-import bixo.tuple.BaseDatum;
+import bixo.pipes.FetchPipe;
 import bixo.urldb.UrlImporter;
 import bixo.utils.TimeStampUtil;
 import cascading.flow.Flow;
