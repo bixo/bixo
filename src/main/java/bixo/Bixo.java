@@ -1,14 +1,11 @@
-package bixo.fetcher.cascading;
+package bixo;
 
 import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.apache.log4j.Logger;
 
-import bixo.IConstants;
 import bixo.cascading.MultiSinkTap;
-import bixo.datum.BaseDatum;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.HttpClientFactory;
@@ -26,72 +23,59 @@ import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.scheme.TextLine;
 import cascading.tap.Hfs;
-import cascading.tap.Lfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
-public class RunTestFetchPipe {
-    private static final Logger LOGGER = Logger.getLogger(RunTestFetchPipe.class);
-    
+public class Bixo {
+    private static final Logger LOGGER = Logger.getLogger(Bixo.class);
+
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
 
     // TODO KKr - discuss use of context w/Chris.
     @SuppressWarnings("serial")
     private static class CreateUrlFunction extends BaseOperation<String> implements Function<String> {
-        
+
         public CreateUrlFunction() {
-            super(BaseDatum.FIELDS);
+            super(UrlDatum.getFields());
         }
-        
+
         @Override
         public void operate(FlowProcess process, FunctionCall<String> funcCall) {
             String urlAsString = funcCall.getArguments().getString("line");
-            try {
-                URL url = new URL(urlAsString);
-                
-                UrlDatum urlDatum = new UrlDatum();
-                urlDatum.setUrl(url);
-                urlDatum.setLastFetched(0);
-                urlDatum.setLastUpdated(0);
-                urlDatum.setLastStatus(FetchStatusCode.NEVER_FETCHED);
-                
-                funcCall.getOutputCollector().add(urlDatum.toTuple());
-            } catch (MalformedURLException e) {
-                LOGGER.warn("Invalid URL: " + urlAsString);
-                // throw new RuntimeException("Invalid URL: " + urlAsString, e);
-            }
+            UrlDatum urlDatum = new UrlDatum(urlAsString, 0, 0, FetchStatusCode.NEVER_FETCHED, null);
+            funcCall.getOutputCollector().add(urlDatum.toTuple());
         }
     }
-    
+
     /**
      * @param args
      */
     public static void main(String[] args) {
         try {
             File inputFile = null;
-            URL path = RunTestFetchPipe.class.getResource("/" + args[0]);
+            URL path = Bixo.class.getResource("/" + args[0]);
             if (path == null) {
                 inputFile = new File(args[0]);
             } else {
                 inputFile = new File(path.getFile());
             }
-            
+
             if (!inputFile.exists()) {
                 System.err.println("File not found in filesystem or on classpath: " + args[0]);
                 System.exit(-1);
             }
-            
+
             Tap in = new Hfs(new TextLine(), inputFile.getCanonicalPath());
-            
+
             Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFunction());
-            
+
             PLDGrouping grouping = new PLDGrouping();
             LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
             IHttpFetcherFactory factory = new HttpClientFactory(10);
             FetchPipe fetchPipe = new FetchPipe(importPipe, grouping, scoring, factory);
-            
+
             // Create the output, which is a dual file sink tap.
-            String outputPath = "build/test-data/RunTestFetchPipe/dual";
+            String outputPath = "build/test-data/Bixo/dual";
             Tap status = new Hfs(new TextLine(new Fields(IConstants.URL, IConstants.FETCH_STATUS), new Fields(IConstants.URL, IConstants.FETCH_STATUS)), outputPath + "/status", true);
             Tap content = new Hfs(new TextLine(new Fields(IConstants.URL, IConstants.CONTENT), new Fields(IConstants.URL, IConstants.FETCH_CONTENT)), outputPath + "/content", true);
             Tap sink = new MultiSinkTap(status, content);
