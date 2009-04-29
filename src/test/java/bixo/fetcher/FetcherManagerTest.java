@@ -6,8 +6,8 @@ import org.mortbay.http.HttpServer;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
+import bixo.datum.FetchStatusCode;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.beans.FetchQueueEntry;
 import bixo.fetcher.http.HttpClientFactory;
 import bixo.fetcher.http.IHttpFetcherFactory;
 import bixo.fetcher.simulation.SimulationWebServer;
@@ -15,12 +15,13 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
 public class FetcherManagerTest extends SimulationWebServer {
-    
+
     private static class FakeCollector extends TupleEntryCollector {
 
         @Override
         protected void collect(Tuple tuple) {
-            // TODO KKr - reenable this when we have a better toString for the tuple, where it limits the
+            // TODO KKr - reenable this when we have a better toString for the
+            // tuple, where it limits the
             // amount of data and avoids printing control characters.
             // System.out.println(tuple.toString());
         }
@@ -37,21 +38,21 @@ public class FetcherManagerTest extends SimulationWebServer {
         fetcherThread.start();
         Thread.sleep(500L);
         fetcherThread.interrupt();
-        
+
         Thread.sleep(1500L);
-        
+
         Assert.assertFalse("Fetcher manager should be terminated", fetcherThread.isAlive());
     }
-    
+
     @Test
     public final void testThreadPool() {
         final int NUM_THREADS = 100;
-        
+
         HttpServer server = null;
-        
+
         try {
-            server = startServer(new SlowResponseHandler(20000, 100*1000L), 8089);
-            
+            server = startServer(new SlowResponseHandler(20000, 100 * 1000L), 8089);
+
             BixoFlowProcess flowProcess = new BixoFlowProcess();
             FetcherQueueMgr queueMgr = new FetcherQueueMgr();
             FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFactory(NUM_THREADS), flowProcess);
@@ -69,12 +70,8 @@ public class FetcherManagerTest extends SimulationWebServer {
                 for (int j = 0; j < 2; j++) {
                     String file = "/page-" + j + ".html";
 
-                    ScoredUrlDatum urlScore = new ScoredUrlDatum();
-                    urlScore.setUrl("http://localhost:8089" + file);
-                    urlScore.SetScore(1.0f - (float)j);
-                    FetchQueueEntry fetchQueueEntry = new FetchQueueEntry(urlScore);
-
-                    queue.offer(fetchQueueEntry);
+                    ScoredUrlDatum urlScore = new ScoredUrlDatum("http://localhost:8089" + file, 0, 0, FetchStatusCode.NEVER_FETCHED, null, 1.0f - (float) j, null);
+                    queue.offer(urlScore);
                 }
 
                 while (!queueMgr.offer(queue)) {
@@ -82,13 +79,15 @@ public class FetcherManagerTest extends SimulationWebServer {
                 }
             }
 
-            // We have a bunch of pages to fetch. In a few milliseconds the FetcherManager should have
-            // fired up all of the threads. The ThreadPool seems to have up to core+max threads, so we're
+            // We have a bunch of pages to fetch. In a few milliseconds the
+            // FetcherManager should have
+            // fired up all of the threads. The ThreadPool seems to have up to
+            // core+max threads, so we're
             // just doing a general test of the count here.
             Thread.sleep(1000);
             int activeThreads = flowProcess.getCounter(FetcherCounters.URLS_FETCHING);
             Assert.assertTrue(activeThreads >= NUM_THREADS);
-            
+
             // Time to terminate everything.
             t.interrupt();
         } catch (Throwable t) {
