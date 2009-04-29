@@ -30,7 +30,7 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
 public class ParserPipeTest extends CascadingTestCase {
-    
+
     @Test
     public void testParserPipe() throws Exception {
 
@@ -50,20 +50,20 @@ public class ParserPipeTest extends CascadingTestCase {
             ArchiveRecord archiveRecord = (ArchiveRecord) iterator.next();
             ArchiveRecordHeader header = archiveRecord.getHeader();
             String url = header.getUrl();
-            
+
             String protocol = "";
             try {
                 protocol = new URL(url).getProtocol();
             } catch (MalformedURLException e) {
                 // Ignore and skip
             }
-            
+
             if (protocol.equals("http")) {
                 validRecords += 1;
                 int contentOffset = header.getContentBegin();
                 long totalLength = header.getLength();
-                int contentLength = (int)totalLength - contentOffset;
-                
+                int contentLength = (int) totalLength - contentOffset;
+
                 long startTime = System.currentTimeMillis();
                 archiveRecord.skip(contentOffset);
                 byte[] content = new byte[contentLength];
@@ -87,50 +87,4 @@ public class ParserPipeTest extends CascadingTestCase {
 
     }
 
-    @SuppressWarnings("serial")
-    public static class DefaultParserFactory implements IParserFactory {
-
-        private static HtmlParser _parser = new HtmlParser();
-        
-        @Override
-        public IParser newParser() {
-            return new IParser() {
-                
-                @Override
-                public ParsedDatum parse(FetchContentTuple contentTuple) {
-                    IParse parse = _parser.getParse(contentTuple).get(contentTuple.getBaseUrl());
-                    
-                    Outlink[] outlinks = parse.getData().getOutlinks();
-                    String[] stringLinks = new String[outlinks.length];
-                    
-                    int i = 0;
-                    for (Outlink outlink : outlinks) {
-                        stringLinks[i++] = outlink.getToUrl();
-                    }
-                    
-                    return new ParsedDatum(parse.getText(), stringLinks);
-                }
-                
-            };
-        }
-        
-    }
-    
-   
-    @SuppressWarnings("serial")
-    public static class FakeParserFactor implements IParserFactory {
-
-        @Override
-        public IParser newParser() {
-            return new IParser() {
-
-                @Override
-                public ParsedDatum parse(FetchContentTuple contentTuple) {
-                    return new ParsedDatum("someText", new String[0]);
-                }
-
-            };
-        }
-
-    }
-}
+w}

@@ -22,7 +22,6 @@
  */
 package bixo.datum;
 
-
 // TODO group fieldnames by classes that use them.
 
 public interface IFieldNames {
@@ -32,14 +31,13 @@ public interface IFieldNames {
     String LINE = "line";
 
     // url DB
-    String URL = "url";
-    String LAST_UPDATED = "lastUpdated";
-    String LAST_FETCHED = "lastFetched";
-    String LAST_STATUS = "lastStatus";
+//    String URL = "url";
+//    String LAST_UPDATED = "lastUpdated";
+//    String LAST_FETCHED = "lastFetched";
 
     String FETCH = "fetch";
     String SCORE = "score";
-    String FETCH_STATUS = "status";
+    String FETCH_STATUS = "fetchStatus";
     String CONTENT = "content";
 
     String GROUPING_KEY = "groupingKey";
@@ -53,13 +51,24 @@ public interface IFieldNames {
     String FETCH_TIME = "fetchTime";
 
     String FETCH_RATE = "fetchRate";
-    
-    String CONTENT_TYPE = "contentType";
 
-    String STATUS = "status";
+    String CONTENT_TYPE = "contentType";
 
     String TEXT = "text";
 
     String OUT_LINKS = "out_links";
 
+    // urlDatum
+
+    String SOURCE_URL = "sourceUrl";
+
+    String SOURCE_LAST_UPDATED = "sourceLastUpdated";
+
+    String SOURCE_LAST_FETCHED = "sourceLastFetched";
+
+    String SOURCE_FETCH_STATUS = "sourceFetchStatus";
+
+    // ParsedDatum
+    
+    String PARSED_CONTENT_URL = "parsedContentUrl";
 }

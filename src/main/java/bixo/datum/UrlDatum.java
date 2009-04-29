@@ -42,7 +42,7 @@ public class UrlDatum extends BaseDatum {
         _lastFetched = lastFetched;
         _lastUpdated = lastUpdated;
         _lastStatus = lastStatus;
-        
+
     }
 
     public String getUrl() {
@@ -80,21 +80,21 @@ public class UrlDatum extends BaseDatum {
     @SuppressWarnings("unchecked")
     @Override
     protected Comparable[] getValues() {
-        return new Comparable[] { _url, _lastUpdated, _lastFetched, _lastStatus };
+        return new Comparable[] { _url, _lastUpdated, _lastFetched, _lastStatus.ordinal() };
     }
 
     public static Fields getFields() {
-        return new Fields(IFieldNames.URL, IFieldNames.LAST_UPDATED, IFieldNames.LAST_FETCHED, IFieldNames.LAST_STATUS);
+        return new Fields(IFieldNames.SOURCE_URL, IFieldNames.SOURCE_LAST_UPDATED, IFieldNames.SOURCE_LAST_FETCHED, IFieldNames.SOURCE_FETCH_STATUS);
     }
 
     public static UrlDatum fromTuple(Tuple tuple, Fields metaDataFieldNames) {
         TupleEntry entry = new TupleEntry(getFields(), tuple);
-        String url = entry.getString(IFieldNames.URL);
-        long lastFetched = entry.getLong(IFieldNames.LAST_FETCHED);
-        long lastUpdated = entry.getLong(IFieldNames.LAST_UPDATED);
-        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.FETCH_STATUS));
+        String url = entry.getString(IFieldNames.SOURCE_URL);
+        long lastFetched = entry.getLong(IFieldNames.SOURCE_LAST_FETCHED);
+        long lastUpdated = entry.getLong(IFieldNames.SOURCE_LAST_UPDATED);
+        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.SOURCE_FETCH_STATUS));
 
         return new UrlDatum(url, lastFetched, lastUpdated, fetchStatus, BaseDatum.extractMetaData(tuple, getFields().size(), metaDataFieldNames));
     }
-    
+
 }

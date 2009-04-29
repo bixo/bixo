@@ -77,8 +77,8 @@ public class SimpleCrawlTool {
 
             // Create the output, which is a dual file sink tap.
             String outputPath = "build/test-data/SimpleCrawlTool/dual";
-            Tap status = new Hfs(new TextLine(new Fields(IFieldNames.URL, IFieldNames.FETCH_STATUS), new Fields(IFieldNames.URL, IFieldNames.FETCH_STATUS)), outputPath + "/status", true);
-            Tap content = new Hfs(new TextLine(new Fields(IFieldNames.URL, IFieldNames.CONTENT), new Fields(IFieldNames.URL, IFieldNames.FETCH_CONTENT)), outputPath + "/content", true);
+            Tap status = new Hfs(new TextLine(new Fields(IFieldNames.BASE_URL, IFieldNames.FETCH_STATUS), new Fields(IFieldNames.BASE_URL, IFieldNames.FETCH_STATUS)), outputPath + "/status", true);
+            Tap content = new Hfs(new TextLine(new Fields(IFieldNames.BASE_URL, IFieldNames.CONTENT), new Fields(IFieldNames.BASE_URL, IFieldNames.FETCH_CONTENT)), outputPath + "/content", true);
             Tap sink = new MultiSinkTap(status, content);
 
             // Finally we can run it.

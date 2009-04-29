@@ -36,9 +36,7 @@ public class FetchPipe extends SubAssembly {
         fetch = new Each(fetch, new ScoreFunction(scoreGenerator, metaDataFields), scoreFields);
 
         fetch = new GroupBy(fetch, new Fields(groupingKey));
-
-        Fields fetchFields = FetchedDatum.getFields().append(metaDataFields);
-        fetch = new Every(fetch, new FetcherBuffer(FetchedDatum.getFields(), metaDataFields, factory), fetchFields);
+        fetch = new Every(fetch, new FetcherBuffer(FetchedDatum.getFields(), metaDataFields, factory),Fields.RESULTS);
 
         setTails(fetch);
     }

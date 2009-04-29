@@ -41,10 +41,10 @@ public class ScoredUrlDatum extends GroupedUrlDatum implements Comparable<Scored
     @SuppressWarnings("unchecked")
     public static ScoredUrlDatum fromTuple(Tuple tuple, Fields metaDataFieldNames) {
         TupleEntry entry = new TupleEntry(getFields(), tuple);
-        String url = entry.getString(IFieldNames.URL);
-        long lastFetched = entry.getLong(IFieldNames.LAST_FETCHED);
-        long lastUpdated = entry.getLong(IFieldNames.LAST_UPDATED);
-        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.FETCH_STATUS));
+        String url = entry.getString(IFieldNames.SOURCE_URL);
+        long lastFetched = entry.getLong(IFieldNames.SOURCE_LAST_FETCHED);
+        long lastUpdated = entry.getLong(IFieldNames.SOURCE_LAST_UPDATED);
+        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.SOURCE_FETCH_STATUS));
         String groupKey = entry.getString(IFieldNames.GROUPING_KEY);
         double score = entry.getDouble(IFieldNames.SCORE);
 

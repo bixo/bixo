@@ -31,7 +31,7 @@ public abstract class BaseDatum {
         if (_map == null) {
             _map = new HashMap<String, Comparable>();
         }
-        
+
         _map.put(key, value);
     }
 
@@ -72,14 +72,20 @@ public abstract class BaseDatum {
         }
 
         Collections.sort(fieldNames);
+        try {
+            HashMap<String, Comparable> map = new HashMap<String, Comparable>();
+            for (int i = 0; i < fieldNames.size(); i++) {
+                String key = (String) fieldNames.get(i);
+                Comparable value = tuple.get(startingOffset + i);
+                map.put(key, value);
+            }
+            return map;
 
-        HashMap<String, Comparable> map = new HashMap<String, Comparable>();
-        for (int i = 0; i < fieldNames.size(); i++) {
-            String key = (String) fieldNames.get(i);
-            Comparable value = tuple.get(startingOffset + i);
-            map.put(key, value);
+        } catch (Exception e) {
+            System.out.println("BaseDatum.extractMetaData()");
+        return null;
         }
-        return map;
+        
     }
 
 }

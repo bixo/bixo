@@ -47,7 +47,7 @@ public class ParsedDatum extends BaseDatum {
     }
 
     public static Fields getFields() {
-        return new Fields(IFieldNames.URL, IFieldNames.TEXT, IFieldNames.OUT_LINKS);
+        return new Fields(IFieldNames.PARSED_CONTENT_URL, IFieldNames.TEXT, IFieldNames.OUT_LINKS);
     }
 
 }

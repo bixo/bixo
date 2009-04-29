@@ -23,6 +23,7 @@
 package bixo.fetcher;
 
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.datum.FetchStatusCode;
@@ -32,6 +33,8 @@ import bixo.fetcher.http.IHttpFetcher;
 import cascading.tuple.TupleEntryCollector;
 
 public class FetcherRunnable implements Runnable {
+    private static final Logger LOGGER = Logger.getLogger(FetcherRunnable.class);
+    
     private IHttpFetcher _httpFetcher;
     private FetchList _items;
 
@@ -74,6 +77,9 @@ public class FetcherRunnable implements Runnable {
                     collector.add(result.toTuple());
                 }
             } catch (Throwable t) {
+                t.printStackTrace();
+                LOGGER.error(t);
+                
                 if (fetching) {
                     process.decrement(FetcherCounters.URLS_FETCHING, 1);
                 }

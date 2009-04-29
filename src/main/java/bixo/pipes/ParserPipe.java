@@ -40,8 +40,7 @@ public class ParserPipe extends SubAssembly {
     public ParserPipe(Pipe fetcherPipe, IParserFactory factory, Fields metaDataField) {
         Pipe parsePipe = new Pipe("parse_pipe", fetcherPipe);
 
-        Fields parsedFields = ParsedDatum.getFields().append(metaDataField);
-        parsePipe = new Each(parsePipe, new ParseFunction(ParsedDatum.getFields(), metaDataField, factory), parsedFields);
+        parsePipe = new Each(parsePipe, new ParseFunction(ParsedDatum.getFields(), metaDataField, factory), Fields.RESULTS);
         setTails(parsePipe);
     }
 

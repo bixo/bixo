@@ -84,7 +84,7 @@ public class FetchedDatum extends BaseDatum {
     @SuppressWarnings("unchecked")
     @Override
     protected Comparable[] getValues() {
-        return new Comparable[] { _statusCode, _baseUrl, _fetchedUrl, _fetchTime, _content, _contentType, _responseRate };
+        return new Comparable[] { _statusCode.ordinal(), _baseUrl, _fetchedUrl, _fetchTime, _content, _contentType, _responseRate };
     }
 
     public static FetchedDatum fromTuple(Tuple tuple, Fields metaDataFieldNames) {

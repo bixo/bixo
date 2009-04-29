@@ -41,10 +41,10 @@ public class GroupedUrlDatum extends UrlDatum {
 
     public static GroupedUrlDatum fromTuple(Tuple tuple, Fields metaDataFieldNames) {
         TupleEntry entry = new TupleEntry(getFields(), tuple);
-        String url = entry.getString(IFieldNames.URL);
-        long lastFetched = entry.getLong(IFieldNames.LAST_FETCHED);
-        long lastUpdated = entry.getLong(IFieldNames.LAST_UPDATED);
-        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.FETCH_STATUS));
+        String url = entry.getString(IFieldNames.SOURCE_URL);
+        long lastFetched = entry.getLong(IFieldNames.SOURCE_LAST_FETCHED);
+        long lastUpdated = entry.getLong(IFieldNames.SOURCE_LAST_UPDATED);
+        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.SOURCE_FETCH_STATUS));
         String groupKey = entry.getString(IFieldNames.GROUPING_KEY);
 
         return new GroupedUrlDatum(url, lastFetched, lastUpdated, fetchStatus, groupKey, BaseDatum.extractMetaData(tuple, getFields().size(), metaDataFieldNames));

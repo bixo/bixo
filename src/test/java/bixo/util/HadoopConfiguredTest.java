@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo;
+package bixo.util;
 
 import java.net.URI;
 
