@@ -1,8 +1,8 @@
 package bixo.pipes;
 
-import bixo.IConstants;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
+import bixo.datum.IFieldNames;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.http.IHttpFetcherFactory;
 import bixo.fetcher.util.IGroupingKeyGenerator;
@@ -27,7 +27,7 @@ public class FetchPipe extends SubAssembly {
     public FetchPipe(Pipe urlProvider, IGroupingKeyGenerator keyGenerator, IScoreGenerator scoreGenerator, IHttpFetcherFactory factory, Fields metaDataFields) {
 
         Pipe fetch = new Pipe("fetch_pipe", urlProvider);
-        String groupingKey = IConstants.GROUPING_KEY;
+        String groupingKey = IFieldNames.GROUPING_KEY;
 
         Fields groupedFields = GroupedUrlDatum.getFields().append(metaDataFields);
         fetch = new Each(fetch, new GroupFunction(groupingKey, metaDataFields, keyGenerator), groupedFields);

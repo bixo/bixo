@@ -2,7 +2,6 @@ package bixo.datum;
 
 import java.util.Map;
 
-import bixo.IConstants;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 
@@ -48,7 +47,7 @@ public class ParsedDatum extends BaseDatum {
     }
 
     public static Fields getFields() {
-        return new Fields(IConstants.URL, IConstants.TEXT, IConstants.OUT_LINKS);
+        return new Fields(IFieldNames.URL, IFieldNames.TEXT, IFieldNames.OUT_LINKS);
     }
 
 }

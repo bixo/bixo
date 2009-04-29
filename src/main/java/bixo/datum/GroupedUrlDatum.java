@@ -3,7 +3,6 @@ package bixo.datum;
 import java.util.Arrays;
 import java.util.Map;
 
-import bixo.IConstants;
 import bixo.util.FieldUtil;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
@@ -37,16 +36,16 @@ public class GroupedUrlDatum extends UrlDatum {
     }
 
     public static Fields getFields() {
-        return FieldUtil.combine(UrlDatum.getFields(), new Fields(IConstants.GROUPING_KEY));
+        return FieldUtil.combine(UrlDatum.getFields(), new Fields(IFieldNames.GROUPING_KEY));
     }
 
     public static GroupedUrlDatum fromTuple(Tuple tuple, Fields metaDataFieldNames) {
         TupleEntry entry = new TupleEntry(getFields(), tuple);
-        String url = entry.getString(IConstants.URL);
-        long lastFetched = entry.getLong(IConstants.LAST_FETCHED);
-        long lastUpdated = entry.getLong(IConstants.LAST_UPDATED);
-        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IConstants.FETCH_STATUS));
-        String groupKey = entry.getString(IConstants.GROUPING_KEY);
+        String url = entry.getString(IFieldNames.URL);
+        long lastFetched = entry.getLong(IFieldNames.LAST_FETCHED);
+        long lastUpdated = entry.getLong(IFieldNames.LAST_UPDATED);
+        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.FETCH_STATUS));
+        String groupKey = entry.getString(IFieldNames.GROUPING_KEY);
 
         return new GroupedUrlDatum(url, lastFetched, lastUpdated, fetchStatus, groupKey, BaseDatum.extractMetaData(tuple, getFields().size(), metaDataFieldNames));
     }

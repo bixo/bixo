@@ -3,7 +3,6 @@ package bixo.datum;
 import java.util.Arrays;
 import java.util.Map;
 
-import bixo.IConstants;
 import bixo.util.FieldUtil;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
@@ -36,18 +35,18 @@ public class ScoredUrlDatum extends GroupedUrlDatum implements Comparable<Scored
     }
 
     public static Fields getFields() {
-        return FieldUtil.combine(GroupedUrlDatum.getFields(), new Fields(IConstants.SCORE));
+        return FieldUtil.combine(GroupedUrlDatum.getFields(), new Fields(IFieldNames.SCORE));
     }
 
     @SuppressWarnings("unchecked")
     public static ScoredUrlDatum fromTuple(Tuple tuple, Fields metaDataFieldNames) {
         TupleEntry entry = new TupleEntry(getFields(), tuple);
-        String url = entry.getString(IConstants.URL);
-        long lastFetched = entry.getLong(IConstants.LAST_FETCHED);
-        long lastUpdated = entry.getLong(IConstants.LAST_UPDATED);
-        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IConstants.FETCH_STATUS));
-        String groupKey = entry.getString(IConstants.GROUPING_KEY);
-        double score = entry.getDouble(IConstants.SCORE);
+        String url = entry.getString(IFieldNames.URL);
+        long lastFetched = entry.getLong(IFieldNames.LAST_FETCHED);
+        long lastUpdated = entry.getLong(IFieldNames.LAST_UPDATED);
+        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.FETCH_STATUS));
+        String groupKey = entry.getString(IFieldNames.GROUPING_KEY);
+        double score = entry.getDouble(IFieldNames.SCORE);
 
         Map<String, Comparable> metaData = extractMetaData(tuple, getFields().size(), metaDataFieldNames);
         

@@ -22,8 +22,8 @@
  */
 package bixo.operations;
 
-import bixo.IConstants;
 import bixo.datum.FetchStatusCode;
+import bixo.datum.IFieldNames;
 import bixo.datum.UrlDatum;
 import bixo.urldb.IUrlFilter;
 import cascading.flow.FlowProcess;
@@ -51,7 +51,7 @@ public class TextUrlParser extends BaseOperation<String> implements Function<Str
     @Override
     public void operate(FlowProcess process, FunctionCall<String> call) {
         TupleEntry arguments = call.getArguments();
-        String url = (String) arguments.get(IConstants.LINE);
+        String url = (String) arguments.get(IFieldNames.LINE);
 
         for (IUrlFilter filter : _urlFilters) {
             url = filter.filter(url);

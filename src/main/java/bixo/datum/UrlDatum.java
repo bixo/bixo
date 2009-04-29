@@ -24,7 +24,6 @@ package bixo.datum;
 
 import java.util.Map;
 
-import bixo.IConstants;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
@@ -85,15 +84,15 @@ public class UrlDatum extends BaseDatum {
     }
 
     public static Fields getFields() {
-        return new Fields(IConstants.URL, IConstants.LAST_UPDATED, IConstants.LAST_FETCHED, IConstants.LAST_STATUS);
+        return new Fields(IFieldNames.URL, IFieldNames.LAST_UPDATED, IFieldNames.LAST_FETCHED, IFieldNames.LAST_STATUS);
     }
 
     public static UrlDatum fromTuple(Tuple tuple, Fields metaDataFieldNames) {
         TupleEntry entry = new TupleEntry(getFields(), tuple);
-        String url = entry.getString(IConstants.URL);
-        long lastFetched = entry.getLong(IConstants.LAST_FETCHED);
-        long lastUpdated = entry.getLong(IConstants.LAST_UPDATED);
-        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IConstants.FETCH_STATUS));
+        String url = entry.getString(IFieldNames.URL);
+        long lastFetched = entry.getLong(IFieldNames.LAST_FETCHED);
+        long lastUpdated = entry.getLong(IFieldNames.LAST_UPDATED);
+        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.FETCH_STATUS));
 
         return new UrlDatum(url, lastFetched, lastUpdated, fetchStatus, BaseDatum.extractMetaData(tuple, getFields().size(), metaDataFieldNames));
     }

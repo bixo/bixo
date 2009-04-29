@@ -26,7 +26,6 @@ import java.util.Map;
 
 import org.apache.hadoop.io.BytesWritable;
 
-import bixo.IConstants;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
@@ -91,19 +90,19 @@ public class FetchedDatum extends BaseDatum {
     public static FetchedDatum fromTuple(Tuple tuple, Fields metaDataFieldNames) {
 
         TupleEntry entry = new TupleEntry(getFields(), tuple);
-        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IConstants.FETCH_STATUS));
-        String baseUrl = entry.getString(IConstants.BASE_URL);
-        String fetchedUrl = entry.getString(IConstants.FETECHED_URL);
-        long fetchTime = entry.getLong(IConstants.FETCH_TIME);
-        BytesWritable content = (BytesWritable)entry.get(IConstants.CONTENT);
-        String contentType = entry.getString(IConstants.CONTENT_TYPE);
-        int responseRate = entry.getInteger(IConstants.FETCH_RATE);
+        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.FETCH_STATUS));
+        String baseUrl = entry.getString(IFieldNames.BASE_URL);
+        String fetchedUrl = entry.getString(IFieldNames.FETECHED_URL);
+        long fetchTime = entry.getLong(IFieldNames.FETCH_TIME);
+        BytesWritable content = (BytesWritable)entry.get(IFieldNames.CONTENT);
+        String contentType = entry.getString(IFieldNames.CONTENT_TYPE);
+        int responseRate = entry.getInteger(IFieldNames.FETCH_RATE);
         
         return new FetchedDatum(fetchStatus, baseUrl, fetchedUrl, fetchTime, content, contentType, responseRate, BaseDatum.extractMetaData(tuple, getFields().size(), metaDataFieldNames));
     }
 
     public static Fields getFields() {
-        return new Fields(IConstants.FETCH_STATUS, IConstants.BASE_URL, IConstants.FETECHED_URL, IConstants.FETCH_TIME, IConstants.CONTENT, IConstants.CONTENT_TYPE, IConstants.FETCH_RATE);
+        return new Fields(IFieldNames.FETCH_STATUS, IFieldNames.BASE_URL, IFieldNames.FETECHED_URL, IFieldNames.FETCH_TIME, IFieldNames.CONTENT, IFieldNames.CONTENT_TYPE, IFieldNames.FETCH_RATE);
     }
 
 }

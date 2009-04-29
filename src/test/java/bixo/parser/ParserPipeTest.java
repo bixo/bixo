@@ -11,10 +11,10 @@ import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.junit.Test;
 
-import bixo.IConstants;
 import bixo.datum.FetchContentTuple;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
+import bixo.datum.IFieldNames;
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.parser.html.HtmlParser;
@@ -36,7 +36,7 @@ public class ParserPipeTest extends CascadingTestCase {
 
         Pipe pipe = new Pipe("parse_source");
         ParserPipe parserPipe = new ParserPipe(pipe, new DefaultParserFactory());
-        Lfs in = new Lfs(new SequenceFile(new Fields(IConstants.URL).append(FetchResultDatum.FetchedDatum)), "build/test-data/ParserPipeTest/in", true);
+        Lfs in = new Lfs(new SequenceFile(new Fields(IFieldNames.URL).append(FetchResultDatum.FetchedDatum)), "build/test-data/ParserPipeTest/in", true);
         Lfs out = new Lfs(new SequenceFile(ParsedDatum.FIELDS), "build/test-data/ParserPipeTest/out", true);
 
         TupleEntryCollector write = in.openForWrite(new JobConf());

@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 
 import bixo.cascading.MultiSinkTap;
 import bixo.datum.FetchStatusCode;
+import bixo.datum.IFieldNames;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.HttpClientFactory;
 import bixo.fetcher.http.IHttpFetcherFactory;
@@ -76,8 +77,8 @@ public class Bixo {
 
             // Create the output, which is a dual file sink tap.
             String outputPath = "build/test-data/Bixo/dual";
-            Tap status = new Hfs(new TextLine(new Fields(IConstants.URL, IConstants.FETCH_STATUS), new Fields(IConstants.URL, IConstants.FETCH_STATUS)), outputPath + "/status", true);
-            Tap content = new Hfs(new TextLine(new Fields(IConstants.URL, IConstants.CONTENT), new Fields(IConstants.URL, IConstants.FETCH_CONTENT)), outputPath + "/content", true);
+            Tap status = new Hfs(new TextLine(new Fields(IFieldNames.URL, IFieldNames.FETCH_STATUS), new Fields(IFieldNames.URL, IFieldNames.FETCH_STATUS)), outputPath + "/status", true);
+            Tap content = new Hfs(new TextLine(new Fields(IFieldNames.URL, IFieldNames.CONTENT), new Fields(IFieldNames.URL, IFieldNames.FETCH_CONTENT)), outputPath + "/content", true);
             Tap sink = new MultiSinkTap(status, content);
 
             // Finally we can run it.

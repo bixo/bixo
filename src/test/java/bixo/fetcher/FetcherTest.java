@@ -27,8 +27,8 @@ import java.io.File;
 import org.apache.hadoop.fs.FileUtil;
 import org.junit.Test;
 
-import bixo.IConstants;
 import bixo.datum.BaseDatum;
+import bixo.datum.IFieldNames;
 import bixo.fetcher.http.HttpClientFactory;
 import bixo.fetcher.http.IHttpFetcherFactory;
 import bixo.fetcher.util.LastFetchScoreGenerator;
@@ -53,16 +53,16 @@ public class FetcherTest {
         String workingFolder = "build/test-data/FetcherTest/working";
 
         // we might dont want to regenerate that all the time..
-        if (!new File(workingFolder, IConstants.URL_DB).exists()) {
+        if (!new File(workingFolder, IFieldNames.URL_DB).exists()) {
             UrlImporter urlImporter = new UrlImporter();
             String inputPath = "src/test-data/top10urls.txt";
             FileUtil.fullyDelete(new File(workingFolder));
             urlImporter.importUrls(inputPath, workingFolder);
         }
 
-        String inputPath = workingFolder + "/" + IConstants.URL_DB;
+        String inputPath = workingFolder + "/" + IFieldNames.URL_DB;
         Lfs in = new Lfs(new SequenceFile(BaseDatum.FIELDS), inputPath, true);
-        String outPath = workingFolder + "/" + IConstants.FETCH + TimeStampUtil.nowWithUnderLine();
+        String outPath = workingFolder + "/" + IFieldNames.FETCH + TimeStampUtil.nowWithUnderLine();
         Lfs out = new Lfs(new SequenceFile(Fields.ALL), outPath, true);
 
         Pipe pipe = new Pipe("urlSource");

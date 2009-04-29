@@ -27,7 +27,7 @@ import java.io.IOException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import bixo.IConstants;
+import bixo.datum.IFieldNames;
 import bixo.datum.UrlDatum;
 import bixo.operations.LastUpdated;
 import bixo.operations.TextUrlParser;
@@ -55,11 +55,11 @@ public class UrlImporter extends HadoopConfigured {
     public void importUrls(String inputPath, String workingFolder) throws IOException {
 
         FileSystem fs = getFileSystem(workingFolder);
-        Path currentDb = new Path(workingFolder, IConstants.URL_DB);
+        Path currentDb = new Path(workingFolder, IFieldNames.URL_DB);
         boolean dbexists = fs.exists(currentDb);
         // if db exists we want to merge dbs
 
-        Path newDb = new Path(workingFolder, IConstants.URL_DB + "-new-" + TimeStampUtil.nowWithUnderLine());
+        Path newDb = new Path(workingFolder, IFieldNames.URL_DB + "-new-" + TimeStampUtil.nowWithUnderLine());
         Tap importSink = new Hfs(new SequenceFile(UrlDatum.getFields()), newDb.toUri().toASCIIString(), true);
         // create tmp db
         importUrls(inputPath, importSink);
@@ -67,26 +67,26 @@ public class UrlImporter extends HadoopConfigured {
         if (dbexists) {
             // merge both together
 
-            Tap oldDbTap = new Hfs(new SequenceFile(UrlDatum.getFields()), workingFolder + "/" + IConstants.URL_DB);
+            Tap oldDbTap = new Hfs(new SequenceFile(UrlDatum.getFields()), workingFolder + "/" + IFieldNames.URL_DB);
 
             Tap newDbTap = new Hfs(new SequenceFile(UrlDatum.getFields()), newDb.toUri().toASCIIString());
 
             MultiTap source = new MultiTap(oldDbTap, newDbTap);
 
-            Path mergeDb = new Path(workingFolder, IConstants.URL_DB + "-merged-" + TimeStampUtil.nowWithUnderLine());
+            Path mergeDb = new Path(workingFolder, IFieldNames.URL_DB + "-merged-" + TimeStampUtil.nowWithUnderLine());
             Tap mergeSink = new Hfs(new SequenceFile(UrlDatum.getFields()), mergeDb.toUri().toASCIIString(), true);
 
             Pipe pipe = new Pipe("urldb-merge");
             // we want the url with the latest update.
-            pipe = new GroupBy(pipe, new Fields(IConstants.URL));
-            Aggregator<Tuple> last = new LastUpdated(IConstants.URL_TUPLE_VALUES);
-            pipe = new Every(pipe, IConstants.URL_TUPLE_VALUES, last);
+            pipe = new GroupBy(pipe, new Fields(IFieldNames.URL));
+            Aggregator<Tuple> last = new LastUpdated(Fields.ALL);
+            pipe = new Every(pipe, Fields.ALL, last);
 
             FlowConnector flowConnector = new FlowConnector();
             Flow flow = flowConnector.connect(source, mergeSink, pipe);
             flow.complete();
 
-            Path oldDb = new Path(workingFolder, IConstants.URL_DB + "-old-" + TimeStampUtil.nowWithUnderLine());
+            Path oldDb = new Path(workingFolder, IFieldNames.URL_DB + "-old-" + TimeStampUtil.nowWithUnderLine());
 
             fs.rename(currentDb, oldDb);
             fs.rename(mergeDb, currentDb);
@@ -115,10 +115,10 @@ public class UrlImporter extends HadoopConfigured {
         TextUrlParser function = new TextUrlParser((IUrlFilter[]) null);
         assembly = new Each(assembly, new Fields("line"), function);
 
-        assembly = new GroupBy(assembly, IConstants.URL_TUPLE_KEY);
+        assembly = new GroupBy(assembly, new Fields(IFieldNames.URL));
         // make sure we only have the url once.
-        Last last = new Last(IConstants.URL_TUPLE_VALUES);
-        assembly = new Every(assembly, IConstants.URL_TUPLE_VALUES, last);
+        Last last = new Last(Fields.ALL);
+        assembly = new Every(assembly, Fields.ALL, last);
 
         FlowConnector flowConnector = new FlowConnector();
         Flow flow = flowConnector.connect("url-import", source, sink, assembly);

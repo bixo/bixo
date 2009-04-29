@@ -20,11 +20,11 @@
  * SOFTWARE.
  *
  */
-package bixo;
+package bixo.datum;
 
 import cascading.tuple.Fields;
 
-public interface IConstants {
+public interface IFieldNames {
 
     String URL_DB = "url_db";
 
@@ -36,8 +36,7 @@ public interface IConstants {
     String LAST_FETCHED = "lastFetched";
     String LAST_STATUS = "lastStatus";
 
-    Fields URL_TUPLE_KEY = new Fields(URL);
-    Fields URL_TUPLE_VALUES = new Fields(LAST_UPDATED, LAST_FETCHED, LAST_STATUS);
+//    Fields URL_TUPLE_VALUES = new Fields(LAST_UPDATED, LAST_FETCHED, LAST_STATUS);
 
     String FETCH = "fetch";
     String SCORE = "score";
