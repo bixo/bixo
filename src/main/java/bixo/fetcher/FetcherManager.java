@@ -22,7 +22,6 @@
  */
 package bixo.fetcher;
 
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -31,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
+import bixo.fetcher.http.IHttpFetcherFactory;
 
 /**
  * Manage the set of threads that one task spawns to fetch pages.

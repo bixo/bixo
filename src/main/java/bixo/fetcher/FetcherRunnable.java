@@ -23,14 +23,18 @@
 package bixo.fetcher;
 
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.fetcher.beans.FetchItem;
-import bixo.fetcher.beans.FetchStatusCode;
-import bixo.tuple.FetchResultTuple;
+import bixo.datum.FetchStatusCode;
+import bixo.datum.FetchedDatum;
+import bixo.datum.ScoredUrlDatum;
+import bixo.fetcher.http.IHttpFetcher;
 import cascading.tuple.TupleEntryCollector;
 
 public class FetcherRunnable implements Runnable {
+    private static final Logger LOGGER = Logger.getLogger(FetcherRunnable.class);
+    
     private IHttpFetcher _httpFetcher;
     private FetchList _items;
 
@@ -45,14 +49,14 @@ public class FetcherRunnable implements Runnable {
 
         // FUTURE KKr - when fetching the last item, send a Connection: close
         // header to let the server know it doesn't need to keep the socket open.
-        for (FetchItem item : _items) {
+        for (ScoredUrlDatum item : _items) {
             boolean fetching = false;
             
             try {
                 fetching = true;
                 process.increment(FetcherCounters.URLS_FETCHING, 1);
                 long startTime = System.currentTimeMillis();
-                FetchResultTuple result = _httpFetcher.get(item.getUrl(), item.getHost());
+                FetchedDatum result = _httpFetcher.get(item);
                 long deltaTime = System.currentTimeMillis() - startTime;
                 process.decrement(FetcherCounters.URLS_FETCHING, 1);
                 process.increment(FetcherCounters.FETCHED_TIME, (int)deltaTime);
@@ -60,7 +64,7 @@ public class FetcherRunnable implements Runnable {
                 
                 if (result.getStatusCode() == FetchStatusCode.FETCHED) {
                     process.increment(FetcherCounters.URLS_FETCHED, 1);
-                    process.increment(FetcherCounters.FETCHED_BYTES, result.getContent().getContent().length);
+                    process.increment(FetcherCounters.FETCHED_BYTES, result.getContent().getLength());
                     process.setStatus(Level.TRACE, "Fetched " + result);
                 } else {
                     process.increment(FetcherCounters.URLS_FAILED, 1);
@@ -73,6 +77,9 @@ public class FetcherRunnable implements Runnable {
                     collector.add(result.toTuple());
                 }
             } catch (Throwable t) {
+                t.printStackTrace();
+                LOGGER.error(t);
+                
                 if (fetching) {
                     process.decrement(FetcherCounters.URLS_FETCHING, 1);
                 }

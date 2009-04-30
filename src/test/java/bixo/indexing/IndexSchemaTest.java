@@ -8,7 +8,6 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
@@ -19,7 +18,8 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TopDocs;
 import org.junit.Test;
 
-import bixo.tuple.ParseResultTuple;
+import bixo.datum.Outlink;
+import bixo.datum.ParsedDatum;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;
@@ -53,17 +53,17 @@ public class IndexSchemaTest {
 
         String in = "build/test-data/IndexSchemaTest/testPipeIntoIndex/in";
 
-        Lfs lfs = new Lfs(new SequenceFile(new Fields("text", "outlinks")), in, SinkMode.REPLACE);
+        Lfs lfs = new Lfs(new SequenceFile(ParsedDatum.FIELDS), in, SinkMode.REPLACE);
         TupleEntryCollector write = lfs.openForWrite(new JobConf());
         for (int i = 0; i < 10000; i++) {
-            ParseResultTuple resultTuple = new ParseResultTuple("text" + i, new String[0]);
+            ParsedDatum resultTuple = new ParsedDatum("http://" + i, "text" + i, new Outlink[0], null);
             write.add(resultTuple.toTuple());
         }
         write.close();
 
         String out = "build/test-data/IndexSchemaTest/testPipeIntoIndex/out";
         FileUtil.fullyDelete(new File(out));
-        Lfs indexSinkTap = new Lfs(new IndexScheme(new Fields("text"), new Store[] { Store.NO }, new Index[] { Index.NOT_ANALYZED }, KeywordAnalyzer.class, MaxFieldLength.UNLIMITED.getLimit()), out,
+        Lfs indexSinkTap = new Lfs(new IndexScheme(new Fields(ParsedDatum.PARSED_TEXT_FIELD), new Store[] { Store.NO }, new Index[] { Index.NOT_ANALYZED }, KeywordAnalyzer.class, MaxFieldLength.UNLIMITED.getLimit()), out,
                         SinkMode.REPLACE);
         Flow flow = new FlowConnector().connect(lfs, indexSinkTap, new Pipe("somePipe"));
         flow.complete();
@@ -77,7 +77,7 @@ public class IndexSchemaTest {
             indexReaders[i] = IndexReader.open(indexFile);
         }
 
-        QueryParser parser = new QueryParser("text", new KeywordAnalyzer());
+        QueryParser parser = new QueryParser(ParsedDatum.PARSED_TEXT_FIELD, new KeywordAnalyzer());
         IndexSearcher searcher = new IndexSearcher(new MultiReader(indexReaders));
         for (int i = 0; i < 10000; i++) {
             TopDocs search = searcher.search(parser.parse("text" + i), 1);

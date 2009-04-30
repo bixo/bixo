@@ -34,9 +34,10 @@ import org.apache.commons.io.LineIterator;
 import org.apache.hadoop.mapred.JobConf;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.fetcher.beans.FetchItem;
-import bixo.fetcher.beans.FetcherPolicy;
-import bixo.tuple.UrlWithScoreTuple;
+import bixo.config.FetcherPolicy;
+import bixo.datum.FetchStatusCode;
+import bixo.datum.ScoredUrlDatum;
+import bixo.fetcher.http.HttpClientFactory;
 import bixo.utils.DomainNames;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Lfs;
@@ -74,7 +75,7 @@ public class RunTestFetcher {
 
             // Now we have the URLs, so create queues for processing.
             System.out.println("Unique PLDs: " + domainMap.size());
-            
+
             // setup output
             JobConf conf = new JobConf();
             String out = "build/test-data/RunTestFetcher/working";
@@ -88,16 +89,12 @@ public class RunTestFetcher {
                 List<String> urls = domainMap.get(pld);
                 System.out.println("Adding " + urls.size() + " URLs for " + pld);
                 for (String url : urls) {
-                    UrlWithScoreTuple urlScore = new UrlWithScoreTuple();
-                    urlScore.setUrl(url);
-                    urlScore.SetScore(0.5d);
-                    queue.offer(new FetchItem(urlScore));
+                    ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0, 0, FetchStatusCode.NEVER_FETCHED, null, 0.5d, null);
+                    queue.offer(urlScore);
                 }
 
                 queueMgr.offer(queue);
             }
-
- 
 
             FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFactory(10), new BixoFlowProcess());
             Thread t = new Thread(threadMgr);

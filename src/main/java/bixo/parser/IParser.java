@@ -1,10 +1,10 @@
 package bixo.parser;
 
-import bixo.tuple.FetchContentTuple;
-import bixo.tuple.ParseResultTuple;
+import bixo.datum.FetchedDatum;
+import bixo.datum.ParsedDatum;
 
 public interface IParser {
 
-    ParseResultTuple parse(FetchContentTuple contentTuple);
+    ParsedDatum parse(FetchedDatum fetchedDatum);
 
 }

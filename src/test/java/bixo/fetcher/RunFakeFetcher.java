@@ -27,9 +27,9 @@ import java.util.Random;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.fetcher.beans.FetchItem;
-import bixo.fetcher.beans.FetcherPolicy;
-import bixo.tuple.UrlWithScoreTuple;
+import bixo.config.FetcherPolicy;
+import bixo.datum.FetchStatusCode;
+import bixo.datum.ScoredUrlDatum;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
@@ -65,12 +65,8 @@ public class RunFakeFetcher {
                 for (int j = 0; j < 5; j++) {
                     String file = "/page-" + j + ".html";
 
-                    UrlWithScoreTuple urlScore = new UrlWithScoreTuple();
-                    urlScore.setUrl("http://www." + host + file);
-                    urlScore.SetScore(rand.nextFloat());
-                    FetchItem fetchItem = new FetchItem(urlScore);
-
-                    queue.offer(fetchItem);
+                    ScoredUrlDatum urlScore = new ScoredUrlDatum("http://www." + host + file, 0,0, FetchStatusCode.NEVER_FETCHED, null, rand.nextFloat(), null);
+                    queue.offer(urlScore);
                 }
 
                 while (!queueMgr.offer(queue)) {

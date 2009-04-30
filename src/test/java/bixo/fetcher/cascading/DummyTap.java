@@ -2,7 +2,6 @@ package bixo.fetcher.cascading;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,10 +10,8 @@ import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 
-import bixo.tuple.UrlTuple;
 import cascading.flow.Flow;
 import cascading.scheme.Scheme;
-import cascading.scheme.SequenceFile;
 import cascading.tap.Tap;
 import cascading.tap.TapException;
 import cascading.tuple.Fields;
@@ -24,6 +21,7 @@ import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 import cascading.tuple.hadoop.TupleSerialization;
 
+@SuppressWarnings("serial")
 public class DummyTap extends Tap {
 
     private List<Tuple> _inputData;
@@ -84,7 +82,10 @@ public class DummyTap extends Tap {
         if (_inputData == null) {
             _inputData = _outPut;
         }
-        return new TupleEntryIterator(UrlTuple.FIELDS, _inputData.iterator());
+        
+        // TODO SGr - not sure what to use for fields here. Do we even need
+        // this DummyTap class?
+        return new TupleEntryIterator(Fields.ALL, _inputData.iterator());
     }
 
     @Override

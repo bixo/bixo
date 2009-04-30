@@ -4,12 +4,17 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Collections;
+//import java.util.ArrayList;
+//import java.util.Collections;
 
 import org.apache.http.HttpVersion;
 
-import bixo.fetcher.beans.FetcherPolicy;
+import bixo.config.FetcherPolicy;
+import bixo.datum.FetchStatusCode;
+import bixo.datum.ScoredUrlDatum;
+import bixo.fetcher.http.HttpClientFactory;
+import bixo.fetcher.http.IHttpFetcher;
+import bixo.utils.DomainNames;
 
 public class TryKeepAlive {
     private static final String[] APACHE_URLS = {
@@ -47,15 +52,20 @@ public class TryKeepAlive {
         "http://xml.apache.org/commons/components/resolver/resolver-article.html",
     };
     
-    private static final String[] TRANSPAC_URLS = {
-                    "http://www.transpac.com/",
-                    "http://www.transpac.com/aboutus.html",
-                    "http://www.transpac.com/contact.html",
-                    "http://www.transpac.com/kkresume.html",
-                    "http://www.transpac.com/csresume.html",
-                    "http://www.transpac.com/projects.html",
-                    "http://www.transpac.com/schmed"
-    };
+//    private static final String[] TRANSPAC_URLS = {
+//                    "http://www.transpac.com/",
+//                    "http://www.transpac.com/aboutus.html",
+//                    "http://www.transpac.com/contact.html",
+//                    "http://www.transpac.com/kkresume.html",
+//                    "http://www.transpac.com/csresume.html",
+//                    "http://www.transpac.com/projects.html",
+//                    "http://www.transpac.com/schmed"
+//    };
+
+    
+    private static ScoredUrlDatum makeSUD(String url) {
+        return new ScoredUrlDatum(url, 0, 0, FetchStatusCode.NEVER_FETCHED, DomainNames.getPLD(url), 1.0d, null);
+    }
 
     private static class UrlWithHost implements Comparable<UrlWithHost> {
         private String _url;
@@ -93,7 +103,7 @@ public class TryKeepAlive {
         for (String uri : urls) {
             HttpClientFactory factory = new HttpClientFactory(1, HttpVersion.HTTP_1_0, new FetcherPolicy());
             IHttpFetcher fetcher = factory.newHttpFetcher();
-            fetcher.get(uri);
+            fetcher.get(makeSUD(uri));
         }
         long stopTime = System.currentTimeMillis();
         return stopTime - startTime;
@@ -105,7 +115,7 @@ public class TryKeepAlive {
         long startTime = System.currentTimeMillis();
         for (String uri : urls) {
             IHttpFetcher fetcher = factory.newHttpFetcher();
-            fetcher.get(uri);
+            fetcher.get(makeSUD(uri));
         }
         long stopTime = System.currentTimeMillis();
         return stopTime - startTime;
@@ -116,46 +126,50 @@ public class TryKeepAlive {
         long startTime = System.currentTimeMillis();
         IHttpFetcher fetcher = factory.newHttpFetcher();
         for (String uri : urls) {
-            fetcher.get(uri);
+            fetcher.get(makeSUD(uri));
         }
         long stopTime = System.currentTimeMillis();
         return stopTime - startTime;
     }
     
-    private static long tryByIPHttp11(String[] urls) throws MalformedURLException, UnknownHostException {
-        ArrayList<UrlWithHost> ipUrls = new ArrayList<UrlWithHost>();
-        for (String url : urls) {
-            ipUrls.add(convertUrlToIP(url));
-        }
-
-        HttpClientFactory factory = new HttpClientFactory(10, HttpVersion.HTTP_1_1, new FetcherPolicy());
-        long startTime = System.currentTimeMillis();
-        IHttpFetcher fetcher = factory.newHttpFetcher();
-        for (UrlWithHost url : ipUrls) {
-            fetcher.get(url.getUrl(), url.getHost());
-        }
-        long stopTime = System.currentTimeMillis();
-        return stopTime - startTime;
-    }
+    // TODO KKr - re-enable this test when we add support for the hostname back to the fetcher.get() call,
+    // as an alternative API.
+//    private static long tryByIPHttp11(String[] urls) throws MalformedURLException, UnknownHostException {
+//        ArrayList<UrlWithHost> ipUrls = new ArrayList<UrlWithHost>();
+//        for (String url : urls) {
+//            ipUrls.add(convertUrlToIP(url));
+//        }
+//
+//        HttpClientFactory factory = new HttpClientFactory(10, HttpVersion.HTTP_1_1, new FetcherPolicy());
+//        long startTime = System.currentTimeMillis();
+//        IHttpFetcher fetcher = factory.newHttpFetcher();
+//        for (UrlWithHost url : ipUrls) {
+//            fetcher.get(url.getUrl(), url.getHost());
+//        }
+//        long stopTime = System.currentTimeMillis();
+//        return stopTime - startTime;
+//    }
     
-    private static long trySortedByIPHttp11(String[] urls) throws MalformedURLException, UnknownHostException {
-        ArrayList<UrlWithHost> ipUrls = new ArrayList<UrlWithHost>();
-        
-        for (String url : urls) {
-            ipUrls.add(convertUrlToIP(url));
-        }
-        
-        Collections.sort(ipUrls);
-        
-        HttpClientFactory factory = new HttpClientFactory(10, HttpVersion.HTTP_1_1, new FetcherPolicy());
-        long startTime = System.currentTimeMillis();
-        IHttpFetcher fetcher = factory.newHttpFetcher();
-        for (UrlWithHost url : ipUrls) {
-            fetcher.get(url.getUrl(), url.getHost());
-        }
-        long stopTime = System.currentTimeMillis();
-        return stopTime - startTime;
-    }
+    // TODO KKr - re-enable this test when we add support for the hostname back to the fetcher.get() call,
+    // as an alternative API.
+//    private static long trySortedByIPHttp11(String[] urls) throws MalformedURLException, UnknownHostException {
+//        ArrayList<UrlWithHost> ipUrls = new ArrayList<UrlWithHost>();
+//        
+//        for (String url : urls) {
+//            ipUrls.add(convertUrlToIP(url));
+//        }
+//        
+//        Collections.sort(ipUrls);
+//        
+//        HttpClientFactory factory = new HttpClientFactory(10, HttpVersion.HTTP_1_1, new FetcherPolicy());
+//        long startTime = System.currentTimeMillis();
+//        IHttpFetcher fetcher = factory.newHttpFetcher();
+//        for (UrlWithHost url : ipUrls) {
+//            fetcher.get(url.getUrl(), url.getHost());
+//        }
+//        long stopTime = System.currentTimeMillis();
+//        return stopTime - startTime;
+//    }
     
     /**
      * @param args
@@ -166,8 +180,8 @@ public class TryKeepAlive {
             System.out.println("Http 1.0 no keep-alive: " + tryNoKeepaliveHttp10(APACHE_URLS) + "ms");
             System.out.println("Http 1.0 elapsed time: " + tryHttp10(APACHE_URLS) + "ms");
             System.out.println("Http 1.1 elapsed time: " + tryHttp11(APACHE_URLS) + "ms");
-            System.out.println("Http 1.1 by IP elapsed time: " + tryByIPHttp11(APACHE_URLS) + "ms");
-            System.out.println("Http 1.1 by sorted IP elapsed time: " + trySortedByIPHttp11(APACHE_URLS) + "ms");
+            // System.out.println("Http 1.1 by IP elapsed time: " + tryByIPHttp11(APACHE_URLS) + "ms");
+            // System.out.println("Http 1.1 by sorted IP elapsed time: " + trySortedByIPHttp11(APACHE_URLS) + "ms");
         } catch (Throwable t) {
             System.err.println("Exception: " + t.getMessage());
             t.printStackTrace(System.err);

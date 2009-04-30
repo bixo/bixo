@@ -33,14 +33,15 @@ import org.apache.html.dom.*;
 
 import org.apache.log4j.Logger;
 
+import bixo.datum.FetchedDatum;
+import bixo.datum.Outlink;
+import bixo.datum.ParsedDatum;
 import bixo.parser.IParse;
 import bixo.parser.IParser;
 import bixo.parser.ParseData;
 import bixo.parser.ParseImpl;
 import bixo.parser.ParseResult;
 import bixo.parser.ParseStatus;
-import bixo.tuple.FetchContentTuple;
-import bixo.tuple.ParseResultTuple;
 import bixo.utils.EncodingDetector;
 import bixo.utils.Metadata;
 
@@ -111,14 +112,14 @@ public class HtmlParser implements IParser {
         return encoding;
     }
 
-    public ParseResult getParse(FetchContentTuple content) {
+    public ParseResult getParse(FetchedDatum fetchedDatum) {
         HTMLMetaTags metaTags = new HTMLMetaTags();
 
         URL base;
         try {
-            base = new URL(content.getBaseUrl());
+            base = new URL(fetchedDatum.getBaseUrl());
         } catch (MalformedURLException e) {
-            return new ParseStatus(e).getEmptyParseResult(content.getBaseUrl());
+            return new ParseStatus(e).getEmptyParseResult(fetchedDatum.getBaseUrl());
         }
 
         String text = "";
@@ -129,14 +130,14 @@ public class HtmlParser implements IParser {
         // parse the content
         DocumentFragment root;
         try {
-            byte[] contentInOctets = content.getContent();
+            byte[] contentInOctets = fetchedDatum.getContent().getBytes();
             InputSource input = new InputSource(new ByteArrayInputStream(contentInOctets));
 
             EncodingDetector detector = new EncodingDetector();
             // TODO KKr - get contentType from content
-            detector.autoDetectClues(content, "xxx", true);
+            detector.autoDetectClues(fetchedDatum, "xxx", true);
             detector.addClue(sniffCharacterEncoding(contentInOctets), "sniffed");
-            String encoding = detector.guessEncoding(content, defaultCharEncoding);
+            String encoding = detector.guessEncoding(fetchedDatum, defaultCharEncoding);
 
             metadata.set(Metadata.ORIGINAL_CHAR_ENCODING_KEY, encoding);
             metadata.set(Metadata.CHAR_ENCODING_FOR_CONVERSION_KEY, encoding);
@@ -145,14 +146,14 @@ public class HtmlParser implements IParser {
             if (LOGGER.isTraceEnabled()) { LOGGER.trace("Parsing..."); }
             root = parse(input);
         } catch (IOException e) {
-            return new ParseStatus(e).getEmptyParseResult(content.getBaseUrl());
+            return new ParseStatus(e).getEmptyParseResult(fetchedDatum.getBaseUrl());
         } catch (DOMException e) {
-            return new ParseStatus(e).getEmptyParseResult(content.getBaseUrl());
+            return new ParseStatus(e).getEmptyParseResult(fetchedDatum.getBaseUrl());
         } catch (SAXException e) {
-            return new ParseStatus(e).getEmptyParseResult(content.getBaseUrl());
+            return new ParseStatus(e).getEmptyParseResult(fetchedDatum.getBaseUrl());
         } catch (Exception e) {
             LOGGER.error("Exception parsing HTML", e);
-            return new ParseStatus(e).getEmptyParseResult(content.getBaseUrl());
+            return new ParseStatus(e).getEmptyParseResult(fetchedDatum.getBaseUrl());
         }
 
         // get meta directives
@@ -180,7 +181,7 @@ public class HtmlParser implements IParser {
             utils.getOutlinks(baseTag!=null?baseTag:base, l, root);
             outlinks = l.toArray(new Outlink[l.size()]);
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("found "+outlinks.length+" outlinks in "+content.getBaseUrl());
+                LOGGER.trace("found "+outlinks.length+" outlinks in "+fetchedDatum.getBaseUrl());
             }
         }
 
@@ -194,7 +195,7 @@ public class HtmlParser implements IParser {
         // TODO KKr - figure out content metadata vs. metadata here.
         Metadata md = new Metadata();
         ParseData parseData = new ParseData(status, title, outlinks, md, metadata);
-        ParseResult parseResult = ParseResult.createParseResult(content.getBaseUrl(), new ParseImpl(text, parseData));
+        ParseResult parseResult = ParseResult.createParseResult(fetchedDatum.getBaseUrl(), new ParseImpl(text, parseData));
 
         // TODO KKr - how do we want to handle parse meta-data?
         if (metaTags.getNoCache()) {             // not okay to cache
@@ -251,20 +252,10 @@ public class HtmlParser implements IParser {
 
     
     @Override
-    public ParseResultTuple parse(FetchContentTuple contentTuple) {
-        ParseResult result = getParse(contentTuple);
-        
-        IParse p = result.get(contentTuple.getBaseUrl());
-        
-        Outlink[] outlinks = p.getData().getOutlinks();
-        String[] slinks = new String[outlinks.length];
-        
-        int i = 0;
-        for (Outlink outlink : outlinks) {
-            slinks[i++] = outlink.getToUrl();
-        }
-        
-        return new ParseResultTuple(p.getText(), slinks);
+    public ParsedDatum parse(FetchedDatum fetchedDatum) {
+        ParseResult result = getParse(fetchedDatum);
+        IParse p = result.get(fetchedDatum.getBaseUrl());        
+        return new ParsedDatum(fetchedDatum.getBaseUrl(), p.getText(), p.getData().getOutlinks(), fetchedDatum.getMetaDataMap());
     }
 
 }

@@ -3,14 +3,15 @@ package bixo.fetcher.cascading;
 import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 
-import bixo.IConstants;
 import bixo.cascading.MultiSinkTap;
+import bixo.datum.FetchStatusCode;
+import bixo.datum.FetchedDatum;
+import bixo.datum.UrlDatum;
 import bixo.fetcher.FakeHttpFetcherFactory;
-import bixo.fetcher.IHttpFetcherFactory;
-import bixo.fetcher.beans.FetchStatusCode;
+import bixo.fetcher.http.IHttpFetcherFactory;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
-import bixo.tuple.UrlTuple;
+import bixo.pipes.FetchPipe;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;
@@ -29,15 +30,11 @@ public class FetchPipeTest {
     @Test
     public void testFetchPipe() throws Exception {
 
-        // First create a sequence file with 1000 UrlTuple tuples in it.
-        Lfs in = new Lfs(new SequenceFile(UrlTuple.FIELDS), "build/test-data/FetchPipeTest/in", true);
+        // First create a sequence file with 1000 UrlDatum tuples in it.
+        Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), "build/test-data/FetchPipeTest/in", true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
         for (int i = 0; i < 1000; i++) {
-            UrlTuple url = new UrlTuple();
-            url.setUrl("http://" + i);
-            url.setLastFetched(0);
-            url.setLastUpdated(0);
-            url.setLastStatus(FetchStatusCode.NEVER_FETCHED);
+            UrlDatum url = new UrlDatum("http://" + i, 0, 0, FetchStatusCode.NEVER_FETCHED, null);
             write.add(url.toTuple());
         }
         write.close();
@@ -63,8 +60,8 @@ public class FetchPipeTest {
 
         // Create the output, which is a dual file sink tap.
         String outputPath = "build/test-data/FetchPipeTest/dual";
-        Tap status = new Hfs(new TextLine(new Fields(IConstants.URL, IConstants.FETCH_STATUS), new Fields(IConstants.URL, IConstants.FETCH_STATUS)), outputPath + "/status", true);
-        Tap content = new Hfs(new TextLine(new Fields(IConstants.URL, IConstants.CONTENT), new Fields(IConstants.URL, IConstants.FETCH_CONTENT)), outputPath + "/content", true);
+        Tap status = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD)), outputPath + "/status", true);
+        Tap content = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD)), outputPath + "/content", true);
         Tap sink = new MultiSinkTap(status, content);
 
         // Finally we can run it.

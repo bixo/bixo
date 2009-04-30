@@ -19,7 +19,7 @@ package bixo.parser;
 
 import java.util.Arrays;
 
-import bixo.parser.html.Outlink;
+import bixo.datum.Outlink;
 import bixo.utils.Metadata;
 
 

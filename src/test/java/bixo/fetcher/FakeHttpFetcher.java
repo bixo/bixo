@@ -25,47 +25,45 @@ package bixo.fetcher;
 import java.net.URL;
 import java.util.Random;
 
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.log4j.Logger;
 
-import bixo.fetcher.beans.FetchStatusCode;
-import bixo.fetcher.beans.FetcherPolicy;
-import bixo.tuple.FetchContentTuple;
-import bixo.tuple.FetchResultTuple;
+import bixo.config.FetcherPolicy;
+import bixo.datum.FetchStatusCode;
+import bixo.datum.FetchedDatum;
+import bixo.datum.ScoredUrlDatum;
+import bixo.fetcher.http.IHttpFetcher;
 
 public class FakeHttpFetcher implements IHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(FakeHttpFetcher.class);
-    
+
     private boolean _randomFetching;
     private FetcherPolicy _fetcherPolicy;
     private Random _rand;
-    
+
     public FakeHttpFetcher() {
         this(true, new FetcherPolicy());
     }
-    
+
     public FakeHttpFetcher(boolean randomFetching, FetcherPolicy fetcherPolicy) {
         _randomFetching = randomFetching;
         _fetcherPolicy = fetcherPolicy;
         _rand = new Random();
     }
-    
-    @Override
-    public FetchResultTuple get(String url) {
-        return get(url, null);
-    }
 
     @Override
-    public FetchResultTuple get(String url, String host) {
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) {
+        String url = scoredUrl.getUrl();
         try {
             URL theUrl = new URL(url);
-            
+
             int statusCode = 200;
             int contentSize = 10000;
             int bytesPerSecond = 100000;
-            
+
             if (_randomFetching) {
-                contentSize = Math.max(0, (int)(_rand.nextGaussian() * 5000.0) + 10000) + 100;
-                bytesPerSecond = Math.max(0, (int)(_rand.nextGaussian() * 25000.0) + 50000) + 1000;
+                contentSize = Math.max(0, (int) (_rand.nextGaussian() * 5000.0) + 10000) + 100;
+                bytesPerSecond = Math.max(0, (int) (_rand.nextGaussian() * 25000.0) + 50000) + 1000;
             } else {
                 String query = theUrl.getQuery();
                 if (query != null) {
@@ -84,20 +82,19 @@ public class FakeHttpFetcher implements IHttpFetcher {
                     }
                 }
             }
-            
+
             FetchStatusCode status = statusCode == 200 ? FetchStatusCode.FETCHED : FetchStatusCode.ERROR;
-            FetchContentTuple content = new FetchContentTuple(url, url, System.currentTimeMillis(), new byte[contentSize], "text/html", bytesPerSecond);
-            
-            // Now we want to delay for as long as it would take to fill in the data.
-            float duration = (float)contentSize/(float)bytesPerSecond;
+
+            // Now we want to delay for as long as it would take to fill in the
+            // data.
+            float duration = (float) contentSize / (float) bytesPerSecond;
             LOGGER.trace(String.format("Fake fetching %d bytes at %d bps (%fs) from %s", contentSize, bytesPerSecond, duration, url));
-            Thread.sleep((long)(duration * 1000.0));
-            return new FetchResultTuple(status, content);
+            Thread.sleep((long) (duration * 1000.0));
+            return new FetchedDatum(status, url, url, System.currentTimeMillis(), new BytesWritable(new byte[contentSize]), "text/html", bytesPerSecond, scoredUrl.getMetaDataMap());
         } catch (Throwable t) {
             LOGGER.error("Exception: " + t.getMessage(), t);
-            return new FetchResultTuple(FetchStatusCode.ERROR, new FetchContentTuple(url, url, System.currentTimeMillis(), null, null, 0));
+            return new FetchedDatum(FetchStatusCode.ERROR, url, url, System.currentTimeMillis(), null, null, 0, scoredUrl.getMetaDataMap());
         }
     }
-
 
 }
