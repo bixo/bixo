@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.mortbay.http.HttpServer;
 
 import bixo.cascading.BixoFlowProcess;
+import bixo.fetcher.FakeHttpFetcherFactory;
 import bixo.fetcher.beans.FetchItem;
 import bixo.fetcher.beans.FetcherPolicy;
 import bixo.fetcher.simulation.SimulationWebServer;
