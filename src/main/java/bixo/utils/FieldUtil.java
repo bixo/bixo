@@ -1,4 +1,4 @@
-package bixo.util;
+package bixo.utils;
 
 import cascading.tuple.Fields;
 

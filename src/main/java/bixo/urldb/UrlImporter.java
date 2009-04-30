@@ -78,7 +78,7 @@ public class UrlImporter extends HadoopConfigured {
 
             Pipe pipe = new Pipe("urldb-merge");
             // we want the url with the latest update.
-            pipe = new GroupBy(pipe, new Fields(IFieldNames.URL));
+            pipe = new GroupBy(pipe, new Fields(IFieldNames.SOURCE_URL));
             Aggregator<Tuple> last = new LastUpdated(Fields.ALL);
             pipe = new Every(pipe, Fields.ALL, last);
 
@@ -115,7 +115,7 @@ public class UrlImporter extends HadoopConfigured {
         TextUrlParser function = new TextUrlParser((IUrlFilter[]) null);
         assembly = new Each(assembly, new Fields("line"), function);
 
-        assembly = new GroupBy(assembly, new Fields(IFieldNames.URL));
+        assembly = new GroupBy(assembly, new Fields(IFieldNames.SOURCE_URL));
         // make sure we only have the url once.
         Last last = new Last(Fields.ALL);
         assembly = new Every(assembly, Fields.ALL, last);

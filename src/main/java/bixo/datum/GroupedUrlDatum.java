@@ -3,7 +3,7 @@ package bixo.datum;
 import java.util.Arrays;
 import java.util.Map;
 
-import bixo.util.FieldUtil;
+import bixo.utils.FieldUtil;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;

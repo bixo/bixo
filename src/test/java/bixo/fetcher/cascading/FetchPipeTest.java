@@ -4,7 +4,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 
 import bixo.cascading.MultiSinkTap;
-import bixo.datum.BaseDatum;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.IFieldNames;
 import bixo.datum.UrlDatum;
@@ -61,8 +60,8 @@ public class FetchPipeTest {
 
         // Create the output, which is a dual file sink tap.
         String outputPath = "build/test-data/FetchPipeTest/dual";
-        Tap status = new Hfs(new TextLine(new Fields(IFieldNames.URL, IFieldNames.FETCH_STATUS), new Fields(IFieldNames.URL, IFieldNames.FETCH_STATUS)), outputPath + "/status", true);
-        Tap content = new Hfs(new TextLine(new Fields(IFieldNames.URL, IFieldNames.CONTENT), new Fields(IFieldNames.URL, IFieldNames.FETCH_CONTENT)), outputPath + "/content", true);
+        Tap status = new Hfs(new TextLine(new Fields(IFieldNames.SOURCE_URL, IFieldNames.FETCH_STATUS), new Fields(IFieldNames.SOURCE_URL, IFieldNames.FETCH_STATUS)), outputPath + "/status", true);
+        Tap content = new Hfs(new TextLine(new Fields(IFieldNames.SOURCE_URL, IFieldNames.CONTENT), new Fields(IFieldNames.SOURCE_URL, IFieldNames.FETCH_CONTENT)), outputPath + "/content", true);
         Tap sink = new MultiSinkTap(status, content);
 
         // Finally we can run it.

@@ -28,7 +28,7 @@ import bixo.indexing.IndexScheme;
 import bixo.parser.FakeParserFactory;
 import bixo.pipes.FetchPipe;
 import bixo.pipes.ParserPipe;
-import bixo.util.FieldUtil;
+import bixo.utils.FieldUtil;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.PlannerException;
