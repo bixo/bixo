@@ -2,7 +2,6 @@ package bixo.pipes;
 
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
-import bixo.datum.IFieldNames;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.http.IHttpFetcherFactory;
 import bixo.fetcher.util.IGroupingKeyGenerator;
@@ -27,16 +26,15 @@ public class FetchPipe extends SubAssembly {
     public FetchPipe(Pipe urlProvider, IGroupingKeyGenerator keyGenerator, IScoreGenerator scoreGenerator, IHttpFetcherFactory factory, Fields metaDataFields) {
 
         Pipe fetch = new Pipe("fetch_pipe", urlProvider);
-        String groupingKey = IFieldNames.GROUPING_KEY;
 
-        Fields groupedFields = GroupedUrlDatum.getFields().append(metaDataFields);
-        fetch = new Each(fetch, new GroupFunction(groupingKey, metaDataFields, keyGenerator), groupedFields);
+        Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
+        fetch = new Each(fetch, new GroupFunction(metaDataFields, keyGenerator), groupedFields);
 
-        Fields scoreFields = ScoredUrlDatum.getFields().append(metaDataFields);
+        Fields scoreFields = ScoredUrlDatum.FIELDS.append(metaDataFields);
         fetch = new Each(fetch, new ScoreFunction(scoreGenerator, metaDataFields), scoreFields);
 
-        fetch = new GroupBy(fetch, new Fields(groupingKey));
-        fetch = new Every(fetch, new FetcherBuffer(FetchedDatum.getFields(), metaDataFields, factory),Fields.RESULTS);
+        fetch = new GroupBy(fetch, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
+        fetch = new Every(fetch, new FetcherBuffer(FetchedDatum.FIELDS, metaDataFields, factory), Fields.RESULTS);
 
         setTails(fetch);
     }

@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import bixo.cascading.NullContext;
 import bixo.datum.GroupedUrlDatum;
-import bixo.datum.IFieldNames;
+import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.util.IScoreGenerator;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
@@ -20,7 +20,8 @@ public class ScoreFunction extends BaseOperation<NullContext> implements Functio
     private final Fields _metaDataFieldNames;
 
     public ScoreFunction(IScoreGenerator scoreGenerator, Fields metaDataFieldNames) {
-        super(new Fields(IFieldNames.SCORE));
+        super(new Fields(ScoredUrlDatum.SCORE_FIELD));
+        
         _scoreGenerator = scoreGenerator;
         _metaDataFieldNames = metaDataFieldNames;
     }
@@ -28,7 +29,7 @@ public class ScoreFunction extends BaseOperation<NullContext> implements Functio
     @Override
     public void operate(FlowProcess process, FunctionCall<NullContext> funCall) {
         double generatedScore;
-        GroupedUrlDatum groupedUrl = GroupedUrlDatum.fromTuple(funCall.getArguments().getTuple(), _metaDataFieldNames);
+        GroupedUrlDatum groupedUrl = new GroupedUrlDatum(funCall.getArguments().getTuple(), _metaDataFieldNames);
 
         try {
             generatedScore = _scoreGenerator.generateScore(groupedUrl);

@@ -14,7 +14,7 @@ public class FakeParserFactory implements IParserFactory {
             @Override
             public ParsedDatum parse(FetchedDatum fetchedDatum) {
 
-                return new ParsedDatum("url", "someParsedText", new Outlink[0], fetchedDatum.getMap());
+                return new ParsedDatum("url", "someParsedText", new Outlink[0], fetchedDatum.getMetaDataMap());
             }
 
         };

@@ -26,7 +26,7 @@ public class ParseFunction extends BaseOperation<ParsedDatum> implements Functio
     public void operate(FlowProcess flowProcess, FunctionCall<ParsedDatum> functionCall) {
         IParser parser = _factory.newParser();
         TupleEntry arguments = functionCall.getArguments();
-        FetchedDatum fetchedDatum = FetchedDatum.fromTuple(arguments.getTuple(), _metaDataFields);
+        FetchedDatum fetchedDatum = new FetchedDatum(arguments.getTuple(), _metaDataFields);
         ParsedDatum parseResult = parser.parse(fetchedDatum);
         functionCall.getOutputCollector().add(parseResult.toTuple());
     }

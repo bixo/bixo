@@ -41,11 +41,11 @@ public class FetchedDatum extends BaseDatum {
     private final int _responseRate;
 
     @SuppressWarnings("unchecked")
-    public FetchedDatum(FetchStatusCode statusCode, String url, String redirectedUrl, long fetchTime, BytesWritable content, String contentType, int responseRate, Map<String, Comparable> metaData) {
+    public FetchedDatum(FetchStatusCode statusCode, String baseUrl, String redirectedUrl, long fetchTime, BytesWritable content, String contentType, int responseRate, Map<String, Comparable> metaData) {
         super(metaData);
         
         _statusCode = statusCode;
-        _baseUrl = url;
+        _baseUrl = baseUrl;
         _fetchedUrl = redirectedUrl;
         _fetchTime = fetchTime;
         _content = content;
@@ -81,28 +81,43 @@ public class FetchedDatum extends BaseDatum {
         return _responseRate;
     }
 
+    // ======================================================================================
+    // Below here is all Cascading-specific implementation
+    // ======================================================================================
+    
+    // Cascading field names that correspond to the datum fields.
+    public static final String STATUS_CODE_FIELD = fieldName(FetchedDatum.class, "statusCode");
+    public static final String BASE_URL_FIELD = fieldName(FetchedDatum.class, "baseUrl");
+    public static final String FETCHED_URL_FIELD = fieldName(FetchedDatum.class, "fetchedUrl");
+    public static final String FETCH_TIME_FIELD = fieldName(FetchedDatum.class, "fetchTime");
+    public static final String CONTENT_FIELD = fieldName(FetchedDatum.class, "content");
+    public static final String CONTENT_TYPE_FIELD = fieldName(FetchedDatum.class, "contentType");
+    public static final String RESPONSE_RATE_FIELD = fieldName(FetchedDatum.class, "responseRate");
+
+    public static final Fields FIELDS = new Fields(STATUS_CODE_FIELD, BASE_URL_FIELD, FETCHED_URL_FIELD, FETCH_TIME_FIELD, CONTENT_FIELD, CONTENT_TYPE_FIELD, RESPONSE_RATE_FIELD);
+
+    public FetchedDatum(Tuple tuple, Fields metaDataFields) {
+        super(tuple, metaDataFields);
+        
+        TupleEntry entry = new TupleEntry(getStandardFields(), tuple);
+        _statusCode = FetchStatusCode.fromOrdinal(entry.getInteger(STATUS_CODE_FIELD));
+        _baseUrl = entry.getString(BASE_URL_FIELD);
+        _fetchedUrl = entry.getString(FETCHED_URL_FIELD);
+        _fetchTime = entry.getLong(FETCH_TIME_FIELD);
+        _content = (BytesWritable)entry.get(CONTENT_FIELD);
+        _contentType = entry.getString(CONTENT_TYPE_FIELD);
+        _responseRate = entry.getInteger(RESPONSE_RATE_FIELD);
+    }
+
+    @Override
+    public Fields getStandardFields() {
+        return FIELDS;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
-    protected Comparable[] getValues() {
+    protected Comparable[] getStandardValues() {
         return new Comparable[] { _statusCode.ordinal(), _baseUrl, _fetchedUrl, _fetchTime, _content, _contentType, _responseRate };
-    }
-
-    public static FetchedDatum fromTuple(Tuple tuple, Fields metaDataFieldNames) {
-
-        TupleEntry entry = new TupleEntry(getFields(), tuple);
-        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.FETCH_STATUS));
-        String baseUrl = entry.getString(IFieldNames.BASE_URL);
-        String fetchedUrl = entry.getString(IFieldNames.FETECHED_URL);
-        long fetchTime = entry.getLong(IFieldNames.FETCH_TIME);
-        BytesWritable content = (BytesWritable)entry.get(IFieldNames.CONTENT);
-        String contentType = entry.getString(IFieldNames.CONTENT_TYPE);
-        int responseRate = entry.getInteger(IFieldNames.FETCH_RATE);
-        
-        return new FetchedDatum(fetchStatus, baseUrl, fetchedUrl, fetchTime, content, contentType, responseRate, BaseDatum.extractMetaData(tuple, getFields().size(), metaDataFieldNames));
-    }
-
-    public static Fields getFields() {
-        return new Fields(IFieldNames.FETCH_STATUS, IFieldNames.BASE_URL, IFieldNames.FETECHED_URL, IFieldNames.FETCH_TIME, IFieldNames.CONTENT, IFieldNames.CONTENT_TYPE, IFieldNames.FETCH_RATE);
     }
 
 }

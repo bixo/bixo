@@ -32,8 +32,8 @@ public class ParserPipeTest extends CascadingTestCase {
 
         Pipe pipe = new Pipe("parse_source");
         ParserPipe parserPipe = new ParserPipe(pipe, new HtmlParserFactory());
-        Lfs in = new Lfs(new SequenceFile(FetchedDatum.getFields()), "build/test-data/ParserPipeTest/in", true);
-        Lfs out = new Lfs(new SequenceFile(ParsedDatum.getFields()), "build/test-data/ParserPipeTest/out", true);
+        Lfs in = new Lfs(new SequenceFile(FetchedDatum.FIELDS), "build/test-data/ParserPipeTest/in", true);
+        Lfs out = new Lfs(new SequenceFile(ParsedDatum.FIELDS), "build/test-data/ParserPipeTest/out", true);
 
         TupleEntryCollector write = in.openForWrite(new JobConf());
 

@@ -3,7 +3,6 @@ package bixo.datum;
 import java.util.Arrays;
 import java.util.Map;
 
-import bixo.utils.FieldUtil;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
@@ -26,28 +25,34 @@ public class GroupedUrlDatum extends UrlDatum {
         _groupKey = groupKey;
     }
 
+    // ======================================================================================
+    // Below here is all Cascading-specific implementation
+    // ======================================================================================
+    
+    // Cascading field names that correspond to the datum fields.
+    public static final String GROUP_KEY_FIELD = fieldName(GroupedUrlDatum.class, "groupKey");
+        
+    public static final Fields FIELDS = UrlDatum.FIELDS.append(new Fields(GROUP_KEY_FIELD));
+    
+    public GroupedUrlDatum(Tuple tuple, Fields metaDataFields) {
+        super(tuple, metaDataFields);
+        
+        TupleEntry entry = new TupleEntry(getStandardFields(), tuple);
+        _groupKey = entry.getString(GROUP_KEY_FIELD);
+    };
+    
+    @Override
+    public Fields getStandardFields() {
+        return FIELDS;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
-    protected Comparable[] getValues() {
-        Comparable[] comparables = super.getValues();
-        Comparable[] copyOf = Arrays.copyOf(comparables, comparables.length + 1);
-        copyOf[comparables.length] = _groupKey;
+    protected Comparable[] getStandardValues() {
+        Comparable[] baseValues = super.getStandardValues();
+        Comparable[] copyOf = Arrays.copyOf(baseValues, baseValues.length + 1);
+        copyOf[baseValues.length] = _groupKey;
         return copyOf;
-    }
-
-    public static Fields getFields() {
-        return FieldUtil.combine(UrlDatum.getFields(), new Fields(IFieldNames.GROUPING_KEY));
-    }
-
-    public static GroupedUrlDatum fromTuple(Tuple tuple, Fields metaDataFieldNames) {
-        TupleEntry entry = new TupleEntry(getFields(), tuple);
-        String url = entry.getString(IFieldNames.SOURCE_URL);
-        long lastFetched = entry.getLong(IFieldNames.SOURCE_LAST_FETCHED);
-        long lastUpdated = entry.getLong(IFieldNames.SOURCE_LAST_UPDATED);
-        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.SOURCE_FETCH_STATUS));
-        String groupKey = entry.getString(IFieldNames.GROUPING_KEY);
-
-        return new GroupedUrlDatum(url, lastFetched, lastUpdated, fetchStatus, groupKey, BaseDatum.extractMetaData(tuple, getFields().size(), metaDataFieldNames));
     }
 
 }

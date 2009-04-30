@@ -60,27 +60,27 @@ public class UrlImporter extends HadoopConfigured {
         // if db exists we want to merge dbs
 
         Path newDb = new Path(workingFolder, IFieldNames.URL_DB + "-new-" + TimeStampUtil.nowWithUnderLine());
-        Tap importSink = new Hfs(new SequenceFile(UrlDatum.getFields()), newDb.toUri().toASCIIString(), true);
+        Tap importSink = new Hfs(new SequenceFile(UrlDatum.FIELDS), newDb.toUri().toASCIIString(), true);
         // create tmp db
         importUrls(inputPath, importSink);
 
         if (dbexists) {
             // merge both together
 
-            Tap oldDbTap = new Hfs(new SequenceFile(UrlDatum.getFields()), workingFolder + "/" + IFieldNames.URL_DB);
+            Tap oldDbTap = new Hfs(new SequenceFile(UrlDatum.FIELDS), workingFolder + "/" + IFieldNames.URL_DB);
 
-            Tap newDbTap = new Hfs(new SequenceFile(UrlDatum.getFields()), newDb.toUri().toASCIIString());
+            Tap newDbTap = new Hfs(new SequenceFile(UrlDatum.FIELDS), newDb.toUri().toASCIIString());
 
             MultiTap source = new MultiTap(oldDbTap, newDbTap);
 
             Path mergeDb = new Path(workingFolder, IFieldNames.URL_DB + "-merged-" + TimeStampUtil.nowWithUnderLine());
-            Tap mergeSink = new Hfs(new SequenceFile(UrlDatum.getFields()), mergeDb.toUri().toASCIIString(), true);
+            Tap mergeSink = new Hfs(new SequenceFile(UrlDatum.FIELDS), mergeDb.toUri().toASCIIString(), true);
 
             Pipe pipe = new Pipe("urldb-merge");
             // we want the url with the latest update.
-            pipe = new GroupBy(pipe, new Fields(IFieldNames.SOURCE_URL));
-            Aggregator<Tuple> last = new LastUpdated(Fields.ALL);
-            pipe = new Every(pipe, Fields.ALL, last);
+            pipe = new GroupBy(pipe, new Fields(UrlDatum.URL_FIELD));
+            Aggregator<Tuple> last = new LastUpdated(UrlDatum.FIELDS);
+            pipe = new Every(pipe, last, Fields.RESULTS);
 
             FlowConnector flowConnector = new FlowConnector();
             Flow flow = flowConnector.connect(source, mergeSink, pipe);
@@ -91,7 +91,7 @@ public class UrlImporter extends HadoopConfigured {
             fs.rename(currentDb, oldDb);
             fs.rename(mergeDb, currentDb);
 
-            fs.delete(newDb, true);// remove the new db
+            fs.delete(newDb, true); // remove the new db
             fs.delete(oldDb, true);
         } else {
             fs.rename(newDb, currentDb);
@@ -115,10 +115,10 @@ public class UrlImporter extends HadoopConfigured {
         TextUrlParser function = new TextUrlParser((IUrlFilter[]) null);
         assembly = new Each(assembly, new Fields("line"), function);
 
-        assembly = new GroupBy(assembly, new Fields(IFieldNames.SOURCE_URL));
+        assembly = new GroupBy(assembly, new Fields(UrlDatum.URL_FIELD));
         // make sure we only have the url once.
-        Last last = new Last(Fields.ALL);
-        assembly = new Every(assembly, Fields.ALL, last);
+        Last last = new Last(UrlDatum.FIELDS);
+        assembly = new Every(assembly, last, Fields.RESULTS);
 
         FlowConnector flowConnector = new FlowConnector();
         Flow flow = flowConnector.connect("url-import", source, sink, assembly);

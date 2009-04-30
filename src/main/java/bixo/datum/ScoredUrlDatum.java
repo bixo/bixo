@@ -3,7 +3,6 @@ package bixo.datum;
 import java.util.Arrays;
 import java.util.Map;
 
-import bixo.utils.FieldUtil;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
@@ -25,35 +24,6 @@ public class ScoredUrlDatum extends GroupedUrlDatum implements Comparable<Scored
         _score = score;
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    protected Comparable[] getValues() {
-        Comparable[] comparables = super.getValues();
-        Comparable[] copyOf = Arrays.copyOf(comparables, comparables.length + 1);
-        copyOf[comparables.length] = _score;
-        return copyOf;
-    }
-
-    public static Fields getFields() {
-        return FieldUtil.combine(GroupedUrlDatum.getFields(), new Fields(IFieldNames.SCORE));
-    }
-
-    @SuppressWarnings("unchecked")
-    public static ScoredUrlDatum fromTuple(Tuple tuple, Fields metaDataFieldNames) {
-        TupleEntry entry = new TupleEntry(getFields(), tuple);
-        String url = entry.getString(IFieldNames.SOURCE_URL);
-        long lastFetched = entry.getLong(IFieldNames.SOURCE_LAST_FETCHED);
-        long lastUpdated = entry.getLong(IFieldNames.SOURCE_LAST_UPDATED);
-        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.SOURCE_FETCH_STATUS));
-        String groupKey = entry.getString(IFieldNames.GROUPING_KEY);
-        double score = entry.getDouble(IFieldNames.SCORE);
-
-        Map<String, Comparable> metaData = extractMetaData(tuple, getFields().size(), metaDataFieldNames);
-        
-        
-        return new ScoredUrlDatum(url, lastFetched, lastUpdated, fetchStatus, groupKey, score, metaData);
-    }
-
     @Override
     public int compareTo(ScoredUrlDatum o) {
         // Sort in reverse order, such that higher scores are first.
@@ -69,4 +39,36 @@ public class ScoredUrlDatum extends GroupedUrlDatum implements Comparable<Scored
             return getUrl().compareTo(o.getUrl());
         }
     }
+
+    // ======================================================================================
+    // Below here is all Cascading-specific implementation
+    // ======================================================================================
+    
+    // Cascading field names that correspond to the datum fields.
+    public static final String SCORE_FIELD = fieldName(ScoredUrlDatum.class, "score");
+        
+    public static final Fields FIELDS = GroupedUrlDatum.FIELDS.append(new Fields(SCORE_FIELD));
+    
+    public ScoredUrlDatum(Tuple tuple, Fields metaDataFields) {
+        super(tuple, metaDataFields);
+        
+        TupleEntry entry = new TupleEntry(getStandardFields(), tuple);
+        _score = entry.getDouble(SCORE_FIELD);
+    };
+    
+    
+    @Override
+    public Fields getStandardFields() {
+        return FIELDS;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    protected Comparable[] getStandardValues() {
+        Comparable[] baseValues = super.getStandardValues();
+        Comparable[] copyOf = Arrays.copyOf(baseValues, baseValues.length + 1);
+        copyOf[baseValues.length] = _score;
+        return copyOf;
+    }
+
 }

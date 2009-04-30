@@ -7,7 +7,7 @@ import org.apache.log4j.Logger;
 
 import bixo.cascading.MultiSinkTap;
 import bixo.datum.FetchStatusCode;
-import bixo.datum.IFieldNames;
+import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.HttpClientFactory;
 import bixo.fetcher.http.IHttpFetcherFactory;
@@ -37,7 +37,7 @@ public class SimpleCrawlTool {
     private static class CreateUrlFunction extends BaseOperation<String> implements Function<String> {
 
         public CreateUrlFunction() {
-            super(UrlDatum.getFields());
+            super(UrlDatum.FIELDS);
         }
 
         @Override
@@ -77,8 +77,8 @@ public class SimpleCrawlTool {
 
             // Create the output, which is a dual file sink tap.
             String outputPath = "build/test-data/SimpleCrawlTool/dual";
-            Tap status = new Hfs(new TextLine(new Fields(IFieldNames.BASE_URL, IFieldNames.FETCH_STATUS), new Fields(IFieldNames.BASE_URL, IFieldNames.FETCH_STATUS)), outputPath + "/status", true);
-            Tap content = new Hfs(new TextLine(new Fields(IFieldNames.BASE_URL, IFieldNames.CONTENT), new Fields(IFieldNames.BASE_URL, IFieldNames.FETCH_CONTENT)), outputPath + "/content", true);
+            Tap status = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD)), outputPath + "/status", true);
+            Tap content = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD)), outputPath + "/content", true);
             Tap sink = new MultiSinkTap(status, content);
 
             // Finally we can run it.

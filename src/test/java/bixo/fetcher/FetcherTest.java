@@ -61,8 +61,8 @@ public class FetcherTest {
         }
 
         String inputPath = workingFolder + "/" + IFieldNames.URL_DB;
-        Lfs in = new Lfs(new SequenceFile(UrlDatum.getFields()), inputPath, true);
-        String outPath = workingFolder + "/" + IFieldNames.FETCH + TimeStampUtil.nowWithUnderLine();
+        Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
+        String outPath = workingFolder + "/" + "FetcherTest" + TimeStampUtil.nowWithUnderLine();
         Lfs out = new Lfs(new SequenceFile(Fields.ALL), outPath, true);
 
         Pipe pipe = new Pipe("urlSource");

@@ -33,11 +33,9 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
 
     private final Fields _metaDataFields;
 
-    private final Fields _outFields;
-
     public FetcherBuffer(Fields outFields, Fields metaDataFields, IHttpFetcherFactory factory) {
         super(outFields.append(metaDataFields));
-        _outFields = outFields;
+
         _metaDataFields = metaDataFields;
         _fetcherFactory = factory;
     }
@@ -89,7 +87,7 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
             int skipped = 0;
             while (values.hasNext()) {
                 Tuple curTuple = values.next().getTuple();
-                ScoredUrlDatum scoreUrl = ScoredUrlDatum.fromTuple(curTuple, _metaDataFields);
+                ScoredUrlDatum scoreUrl = new ScoredUrlDatum(curTuple, _metaDataFields);
 
                 if (!queue.offer(scoreUrl)) {
                     skipped += 1;

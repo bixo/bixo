@@ -22,7 +22,6 @@
  */
 package bixo.operations;
 
-import bixo.datum.IFieldNames;
 import bixo.datum.UrlDatum;
 import cascading.flow.FlowProcess;
 import cascading.operation.Aggregator;
@@ -53,8 +52,8 @@ public class LastUpdated extends BaseOperation<Tuple> implements Aggregator<Tupl
         } else {
             TupleEntry entry = aggregatorCall.getArguments();
 
-            long newLast = entry.getLong(IFieldNames.SOURCE_LAST_UPDATED);
-            long oldLast = new TupleEntry(UrlDatum.getFields(), tuple).getLong(IFieldNames.SOURCE_LAST_UPDATED);
+            long newLast = entry.getLong(UrlDatum.LAST_UPDATED_FIELD);
+            long oldLast = new TupleEntry(UrlDatum.FIELDS, tuple).getLong(UrlDatum.LAST_UPDATED_FIELD);
             if (newLast > oldLast) {
                 aggregatorCall.setContext(new Tuple(entry.getTuple()));
             }

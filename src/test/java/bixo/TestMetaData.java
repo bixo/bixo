@@ -47,7 +47,7 @@ public class TestMetaData {
     public void testMetaData() throws Exception {
         // we want to pass meta data all the way through to the index.
 
-        Lfs in = new Lfs(new SequenceFile(FieldUtil.combine(UrlDatum.getFields(), new Fields("metaData"))), "build/test-data/TestMetaData/testMetaData/in", true);
+        Lfs in = new Lfs(new SequenceFile(FieldUtil.combine(UrlDatum.FIELDS, new Fields("metaData"))), "build/test-data/TestMetaData/testMetaData/in", true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
 
         for (int i = 0; i < DATA_COUNT; i++) {

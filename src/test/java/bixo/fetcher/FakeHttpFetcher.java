@@ -90,10 +90,10 @@ public class FakeHttpFetcher implements IHttpFetcher {
             float duration = (float) contentSize / (float) bytesPerSecond;
             LOGGER.trace(String.format("Fake fetching %d bytes at %d bps (%fs) from %s", contentSize, bytesPerSecond, duration, url));
             Thread.sleep((long) (duration * 1000.0));
-            return new FetchedDatum(status, url, url, System.currentTimeMillis(), new BytesWritable(new byte[contentSize]), "text/html", bytesPerSecond, scoredUrl.getMap());
+            return new FetchedDatum(status, url, url, System.currentTimeMillis(), new BytesWritable(new byte[contentSize]), "text/html", bytesPerSecond, scoredUrl.getMetaDataMap());
         } catch (Throwable t) {
             LOGGER.error("Exception: " + t.getMessage(), t);
-            return new FetchedDatum(FetchStatusCode.ERROR, url, url, System.currentTimeMillis(), null, null, 0, scoredUrl.getMap());
+            return new FetchedDatum(FetchStatusCode.ERROR, url, url, System.currentTimeMillis(), null, null, 0, scoredUrl.getMetaDataMap());
         }
     }
 

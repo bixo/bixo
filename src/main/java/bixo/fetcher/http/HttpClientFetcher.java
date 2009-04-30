@@ -173,7 +173,7 @@ public class HttpClientFetcher implements IHttpFetcher {
             String redirectedUrl = url;
             // TODO SG used the new enum here.Use different status than fetch if
             // you need to.
-            return new FetchedDatum(fsCode, url, redirectedUrl, System.currentTimeMillis(), new BytesWritable(content), contentType, (int)readRate, scoredUrl.getMap());
+            return new FetchedDatum(fsCode, url, redirectedUrl, System.currentTimeMillis(), new BytesWritable(content), contentType, (int)readRate, scoredUrl.getMetaDataMap());
         } catch (Throwable t) {
             safeAbort(httpget);
 
@@ -181,7 +181,7 @@ public class HttpClientFetcher implements IHttpFetcher {
             // TODO KKr - use real status for exception, include exception msg
             // somehow.
             // TODO SG should we use FetchStatusCode.ERROR or NEVER_FTEHCED?
-            return new FetchedDatum(FetchStatusCode.ERROR, url, url, System.currentTimeMillis(), null, null, 0, scoredUrl.getMap());
+            return new FetchedDatum(FetchStatusCode.ERROR, url, url, System.currentTimeMillis(), null, null, 0, scoredUrl.getMetaDataMap());
         }
     }
 

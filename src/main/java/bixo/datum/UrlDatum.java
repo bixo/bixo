@@ -29,20 +29,19 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 public class UrlDatum extends BaseDatum {
-
-    String _url;
-    long _lastUpdated;
-    long _lastFetched;
-    FetchStatusCode _lastStatus;
+    private String _url;
+    private long _lastFetched;
+    private long _lastUpdated;
+    private FetchStatusCode _lastStatus;
 
     @SuppressWarnings("unchecked")
     public UrlDatum(String url, long lastFetched, long lastUpdated, FetchStatusCode lastStatus, Map<String, Comparable> metaData) {
         super(metaData);
+        
         _url = url;
         _lastFetched = lastFetched;
         _lastUpdated = lastUpdated;
         _lastStatus = lastStatus;
-
     }
 
     public String getUrl() {
@@ -53,20 +52,20 @@ public class UrlDatum extends BaseDatum {
         _url = url;
     }
 
-    public long getLastUpdated() {
-        return _lastUpdated;
-    }
-
-    public void setLastUpdated(long lastUpdated) {
-        _lastUpdated = lastUpdated;
-    }
-
     public long getLastFetched() {
         return _lastFetched;
     }
 
     public void setLastFetched(long lastFetched) {
         _lastFetched = lastFetched;
+    }
+
+    public long getLastUpdated() {
+        return _lastUpdated;
+    }
+
+    public void setLastUpdated(long lastUpdated) {
+        _lastUpdated = lastUpdated;
     }
 
     public FetchStatusCode getLastStatus() {
@@ -77,24 +76,37 @@ public class UrlDatum extends BaseDatum {
         _lastStatus = lastStatus;
     }
 
+    // ======================================================================================
+    // Below here is all Cascading-specific implementation
+    // ======================================================================================
+    
+    // Cascading field names that correspond to the datum fields.
+    public static final String URL_FIELD = fieldName(UrlDatum.class, "url");
+    public static final String LAST_FETCHED_FIELD = fieldName(UrlDatum.class, "lastFetched");
+    public static final String LAST_UPDATED_FIELD = fieldName(UrlDatum.class, "lastUpdated");
+    public static final String LAST_STATUS_FIELD = fieldName(UrlDatum.class, "lastStatus");
+        
+    public static final Fields FIELDS = new Fields(URL_FIELD, LAST_FETCHED_FIELD, LAST_UPDATED_FIELD, LAST_STATUS_FIELD);
+    
+    public UrlDatum(Tuple tuple, Fields metaDataFields) {
+        super(tuple, metaDataFields);
+        
+        TupleEntry entry = new TupleEntry(getStandardFields(), tuple);
+        _url = entry.getString(URL_FIELD);
+        _lastFetched = entry.getLong(LAST_FETCHED_FIELD);
+        _lastUpdated = entry.getLong(LAST_UPDATED_FIELD);
+        _lastStatus = FetchStatusCode.fromOrdinal(entry.getInteger(LAST_STATUS_FIELD));
+    }
+    
+    @Override
+    public Fields getStandardFields() {
+        return FIELDS;
+    }
+    
     @SuppressWarnings("unchecked")
     @Override
-    protected Comparable[] getValues() {
-        return new Comparable[] { _url, _lastUpdated, _lastFetched, _lastStatus.ordinal() };
-    }
-
-    public static Fields getFields() {
-        return new Fields(IFieldNames.SOURCE_URL, IFieldNames.SOURCE_LAST_UPDATED, IFieldNames.SOURCE_LAST_FETCHED, IFieldNames.SOURCE_FETCH_STATUS);
-    }
-
-    public static UrlDatum fromTuple(Tuple tuple, Fields metaDataFieldNames) {
-        TupleEntry entry = new TupleEntry(getFields(), tuple);
-        String url = entry.getString(IFieldNames.SOURCE_URL);
-        long lastFetched = entry.getLong(IFieldNames.SOURCE_LAST_FETCHED);
-        long lastUpdated = entry.getLong(IFieldNames.SOURCE_LAST_UPDATED);
-        FetchStatusCode fetchStatus = FetchStatusCode.fromOrdinal(entry.getInteger(IFieldNames.SOURCE_FETCH_STATUS));
-
-        return new UrlDatum(url, lastFetched, lastUpdated, fetchStatus, BaseDatum.extractMetaData(tuple, getFields().size(), metaDataFieldNames));
+    protected Comparable[] getStandardValues() {
+        return new Comparable[] { _url, _lastFetched, _lastUpdated, _lastStatus.ordinal() };
     }
 
 }

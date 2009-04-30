@@ -17,8 +17,6 @@
 
 package bixo.datum;
 
-import java.net.MalformedURLException;
-
 /* An outgoing link from a page. */
 public class Outlink {
 
@@ -28,7 +26,7 @@ public class Outlink {
     public Outlink() {
     }
 
-    public Outlink(String toUrl, String anchor) throws MalformedURLException {
+    public Outlink(String toUrl, String anchor) {
         this.toUrl = toUrl;
         if (anchor == null)
             anchor = "";

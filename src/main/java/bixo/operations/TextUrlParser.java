@@ -38,11 +38,11 @@ public class TextUrlParser extends BaseOperation<String> implements Function<Str
     private IUrlFilter[] _urlFilters = new IUrlFilter[0];
 
     public TextUrlParser() {
-        super(UrlDatum.getFields());
+        super(UrlDatum.FIELDS);
     }
 
     public TextUrlParser(IUrlFilter... urlFilters) {
-        super(UrlDatum.getFields());
+        super(UrlDatum.FIELDS);
         if (urlFilters != null) {
             _urlFilters = urlFilters;
         }

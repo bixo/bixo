@@ -3,6 +3,7 @@ package bixo.operations;
 import java.io.IOException;
 
 import bixo.cascading.NullContext;
+import bixo.datum.GroupedUrlDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import cascading.flow.FlowProcess;
@@ -18,8 +19,9 @@ public class GroupFunction extends BaseOperation<NullContext> implements Functio
     private final IGroupingKeyGenerator _generator;
     private final Fields _metaDataFieldNames;
 
-    public GroupFunction(String fieldName, Fields metaDataFieldNames, IGroupingKeyGenerator generator) {
-        super(new Fields(fieldName));
+    public GroupFunction(Fields metaDataFieldNames, IGroupingKeyGenerator generator) {
+        super(new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
+        
         _metaDataFieldNames = metaDataFieldNames;
         _generator = generator;
     }
@@ -27,7 +29,7 @@ public class GroupFunction extends BaseOperation<NullContext> implements Functio
     @Override
     public void operate(FlowProcess process, FunctionCall<NullContext> funCall) {
         try {
-            String key = _generator.getGroupingKey(UrlDatum.fromTuple(funCall.getArguments().getTuple(), _metaDataFieldNames));
+            String key = _generator.getGroupingKey(new UrlDatum(funCall.getArguments().getTuple(), _metaDataFieldNames));
             funCall.getOutputCollector().add(new Tuple(key));
         } catch (IOException e) {
             // we throw the exception here to get this data into the trap
