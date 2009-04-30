@@ -27,8 +27,8 @@ import java.io.File;
 import org.apache.hadoop.fs.FileUtil;
 import org.junit.Test;
 
-import bixo.datum.BaseDatum;
 import bixo.datum.IFieldNames;
+import bixo.datum.UrlDatum;
 import bixo.fetcher.http.HttpClientFactory;
 import bixo.fetcher.http.IHttpFetcherFactory;
 import bixo.fetcher.util.LastFetchScoreGenerator;
@@ -61,7 +61,7 @@ public class FetcherTest {
         }
 
         String inputPath = workingFolder + "/" + IFieldNames.URL_DB;
-        Lfs in = new Lfs(new SequenceFile(BaseDatum.FIELDS), inputPath, true);
+        Lfs in = new Lfs(new SequenceFile(UrlDatum.getFields()), inputPath, true);
         String outPath = workingFolder + "/" + IFieldNames.FETCH + TimeStampUtil.nowWithUnderLine();
         Lfs out = new Lfs(new SequenceFile(Fields.ALL), outPath, true);
 

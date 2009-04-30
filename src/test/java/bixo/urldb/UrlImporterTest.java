@@ -28,8 +28,8 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 
-import bixo.datum.BaseDatum;
 import bixo.datum.IFieldNames;
+import bixo.datum.UrlDatum;
 import cascading.CascadingTestCase;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Hfs;
@@ -45,13 +45,13 @@ public class UrlImporterTest extends CascadingTestCase {
         FileUtil.fullyDelete(new File(workingFolder));
         urlImporter.importUrls(inputPath, workingFolder);
 
-        Hfs hfs = new Hfs(new SequenceFile(BaseDatum.FIELDS), workingFolder + "/" + IFieldNames.URL_DB);
+        Hfs hfs = new Hfs(new SequenceFile(UrlDatum.getFields()), workingFolder + "/" + IFieldNames.URL_DB);
         TupleEntryIterator tupleEntryIterator = hfs.openForRead(new JobConf());
         validateLength(tupleEntryIterator, 10);
 
         urlImporter.importUrls(inputPath, workingFolder);
         // should be still only 10
-        hfs = new Hfs(new SequenceFile(BaseDatum.FIELDS), workingFolder + "/" + IFieldNames.URL_DB);
+        hfs = new Hfs(new SequenceFile(UrlDatum.getFields()), workingFolder + "/" + IFieldNames.URL_DB);
         tupleEntryIterator = hfs.openForRead(new JobConf());
         validateLength(tupleEntryIterator, 10);
     }

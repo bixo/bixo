@@ -32,14 +32,10 @@ public class FetchPipeTest {
     public void testFetchPipe() throws Exception {
 
         // First create a sequence file with 1000 UrlDatum tuples in it.
-        Lfs in = new Lfs(new SequenceFile(BaseDatum.FIELDS), "build/test-data/FetchPipeTest/in", true);
+        Lfs in = new Lfs(new SequenceFile(UrlDatum.getFields()), "build/test-data/FetchPipeTest/in", true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
         for (int i = 0; i < 1000; i++) {
-            UrlDatum url = new UrlDatum();
-            url.setUrl("http://" + i);
-            url.setLastFetched(0);
-            url.setLastUpdated(0);
-            url.setLastStatus(FetchStatusCode.NEVER_FETCHED);
+            UrlDatum url = new UrlDatum("http://" + i, 0, 0, FetchStatusCode.NEVER_FETCHED, null);
             write.add(url.toTuple());
         }
         write.close();

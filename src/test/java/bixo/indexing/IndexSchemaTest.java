@@ -8,7 +8,6 @@ import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexReader;
@@ -19,6 +18,7 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TopDocs;
 import org.junit.Test;
 
+import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -53,10 +53,10 @@ public class IndexSchemaTest {
 
         String in = "build/test-data/IndexSchemaTest/testPipeIntoIndex/in";
 
-        Lfs lfs = new Lfs(new SequenceFile(new Fields("text", "outlinks")), in, SinkMode.REPLACE);
+        Lfs lfs = new Lfs(new SequenceFile(ParsedDatum.getFields()), in, SinkMode.REPLACE);
         TupleEntryCollector write = lfs.openForWrite(new JobConf());
         for (int i = 0; i < 10000; i++) {
-            ParsedDatum resultTuple = new ParsedDatum("text" + i, new String[0]);
+            ParsedDatum resultTuple = new ParsedDatum("http://" + i, "text" + i, new Outlink[0], null);
             write.add(resultTuple.toTuple());
         }
         write.close();
