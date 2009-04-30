@@ -141,8 +141,8 @@ SOFTWARE.
 		<ivy:cachepath pathid="eclipse.path.id" conf="eclipse" />
 		<ivy:cachepath pathid="test.path.id" conf="test" />
 		<taskdef name="eclipse" classname="prantl.ant.eclipse.EclipseTask" classpathref="eclipse.path.id" />
-		<mkdir dir="${build.dir.main-classes}" />
-		<mkdir dir="${build.dir.test-classes}" />
+		<mkdir dir="${build.dir.main-classes-eclipse}" />
+		<mkdir dir="${build.dir.test-classes-eclipse}" />
 		<eclipse>
 			<settings>
 				<jdtcore compilercompliance="6.0" />
@@ -152,16 +152,16 @@ SOFTWARE.
 			<classpath>
 				<container path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6" />
 
-			    <source path="${basedir}/src/main/java" output="${build.dir.main-classes}" />
-				<source path="${basedir}/src/test/java" output="${build.dir.test-classes}" />
-				<source path="${basedir}/src/test/resources" output="${build.dir.test-classes}" />
-				<source path="${basedir}/src/test/integration" output="${build.dir.test-classes}" />
+			    <source path="${basedir}/src/main/java" output="${build.dir.main-classes-eclipse}" />
+				<source path="${basedir}/src/test/java" output="${build.dir.test-classes-eclipse}" />
+				<source path="${basedir}/src/test/resources" output="${build.dir.test-classes-eclipse}" />
+				<source path="${basedir}/src/test/integration" output="${build.dir.test-classes-eclipse}" />
 
 
 				<!-- extras -->
 				<!-- we do not yet have extra modules, but it is just a question of time :) -->
                 
-				<output path="${build.dir.main-classes}" />
+				<output path="${build.dir.main-classes-eclipse}" />
 				<library pathref="test.path.id" exported="false" />
 			</classpath>
 		</eclipse>
