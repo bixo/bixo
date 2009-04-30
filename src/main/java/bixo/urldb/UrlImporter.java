@@ -79,8 +79,8 @@ public class UrlImporter extends HadoopConfigured {
             Pipe pipe = new Pipe("urldb-merge");
             // we want the url with the latest update.
             pipe = new GroupBy(pipe, new Fields(IFieldNames.SOURCE_URL));
-            Aggregator<Tuple> last = new LastUpdated(Fields.ALL);
-            pipe = new Every(pipe, Fields.ALL, last);
+            Aggregator<Tuple> last = new LastUpdated(UrlDatum.getFields());
+            pipe = new Every(pipe, last, Fields.RESULTS);
 
             FlowConnector flowConnector = new FlowConnector();
             Flow flow = flowConnector.connect(source, mergeSink, pipe);
@@ -117,8 +117,8 @@ public class UrlImporter extends HadoopConfigured {
 
         assembly = new GroupBy(assembly, new Fields(IFieldNames.SOURCE_URL));
         // make sure we only have the url once.
-        Last last = new Last(Fields.ALL);
-        assembly = new Every(assembly, Fields.ALL, last);
+        Last last = new Last(UrlDatum.getFields());
+        assembly = new Every(assembly, last, Fields.RESULTS);
 
         FlowConnector flowConnector = new FlowConnector();
         Flow flow = flowConnector.connect("url-import", source, sink, assembly);
