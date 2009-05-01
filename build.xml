@@ -25,13 +25,13 @@ SOFTWARE.
 	<!-- all standard ant tasks are in the common build file-->
 	<import file="${root.dir}/src/build/ant/common-build.xml" />
 
-	
+
 
 	<!-- ================================================================== -->
 	<!-- Integration Tests                                                  -->
 	<!-- ================================================================== -->
 
-	<target name="compile-integration-test" depends="compile, compile-test" >
+	<target name="compile-integration-test" depends="compile, compile-test">
 		<echo>*** Building Integration Tests Sources ***</echo>
 		<mkdir dir="${build.dir.it-classes}" />
 		<ivy:cachepath pathid="test.path.id" conf="test" />
@@ -41,13 +41,23 @@ SOFTWARE.
 			<pathelement location="${build.dir.test-classes}" />
 		</path>
 
-		<javac encoding="${build.encoding}" srcdir="${it.src.dir}" includes="**/*.java" destdir="${build.dir.it-classes}" debug="${javac.debug}" optimize="${javac.optimize}" target="${javac.version}" source="${javac.version}" deprecation="${javac.deprecation}">
+		<javac encoding="${build.encoding}"
+		       srcdir="${it.src.dir}"
+		       includes="**/*.java"
+		       destdir="${build.dir.it-classes}"
+		       debug="${javac.debug}"
+		       optimize="${javac.optimize}"
+		       target="${javac.version}"
+		       source="${javac.version}"
+		       deprecation="${javac.deprecation}">
 			<compilerarg line="${javac.args} ${javac.args.warnings}" />
 			<classpath refid="test.path" />
 		</javac>
 	</target>
 
-	<target name="it" depends="jar, compile-integration-test" description="--> run integration tests">
+	<target name="it"
+	        depends="jar, compile-integration-test"
+	        description="--> run integration tests">
 		<delete dir="${build.dir.it-reports}" />
 		<mkdir dir="${build.dir.it-reports}" />
 
@@ -56,7 +66,14 @@ SOFTWARE.
 
 		<ivy:cachepath pathid="test.path.id" conf="test" />
 
-		<junit showoutput="no" printsummary="yes" haltonfailure="no" fork="yes" maxmemory="256m" dir="${basedir}" errorProperty="tests.failed" failureProperty="tests.failed">
+		<junit showoutput="no"
+		       printsummary="yes"
+		       haltonfailure="no"
+		       fork="yes"
+		       maxmemory="256m"
+		       dir="${basedir}"
+		       errorProperty="tests.failed"
+		       failureProperty="tests.failed">
 			<classpath>
 				<pathelement location="${build.dir.main-classes}" />
 				<pathelement location="${build.dir.it-classes}" />
@@ -77,10 +94,38 @@ SOFTWARE.
 	</target>
 
 	<!-- ================================================================== -->
+	<!-- Hadoop job jar                                                     -->
+	<!-- ================================================================== -->
+
+
+
+	<target name="job"
+	        depends="compile"
+	        description="creates a Hadoop ready jar will all dependencies">
+
+		<ivy:cachepath pathid="job.path.id" conf="job" />
+		<copy todir="${build.dir}/lib" flatten="true">
+			<path refid="job.path.id" />
+		</copy>
+
+		<jar destfile="${build.dir}/${ant.project.name}-job-${version}.jar" compress="true">
+			<fileset dir="${build.dir.main-classes}" />
+			<fileset dir="${build.dir}" includes="lib/" />
+
+			<manifest>
+				<!--<attribute name="Main-Class" value="${main.class.name}" />-->
+			</manifest>
+		</jar>
+	</target>
+
+
+	<!-- ================================================================== -->
 	<!-- Generate a distribution                                            -->
 	<!-- ================================================================== -->
 
-	<target name="dist" depends="test, it, coverage, jar, doc" description="--> creates a distribution">
+	<target name="dist"
+	        depends="test, it, coverage, jar, doc"
+	        description="--> creates a distribution">
 
 		<delete dir="${build.dir.dist}" />
 		<!-- creating a fileset for pulling all libs from ivycache cuz disk space is cheap -->
@@ -140,7 +185,9 @@ SOFTWARE.
 
 		<ivy:cachepath pathid="eclipse.path.id" conf="eclipse" />
 		<ivy:cachepath pathid="test.path.id" conf="test" />
-		<taskdef name="eclipse" classname="prantl.ant.eclipse.EclipseTask" classpathref="eclipse.path.id" />
+		<taskdef name="eclipse"
+		         classname="prantl.ant.eclipse.EclipseTask"
+		         classpathref="eclipse.path.id" />
 		<mkdir dir="${build.dir.main-classes-eclipse}" />
 		<mkdir dir="${build.dir.test-classes-eclipse}" />
 		<eclipse>
@@ -152,26 +199,35 @@ SOFTWARE.
 			<classpath>
 				<container path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6" />
 
-			    <source path="${basedir}/src/main/java" output="${build.dir.main-classes-eclipse}" />
-				<source path="${basedir}/src/test/java" output="${build.dir.test-classes-eclipse}" />
-				<source path="${basedir}/src/test/resources" output="${build.dir.test-classes-eclipse}" />
-				<source path="${basedir}/src/test/integration" output="${build.dir.test-classes-eclipse}" />
+				<source path="${basedir}/src/main/java"
+				        output="${build.dir.main-classes-eclipse}" />
+				<source path="${basedir}/src/test/java"
+				        output="${build.dir.test-classes-eclipse}" />
+				<source path="${basedir}/src/test/resources"
+				        output="${build.dir.test-classes-eclipse}" />
+				<source path="${basedir}/src/test/integration"
+				        output="${build.dir.test-classes-eclipse}" />
 
 
 				<!-- extras -->
 				<!-- we do not yet have extra modules, but it is just a question of time :) -->
-                
+
 				<output path="${build.dir.main-classes-eclipse}" />
 				<library pathref="test.path.id" exported="false" />
 			</classpath>
 		</eclipse>
-		<concat destfile="${basedir.ivy.instance}/.settings/org.eclipse.jdt.core.prefs" append="true">
-			 <filelist dir="${root.dir}/src/build/eclipse" files="formatter"/>
+		<concat destfile="${basedir.ivy.instance}/.settings/org.eclipse.jdt.core.prefs"
+		        append="true">
+			<filelist dir="${root.dir}/src/build/eclipse" files="formatter" />
 		</concat>
-		<replace file="${basedir.ivy.instance}/.settings/org.eclipse.jdt.core.prefs" token="org.eclipse.jdt.core.compiler.compliance=6.0" value="org.eclipse.jdt.core.compiler.compliance=1.6" />
+		<replace file="${basedir.ivy.instance}/.settings/org.eclipse.jdt.core.prefs"
+		         token="org.eclipse.jdt.core.compiler.compliance=6.0"
+		         value="org.eclipse.jdt.core.compiler.compliance=1.6" />
 	</target>
 
-	<target name="clean-eclipse" depends="resolve" description="--> cleans the eclipse project files">
+	<target name="clean-eclipse"
+	        depends="resolve"
+	        description="--> cleans the eclipse project files">
 		<delete file=".classpath" />
 		<delete file=".eclipse" />
 		<delete file=".project" />
