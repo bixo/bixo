@@ -30,12 +30,14 @@ import cascading.tuple.TupleEntry;
 import cascading.tuple.Tuples;
 import cascading.util.Util;
 
+@SuppressWarnings("serial")
 public class IndexScheme extends Scheme {
     private static final String ANALYZER = "bixo.analyzer";
-    private static final String MAX_FIELD_LENGTH = "bix.maxFieldLength";
+    private static final String MAX_FIELD_LENGTH = "bixo.maxFieldLength";
     private static final String SINK_FIELDS = "bixo.fields";
     private static final String INDEX = "bixo.index";
     private static final String STORE = "bixo.store";
+    
     private Class<? extends Analyzer> _analyzer;
     private int _maxFieldLeng;
     private Store[] _store;
@@ -68,6 +70,7 @@ public class IndexScheme extends Scheme {
         conf.set(STORE, Util.serializeBase64(_store));
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void sink(TupleEntry tupleEntry, OutputCollector outputCollector) throws IOException {
         Tuple result = getSinkFields() != null ? tupleEntry.selectTuple(getSinkFields()) : tupleEntry.getTuple();
@@ -134,6 +137,7 @@ public class IndexScheme extends Scheme {
                     reporterThread.interrupt();
                 }
 
+                @SuppressWarnings("unchecked")
                 @Override
                 public void write(Tuple key, Tuple value) throws IOException {
                     Document doc = new Document();
