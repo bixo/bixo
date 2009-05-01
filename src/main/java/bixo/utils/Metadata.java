@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import bixo.fetcher.util.IHttpHeaders;
+import bixo.fetcher.http.IHttpHeaders;
 import bixo.parser.html.IBixoMetaKeys;
 
 

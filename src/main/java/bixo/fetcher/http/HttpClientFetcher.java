@@ -94,7 +94,7 @@ public class HttpClientFetcher implements IHttpFetcher {
                 targetLength = ERROR_CONTENT_LENGTH;
             }
 
-            Header[] headers = response.getHeaders(HttpHeaders.CONTENT_LENGTH);
+            Header[] headers = response.getHeaders(IHttpHeaders.CONTENT_LENGTH);
             for (Header header : headers) {
                 try {
                     int length = Integer.parseInt(header.getValue());
