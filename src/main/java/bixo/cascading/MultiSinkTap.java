@@ -44,6 +44,7 @@ import cascading.tuple.TupleEntryCollector;
  *Contribution by Chris Wensel
  */
 
+@SuppressWarnings("serial")
 public class MultiSinkTap extends SinkTap {
     /** Field LOG */
     private static final Logger LOG = Logger.getLogger(MultiSinkTap.class);
@@ -119,11 +120,13 @@ public class MultiSinkTap extends SinkTap {
         return modified;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void sink(TupleEntry tupleEntry, OutputCollector outputCollector) throws IOException {
         outputCollector.collect(null, tupleEntry);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Scheme getScheme() {
         if (super.getScheme() != null)
@@ -173,6 +176,7 @@ public class MultiSinkTap extends SinkTap {
 
     }
 
+    @SuppressWarnings("unchecked")
     private class MultiSinkCollector extends TupleEntryCollector implements OutputCollector {
         JobConf _conf;
         OutputCollector[] _collectors;

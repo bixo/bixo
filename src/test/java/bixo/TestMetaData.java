@@ -43,6 +43,7 @@ public class TestMetaData {
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
     private static final int DATA_COUNT = 100;
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testMetaData() throws Exception {
         // we want to pass meta data all the way through to the index.
