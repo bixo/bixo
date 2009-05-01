@@ -17,7 +17,7 @@ public class URLNormalizerTest {
         _normalizer = new URLNormalizer();
     }
     
-    // @Test
+    @Test
     public void testNormalizer() {
         normalizeTest(" http://www.foo.com/ ", "http://www.foo.com/", "remove leading/trailing spaces");
         normalizeTest("HTTP://www.foo.com/", "http://www.foo.com/", "lower-case protocol");
@@ -31,6 +31,7 @@ public class URLNormalizerTest {
         normalizeTest("http://www.foo.com/foo?mode=html", "http://www.foo.com/foo?mode=html", "leave query");
 
         normalizeTest("http://www.foo.com/foo.html#ref", "http://www.foo.com/foo.html", "remove reference");
+        normalizeTest("http://www.foo.com/foo?q=query#ref", "http://www.foo.com/foo?q=query", "remove reference from query");
 
         normalizeTest("http://foo.com/", "http://www.foo.com/", "add 'www.' to hostname with only paid-level domain");
         normalizeTest("http://foo.co.jp/", "http://www.foo.co.jp/", "add 'www.' to hostname with only paid-level domain");
@@ -42,9 +43,16 @@ public class URLNormalizerTest {
         normalizeTest("mailto://ken@foo.com", "mailto://ken@foo.com", "Don't add 'http://' protocol to URLs with other protocols");
 
         normalizeTest("http://www.foo.com/%66oo.html", "http://www.foo.com/foo.html", "Convert safe encoded characters to actual characters");
+        normalizeTest("http://www.foo.com/foo?q=%66oo", "http://www.foo.com/foo?q=foo", "Convert safe encoded characters to actual characters (in query)");
+        normalizeTest("http://www.foo.com/foo?q=", "http://www.foo.com/foo?q=", "Handle empty value in query parameter");
+        normalizeTest("http://www.foo.com/foo?q", "http://www.foo.com/foo?q", "Handle no value in query parameter");
+        normalizeTest("http://www.foo.com/foo?q&p&r=&&s=t", "http://www.foo.com/foo?q&p&r=&&s=t", "Handle funky values in query parameter");
         normalizeTest("http://www.foo.com/foo%20me.html", "http://www.foo.com/foo+me.html", "Convert encoded spaces to '+' format");
         normalizeTest("http://www.foo.com/foo%3Fme.html", "http://www.foo.com/foo%3Fme.html", "Don't convert special chars from hex encoding");
+        normalizeTest("http://www.foo.com/foo/bar.html", "http://www.foo.com/foo/bar.html", "Don't convert path separators");
         
+        /* FUTURE uncomment these when BIXO-56 is done
+         
         // check that unnecessary "../" are removed
         normalizeTest("http://www.foo.com/aa/../", 
                       "http://www.foo.com/", "Remove unnecessary '../' sequences");
@@ -86,5 +94,6 @@ public class URLNormalizerTest {
                       "http://www.foo.com/aa/bb/foo.html", "Remove unnecessary '../' sequences");
         normalizeTest("http://www.foo.com////aa////bb////foo.html",
                       "http://www.foo.com/aa/bb/foo.html", "Remove unnecessary '../' sequences");
+        */
     }
 }

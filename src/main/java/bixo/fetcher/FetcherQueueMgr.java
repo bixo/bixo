@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Manage a set of FetcherQueue objects, one per URL grouping (either domain or IP address)
  *
  */
-public class FetcherQueueMgr implements IFetchItemProvider {
+public class FetcherQueueMgr implements IFetchListProvider {
     // TODO KKr - look at using a DelayQueue here (from Concurrent package) so that
     // queues are ordered by time until they can be used again. Empty queues would
     // sort at the end, and we could check for this when getting a poll call, and
