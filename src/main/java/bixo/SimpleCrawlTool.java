@@ -3,9 +3,8 @@ package bixo;
 import java.io.File;
 import java.net.URL;
 
-import org.apache.log4j.Logger;
-
 import bixo.cascading.MultiSinkTap;
+import bixo.cascading.NullContext;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
@@ -28,20 +27,17 @@ import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
 public class SimpleCrawlTool {
-    private static final Logger LOGGER = Logger.getLogger(SimpleCrawlTool.class);
-
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
 
-    // TODO KKr - discuss use of context w/Chris.
     @SuppressWarnings("serial")
-    private static class CreateUrlFunction extends BaseOperation<String> implements Function<String> {
+    private static class CreateUrlFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
         public CreateUrlFunction() {
             super(UrlDatum.FIELDS);
         }
 
         @Override
-        public void operate(FlowProcess process, FunctionCall<String> funcCall) {
+        public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
             String urlAsString = funcCall.getArguments().getString("line");
             UrlDatum urlDatum = new UrlDatum(urlAsString, 0, 0, FetchStatusCode.NEVER_FETCHED, null);
             funcCall.getOutputCollector().add(urlDatum.toTuple());
