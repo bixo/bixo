@@ -20,8 +20,8 @@ import org.junit.Test;
 
 import bixo.datum.FetchStatusCode;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.FakeHttpFetcherFactory;
-import bixo.fetcher.http.IHttpFetcherFactory;
+import bixo.fetcher.FakeHttpFetcher;
+import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.indexing.IndexScheme;
@@ -62,11 +62,11 @@ public class TestMetaData {
         Pipe pipe = new Pipe("urlSource");
         PLDGrouping grouping = new PLDGrouping();
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
-        IHttpFetcherFactory factory = new FakeHttpFetcherFactory(false, DATA_COUNT);
+        IHttpFetcher fetcher = new FakeHttpFetcher(false, DATA_COUNT);
 
         Fields metaDataField = new Fields("metaData");
 
-        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, factory, metaDataField);
+        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher, metaDataField);
 
         ParserPipe parserPipe = new ParserPipe(fetchPipe, new FakeParserFactory(), metaDataField);
 

@@ -41,7 +41,7 @@ public class RunFakeFetcher {
         try {
             BixoFlowProcess flowProcess = new BixoFlowProcess();
             FetcherQueueMgr queueMgr = new FetcherQueueMgr();
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new FakeHttpFetcherFactory(true, 4), flowProcess);
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new FakeHttpFetcher(true, 4), flowProcess);
 
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");

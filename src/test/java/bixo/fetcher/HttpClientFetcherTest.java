@@ -8,7 +8,7 @@ import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.http.HttpClientFactory;
+import bixo.fetcher.http.HttpClientFetcher;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.SimulationWebServer;
 
@@ -26,8 +26,7 @@ public class HttpClientFetcherTest extends SimulationWebServer {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setMinResponseRate(20000);
 
-        HttpClientFactory factory = new HttpClientFactory(1, policy);
-        IHttpFetcher fetcher = factory.newHttpFetcher();
+        IHttpFetcher fetcher = new HttpClientFetcher(1, policy);
 
         FetchedDatum result = fetcher.get(new ScoredUrlDatum("http://localhost:8089/test.html", 0, 0, FetchStatusCode.NEVER_FETCHED, null, 1d, null));
         server.stop();
@@ -49,8 +48,7 @@ public class HttpClientFetcherTest extends SimulationWebServer {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setMinResponseRate(FetcherPolicy.NO_MIN_RESPONSE_RATE);
 
-        HttpClientFactory factory = new HttpClientFactory(1, policy);
-        IHttpFetcher fetcher = factory.newHttpFetcher();
+        IHttpFetcher fetcher = new HttpClientFetcher(1, policy);
 
         FetchedDatum result = fetcher.get(new ScoredUrlDatum("http://localhost:8089/test.html", 0, 0, FetchStatusCode.NEVER_FETCHED, null, 1d, null));
         server.stop();

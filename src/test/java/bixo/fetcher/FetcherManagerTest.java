@@ -5,12 +5,11 @@ import org.junit.Test;
 import org.mortbay.http.HttpServer;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.fetcher.FakeHttpFetcherFactory;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.http.HttpClientFactory;
-import bixo.fetcher.http.IHttpFetcherFactory;
+import bixo.fetcher.http.HttpClientFetcher;
+import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.SimulationWebServer;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
@@ -31,8 +30,8 @@ public class FetcherManagerTest extends SimulationWebServer {
     @Test
     public final void testTermination() throws InterruptedException {
         FetcherQueueMgr queueMgr = new FetcherQueueMgr();
-        IHttpFetcherFactory fetcherFactory = new FakeHttpFetcherFactory(true, 10);
-        FetcherManager fetcherMgr = new FetcherManager(queueMgr, fetcherFactory, new BixoFlowProcess());
+        IHttpFetcher fetcher = new FakeHttpFetcher(true, 10);
+        FetcherManager fetcherMgr = new FetcherManager(queueMgr, fetcher, new BixoFlowProcess());
 
         Thread fetcherThread = new Thread(fetcherMgr);
         fetcherThread.setName("Fetcher manager");
@@ -56,7 +55,7 @@ public class FetcherManagerTest extends SimulationWebServer {
 
             BixoFlowProcess flowProcess = new BixoFlowProcess();
             FetcherQueueMgr queueMgr = new FetcherQueueMgr();
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFactory(NUM_THREADS), flowProcess);
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFetcher(NUM_THREADS), flowProcess);
 
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");

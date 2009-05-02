@@ -22,9 +22,16 @@
  */
 package bixo.fetcher.http;
 
+import java.io.Serializable;
+
+import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 
-public interface IHttpFetcher {
+public interface IHttpFetcher extends Serializable {
+    public FetcherPolicy getFetcherPolicy();
+    public int getMaxThreads();
+
+    // TODO KKr - rename this to be fetch()
     public FetchedDatum get(ScoredUrlDatum scoredUrl);
 }

@@ -31,9 +31,23 @@ import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.params.CookiePolicy;
+import org.apache.http.client.params.HttpClientParams;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.params.ConnManagerParams;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.cookie.params.CookieSpecParamBean;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpParams;
+import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
@@ -43,20 +57,83 @@ import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 
+@SuppressWarnings("serial")
 public class HttpClientFetcher implements IHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(HttpClientFetcher.class);
 
     private static final int ERROR_CONTENT_LENGTH = 1024;
     public static final int BUFFER_SIZE = 8 * 1024;
 
-    private HttpClient _httpClient;
-    private HttpContext _httpContext;
+    private int _maxThreads;
+    private HttpVersion _httpVersion;
     private FetcherPolicy _fetcherPolicy;
 
-    public HttpClientFetcher(HttpClient httpClient, FetcherPolicy fetcherPolicy) {
-        _httpClient = httpClient;
-        _httpContext = new BasicHttpContext();
+    transient private HttpClient _httpClient;
+    transient private HttpContext _httpContext;
+    
+    public HttpClientFetcher(int maxThreads) {
+        this(maxThreads, HttpVersion.HTTP_1_1, new FetcherPolicy());
+    }
+
+    public HttpClientFetcher(int maxThreads, FetcherPolicy fetcherPolicy) {
+        this(maxThreads, HttpVersion.HTTP_1_1, fetcherPolicy);
+    }
+
+    public HttpClientFetcher(int maxThreads, HttpVersion httpVersion, FetcherPolicy fetcherPolicy) {
+        _maxThreads = maxThreads;
+        _httpVersion = httpVersion;
         _fetcherPolicy = fetcherPolicy;
+        
+        // Create and initialize HTTP parameters
+        HttpParams params = new BasicHttpParams();
+        
+        ConnManagerParams.setMaxTotalConnections(params, _maxThreads);
+        // TODO KKr - get timeout from config.
+        ConnManagerParams.setTimeout(params, 10000);
+        // TODO KKr - setMaxConnectionsPerRoute(params, new BixoConnPerRoute())
+        
+        HttpProtocolParams.setVersion(params, _httpVersion);
+        // TODO KKr - get user agent string from config.
+        HttpProtocolParams.setUserAgent(params, "bixo");
+        HttpProtocolParams.setContentCharset(params, "UTF-8");
+        // TODO KKr - what about HttpProtocolParams.setHttpElementCharset(params, "UTF-8");
+        // TODO KKr - what about HttpProtocolParams.setUseExpectContinue(params, true);
+        
+        // TODO KKr - set on connection manager params, or client params?
+        CookieSpecParamBean cookieParams = new CookieSpecParamBean(params);
+        cookieParams.setSingleHeader(true);
+        
+        // Create and initialize scheme registry
+        SchemeRegistry schemeRegistry = new SchemeRegistry();
+        schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+        // FUTURE KKr - support https on port 443
+
+        // Create an HttpClient with the ThreadSafeClientConnManager.
+        // This connection manager must be used if more than one thread will
+        // be using the HttpClient.
+        ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
+        _httpClient = new DefaultHttpClient(cm, params);
+        
+        params = _httpClient.getParams();
+        // FUTURE KKr - support authentication
+        HttpClientParams.setAuthenticating(params, false);
+        // TODO KKr - get from config.
+        HttpClientParams.setRedirecting(params, true);
+        HttpClientParams.setCookiePolicy(params, CookiePolicy.BEST_MATCH);
+
+        // TODO KKr - I think we can punt on using a context, since we're not trying to
+        // manage/maintain state between requests.
+        _httpContext = new BasicHttpContext();
+    }
+
+    @Override
+    public int getMaxThreads() {
+        return _maxThreads;
+    }
+
+    @Override
+    public FetcherPolicy getFetcherPolicy() {
+        return _fetcherPolicy;
     }
 
     @Override

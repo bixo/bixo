@@ -38,17 +38,33 @@ public class FakeHttpFetcher implements IHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(FakeHttpFetcher.class);
 
     private boolean _randomFetching;
+    private int _maxThreads;
     private FetcherPolicy _fetcherPolicy;
     private Random _rand;
 
     public FakeHttpFetcher() {
-        this(true, new FetcherPolicy());
+        this(true, 1, new FetcherPolicy());
     }
 
-    public FakeHttpFetcher(boolean randomFetching, FetcherPolicy fetcherPolicy) {
+    public FakeHttpFetcher(boolean randomFetching, int maxThreads) {
+        this(randomFetching, maxThreads, new FetcherPolicy());
+    }
+    
+    public FakeHttpFetcher(boolean randomFetching, int maxThreads, FetcherPolicy fetcherPolicy) {
         _randomFetching = randomFetching;
+        _maxThreads = maxThreads;
         _fetcherPolicy = fetcherPolicy;
         _rand = new Random();
+    }
+    
+    @Override
+    public int getMaxThreads() {
+        return _maxThreads;
+    }
+
+    @Override
+    public FetcherPolicy getFetcherPolicy() {
+        return _fetcherPolicy;
     }
 
     @Override

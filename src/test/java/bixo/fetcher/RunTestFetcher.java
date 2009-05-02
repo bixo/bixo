@@ -37,7 +37,7 @@ import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.http.HttpClientFactory;
+import bixo.fetcher.http.HttpClientFetcher;
 import bixo.utils.DomainNames;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Lfs;
@@ -96,7 +96,7 @@ public class RunTestFetcher {
                 queueMgr.offer(queue);
             }
 
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFactory(10), new BixoFlowProcess());
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFetcher(10), new BixoFlowProcess());
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");
             t.start();

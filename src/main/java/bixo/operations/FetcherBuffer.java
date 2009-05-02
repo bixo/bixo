@@ -11,7 +11,7 @@ import bixo.fetcher.FetcherCounters;
 import bixo.fetcher.FetcherManager;
 import bixo.fetcher.FetcherQueue;
 import bixo.fetcher.FetcherQueueMgr;
-import bixo.fetcher.http.IHttpFetcherFactory;
+import bixo.fetcher.http.IHttpFetcher;
 import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
@@ -29,15 +29,15 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
     private FetcherQueueMgr _queueMgr;
     private Thread _fetcherThread;
     private BixoFlowProcess _flowProcess;
-    private IHttpFetcherFactory _fetcherFactory;
+    private IHttpFetcher _fetcher;
 
     private final Fields _metaDataFields;
 
-    public FetcherBuffer(Fields outFields, Fields metaDataFields, IHttpFetcherFactory factory) {
+    public FetcherBuffer(Fields outFields, Fields metaDataFields, IHttpFetcher fetcher) {
         super(outFields.append(metaDataFields));
 
         _metaDataFields = metaDataFields;
-        _fetcherFactory = factory;
+        _fetcher = fetcher;
     }
 
     @Override
@@ -53,7 +53,7 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
         _flowProcess = new BixoFlowProcess((HadoopFlowProcess) flowProcess);
 
         _queueMgr = new FetcherQueueMgr();
-        _fetcherMgr = new FetcherManager(_queueMgr, _fetcherFactory, _flowProcess);
+        _fetcherMgr = new FetcherManager(_queueMgr, _fetcher, _flowProcess);
 
         _fetcherThread = new Thread(_fetcherMgr);
         _fetcherThread.setName("Fetcher manager");

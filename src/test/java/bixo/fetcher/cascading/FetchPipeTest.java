@@ -7,8 +7,8 @@ import bixo.cascading.MultiSinkTap;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.FakeHttpFetcherFactory;
-import bixo.fetcher.http.IHttpFetcherFactory;
+import bixo.fetcher.FakeHttpFetcher;
+import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.pipes.FetchPipe;
@@ -43,8 +43,8 @@ public class FetchPipeTest {
         Pipe pipe = new Pipe("urlSource");
         PLDGrouping grouping = new PLDGrouping();
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
-        IHttpFetcherFactory factory = new FakeHttpFetcherFactory(false, 10);
-        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, factory);
+        IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
+        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
 
         // Test that we correctly generated the sequence file.
         // Flow flow = flowConnector.connect(in, out, fetchPipe);

@@ -3,7 +3,7 @@ package bixo.pipes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.http.IHttpFetcherFactory;
+import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
 import bixo.operations.FetcherBuffer;
@@ -19,11 +19,11 @@ import cascading.tuple.Fields;
 @SuppressWarnings("serial")
 public class FetchPipe extends SubAssembly {
 
-    public FetchPipe(Pipe urlProvider, IGroupingKeyGenerator keyGenerator, IScoreGenerator scoreGenerator, IHttpFetcherFactory factory) {
-        this(urlProvider, keyGenerator, scoreGenerator, factory, new Fields());
+    public FetchPipe(Pipe urlProvider, IGroupingKeyGenerator keyGenerator, IScoreGenerator scoreGenerator, IHttpFetcher fetcher) {
+        this(urlProvider, keyGenerator, scoreGenerator, fetcher, new Fields());
     }
 
-    public FetchPipe(Pipe urlProvider, IGroupingKeyGenerator keyGenerator, IScoreGenerator scoreGenerator, IHttpFetcherFactory factory, Fields metaDataFields) {
+    public FetchPipe(Pipe urlProvider, IGroupingKeyGenerator keyGenerator, IScoreGenerator scoreGenerator, IHttpFetcher fetcher, Fields metaDataFields) {
 
         Pipe fetch = new Pipe("fetch_pipe", urlProvider);
 
@@ -34,7 +34,7 @@ public class FetchPipe extends SubAssembly {
         fetch = new Each(fetch, new ScoreFunction(scoreGenerator, metaDataFields), scoreFields);
 
         fetch = new GroupBy(fetch, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
-        fetch = new Every(fetch, new FetcherBuffer(FetchedDatum.FIELDS, metaDataFields, factory), Fields.RESULTS);
+        fetch = new Every(fetch, new FetcherBuffer(FetchedDatum.FIELDS, metaDataFields, fetcher), Fields.RESULTS);
 
         setTails(fetch);
     }

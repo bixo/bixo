@@ -29,8 +29,8 @@ import org.junit.Test;
 
 import bixo.datum.IFieldNames;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.http.HttpClientFactory;
-import bixo.fetcher.http.IHttpFetcherFactory;
+import bixo.fetcher.http.HttpClientFetcher;
+import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.pipes.FetchPipe;
@@ -69,8 +69,8 @@ public class FetcherTest {
 
         PLDGrouping grouping = new PLDGrouping();
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
-        IHttpFetcherFactory factory = new HttpClientFactory(10);
-        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, factory);
+        IHttpFetcher fetcher = new HttpClientFetcher(10);
+        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
 
         FlowConnector flowConnector = new FlowConnector();
 

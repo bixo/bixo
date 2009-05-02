@@ -4,16 +4,13 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
-//import java.util.ArrayList;
-//import java.util.Collections;
 
 import org.apache.http.HttpVersion;
 
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.http.HttpClientFactory;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.HttpClientFetcher;
 import bixo.utils.DomainNames;
 
 public class TryKeepAlive {
@@ -101,8 +98,7 @@ public class TryKeepAlive {
     private static long tryNoKeepaliveHttp10(String[] urls) {
         long startTime = System.currentTimeMillis();
         for (String uri : urls) {
-            HttpClientFactory factory = new HttpClientFactory(1, HttpVersion.HTTP_1_0, new FetcherPolicy());
-            IHttpFetcher fetcher = factory.newHttpFetcher();
+            HttpClientFetcher fetcher = new HttpClientFetcher(1, HttpVersion.HTTP_1_0, new FetcherPolicy());
             fetcher.get(makeSUD(uri));
         }
         long stopTime = System.currentTimeMillis();
@@ -110,11 +106,10 @@ public class TryKeepAlive {
     }
     
     private static long tryHttp10(String[] urls) {
-        HttpClientFactory factory = new HttpClientFactory(1, HttpVersion.HTTP_1_0, new FetcherPolicy());
+        HttpClientFetcher fetcher = new HttpClientFetcher(1, HttpVersion.HTTP_1_0, new FetcherPolicy());
 
         long startTime = System.currentTimeMillis();
         for (String uri : urls) {
-            IHttpFetcher fetcher = factory.newHttpFetcher();
             fetcher.get(makeSUD(uri));
         }
         long stopTime = System.currentTimeMillis();
@@ -122,9 +117,8 @@ public class TryKeepAlive {
     }
     
     private static long tryHttp11(String[] urls) {
-        HttpClientFactory factory = new HttpClientFactory(10, HttpVersion.HTTP_1_1, new FetcherPolicy());
+        HttpClientFetcher fetcher = new HttpClientFetcher(10, HttpVersion.HTTP_1_1, new FetcherPolicy());
         long startTime = System.currentTimeMillis();
-        IHttpFetcher fetcher = factory.newHttpFetcher();
         for (String uri : urls) {
             fetcher.get(makeSUD(uri));
         }

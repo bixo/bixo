@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.fetcher.http.IHttpFetcherFactory;
+import bixo.fetcher.http.IHttpFetcher;
 
 /**
  * Manage the set of threads that one task spawns to fetch pages.
@@ -47,18 +47,18 @@ public class FetcherManager implements Runnable {
     private static final int FETCH_IDLE_TIMEOUT = 1;
 
     private IFetchListProvider _provider;
-    private IHttpFetcherFactory _factory;
+    private IHttpFetcher _fetcher;
     private ThreadPoolExecutor _pool;
     private BixoFlowProcess _process;
     
-    public FetcherManager(IFetchListProvider provider, IHttpFetcherFactory factory, BixoFlowProcess process) {
+    public FetcherManager(IFetchListProvider provider, IHttpFetcher fetcher, BixoFlowProcess process) {
         _provider = provider;
-        _factory = factory;
+        _fetcher = fetcher;
         _process = process;
 
         SynchronousQueue<Runnable> queue = new SynchronousQueue<Runnable>(true);
-        _pool = new ThreadPoolExecutor(Math.min(FETCH_THREAD_COUNT_CORE, _factory.getMaxThreads()),
-                        _factory.getMaxThreads(), FETCH_IDLE_TIMEOUT, TimeUnit.SECONDS, queue);
+        _pool = new ThreadPoolExecutor(Math.min(FETCH_THREAD_COUNT_CORE, _fetcher.getMaxThreads()),
+                        _fetcher.getMaxThreads(), FETCH_IDLE_TIMEOUT, TimeUnit.SECONDS, queue);
     }
     
     
@@ -90,7 +90,7 @@ public class FetcherManager implements Runnable {
 	                FetchList items = _provider.poll();
 	                if (items != null) {
 	                    LOGGER.trace(String.format("Creating a FetcherRunnable for %d items from %s", items.size(), items.getDomain()));
-	                    nextRunnable = new FetcherRunnable(_factory.newHttpFetcher(), items);
+	                    nextRunnable = new FetcherRunnable(_fetcher, items);
 	                }
 	            }
 	            

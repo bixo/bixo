@@ -8,8 +8,8 @@ import bixo.cascading.NullContext;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.http.HttpClientFactory;
-import bixo.fetcher.http.IHttpFetcherFactory;
+import bixo.fetcher.http.HttpClientFetcher;
+import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.pipes.FetchPipe;
@@ -68,8 +68,8 @@ public class SimpleCrawlTool {
 
             PLDGrouping grouping = new PLDGrouping();
             LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
-            IHttpFetcherFactory factory = new HttpClientFactory(10);
-            FetchPipe fetchPipe = new FetchPipe(importPipe, grouping, scoring, factory);
+            IHttpFetcher fetcher = new HttpClientFetcher(10);
+            FetchPipe fetchPipe = new FetchPipe(importPipe, grouping, scoring, fetcher);
 
             // Create the output, which is a dual file sink tap.
             String outputPath = "build/test-data/SimpleCrawlTool/dual";
