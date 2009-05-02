@@ -46,12 +46,12 @@ public class FetcherManager implements Runnable {
     private static final int FETCH_THREAD_COUNT_CORE = 10;
     private static final int FETCH_IDLE_TIMEOUT = 1;
 
-    private IFetchItemProvider _provider;
+    private IFetchListProvider _provider;
     private IHttpFetcherFactory _factory;
     private ThreadPoolExecutor _pool;
     private BixoFlowProcess _process;
     
-    public FetcherManager(IFetchItemProvider provider, IHttpFetcherFactory factory, BixoFlowProcess process) {
+    public FetcherManager(IFetchListProvider provider, IHttpFetcherFactory factory, BixoFlowProcess process) {
         _provider = provider;
         _factory = factory;
         _process = process;

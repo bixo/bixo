@@ -34,7 +34,7 @@ import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
 import bixo.datum.ScoredUrlDatum;
 
-public class FetcherQueue implements IFetchItemProvider {
+public class FetcherQueue implements IFetchListProvider {
     private static Logger LOGGER = Logger.getLogger(FetcherQueue.class);
     
     private String _domain;

@@ -23,7 +23,7 @@
 package bixo.fetcher;
 
 
-public interface IFetchItemProvider {
+public interface IFetchListProvider {
     
 	/**
 	 * @return - next list of items to fetch, or null if nothing is available.
