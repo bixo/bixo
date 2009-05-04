@@ -11,8 +11,8 @@ import org.apache.log4j.Logger;
 import bixo.utils.DomainNames;
 
 @SuppressWarnings("serial")
-public class URLNormalizer implements IUrlNormalizer {
-    private static final Logger LOGGER = Logger.getLogger(URLNormalizer.class);
+public class UrlNormalizer implements IUrlNormalizer {
+    private static final Logger LOGGER = Logger.getLogger(UrlNormalizer.class);
     
     public String encodeUrl(String url) {
         try {
