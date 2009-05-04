@@ -33,7 +33,9 @@ SOFTWARE.
 
 	<target name="clean" description="--> clean the project">
 		<echo>cleaning ${ant.project.name}</echo>
-		<delete dir="${build.dir}" />
+		<delete includeemptydirs="true">
+			<fileset dir="${build.dir}" excludes="**/*-eclipse" />
+		</delete>
 	</target>
 
 
@@ -44,8 +46,12 @@ SOFTWARE.
 	<target name="download-ivy" unless="ivyIsAvailable">
 		<mkdir dir="${ivy.jar.dir}" />
 		<echo message="installing ivy..." />
-		<get src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" dest="${ivy.jar.file}" usetimestamp="true" />
-		<get src="http://repo1.maven.org/maven2/com/jcraft/jsch/${jcraft.install.version}/jsch-${jcraft.install.version}.jar" dest="${jcraft.jar.file}" usetimestamp="true" />
+		<get src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar"
+		     dest="${ivy.jar.file}"
+		     usetimestamp="true" />
+		<get src="http://repo1.maven.org/maven2/com/jcraft/jsch/${jcraft.install.version}/jsch-${jcraft.install.version}.jar"
+		     dest="${jcraft.jar.file}"
+		     usetimestamp="true" />
 	</target>
 
 	<target name="check-ivy-available">
@@ -53,16 +59,18 @@ SOFTWARE.
 		<antcall target="download-ivy" />
 	</target>
 
-	<target name="install-ivy" depends="check-ivy-available" >
+	<target name="install-ivy" depends="check-ivy-available">
 		<echo>Ivy path </echo>
 		<property environment="env" />
 		<path id="ivy.lib.path">
 			<fileset dir="${ivy.jar.dir}" includes="*.jar" />
 		</path>
-		<taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path" />
+		<taskdef resource="org/apache/ivy/ant/antlib.xml"
+		         uri="antlib:org.apache.ivy.ant"
+		         classpathref="ivy.lib.path" />
 	</target>
 
-	<target name="resolve" depends="install-ivy" >
+	<target name="resolve" depends="install-ivy">
 		<ivy:settings file="${root.dir}/ivy/ivysettings.xml" />
 		<ivy:resolve useOrigin="true" />
 	</target>
@@ -71,19 +79,31 @@ SOFTWARE.
 		<delete dir="${ivy.jar.dir}" />
 	</target>
 
-	<target name="clean-cache" depends="install-ivy" description="--> clean the ivy cache">
+	<target name="clean-cache"
+	        depends="install-ivy"
+	        description="--> clean the ivy cache">
 		<ivy:settings file="${root.dir}/ivy/ivysettings.xml" />
-		<ivy:cleancache  />
+		<ivy:cleancache />
 	</target>
 
 	<!-- ================================================================== -->
 	<!-- Build sources                                                      -->
 	<!-- ================================================================== -->
 
-	<target name="compile" depends="resolve" description="--> compile main classes">
+	<target name="compile"
+	        depends="resolve"
+	        description="--> compile main classes">
 		<mkdir dir="${build.dir.main-classes}" />
 		<ivy:cachepath pathid="build.path.id" conf="compile" />
-		<javac encoding="${build.encoding}" srcdir="${main.src.dir}" includes="**/*.java" destdir="${build.dir.main-classes}" debug="${javac.debug}" optimize="${javac.optimize}" target="${javac.version}" source="${javac.version}" deprecation="${javac.deprecation}">
+		<javac encoding="${build.encoding}"
+		       srcdir="${main.src.dir}"
+		       includes="**/*.java"
+		       destdir="${build.dir.main-classes}"
+		       debug="${javac.debug}"
+		       optimize="${javac.optimize}"
+		       target="${javac.version}"
+		       source="${javac.version}"
+		       deprecation="${javac.deprecation}">
 			<compilerarg line="${javac.args} ${javac.args.warnings}" />
 			<classpath refid="build.path.id" />
 		</javac>
@@ -93,7 +113,7 @@ SOFTWARE.
 	<!-- Tests                                                              -->
 	<!-- ================================================================== -->
 
-	<target name="compile-test" depends="compile" >
+	<target name="compile-test" depends="compile">
 		<echo>*** Building Tests Sources ***</echo>
 		<mkdir dir="${build.dir.test-classes}" />
 		<ivy:cachepath pathid="test.path.id" conf="test" />
@@ -102,7 +122,15 @@ SOFTWARE.
 			<pathelement location="${build.dir.main-classes}" />
 		</path>
 
-		<javac encoding="${build.encoding}" srcdir="${test.src.dir}" includes="**/*.java" destdir="${build.dir.test-classes}" debug="${javac.debug}" optimize="${javac.optimize}" target="${javac.version}" source="${javac.version}" deprecation="${javac.deprecation}">
+		<javac encoding="${build.encoding}"
+		       srcdir="${test.src.dir}"
+		       includes="**/*.java"
+		       destdir="${build.dir.test-classes}"
+		       debug="${javac.debug}"
+		       optimize="${javac.optimize}"
+		       target="${javac.version}"
+		       source="${javac.version}"
+		       deprecation="${javac.deprecation}">
 			<compilerarg line="${javac.args} ${javac.args.warnings}" />
 			<classpath refid="test.path" />
 		</javac>
@@ -110,7 +138,8 @@ SOFTWARE.
 
 	<target name="checkstyle" depends="resolve">
 		<ivy:cachepath pathid="checkstyle.path.id" conf="checkstyle" />
-		<taskdef resource="checkstyletask.properties" classpathref="checkstyle.path.id" />
+		<taskdef resource="checkstyletask.properties"
+		         classpathref="checkstyle.path.id" />
 
 		<checkstyle config="src/build/checkstyle/checkstyle.xml">
 			<fileset dir="${main.src.dir}" includes="**/*.java" />
@@ -129,8 +158,16 @@ SOFTWARE.
 
 		<ivy:cachepath pathid="test.path.id" conf="test" />
 		<ivy:cachepath pathid="instrument.path.id" conf="instrument" />
-		<junit showoutput="false" printsummary="yes" haltonfailure="no" fork="yes" maxmemory="256m" dir="${basedir}" errorProperty="tests.failed" failureProperty="tests.failed">
-			<sysproperty key="net.sourceforge.cobertura.datafile" file="${reports.dir}/katta_coverage.ser" />
+		<junit showoutput="false"
+		       printsummary="yes"
+		       haltonfailure="no"
+		       fork="yes"
+		       maxmemory="256m"
+		       dir="${basedir}"
+		       errorProperty="tests.failed"
+		       failureProperty="tests.failed">
+			<sysproperty key="net.sourceforge.cobertura.datafile"
+			             file="${reports.dir}/katta_coverage.ser" />
 			<classpath>
 				<pathelement location="${instrumented.dir}" />
 				<pathelement location="${build.dir.main-classes}" />
@@ -140,15 +177,20 @@ SOFTWARE.
 				<path refid="instrument.path.id" />
 			</classpath>
 			<formatter type="plain" />
-			<batchtest fork="yes" todir="${build.dir.test-reports}" unless="testcase">
+			<batchtest fork="yes"
+			           todir="${build.dir.test-reports}"
+			           unless="testcase">
 				<fileset dir="${test.src.dir}">
 					<include name="**/*Test.java" unless="testcase" />
 					<exclude name="**/Abstract*.java" unless="testcase" />
-					<exclude name="**/ExtendedTestCase.java" unless="testcase" />
+					<exclude name="**/ExtendedTestCase.java"
+					         unless="testcase" />
 					<include name="${testcase}" if="testcase" />
 				</fileset>
 			</batchtest>
-			<batchtest fork="yes" todir="${build.dir.test-reports}" if="testcase">
+			<batchtest fork="yes"
+			           todir="${build.dir.test-reports}"
+			           if="testcase">
 				<fileset dir="${test.src.dir}" includes="**/${testcase}.java" />
 			</batchtest>
 		</junit>
@@ -161,10 +203,12 @@ SOFTWARE.
 
 	<target name="instrument" depends="compile">
 		<ivy:cachepath pathid="instrument.path.id" conf="instrument" />
-		<taskdef classpathref="instrument.path.id" resource="tasks.properties" />
+		<taskdef classpathref="instrument.path.id"
+		         resource="tasks.properties" />
 		<delete file="${reports.dir}/${ant.project.name}_coverage.ser" />
 		<delete dir="${instrumented.dir}" />
-		<cobertura-instrument datafile="${reports.dir}/${ant.project.name}_coverage.ser" todir="${instrumented.dir}">
+		<cobertura-instrument datafile="${reports.dir}/${ant.project.name}_coverage.ser"
+		                      todir="${instrumented.dir}">
 			<!--
 						The following line causes instrument to ignore any
 						source line containing a reference to log4j, for the
@@ -178,10 +222,14 @@ SOFTWARE.
 	</target>
 
 	<target name="coverage-report">
-		<cobertura-report datafile="${reports.dir}/${ant.project.name}_coverage.ser" srcdir="${main.src.dir}" destdir="${coverage.html.dir}" />
+		<cobertura-report datafile="${reports.dir}/${ant.project.name}_coverage.ser"
+		                  srcdir="${main.src.dir}"
+		                  destdir="${coverage.html.dir}" />
 	</target>
 
-	<target name="coverage" depends="compile,instrument,test,coverage-report" description="--> create coverage reports" />
+	<target name="coverage"
+	        depends="compile,instrument,test,coverage-report"
+	        description="--> create coverage reports" />
 
 	<!-- ================================================================== -->
 	<!-- Build jar of sources                                               -->
@@ -195,12 +243,16 @@ SOFTWARE.
 			<format property="timestamp" pattern="MMM dd yyyy, HH:mm:ss" />
 		</tstamp>
 
-		<jar jarfile="${build.dir}/${jar.name}" basedir="${build.dir.main-classes}">
+		<jar jarfile="${build.dir}/${jar.name}"
+		     basedir="${build.dir.main-classes}">
 			<manifest>
 				<section name="bixo">
-					<attribute name="Implementation-Vendor" value="101tec inc" />
-					<attribute name="Implementation-Title" value="${ant.project.name}" />
-					<attribute name="Implementation-Version" value="${version}" />
+					<attribute name="Implementation-Vendor"
+					           value="101tec inc" />
+					<attribute name="Implementation-Title"
+					           value="${ant.project.name}" />
+					<attribute name="Implementation-Version"
+					           value="${version}" />
 					<attribute name="Compile-Time" value="${timestamp}" />
 					<attribute name="Compiled-By" value="${user.name}" />
 					<!-- TODO as soon we can extract the version from git we need to add this
@@ -216,8 +268,11 @@ SOFTWARE.
 	<!-- Build sources                                                      -->
 	<!-- ================================================================== -->
 
-	<target name="job" depends="compile" description="--> creates a hadop job jar">
-		<property name="job.dir" value="${build.dir}/${ant.project.name}-${version}" />
+	<target name="job"
+	        depends="compile"
+	        description="--> creates a hadop job jar">
+		<property name="job.dir"
+		          value="${build.dir}/${ant.project.name}-${version}" />
 		<mkdir dir="${job.dir}" />
 		<mkdir dir="${job.dir}/lib" />
 		<!-- copy ivy cache to lib -->
@@ -251,7 +306,14 @@ SOFTWARE.
 	<target name="doc" depends="compile" description="--> create javadoc">
 		<mkdir dir="${build.javadoc}" />
 		<ivy:cachepath pathid="build.path.id" conf="compile" />
-		<javadoc packagenames="sf.net.katta" destdir="${build.javadoc}" author="true" version="true" use="true" windowtitle="${name} ${version} API" doctitle="${name} ${version} API" bottom="Copyright &amp;copy; ${year} 101tec Inc.">
+		<javadoc packagenames="sf.net.katta"
+		         destdir="${build.javadoc}"
+		         author="true"
+		         version="true"
+		         use="true"
+		         windowtitle="${name} ${version} API"
+		         doctitle="${name} ${version} API"
+		         bottom="Copyright &amp;copy; ${year} 101tec Inc.">
 			<packageset dir="${main.src.dir}" />
 			<link href="${javadoc.link.java}" />
 			<classpath>
