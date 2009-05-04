@@ -17,10 +17,9 @@ import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.parser.IParse;
 import bixo.parser.IParser;
-import bixo.parser.IParserFactory;
 import bixo.parser.ParseResult;
 import bixo.parser.html.HtmlParser;
-import bixo.parser.html.HtmlParserFactory;
+import bixo.parser.html.IBixoMetaKeys;
 
 public class HtmlParserTest {
 
@@ -40,7 +39,7 @@ public class HtmlParserTest {
     public void testHtlmParsing() throws IOException {
         URL path = HtmlParserTest.class.getResource("/" + "simple-page.html");
 
-        HtmlParser parser = new HtmlParser();
+        HtmlParser parser = new HtmlParser("windows-1252", IBixoMetaKeys.CACHING_FORBIDDEN_CONTENT);
         FetchedDatum content = makeFetchedDat(path);
         ParseResult parse = parser.getParse(content);
 
@@ -56,8 +55,7 @@ public class HtmlParserTest {
 
     @Test
     public void testIParserInterface() throws IOException {
-        IParserFactory factory = new HtmlParserFactory();
-        IParser parser = factory.newParser();
+        IParser parser = new HtmlParser("windows-1252", IBixoMetaKeys.CACHING_FORBIDDEN_CONTENT);
 
         URL path = HtmlParserTest.class.getResource("/" + "simple-page.html");
         FetchedDatum content = makeFetchedDat(path);

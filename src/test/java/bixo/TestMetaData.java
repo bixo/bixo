@@ -25,7 +25,7 @@ import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.indexing.IndexScheme;
-import bixo.parser.FakeParserFactory;
+import bixo.parser.FakeParser;
 import bixo.pipes.FetchPipe;
 import bixo.pipes.ParserPipe;
 import bixo.utils.FieldUtil;
@@ -68,7 +68,7 @@ public class TestMetaData {
 
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher, metaDataField);
 
-        ParserPipe parserPipe = new ParserPipe(fetchPipe, new FakeParserFactory(), metaDataField);
+        ParserPipe parserPipe = new ParserPipe(fetchPipe, new FakeParser(), metaDataField);
 
         String out = "build/test-data/TestMetaData/testMetaData/out";
         FileUtil.fullyDelete(new File(out));

@@ -45,6 +45,7 @@ import bixo.parser.ParseStatus;
 import bixo.utils.EncodingDetector;
 import bixo.utils.Metadata;
 
+@SuppressWarnings("serial")
 public class HtmlParser implements IParser {
     public static final Logger LOGGER = Logger.getLogger(HtmlParser.class);
 
@@ -52,21 +53,17 @@ public class HtmlParser implements IParser {
     // meta tag well past the first 1000 bytes. 
     // (e.g. http://cn.promo.yahoo.com/customcare/music.html)
     private static final int CHUNK_SIZE = 2000;
-    private static Pattern metaPattern =
+    private static Pattern META_PATTERN =
         Pattern.compile("<meta\\s+([^>]*http-equiv=\"?content-type\"?[^>]*)>", Pattern.CASE_INSENSITIVE);
-    private static Pattern charsetPattern = Pattern.compile("charset=\\s*([a-z][_\\-0-9a-z]*)",
+    private static Pattern CHARSET_PATTERN = Pattern.compile("charset=\\s*([a-z][_\\-0-9a-z]*)",
                         Pattern.CASE_INSENSITIVE);
 
-    private String defaultCharEncoding;
-    private DOMContentUtils utils;
-    private String cachingPolicy;
+    private String _defaultEncoding;
+    private String _cachingPolicy;
 
-    public HtmlParser() {
-        // TODO KKr - set these from conf
-        this.defaultCharEncoding = "windows-1252";
-        this.cachingPolicy = IBixoMetaKeys.CACHING_FORBIDDEN_CONTENT;
-
-        this.utils = new DOMContentUtils();
+    public HtmlParser(String defaultEncoding, String cachingPolicy) {
+        _defaultEncoding = defaultEncoding;
+        _cachingPolicy = cachingPolicy;
     }
 
     /**
@@ -101,10 +98,10 @@ public class HtmlParser implements IParser {
             return null;
         }
 
-        Matcher metaMatcher = metaPattern.matcher(str);
+        Matcher metaMatcher = META_PATTERN.matcher(str);
         String encoding = null;
         if (metaMatcher.find()) {
-            Matcher charsetMatcher = charsetPattern.matcher(metaMatcher.group(1));
+            Matcher charsetMatcher = CHARSET_PATTERN.matcher(metaMatcher.group(1));
             if (charsetMatcher.find()) 
                 encoding = new String(charsetMatcher.group(1));
         }
@@ -137,7 +134,7 @@ public class HtmlParser implements IParser {
             // TODO KKr - get contentType from content
             detector.autoDetectClues(fetchedDatum, "xxx", true);
             detector.addClue(sniffCharacterEncoding(contentInOctets), "sniffed");
-            String encoding = detector.guessEncoding(fetchedDatum, defaultCharEncoding);
+            String encoding = detector.guessEncoding(fetchedDatum, _defaultEncoding);
 
             metadata.set(Metadata.ORIGINAL_CHAR_ENCODING_KEY, encoding);
             metadata.set(Metadata.CHAR_ENCODING_FOR_CONVERSION_KEY, encoding);
@@ -162,6 +159,8 @@ public class HtmlParser implements IParser {
             LOGGER.trace("Meta tags for " + base + ": " + metaTags.toString());
         }
         
+        DOMContentUtils utils = new DOMContentUtils();
+
         // check meta directives
         if (!metaTags.getNoIndex()) {               // okay to index
             StringBuffer sb = new StringBuffer();
@@ -201,7 +200,7 @@ public class HtmlParser implements IParser {
         if (metaTags.getNoCache()) {             // not okay to cache
             for (Map.Entry<org.apache.hadoop.io.Text, IParse> entry : parseResult) 
                 entry.getValue().getData().getParseMeta().set(IBixoMetaKeys.CACHING_FORBIDDEN_KEY, 
-                                cachingPolicy);
+                                _cachingPolicy);
         }
         return parseResult;
     }
@@ -215,7 +214,7 @@ public class HtmlParser implements IParser {
         
         try {
             parser.setFeature("http://cyberneko.org/html/features/augmentations", true);
-            parser.setProperty("http://cyberneko.org/html/properties/default-encoding", defaultCharEncoding);
+            parser.setProperty("http://cyberneko.org/html/properties/default-encoding", _defaultEncoding);
             parser.setFeature("http://cyberneko.org/html/features/scanner/ignore-specified-charset", true);
             parser.setFeature("http://cyberneko.org/html/features/balance-tags/ignore-outside-content", false);
             parser.setFeature("http://cyberneko.org/html/features/balance-tags/document-fragment", true);

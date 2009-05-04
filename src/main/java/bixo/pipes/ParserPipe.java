@@ -24,7 +24,7 @@ package bixo.pipes;
 
 import bixo.datum.ParsedDatum;
 import bixo.operations.ParseFunction;
-import bixo.parser.IParserFactory;
+import bixo.parser.IParser;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
@@ -33,14 +33,14 @@ import cascading.tuple.Fields;
 @SuppressWarnings("serial")
 public class ParserPipe extends SubAssembly {
 
-    public ParserPipe(Pipe fetcherPipe, IParserFactory factory) {
-        this(fetcherPipe, factory, new Fields());
+    public ParserPipe(Pipe fetcherPipe, IParser parser) {
+        this(fetcherPipe, parser, new Fields());
     }
 
-    public ParserPipe(Pipe fetcherPipe, IParserFactory factory, Fields metaDataField) {
+    public ParserPipe(Pipe fetcherPipe, IParser parser, Fields metaDataField) {
         Pipe parsePipe = new Pipe("parse_pipe", fetcherPipe);
 
-        parsePipe = new Each(parsePipe, new ParseFunction(ParsedDatum.FIELDS, metaDataField, factory), Fields.RESULTS);
+        parsePipe = new Each(parsePipe, new ParseFunction(ParsedDatum.FIELDS, metaDataField, parser), Fields.RESULTS);
         setTails(parsePipe);
     }
 
