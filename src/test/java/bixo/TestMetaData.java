@@ -28,6 +28,8 @@ import bixo.indexing.IndexScheme;
 import bixo.parser.FakeParser;
 import bixo.pipes.FetchPipe;
 import bixo.pipes.ParserPipe;
+import bixo.urldb.IUrlNormalizer;
+import bixo.urldb.URLNormalizer;
 import bixo.utils.FieldUtil;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -60,13 +62,14 @@ public class TestMetaData {
         write.close();
 
         Pipe pipe = new Pipe("urlSource");
+        IUrlNormalizer urlNormalizer = new URLNormalizer();
         PLDGrouping grouping = new PLDGrouping();
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, DATA_COUNT);
 
         Fields metaDataField = new Fields("metaData");
 
-        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher, metaDataField);
+        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher, metaDataField);
 
         ParserPipe parserPipe = new ParserPipe(fetchPipe, new FakeParser(), metaDataField);
 

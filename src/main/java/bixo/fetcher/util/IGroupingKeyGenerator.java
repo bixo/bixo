@@ -25,8 +25,8 @@ package bixo.fetcher.util;
 import java.io.IOException;
 import java.io.Serializable;
 
-import bixo.datum.UrlDatum;
+import bixo.datum.NormalizedUrlDatum;
 
 public interface IGroupingKeyGenerator extends Serializable{
-    public String getGroupingKey(UrlDatum urlDatum) throws IOException;
+    public String getGroupingKey(NormalizedUrlDatum urlDatum) throws IOException;
 }

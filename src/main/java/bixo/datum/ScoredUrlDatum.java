@@ -11,8 +11,8 @@ public class ScoredUrlDatum extends GroupedUrlDatum implements Comparable<Scored
     private double _score;
 
     @SuppressWarnings("unchecked")
-    public ScoredUrlDatum(String url, long lastFetched, long lastUpdated, FetchStatusCode lastStatus, String groupKey, double score, Map<String, Comparable> metaData) {
-        super(url, lastFetched, lastUpdated, lastStatus, groupKey, metaData);
+    public ScoredUrlDatum(String url, long lastFetched, long lastUpdated, FetchStatusCode lastStatus, String normalizedUrl, String groupKey, double score, Map<String, Comparable> metaData) {
+        super(url, lastFetched, lastUpdated, lastStatus, normalizedUrl, groupKey, metaData);
         _score = score;
     }
 
@@ -36,7 +36,7 @@ public class ScoredUrlDatum extends GroupedUrlDatum implements Comparable<Scored
             // fetching pages from the same area of the website.
 
             // TODO SG adding a simple sting comparison for now.
-            return getUrl().compareTo(o.getUrl());
+            return getNormalizedUrl().compareTo(o.getNormalizedUrl());
         }
     }
 

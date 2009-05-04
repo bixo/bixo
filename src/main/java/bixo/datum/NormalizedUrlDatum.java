@@ -7,22 +7,22 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
-public class GroupedUrlDatum extends NormalizedUrlDatum {
+public class NormalizedUrlDatum extends UrlDatum {
 
-    private String _groupKey;
+    private String _normalizedUrl;
 
     @SuppressWarnings("unchecked")
-    public GroupedUrlDatum(String url, long lastFetched, long lastUpdated, FetchStatusCode lastStatus, String normalizedUrl, String groupKey, Map<String, Comparable> metaData) {
-        super(url, lastFetched, lastUpdated, lastStatus, normalizedUrl, metaData);
-        _groupKey = groupKey;
+    public NormalizedUrlDatum(String url, long lastFetched, long lastUpdated, FetchStatusCode lastStatus, String normalizedUrl, Map<String, Comparable> metaData) {
+        super(url, lastFetched, lastUpdated, lastStatus, metaData);
+        _normalizedUrl = normalizedUrl;
     }
 
-    public String getGroupKey() {
-        return _groupKey;
+    public String getNormalizedUrl() {
+        return _normalizedUrl;
     }
 
-    public void setGroupKey(String groupKey) {
-        _groupKey = groupKey;
+    public void setNormalizedUrl(String normalizedUrl) {
+        _normalizedUrl = normalizedUrl;
     }
 
     // ======================================================================================
@@ -30,15 +30,15 @@ public class GroupedUrlDatum extends NormalizedUrlDatum {
     // ======================================================================================
     
     // Cascading field names that correspond to the datum fields.
-    public static final String GROUP_KEY_FIELD = fieldName(GroupedUrlDatum.class, "groupKey");
+    public static final String NORMALIZED_URL_FIELD = fieldName(NormalizedUrlDatum.class, "normalizedUrl");
         
-    public static final Fields FIELDS = NormalizedUrlDatum.FIELDS.append(new Fields(GROUP_KEY_FIELD));
+    public static final Fields FIELDS = UrlDatum.FIELDS.append(new Fields(NORMALIZED_URL_FIELD));
     
-    public GroupedUrlDatum(Tuple tuple, Fields metaDataFields) {
+    public NormalizedUrlDatum(Tuple tuple, Fields metaDataFields) {
         super(tuple, metaDataFields);
         
         TupleEntry entry = new TupleEntry(getStandardFields(), tuple);
-        _groupKey = entry.getString(GROUP_KEY_FIELD);
+        _normalizedUrl = entry.getString(NORMALIZED_URL_FIELD);
     };
     
     @Override
@@ -51,7 +51,7 @@ public class GroupedUrlDatum extends NormalizedUrlDatum {
     protected Comparable[] getStandardValues() {
         Comparable[] baseValues = super.getStandardValues();
         Comparable[] copyOf = Arrays.copyOf(baseValues, baseValues.length + 1);
-        copyOf[baseValues.length] = _groupKey;
+        copyOf[baseValues.length] = _normalizedUrl;
         return copyOf;
     }
 

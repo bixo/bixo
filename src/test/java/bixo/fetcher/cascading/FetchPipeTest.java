@@ -12,6 +12,8 @@ import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.pipes.FetchPipe;
+import bixo.urldb.IUrlNormalizer;
+import bixo.urldb.URLNormalizer;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;
@@ -41,10 +43,11 @@ public class FetchPipeTest {
 
         // Create the fetch pipe we'll use to process these fake URLs
         Pipe pipe = new Pipe("urlSource");
+        IUrlNormalizer urlNormalizer = new URLNormalizer();
         PLDGrouping grouping = new PLDGrouping();
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
-        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
+        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
 
         // Test that we correctly generated the sequence file.
         // Flow flow = flowConnector.connect(in, out, fetchPipe);

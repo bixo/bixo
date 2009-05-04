@@ -4,6 +4,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import bixo.urldb.URLNormalizer;
+
 
 public class URLNormalizerTest {
     private URLNormalizer _normalizer;

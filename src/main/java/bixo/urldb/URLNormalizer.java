@@ -1,4 +1,4 @@
-package bixo.utils;
+package bixo.urldb;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -8,7 +8,10 @@ import java.net.URLEncoder;
 
 import org.apache.log4j.Logger;
 
-public class URLNormalizer {
+import bixo.utils.DomainNames;
+
+@SuppressWarnings("serial")
+public class URLNormalizer implements IUrlNormalizer {
     private static final Logger LOGGER = Logger.getLogger(URLNormalizer.class);
     
     public String encodeUrl(String url) {

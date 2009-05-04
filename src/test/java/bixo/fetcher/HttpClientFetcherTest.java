@@ -28,7 +28,8 @@ public class HttpClientFetcherTest extends SimulationWebServer {
 
         IHttpFetcher fetcher = new HttpClientFetcher(1, policy);
 
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum("http://localhost:8089/test.html", 0, 0, FetchStatusCode.NEVER_FETCHED, null, 1d, null));
+        String url = "http://localhost:8089/test.html";
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.NEVER_FETCHED, url, null, 1d, null));
         server.stop();
 
         // Since our SlowResponseHandler is returning 10000 bytes in 1 second,
@@ -50,7 +51,8 @@ public class HttpClientFetcherTest extends SimulationWebServer {
 
         IHttpFetcher fetcher = new HttpClientFetcher(1, policy);
 
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum("http://localhost:8089/test.html", 0, 0, FetchStatusCode.NEVER_FETCHED, null, 1d, null));
+        String url = "http://localhost:8089/test.html";
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.NEVER_FETCHED, url, null, 1d, null));
         server.stop();
 
         FetchStatusCode statusCode = result.getStatusCode();

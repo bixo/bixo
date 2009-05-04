@@ -69,7 +69,7 @@ public class FakeHttpFetcher implements IHttpFetcher {
 
     @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) {
-        String url = scoredUrl.getUrl();
+        String url = scoredUrl.getNormalizedUrl();
         try {
             URL theUrl = new URL(url);
 

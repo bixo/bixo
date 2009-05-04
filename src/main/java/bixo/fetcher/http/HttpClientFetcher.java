@@ -139,7 +139,7 @@ public class HttpClientFetcher implements IHttpFetcher {
     @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) {
         HttpGet httpget = null;
-        String url = scoredUrl.getUrl();
+        String url = scoredUrl.getNormalizedUrl();
         
         try {
             LOGGER.trace("Fetching " + url);

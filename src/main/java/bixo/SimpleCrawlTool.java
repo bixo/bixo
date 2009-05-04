@@ -13,6 +13,8 @@ import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.pipes.FetchPipe;
+import bixo.urldb.IUrlNormalizer;
+import bixo.urldb.URLNormalizer;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -66,10 +68,11 @@ public class SimpleCrawlTool {
 
             Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFunction());
 
+            IUrlNormalizer urlNormalizer = new URLNormalizer();
             PLDGrouping grouping = new PLDGrouping();
             LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
             IHttpFetcher fetcher = new HttpClientFetcher(10);
-            FetchPipe fetchPipe = new FetchPipe(importPipe, grouping, scoring, fetcher);
+            FetchPipe fetchPipe = new FetchPipe(importPipe, urlNormalizer, grouping, scoring, fetcher);
 
             // Create the output, which is a dual file sink tap.
             String outputPath = "build/test-data/SimpleCrawlTool/dual";
