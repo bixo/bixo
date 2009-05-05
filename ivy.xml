@@ -110,6 +110,8 @@
         <!-- lucene -->
         <dependency org="org.apache.lucene" name="lucene-core" rev="2.4.1" conf="compile,job" />
         
+        <!--  miscellaneous  -->
+        <dependency org="org.kohsuke" name="args4j" rev="2.0.10" conf="compile,job" />
     </dependencies>
 
 </ivy-module>
