@@ -84,46 +84,54 @@ public class HttpClientFetcher implements IHttpFetcher {
         _httpVersion = httpVersion;
         _fetcherPolicy = fetcherPolicy;
         
-        // Create and initialize HTTP parameters
-        HttpParams params = new BasicHttpParams();
-        
-        ConnManagerParams.setMaxTotalConnections(params, _maxThreads);
-        // TODO KKr - get timeout from config.
-        ConnManagerParams.setTimeout(params, 10000);
-        // TODO KKr - setMaxConnectionsPerRoute(params, new BixoConnPerRoute())
-        
-        HttpProtocolParams.setVersion(params, _httpVersion);
-        // TODO KKr - get user agent string from config.
-        HttpProtocolParams.setUserAgent(params, "bixo");
-        HttpProtocolParams.setContentCharset(params, "UTF-8");
-        // TODO KKr - what about HttpProtocolParams.setHttpElementCharset(params, "UTF-8");
-        // TODO KKr - what about HttpProtocolParams.setUseExpectContinue(params, true);
-        
-        // TODO KKr - set on connection manager params, or client params?
-        CookieSpecParamBean cookieParams = new CookieSpecParamBean(params);
-        cookieParams.setSingleHeader(true);
-        
-        // Create and initialize scheme registry
-        SchemeRegistry schemeRegistry = new SchemeRegistry();
-        schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-        // FUTURE KKr - support https on port 443
+        // Just to be explicit, we rely on lazy initialization of this so that
+        // we don't have to worry about serializing it.
+        _httpClient = null;
+    }
+    
+    private synchronized void init() {
+        if (_httpClient == null) {
+            // Create and initialize HTTP parameters
+            HttpParams params = new BasicHttpParams();
 
-        // Create an HttpClient with the ThreadSafeClientConnManager.
-        // This connection manager must be used if more than one thread will
-        // be using the HttpClient.
-        ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
-        _httpClient = new DefaultHttpClient(cm, params);
-        
-        params = _httpClient.getParams();
-        // FUTURE KKr - support authentication
-        HttpClientParams.setAuthenticating(params, false);
-        // TODO KKr - get from config.
-        HttpClientParams.setRedirecting(params, true);
-        HttpClientParams.setCookiePolicy(params, CookiePolicy.BEST_MATCH);
+            ConnManagerParams.setMaxTotalConnections(params, _maxThreads);
+            // TODO KKr - get timeout from config.
+            ConnManagerParams.setTimeout(params, 10000);
+            // TODO KKr - setMaxConnectionsPerRoute(params, new BixoConnPerRoute())
 
-        // TODO KKr - I think we can punt on using a context, since we're not trying to
-        // manage/maintain state between requests.
-        _httpContext = new BasicHttpContext();
+            HttpProtocolParams.setVersion(params, _httpVersion);
+            // TODO KKr - get user agent string from config.
+            HttpProtocolParams.setUserAgent(params, "bixo");
+            HttpProtocolParams.setContentCharset(params, "UTF-8");
+            // TODO KKr - what about HttpProtocolParams.setHttpElementCharset(params, "UTF-8");
+            // TODO KKr - what about HttpProtocolParams.setUseExpectContinue(params, true);
+
+            // TODO KKr - set on connection manager params, or client params?
+            CookieSpecParamBean cookieParams = new CookieSpecParamBean(params);
+            cookieParams.setSingleHeader(true);
+
+            // Create and initialize scheme registry
+            SchemeRegistry schemeRegistry = new SchemeRegistry();
+            schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+            // FUTURE KKr - support https on port 443
+
+            // Create an HttpClient with the ThreadSafeClientConnManager.
+            // This connection manager must be used if more than one thread will
+            // be using the HttpClient.
+            ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
+            _httpClient = new DefaultHttpClient(cm, params);
+
+            params = _httpClient.getParams();
+            // FUTURE KKr - support authentication
+            HttpClientParams.setAuthenticating(params, false);
+            // TODO KKr - get from config.
+            HttpClientParams.setRedirecting(params, true);
+            HttpClientParams.setCookiePolicy(params, CookiePolicy.BEST_MATCH);
+            
+            // TODO KKr - I think we can punt on using a context, since we're not trying to
+            // manage/maintain state between requests.
+            _httpContext = new BasicHttpContext();
+        }
     }
 
     @Override
@@ -138,6 +146,8 @@ public class HttpClientFetcher implements IHttpFetcher {
 
     @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) {
+        init();
+        
         HttpGet httpget = null;
         String url = scoredUrl.getNormalizedUrl();
         

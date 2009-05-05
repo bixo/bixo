@@ -1,4 +1,4 @@
-package bixo.content.parser.html;
+package bixo.parser.html;
 
 import java.io.DataInputStream;
 import java.io.File;

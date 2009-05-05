@@ -7,6 +7,7 @@ import java.net.URL;
  * Simple UrlFilter that just makes sure the URL is considered to be
  * "valid" by the rather simple rules encoded in the java.net URL class.
  */
+@SuppressWarnings("serial")
 public class ValidUrlFilter implements IUrlFilter {
 
     @Override

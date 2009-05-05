@@ -1,4 +1,4 @@
-package bixo.fetcher;
+package bixo.fetcher.http;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -8,6 +8,7 @@ import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
+import bixo.fetcher.SlowResponseHandler;
 import bixo.fetcher.http.HttpClientFetcher;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.SimulationWebServer;

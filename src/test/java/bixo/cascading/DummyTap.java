@@ -1,4 +1,4 @@
-package bixo.fetcher.cascading;
+package bixo.cascading;
 
 import java.io.IOException;
 import java.util.ArrayList;

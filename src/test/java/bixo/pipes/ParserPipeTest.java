@@ -1,4 +1,4 @@
-package bixo.parser;
+package bixo.pipes;
 
 import java.net.MalformedURLException;
 import java.net.URL;

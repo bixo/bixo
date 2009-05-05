@@ -22,11 +22,13 @@
  */
 package bixo.urldb;
 
+import java.io.Serializable;
+
 /**
  * Filter or normalize urls
  * 
  */
-public interface IUrlFilter {
+public interface IUrlFilter extends Serializable {
 
     /**
      * Return a normalized string or null if the url does not pass the filter

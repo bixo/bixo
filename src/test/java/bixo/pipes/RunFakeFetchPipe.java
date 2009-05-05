@@ -1,4 +1,4 @@
-package bixo.fetcher.cascading;
+package bixo.pipes;
 
 import java.io.File;
 import java.net.MalformedURLException;

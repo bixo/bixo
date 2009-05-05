@@ -1,4 +1,4 @@
-package bixo.fetcher.cascading;
+package bixo.pipes;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;

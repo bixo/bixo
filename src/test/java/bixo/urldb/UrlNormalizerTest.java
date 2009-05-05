@@ -1,4 +1,4 @@
-package bixo.utils;
+package bixo.urldb;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -7,7 +7,7 @@ import org.junit.Test;
 import bixo.urldb.UrlNormalizer;
 
 
-public class URLNormalizerTest {
+public class UrlNormalizerTest {
     private UrlNormalizer _normalizer;
     
     private void normalizeTest(String weird, String normal, String testName) {
