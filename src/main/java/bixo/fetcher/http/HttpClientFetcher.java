@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.net.URI;
 
 import org.apache.hadoop.io.BytesWritable;
+
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -39,6 +40,7 @@ import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.params.ConnManagerParams;
+import org.apache.http.conn.params.ConnPerRouteBean;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
@@ -46,10 +48,12 @@ import org.apache.http.cookie.params.CookieSpecParamBean;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
@@ -61,6 +65,10 @@ import bixo.datum.ScoredUrlDatum;
 public class HttpClientFetcher implements IHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(HttpClientFetcher.class);
 
+    private static final int SOCKET_TIMEOUT = 10 * 1000;
+    private static final int CONNECTION_TIMEOUT = 10 * 1000;
+    private static final long CONNECTION_POOL_TIMEOUT = 10 * 1000L;
+    
     private static final int ERROR_CONTENT_LENGTH = 1024;
     public static final int BUFFER_SIZE = 8 * 1024;
 
@@ -95,16 +103,36 @@ public class HttpClientFetcher implements IHttpFetcher {
             HttpParams params = new BasicHttpParams();
 
             ConnManagerParams.setMaxTotalConnections(params, _maxThreads);
-            // TODO KKr - get timeout from config.
-            ConnManagerParams.setTimeout(params, 10000);
-            // TODO KKr - setMaxConnectionsPerRoute(params, new BixoConnPerRoute())
+            
+            // Set the maximum time we'll wait for a spare connection in the connection pool. We
+            // shouldn't actually hit this, as we make sure (in FetcherManager) that the max number
+            // of active requests doesn't exceed the value returned by getMaxThreads() here.
+            ConnManagerParams.setTimeout(params, CONNECTION_POOL_TIMEOUT);
+            
+            // Set the socket and connection timeout to be something reasonable.
+            HttpConnectionParams.setSoTimeout(params, SOCKET_TIMEOUT);
+            HttpConnectionParams.setConnectionTimeout(params, CONNECTION_TIMEOUT);
+            
+            // Even with stale checking enabled, a connection can "go stale" between the check and the
+            // next request. So we still need to handle the case of a closed socket (from the server side),
+            // and disabling this check improves performance.
+            HttpConnectionParams.setStaleCheckingEnabled(params, false);
+            
+            // We need to set up for at least the number of per-host connections as is specified
+            // by our policy, plus one for slop so that we can potentially fetch robots.txt at the
+            // same time as a page from the server.
+            // FUTURE - set this on a per-route (host) basis when we have per-host policies for
+            // doing partner crawls. We could define a BixoConnPerRoute class that supports this.
+            ConnPerRouteBean connPerRoute = new ConnPerRouteBean(_fetcherPolicy.getThreadsPerHost() + 1);
+            ConnManagerParams.setMaxConnectionsPerRoute(params, connPerRoute);
 
             HttpProtocolParams.setVersion(params, _httpVersion);
+            
             // TODO KKr - get user agent string from config.
             HttpProtocolParams.setUserAgent(params, "bixo");
             HttpProtocolParams.setContentCharset(params, "UTF-8");
-            // TODO KKr - what about HttpProtocolParams.setHttpElementCharset(params, "UTF-8");
-            // TODO KKr - what about HttpProtocolParams.setUseExpectContinue(params, true);
+            HttpProtocolParams.setHttpElementCharset(params, "UTF-8");
+            HttpProtocolParams.setUseExpectContinue(params, true);
 
             // TODO KKr - set on connection manager params, or client params?
             CookieSpecParamBean cookieParams = new CookieSpecParamBean(params);
@@ -164,7 +192,7 @@ public class HttpClientFetcher implements IHttpFetcher {
 //            }
 
             long readStartTime = System.currentTimeMillis();
-            HttpResponse response = _httpClient.execute(httpget, _httpContext);
+            HttpResponse response = _httpClient.execute(httpget);
             int statusCode = response.getStatusLine().getStatusCode();
 
             // Figure out how much data we want to try to fetch.
