@@ -4,6 +4,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.NormalizedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
+import bixo.datum.UrlDatum;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
@@ -31,7 +32,7 @@ public class FetchPipe extends SubAssembly {
         Pipe fetch = new Pipe("fetch_pipe", urlProvider);
 
         Fields normalizedFields = NormalizedUrlDatum.FIELDS.append(metaDataFields);
-        fetch = new Each(fetch, new NormalizeFunction(urlNormalizer), normalizedFields);
+        fetch = new Each(fetch, new NormalizeFunction(UrlDatum.URL_FIELD, new Fields(NormalizedUrlDatum.NORMALIZED_URL_FIELD), urlNormalizer), normalizedFields);
         
         Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
         fetch = new Each(fetch, new GroupFunction(metaDataFields, keyGenerator), groupedFields);

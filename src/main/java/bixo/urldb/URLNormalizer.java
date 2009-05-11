@@ -252,7 +252,8 @@ public class UrlNormalizer implements IUrlNormalizer {
         String query = testUrl.getQuery();
         String anchor = testUrl.getRef();
         
-        if ((anchor != null) && (query == null) && (url.charAt(url.indexOf("#" + anchor) - 1) == '/')) {
+        int pos = url.indexOf("#" + anchor);
+        if ((anchor != null) && (query == null) && (pos != -1) && (url.charAt(pos - 1) == '/')) {
             anchor = "#" + normalizeQuery(anchor);
             query = "";
         } else if (query != null) {
