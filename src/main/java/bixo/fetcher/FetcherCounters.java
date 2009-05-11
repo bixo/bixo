@@ -1,9 +1,10 @@
 package bixo.fetcher;
 
 public enum FetcherCounters {
-    ADDED_DOMAIN_QUEUE,     // Added a new domain queue
+    DOMAINS_QUEUED,     // Added a new domain queue
+    DOMAINS_FINISHED,   // Domains where we've fetched all of the URLs
     
-    LISTS_FETCHING,
+    DOMAINS_FETCHING,   // Domains that are in the process of being fetched.
     
     URLS_QUEUED,
     URLS_SKIPPED,
@@ -15,5 +16,4 @@ public enum FetcherCounters {
     
     FETCHED_BYTES,          // Total bytes of fetched content.
     FETCHED_TIME            // Total time in milliseconds spent fetching
-    
 }

@@ -82,7 +82,7 @@ public class FetcherManager implements Runnable {
 	                
 	                _process.setStatus(String.format("Fetching %d URLs from %d domains",
 	                                _process.getCounter(FetcherCounters.URLS_FETCHING),
-	                                _process.getCounter(FetcherCounters.LISTS_FETCHING)));
+	                                _process.getCounter(FetcherCounters.DOMAINS_FETCHING)));
 	            }
 	            
 	            // See if we should set up the next thing to fetch

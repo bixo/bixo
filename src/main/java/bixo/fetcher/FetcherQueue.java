@@ -146,7 +146,7 @@ public class FetcherQueue implements IFetchListProvider {
         }
         
         if (result != null) {
-            _process.increment(FetcherCounters.LISTS_FETCHING, 1);
+            _process.increment(FetcherCounters.DOMAINS_FETCHING, 1);
         }
         
         return result;
@@ -163,7 +163,7 @@ public class FetcherQueue implements IFetchListProvider {
      * @param items - items previously returned from call to poll()
      */
     public synchronized void release(FetchList items) {
-        _process.decrement(FetcherCounters.LISTS_FETCHING, 1);
+        _process.decrement(FetcherCounters.DOMAINS_FETCHING, 1);
         _numActiveFetchers -= 1;
     }
 
