@@ -29,9 +29,10 @@ public class FetcherManagerTest extends SimulationWebServer {
 
     @Test
     public final void testTermination() throws InterruptedException {
-        FetcherQueueMgr queueMgr = new FetcherQueueMgr();
+        BixoFlowProcess process = new BixoFlowProcess();
+        FetcherQueueMgr queueMgr = new FetcherQueueMgr(process);
         IHttpFetcher fetcher = new FakeHttpFetcher(true, 10);
-        FetcherManager fetcherMgr = new FetcherManager(queueMgr, fetcher, new BixoFlowProcess());
+        FetcherManager fetcherMgr = new FetcherManager(queueMgr, fetcher, process);
 
         Thread fetcherThread = new Thread(fetcherMgr);
         fetcherThread.setName("Fetcher manager");
@@ -54,7 +55,7 @@ public class FetcherManagerTest extends SimulationWebServer {
             server = startServer(new SlowResponseHandler(20000, 100 * 1000L), 8089);
 
             BixoFlowProcess flowProcess = new BixoFlowProcess();
-            FetcherQueueMgr queueMgr = new FetcherQueueMgr();
+            FetcherQueueMgr queueMgr = new FetcherQueueMgr(flowProcess);
             FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFetcher(NUM_THREADS), flowProcess);
 
             Thread t = new Thread(threadMgr);

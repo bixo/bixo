@@ -84,11 +84,12 @@ public class RunTestFetcher {
             String out = "build/test-data/RunTestFetcher/working";
             TupleEntryCollector tupleEntryCollector = new Lfs(new SequenceFile(Fields.ALL), out, true).openForWrite(conf);
 
-            FetcherQueueMgr queueMgr = new FetcherQueueMgr();
+            BixoFlowProcess process = new BixoFlowProcess();
+            FetcherQueueMgr queueMgr = new FetcherQueueMgr(process);
             FetcherPolicy policy = new FetcherPolicy();
 
             for (String pld : domainMap.keySet()) {
-                FetcherQueue queue = new FetcherQueue(pld, policy, 100, new BixoFlowProcess(), tupleEntryCollector);
+                FetcherQueue queue = new FetcherQueue(pld, policy, 100, process, tupleEntryCollector);
                 List<String> urls = domainMap.get(pld);
                 System.out.println("Adding " + urls.size() + " URLs for " + pld);
                 for (String url : urls) {

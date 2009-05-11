@@ -24,6 +24,8 @@ package bixo.fetcher;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import bixo.cascading.BixoFlowProcess;
+
 /**
  * Manage a set of FetcherQueue objects, one per URL grouping (either domain or IP address)
  *
@@ -34,8 +36,10 @@ public class FetcherQueueMgr implements IFetchListProvider {
     // sort at the end, and we could check for this when getting a poll call, and
     // remove them.
 	private ConcurrentLinkedQueue<FetcherQueue> _queues;	
+	private BixoFlowProcess _process;
 	
-	public FetcherQueueMgr() {
+	public FetcherQueueMgr(BixoFlowProcess process) {
+	    _process = process;
 		_queues = new ConcurrentLinkedQueue<FetcherQueue>();
 	}
 	
@@ -93,6 +97,7 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	            if (queue.isEmpty()) {
 	                // Don't put it back in the queue, as there's nothing left to
 	                // do with it.
+	                _process.increment(FetcherCounters.DOMAINS_FINISHED, 1);
 	            } else {
 	                result = queue.poll();
 	                _queues.add(queue);

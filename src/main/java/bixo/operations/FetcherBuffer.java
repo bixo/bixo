@@ -52,7 +52,7 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
         // it if it exists.
         _flowProcess = new BixoFlowProcess((HadoopFlowProcess) flowProcess);
 
-        _queueMgr = new FetcherQueueMgr();
+        _queueMgr = new FetcherQueueMgr(_flowProcess);
         _fetcherMgr = new FetcherManager(_queueMgr, _fetcher, _flowProcess);
 
         _fetcherThread = new Thread(_fetcherMgr);
@@ -72,7 +72,7 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
             FetcherPolicy policy = new FetcherPolicy();
 
             // TODO KKr - base maxURLs on fetcher policy, target end of fetch
-            int maxURLs = 10;
+            int maxURLs = 30;
 
             // TODO KKr - if domain isn't already an IP address, we want to
             // covert URLs to IP addresses and segment that way, as otherwise
@@ -80,6 +80,19 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
             // can go to different servers. Which means breaking it up here
             // into sorted lists, and creating a queue with the list of items
             // to be fetched (moving list logic elsewhere??)
+            
+            // Really what we want is to create N queues for N unique combinations
+            // of IP address and robots.txt. Which means having a mapping from
+            // hostname (full) to IP/robots, and another one from IP/robots to queues.
+            // So you get a hostname, and if it doesn't exist in the first table then
+            // you map it to IP/robots. If IP/robots doesn't exist in the second table,
+            // you create a new queue. Then you add the URL to the right queue.
+            //
+            // This should handle polite crawling (by IP, and robots.txt). Makes me
+            // think we might want to handle this as a regular function that takes
+            // URL and adds IP/crawl delay as the key (and filter if blocked). Then
+            // group by this, and we're done. Would need good DNS (and probably our
+            // own cache in front, for each such function).
             FetcherQueue queue = new FetcherQueue(domain, policy, maxURLs, _flowProcess, buffCall.getOutputCollector());
 
             int skipped = 0;
@@ -88,6 +101,10 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                 ScoredUrlDatum scoreUrl = new ScoredUrlDatum(curTuple, _metaDataFields);
 
                 if (!queue.offer(scoreUrl)) {
+                    if (LOGGER.isTraceEnabled()) {
+                        LOGGER.trace("Skipping URL: " + scoreUrl.getNormalizedUrl());
+                    }
+                    
                     skipped += 1;
                 }
             }
@@ -102,7 +119,7 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                 process.keepAlive();
             }
 
-            _flowProcess.increment(FetcherCounters.ADDED_DOMAIN_QUEUE, 1);
+            _flowProcess.increment(FetcherCounters.DOMAINS_QUEUED, 1);
         } catch (Throwable t) {
             LOGGER.error("Exception during reduce", t);
         }
