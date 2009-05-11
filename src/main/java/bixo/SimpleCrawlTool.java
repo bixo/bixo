@@ -17,7 +17,7 @@ import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.pipes.FetchPipe;
 import bixo.urldb.IUrlNormalizer;
-import bixo.urldb.UrlNormalizer;
+import bixo.urldb.UrlNormaliser;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -93,7 +93,7 @@ public class SimpleCrawlTool {
 
             // Create the sub-assembly that runs the fetch job
             Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFunction());
-            IUrlNormalizer urlNormalizer = new UrlNormalizer();
+            IUrlNormalizer urlNormalizer = new UrlNormaliser();
             PLDGrouping grouping = new PLDGrouping();
             LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
             IHttpFetcher fetcher = new HttpClientFetcher(options.getMaxThreads());
