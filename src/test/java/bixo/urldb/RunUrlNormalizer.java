@@ -16,7 +16,7 @@ public class RunUrlNormalizer {
         try {
             List<String> lines = FileUtils.readLines(new File(args[0]));
 
-            IUrlNormalizer urlNormalizer = new UrlNormaliser();
+            IUrlNormalizer urlNormalizer = new UrlNormalizer();
             for (String url : lines) {
                 curUrl = url;
                 String normalized = urlNormalizer.normalize(curUrl);

@@ -13,7 +13,7 @@ import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.pipes.FetchPipe;
 import bixo.urldb.IUrlNormalizer;
-import bixo.urldb.UrlNormaliser;
+import bixo.urldb.UrlNormalizer;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;
@@ -43,7 +43,7 @@ public class FetchPipeTest {
 
         // Create the fetch pipe we'll use to process these fake URLs
         Pipe pipe = new Pipe("urlSource");
-        IUrlNormalizer urlNormalizer = new UrlNormaliser();
+        IUrlNormalizer urlNormalizer = new UrlNormalizer();
         PLDGrouping grouping = new PLDGrouping();
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);

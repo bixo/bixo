@@ -16,7 +16,7 @@ import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.pipes.FetchPipe;
 import bixo.urldb.IUrlNormalizer;
-import bixo.urldb.UrlNormaliser;
+import bixo.urldb.UrlNormalizer;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -76,7 +76,7 @@ public class RunFakeFetchPipe {
 
             Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFunction());
 
-            IUrlNormalizer urlNormalizer = new UrlNormaliser();
+            IUrlNormalizer urlNormalizer = new UrlNormalizer();
             PLDGrouping grouping = new PLDGrouping();
             LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
             IHttpFetcher fetcher = new FakeHttpFetcher(true, 10);

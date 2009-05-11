@@ -4,11 +4,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import bixo.urldb.UrlNormaliser;
+import bixo.urldb.UrlNormalizer;
 
 
 public class UrlNormalizerTest {
-    private UrlNormaliser _normalizer;
+    private UrlNormalizer _normalizer;
     
     private void normalizeTest(String weird, String normal, String testName) {
         Assert.assertEquals(testName, normal, _normalizer.normalize(weird));
@@ -16,7 +16,7 @@ public class UrlNormalizerTest {
 
     @Before
     public void setupNormalizer() {
-        _normalizer = new UrlNormaliser();
+        _normalizer = new UrlNormalizer();
     }
     
     @Test

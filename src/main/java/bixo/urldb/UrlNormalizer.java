@@ -11,8 +11,8 @@ import org.apache.log4j.Logger;
 import bixo.utils.DomainNames;
 
 @SuppressWarnings("serial")
-public class UrlNormaliser implements IUrlNormalizer {
-    private static final Logger LOGGER = Logger.getLogger(UrlNormaliser.class);
+public class UrlNormalizer implements IUrlNormalizer {
+    private static final Logger LOGGER = Logger.getLogger(UrlNormalizer.class);
     
     // http://en.wikipedia.org/wiki/Percent-encoding - full set of reserved chars is:
     // !    *   '   (   )   ;   :   @   &   =   +   $   ,   /   ?   %   #   [   ]
