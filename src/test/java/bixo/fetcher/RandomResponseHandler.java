@@ -2,6 +2,7 @@ package bixo.fetcher;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Random;
 
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
@@ -9,19 +10,30 @@ import org.mortbay.http.HttpResponse;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
 @SuppressWarnings("serial")
-public class SlowResponseHandler extends AbstractHttpHandler {
+public class RandomResponseHandler extends AbstractHttpHandler {
     private int _length;
     private long _duration;
+    private Random _rand;
     
     /**
-     * Create an HTTP response handler that trickles back data.
+     * Create an HTTP response handler that sends random data back at a particular rate.
      * 
-     * @param length - bytes to return
+     * @param length - number of bytes to return
      * @param duration - duration for response, in milliseconds.
      */
-    public SlowResponseHandler(int length, long duration) {
+    public RandomResponseHandler(int length, long duration) {
         _length = length;
         _duration = duration;
+        _rand = new Random();
+    }
+    
+    /**
+     * Send back <length> bytes of random data in one second.
+     * 
+     * @param length - number of bytes to return
+     */
+    public RandomResponseHandler(int length) {
+        this(length, 1000);
     }
     
     @Override
@@ -32,10 +44,12 @@ public class SlowResponseHandler extends AbstractHttpHandler {
         
         OutputStream os = response.getOutputStream();
         long startTime = System.currentTimeMillis();
+        byte[] bytes = new byte[1];
         
         try {
             for (long i = 0; i < _length; i++) {
-                os.write(0);
+                _rand.nextBytes(bytes);
+                os.write(bytes[0]);
                 
                 // Given i/_length as % of data written, we know that
                 // this * duration is the target elapsed time. Figure out

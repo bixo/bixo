@@ -33,24 +33,27 @@ public class FetcherPolicy implements Serializable {
     public static final int DEFAULT_THREADS_PER_HOST = 1;
     public static final int DEFAULT_REQUESTS_PER_CONNECTION = 10;
     public static final int DEFAULT_MIN_RESPONSE_RATE = NO_MIN_RESPONSE_RATE;
+    public static final int DEFAULT_MAX_CONTENT_SIZE = 64 * 1024;
     
     private int _crawlDelay;			// Delay between requests, in seconds.
     private int _threadsPerHost;		// > 1 => ignore crawl delay
     private int _requestsPerConnection;	// > 1 => using keep-alive.
     private int _minResponseRate;        // lower bounds on bytes-per-second
+    private int _maxContentSize;        // Max # of bytes to use.
     
     // TODO KKr - add RobotExclusion instance here
 
     public FetcherPolicy() {
-        this(DEFAULT_CRAWL_DELAY, DEFAULT_THREADS_PER_HOST, DEFAULT_REQUESTS_PER_CONNECTION, DEFAULT_MIN_RESPONSE_RATE);
+        this(DEFAULT_CRAWL_DELAY, DEFAULT_THREADS_PER_HOST, DEFAULT_REQUESTS_PER_CONNECTION, DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE);
     }
 
 
-    public FetcherPolicy(int crawlDelay, int threadsPerHost, int requestsPerConnection, int minResponseRate) {
+    public FetcherPolicy(int crawlDelay, int threadsPerHost, int requestsPerConnection, int minResponseRate, int maxContentSize) {
         _crawlDelay = crawlDelay;
         _threadsPerHost = threadsPerHost;
         _requestsPerConnection = requestsPerConnection;
         _minResponseRate = minResponseRate;
+        _maxContentSize = maxContentSize;
     }
 
 
@@ -83,7 +86,7 @@ public class FetcherPolicy implements Serializable {
     }
 
 
-    public void setRequestsPerConnect(int requestsPerConnection) {
+    public void setRequestsPerConnection(int requestsPerConnection) {
         _requestsPerConnection = requestsPerConnection;
     }
 
@@ -95,6 +98,16 @@ public class FetcherPolicy implements Serializable {
 
     public void setMinResponseRate(int minResponseRate) {
         _minResponseRate = minResponseRate;
+    }
+
+
+    public int getMaxContentSize() {
+        return _maxContentSize;
+    }
+
+
+    public void setMaxContentSize(int maxContentSize) {
+        _maxContentSize = maxContentSize;
     }
     
 

@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.net.URI;
 
 import org.apache.hadoop.io.BytesWritable;
-
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -51,9 +50,6 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HttpContext;
-
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
@@ -77,7 +73,6 @@ public class HttpClientFetcher implements IHttpFetcher {
     private FetcherPolicy _fetcherPolicy;
 
     transient private HttpClient _httpClient;
-    transient private HttpContext _httpContext;
     
     public HttpClientFetcher(int maxThreads) {
         this(maxThreads, HttpVersion.HTTP_1_1, new FetcherPolicy());
@@ -155,10 +150,6 @@ public class HttpClientFetcher implements IHttpFetcher {
             // TODO KKr - get from config.
             HttpClientParams.setRedirecting(params, true);
             HttpClientParams.setCookiePolicy(params, CookiePolicy.BEST_MATCH);
-            
-            // TODO KKr - I think we can punt on using a context, since we're not trying to
-            // manage/maintain state between requests.
-            _httpContext = new BasicHttpContext();
         }
     }
 
@@ -200,8 +191,7 @@ public class HttpClientFetcher implements IHttpFetcher {
             FetchStatusCode fsCode;
             if (statusCode == HttpStatus.SC_OK) {
                 fsCode = FetchStatusCode.FETCHED;
-                targetLength = Integer.MAX_VALUE;
-                // TODO KKr - limit to max length, based on conf
+                targetLength = _fetcherPolicy.getMaxContentSize();
             } else {
                 fsCode = FetchStatusCode.ERROR;
                 // Even for an error case, we can use the response body data for

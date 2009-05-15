@@ -42,7 +42,7 @@ public class FetcherQueueTest {
     
     @Test
     public void testMaxURLs() throws MalformedURLException {
-        FetcherPolicy policy = new FetcherPolicy(30, 1, 1, FetcherPolicy.NO_MIN_RESPONSE_RATE);
+        FetcherPolicy policy = new FetcherPolicy(30, 1, 1, FetcherPolicy.NO_MIN_RESPONSE_RATE, FetcherPolicy.DEFAULT_MAX_CONTENT_SIZE);
         FetcherQueue queue = new FetcherQueue("domain.com", policy, 1, new BixoFlowProcess(), null);
 
         ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 0.0d);
@@ -98,7 +98,7 @@ public class FetcherQueueTest {
     public void testTimeLimit() throws MalformedURLException, InterruptedException {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setCrawlDelay(1);
-        policy.setRequestsPerConnect(1);
+        policy.setRequestsPerConnection(1);
         FetcherQueue queue = new FetcherQueue("domain.com", policy, 100, new BixoFlowProcess(), null);
 
         ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 0.5d);
@@ -119,7 +119,7 @@ public class FetcherQueueTest {
     public void testMultipleRequestsPerConnection() throws InterruptedException {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setCrawlDelay(1);
-        policy.setRequestsPerConnect(2);
+        policy.setRequestsPerConnection(2);
         
         FetcherQueue queue = new FetcherQueue("domain.com", policy, 100, new BixoFlowProcess(), null);
 

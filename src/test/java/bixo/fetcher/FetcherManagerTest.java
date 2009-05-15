@@ -52,7 +52,7 @@ public class FetcherManagerTest extends SimulationWebServer {
         HttpServer server = null;
 
         try {
-            server = startServer(new SlowResponseHandler(20000, 100 * 1000L), 8089);
+            server = startServer(new RandomResponseHandler(20000, 100 * 1000L), 8089);
 
             BixoFlowProcess flowProcess = new BixoFlowProcess();
             FetcherQueueMgr queueMgr = new FetcherQueueMgr(flowProcess);
