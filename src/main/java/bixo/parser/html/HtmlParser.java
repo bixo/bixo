@@ -33,6 +33,7 @@ import org.apache.html.dom.*;
 
 import org.apache.log4j.Logger;
 
+import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
@@ -119,6 +120,18 @@ public class HtmlParser implements IParser {
             return new ParseStatus(e).getEmptyParseResult(fetchedDatum.getBaseUrl());
         }
 
+        if ((fetchedDatum.getStatusCode() != FetchStatusCode.FETCHED) || (fetchedDatum.getContent() == null)) {
+            LOGGER.warn("Got empty FetchedDatum: " + fetchedDatum.getBaseUrl());
+            return ParseResult.createParseResult(fetchedDatum.getBaseUrl(), new ParseStatus().getEmptyParse());
+        }
+        
+        // TODO KKr - remove this guy.
+        byte[] contentInOctets = fetchedDatum.getContent().getBytes();
+        if (contentInOctets.length > (64 * 1024L)) {
+            LOGGER.warn(String.format("Got big content (%d) for %s", contentInOctets.length, fetchedDatum.getBaseUrl()));
+            return ParseResult.createParseResult(fetchedDatum.getBaseUrl(), new ParseStatus().getEmptyParse());
+        }
+        
         String text = "";
         String title = "";
         Outlink[] outlinks = new Outlink[0];
@@ -127,7 +140,6 @@ public class HtmlParser implements IParser {
         // parse the content
         DocumentFragment root;
         try {
-            byte[] contentInOctets = fetchedDatum.getContent().getBytes();
             InputSource input = new InputSource(new ByteArrayInputStream(contentInOctets));
 
             EncodingDetector detector = new EncodingDetector();
