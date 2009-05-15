@@ -44,7 +44,7 @@ public class SimpleCrawlTool {
         @Override
         public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
             String urlAsString = funcCall.getArguments().getString("line");
-            UrlDatum urlDatum = new UrlDatum(urlAsString, 0, 0, FetchStatusCode.NEVER_FETCHED, null);
+            UrlDatum urlDatum = new UrlDatum(urlAsString, 0, 0, FetchStatusCode.UNFETCHED, null);
             funcCall.getOutputCollector().add(urlDatum.toTuple());
         }
     }
