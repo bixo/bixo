@@ -41,10 +41,14 @@ import bixo.fetcher.http.IHttpFetcher;
 public class FetcherManager implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(FetcherManager.class);
     
+    private static final long STATUS_UPDATE_INTERVAL = 2000;
+    private static final long NO_CAPACITY_SLEEP_INTERVAL = 200;
+
     // TODO KKr - figure out how best to get these values, without having
     // to pass around a _conf everywhere.
     private static final int FETCH_THREAD_COUNT_CORE = 10;
     private static final int FETCH_IDLE_TIMEOUT = 1;
+
 
     private IFetchListProvider _provider;
     private IHttpFetcher _fetcher;
@@ -78,7 +82,7 @@ public class FetcherManager implements Runnable {
 	            // See if we should update our status
 	            long curTime = System.currentTimeMillis();
 	            if (curTime >= nextStatusTime) {
-	                nextStatusTime = curTime + (200);
+	                nextStatusTime = curTime + STATUS_UPDATE_INTERVAL;
 	                
 	                _process.setStatus(String.format("Fetching %d URLs from %d domains",
 	                                _process.getCounter(FetcherCounters.URLS_FETCHING),
@@ -100,7 +104,7 @@ public class FetcherManager implements Runnable {
 	                    nextRunnable = null;
 	                } catch (RejectedExecutionException e) {
 	                    LOGGER.trace("No spare capacity for fetching, sleeping");
-	                    Thread.sleep(100);
+	                    Thread.sleep(NO_CAPACITY_SLEEP_INTERVAL);
 	                }
 	            } else {
                     LOGGER.trace("Nothing to fetch, sleeping");
