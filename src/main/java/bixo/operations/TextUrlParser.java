@@ -23,7 +23,6 @@
 package bixo.operations;
 
 import bixo.datum.FetchStatusCode;
-import bixo.datum.IFieldNames;
 import bixo.datum.UrlDatum;
 import bixo.urldb.IUrlFilter;
 import cascading.flow.FlowProcess;
@@ -34,7 +33,10 @@ import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
 public class TextUrlParser extends BaseOperation<String> implements Function<String> {
-
+    // Default implicit name for field returned by Cascading TextLine scheme that contains the
+    // actual text from a line in a file.
+    private static final String LINE = "line";
+    
     private IUrlFilter[] _urlFilters = new IUrlFilter[0];
 
     public TextUrlParser() {
@@ -51,7 +53,7 @@ public class TextUrlParser extends BaseOperation<String> implements Function<Str
     @Override
     public void operate(FlowProcess process, FunctionCall<String> call) {
         TupleEntry arguments = call.getArguments();
-        String url = (String) arguments.get(IFieldNames.LINE);
+        String url = (String) arguments.get(LINE);
 
         for (IUrlFilter filter : _urlFilters) {
             url = filter.filter(url);
@@ -61,6 +63,6 @@ public class TextUrlParser extends BaseOperation<String> implements Function<Str
             }
         }
         // emit link with default values
-        call.getOutputCollector().add(new UrlDatum(url, System.currentTimeMillis(), 0l, FetchStatusCode.NEVER_FETCHED, null).toTuple());
+        call.getOutputCollector().add(new UrlDatum(url, System.currentTimeMillis(), 0l, FetchStatusCode.UNFETCHED, null).toTuple());
     }
 }

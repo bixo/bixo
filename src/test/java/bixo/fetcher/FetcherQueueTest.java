@@ -37,7 +37,7 @@ import bixo.utils.DomainNames;
 public class FetcherQueueTest {
     
     private static ScoredUrlDatum makeSUD(String url, double score) {
-        return new ScoredUrlDatum(url, 0, 0, FetchStatusCode.NEVER_FETCHED, url, DomainNames.getPLD(url), score, null);
+        return new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, DomainNames.getPLD(url), score, null);
     }
     
     @Test

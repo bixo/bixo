@@ -36,7 +36,7 @@ public class FetchPipeTest {
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), "build/test-data/FetchPipeTest/in", true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
         for (int i = 0; i < 1000; i++) {
-            UrlDatum url = new UrlDatum("http://" + i, 0, 0, FetchStatusCode.NEVER_FETCHED, null);
+            UrlDatum url = new UrlDatum("http://" + i, 0, 0, FetchStatusCode.UNFETCHED, null);
             write.add(url.toTuple());
         }
         write.close();

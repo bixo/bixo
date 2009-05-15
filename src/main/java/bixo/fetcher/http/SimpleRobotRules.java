@@ -103,7 +103,7 @@ public class SimpleRobotRules implements IRobotRules {
             URL realUrl = new URL(url);
             String urlToFetch = new URL(realUrl, "/robots.txt").toExternalForm();
             
-            ScoredUrlDatum scoredUrl = new ScoredUrlDatum(urlToFetch, 0, 0, FetchStatusCode.NEVER_FETCHED, urlToFetch, null, 1.0, null);
+            ScoredUrlDatum scoredUrl = new ScoredUrlDatum(urlToFetch, 0, 0, FetchStatusCode.UNFETCHED, urlToFetch, null, 1.0, null);
             FetchedDatum result = fetcher.get(scoredUrl);
             
             if (result.getStatusCode() == FetchStatusCode.FETCHED) {

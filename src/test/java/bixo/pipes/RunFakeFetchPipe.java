@@ -50,7 +50,7 @@ public class RunFakeFetchPipe {
             try {
                 URL url = new URL(urlAsString);
 
-                UrlDatum urlDatum = new UrlDatum(url.toString(), 0, 0, FetchStatusCode.NEVER_FETCHED, null);
+                UrlDatum urlDatum = new UrlDatum(url.toString(), 0, 0, FetchStatusCode.UNFETCHED, null);
 
                 funcCall.getOutputCollector().add(urlDatum.toTuple());
             } catch (MalformedURLException e) {

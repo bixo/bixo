@@ -56,7 +56,7 @@ public class TestMetaData {
         for (int i = 0; i < DATA_COUNT; i++) {
             HashMap<String, Comparable> map = new HashMap<String, Comparable>();
             map.put("metaData", "metaData" + i);
-            UrlDatum url = new UrlDatum("http://" + i, 0, 0, FetchStatusCode.NEVER_FETCHED, map);
+            UrlDatum url = new UrlDatum("http://" + i, 0, 0, FetchStatusCode.UNFETCHED, map);
             write.add(url.toTuple());
         }
         write.close();

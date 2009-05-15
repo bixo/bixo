@@ -27,7 +27,6 @@ import java.io.File;
 import org.apache.hadoop.fs.FileUtil;
 import org.junit.Test;
 
-import bixo.datum.IFieldNames;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.HttpClientFetcher;
 import bixo.fetcher.http.IHttpFetcher;
@@ -35,8 +34,8 @@ import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.pipes.FetchPipe;
 import bixo.urldb.IUrlNormalizer;
-import bixo.urldb.UrlNormalizer;
 import bixo.urldb.UrlImporter;
+import bixo.urldb.UrlNormalizer;
 import bixo.utils.TimeStampUtil;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -55,14 +54,14 @@ public class FetcherTest {
         String workingFolder = "build/test-data/FetcherTest/working";
 
         // we might dont want to regenerate that all the time..
-        if (!new File(workingFolder, IFieldNames.URL_DB).exists()) {
+        if (!new File(workingFolder, UrlImporter.URL_DB_NAME).exists()) {
             UrlImporter urlImporter = new UrlImporter();
             String inputPath = "src/test-data/top10urls.txt";
             FileUtil.fullyDelete(new File(workingFolder));
             urlImporter.importUrls(inputPath, workingFolder);
         }
 
-        String inputPath = workingFolder + "/" + IFieldNames.URL_DB;
+        String inputPath = workingFolder + "/" + UrlImporter.URL_DB_NAME;
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
         String outPath = workingFolder + "/" + "FetcherTest" + TimeStampUtil.nowWithUnderLine();
         Lfs out = new Lfs(new SequenceFile(Fields.ALL), outPath, true);

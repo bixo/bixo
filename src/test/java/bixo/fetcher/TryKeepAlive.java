@@ -61,7 +61,7 @@ public class TryKeepAlive {
 
     
     private static ScoredUrlDatum makeSUD(String url) {
-        return new ScoredUrlDatum(url, 0, 0, FetchStatusCode.NEVER_FETCHED, url, DomainNames.getPLD(url), 1.0d, null);
+        return new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, DomainNames.getPLD(url), 1.0d, null);
     }
 
     private static class UrlWithHost implements Comparable<UrlWithHost> {

@@ -27,7 +27,6 @@ import java.io.IOException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import bixo.datum.IFieldNames;
 import bixo.datum.UrlDatum;
 import bixo.operations.LastUpdated;
 import bixo.operations.TextUrlParser;
@@ -51,15 +50,16 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 
 public class UrlImporter extends HadoopConfigured {
-
+    public static final String URL_DB_NAME = "url_db";
+    
     public void importUrls(String inputPath, String workingFolder) throws IOException {
 
         FileSystem fs = getFileSystem(workingFolder);
-        Path currentDb = new Path(workingFolder, IFieldNames.URL_DB);
+        Path currentDb = new Path(workingFolder, URL_DB_NAME);
         boolean dbexists = fs.exists(currentDb);
         // if db exists we want to merge dbs
 
-        Path newDb = new Path(workingFolder, IFieldNames.URL_DB + "-new-" + TimeStampUtil.nowWithUnderLine());
+        Path newDb = new Path(workingFolder, URL_DB_NAME + "-new-" + TimeStampUtil.nowWithUnderLine());
         Tap importSink = new Hfs(new SequenceFile(UrlDatum.FIELDS), newDb.toUri().toASCIIString(), true);
         // create tmp db
         importUrls(inputPath, importSink);
@@ -67,13 +67,13 @@ public class UrlImporter extends HadoopConfigured {
         if (dbexists) {
             // merge both together
 
-            Tap oldDbTap = new Hfs(new SequenceFile(UrlDatum.FIELDS), workingFolder + "/" + IFieldNames.URL_DB);
+            Tap oldDbTap = new Hfs(new SequenceFile(UrlDatum.FIELDS), workingFolder + "/" + URL_DB_NAME);
 
             Tap newDbTap = new Hfs(new SequenceFile(UrlDatum.FIELDS), newDb.toUri().toASCIIString());
 
             MultiTap source = new MultiTap(oldDbTap, newDbTap);
 
-            Path mergeDb = new Path(workingFolder, IFieldNames.URL_DB + "-merged-" + TimeStampUtil.nowWithUnderLine());
+            Path mergeDb = new Path(workingFolder, URL_DB_NAME + "-merged-" + TimeStampUtil.nowWithUnderLine());
             Tap mergeSink = new Hfs(new SequenceFile(UrlDatum.FIELDS), mergeDb.toUri().toASCIIString(), true);
 
             Pipe pipe = new Pipe("urldb-merge");
@@ -86,7 +86,7 @@ public class UrlImporter extends HadoopConfigured {
             Flow flow = flowConnector.connect(source, mergeSink, pipe);
             flow.complete();
 
-            Path oldDb = new Path(workingFolder, IFieldNames.URL_DB + "-old-" + TimeStampUtil.nowWithUnderLine());
+            Path oldDb = new Path(workingFolder, URL_DB_NAME + "-old-" + TimeStampUtil.nowWithUnderLine());
 
             fs.rename(currentDb, oldDb);
             fs.rename(mergeDb, currentDb);

@@ -66,7 +66,7 @@ public class RunFakeFetcher {
                     String file = "/page-" + j + ".html";
 
                     String url = "http://www." + host + file;
-                    ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0,0, FetchStatusCode.NEVER_FETCHED, url, null, rand.nextFloat(), null);
+                    ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0,0, FetchStatusCode.UNFETCHED, url, null, rand.nextFloat(), null);
                     queue.offer(urlScore);
                 }
 
