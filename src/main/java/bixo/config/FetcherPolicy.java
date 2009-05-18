@@ -28,41 +28,38 @@ import java.io.Serializable;
 public class FetcherPolicy implements Serializable {
     public static final int NO_CRAWL_DELAY = 0;
     public static final int NO_MIN_RESPONSE_RATE = 0;
+    public static final long NO_CRAWL_END_TIME = 0;
     
     public static final int DEFAULT_CRAWL_DELAY = 30;
-    public static final int DEFAULT_THREADS_PER_HOST = 1;
     public static final int DEFAULT_REQUESTS_PER_CONNECTION = 10;
     public static final int DEFAULT_MIN_RESPONSE_RATE = NO_MIN_RESPONSE_RATE;
     public static final int DEFAULT_MAX_CONTENT_SIZE = 64 * 1024;
+    public static final long DEFAULT_CRAWL_END_TIME = NO_CRAWL_END_TIME;
     
     private int _crawlDelay;			// Delay between requests, in seconds.
-    private int _threadsPerHost;		// > 1 => ignore crawl delay
     private int _requestsPerConnection;	// > 1 => using keep-alive.
     private int _minResponseRate;        // lower bounds on bytes-per-second
     private int _maxContentSize;        // Max # of bytes to use.
+    private long _crawlEndTime;          // When we want the crawl to end
     
     // TODO KKr - add RobotExclusion instance here
 
     public FetcherPolicy() {
-        this(DEFAULT_CRAWL_DELAY, DEFAULT_THREADS_PER_HOST, DEFAULT_REQUESTS_PER_CONNECTION, DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE);
+        this(DEFAULT_CRAWL_DELAY, DEFAULT_REQUESTS_PER_CONNECTION, DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME);
     }
 
 
-    public FetcherPolicy(int crawlDelay, int threadsPerHost, int requestsPerConnection, int minResponseRate, int maxContentSize) {
+    public FetcherPolicy(int crawlDelay, int requestsPerConnection, int minResponseRate, int maxContentSize, long crawlEndTime) {
         _crawlDelay = crawlDelay;
-        _threadsPerHost = threadsPerHost;
         _requestsPerConnection = requestsPerConnection;
         _minResponseRate = minResponseRate;
         _maxContentSize = maxContentSize;
+        _crawlEndTime = crawlEndTime;
     }
 
 
     public int getCrawlDelay() {
-        if (_threadsPerHost > 1) {
-            return 0;
-        } else {
-            return _crawlDelay;
-        }
+        return _crawlDelay;
     }
 
 
@@ -71,13 +68,13 @@ public class FetcherPolicy implements Serializable {
     }
 
 
-    public int getThreadsPerHost() {
-        return _threadsPerHost;
+    public long getCrawlEndTime() {
+        return _crawlEndTime;
     }
 
 
-    public void setThreadsPerHost(int threadsPerHost) {
-        _threadsPerHost = threadsPerHost;
+    public void setCrawlEndTime(long crawlEndTime) {
+        _crawlEndTime = crawlEndTime;
     }
 
 
