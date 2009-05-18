@@ -24,7 +24,10 @@ package bixo.fetcher;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import cascading.tuple.TupleEntryCollector;
+
 import bixo.cascading.BixoFlowProcess;
+import bixo.config.FetcherPolicy;
 
 /**
  * Manage a set of FetcherQueue objects, one per URL grouping (either domain or IP address)
@@ -37,10 +40,20 @@ public class FetcherQueueMgr implements IFetchListProvider {
     // remove them.
 	private ConcurrentLinkedQueue<FetcherQueue> _queues;	
 	private BixoFlowProcess _process;
+	private FetcherPolicy _defaultPolicy;
 	
-	public FetcherQueueMgr(BixoFlowProcess process) {
-	    _process = process;
-		_queues = new ConcurrentLinkedQueue<FetcherQueue>();
+    public FetcherQueueMgr(BixoFlowProcess process) {
+        this(process, new FetcherPolicy());
+    }
+    
+    public FetcherQueueMgr(BixoFlowProcess process, FetcherPolicy defaultPolicy) {
+        _process = process;
+        _defaultPolicy = defaultPolicy;
+        _queues = new ConcurrentLinkedQueue<FetcherQueue>();
+    }
+    
+	public FetcherQueue createQueue(String domain, TupleEntryCollector collector) {
+	    return new FetcherQueue(domain, _defaultPolicy, _process, collector);
 	}
 	
 	/**
