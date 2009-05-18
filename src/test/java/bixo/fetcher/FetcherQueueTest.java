@@ -41,15 +41,17 @@ public class FetcherQueueTest {
     }
     
     @Test
-    public void testMaxURLs() throws MalformedURLException {
-        FetcherPolicy policy = new FetcherPolicy(30, 1, 1, FetcherPolicy.NO_MIN_RESPONSE_RATE, FetcherPolicy.DEFAULT_MAX_CONTENT_SIZE);
-        FetcherQueue queue = new FetcherQueue("domain.com", policy, 1, new BixoFlowProcess(), null);
+    public void testCrawlDurationLimit() throws MalformedURLException {
+        // Set the target end of the crawl to now, which means we'll only try to fetch a single URL.
+        FetcherPolicy policy = new FetcherPolicy();
+        policy.setCrawlEndTime(System.currentTimeMillis());
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
 
         ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 0.0d);
         ScoredUrlDatum fetchItem2 = makeSUD("http://domain.com/page2", 1.0d);
         ScoredUrlDatum fetchItem3 = makeSUD("http://domain.com/page3", 0.5d);
 
-        queue.offer(fetchItem1);
+        Assert.assertTrue(queue.offer(fetchItem1));
         Assert.assertTrue(queue.offer(fetchItem2));
         Assert.assertFalse(queue.offer(fetchItem3));
 
@@ -65,18 +67,19 @@ public class FetcherQueueTest {
     public void testSortedUrls() throws MalformedURLException {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setCrawlDelay(0);
-
-        FetcherQueue queue = new FetcherQueue("domain.com", policy, 100, new BixoFlowProcess(), null);
+        policy.setRequestsPerConnection(1);
+        
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
         Random rand = new Random(1L);
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             ScoredUrlDatum fetchQueueEntry = makeSUD("http://domain.com/page" + rand.nextInt(), rand.nextFloat());
             queue.offer(fetchQueueEntry);
         }
 
         double curScore = 2.0;
         int totalItems = 0;
-        while (totalItems < 100) {
+        while (totalItems < 10) {
             FetchList items = queue.poll();
             Assert.assertNotNull(items);
             totalItems += items.size();
@@ -90,16 +93,36 @@ public class FetcherQueueTest {
             queue.release(items);
         }
 
-        Assert.assertEquals(100, totalItems);
+        Assert.assertEquals(10, totalItems);
+        
+        queue.setMaxUrls(2);
+        curScore = 2.0;
+        totalItems = 0;
+        while (totalItems < 2) {
+            FetchList items = queue.poll();
+            Assert.assertNotNull(items);
+            totalItems += items.size();
+
+            Assert.assertTrue(items.get(0).getScore() <= curScore);
+            for (ScoredUrlDatum item : items) {
+                Assert.assertTrue(item.getScore() <= curScore);
+                curScore = item.getScore();
+            }
+
+            queue.release(items);
+        }
+
+        Assert.assertEquals(2, totalItems);
         Assert.assertNull(queue.poll());
     }
+    
 
     @Test
-    public void testTimeLimit() throws MalformedURLException, InterruptedException {
+    public void testCrawlDelay() throws MalformedURLException, InterruptedException {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setCrawlDelay(1);
         policy.setRequestsPerConnection(1);
-        FetcherQueue queue = new FetcherQueue("domain.com", policy, 100, new BixoFlowProcess(), null);
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
 
         ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 0.5d);
         ScoredUrlDatum fetchItem2 = makeSUD("http://domain.com/page2", 0.0d);
@@ -121,7 +144,7 @@ public class FetcherQueueTest {
         policy.setCrawlDelay(1);
         policy.setRequestsPerConnection(2);
         
-        FetcherQueue queue = new FetcherQueue("domain.com", policy, 100, new BixoFlowProcess(), null);
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
 
         ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 1.0d);
         ScoredUrlDatum fetchItem2 = makeSUD("http://domain.com/page2", 0.5d);

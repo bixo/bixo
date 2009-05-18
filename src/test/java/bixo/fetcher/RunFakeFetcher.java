@@ -53,14 +53,13 @@ public class RunFakeFetcher {
 
             for (int i = 0; i < 10; i++) {
                 String host = "domain-" + i + ".com";
-                int capacity = 100 - (i * 10);
                 int delay = 0 + rand.nextInt(5);
 
-                LOGGER.trace(String.format("Creating queue for %s with delay %d and capacity %d", host, delay, capacity));
+                LOGGER.trace(String.format("Creating queue for %s with delay %d", host, delay));
 
                 FetcherPolicy policy = new FetcherPolicy();
                 policy.setCrawlDelay(delay);
-                FetcherQueue queue = new FetcherQueue(host, policy, capacity, flowProcess, new FakeCollector());
+                FetcherQueue queue = new FetcherQueue(host, policy, flowProcess, new FakeCollector());
 
                 for (int j = 0; j < 5; j++) {
                     String file = "/page-" + j + ".html";

@@ -48,7 +48,8 @@ import cascading.tuple.Fields;
 import cascading.tuple.TupleEntryCollector;
 
 public class RunTestFetcher {
-
+    private static final long TEN_MINUTES = 10 * 60 * 1000L;
+    
     /**
      * @param args
      */
@@ -85,11 +86,12 @@ public class RunTestFetcher {
             TupleEntryCollector tupleEntryCollector = new Lfs(new SequenceFile(Fields.ALL), out, true).openForWrite(conf);
 
             BixoFlowProcess process = new BixoFlowProcess();
-            FetcherQueueMgr queueMgr = new FetcherQueueMgr(process);
-            FetcherPolicy policy = new FetcherPolicy();
-
+            FetcherPolicy defaultPolicy = new FetcherPolicy();
+            defaultPolicy.setCrawlEndTime(System.currentTimeMillis() + TEN_MINUTES);
+            FetcherQueueMgr queueMgr = new FetcherQueueMgr(process, defaultPolicy);
+            
             for (String pld : domainMap.keySet()) {
-                FetcherQueue queue = new FetcherQueue(pld, policy, 100, process, tupleEntryCollector);
+                FetcherQueue queue = queueMgr.createQueue(pld, tupleEntryCollector);
                 List<String> urls = domainMap.get(pld);
                 System.out.println("Adding " + urls.size() + " URLs for " + pld);
                 for (String url : urls) {

@@ -55,7 +55,9 @@ public class FetcherManagerTest extends SimulationWebServer {
             server = startServer(new RandomResponseHandler(20000, 100 * 1000L), 8089);
 
             BixoFlowProcess flowProcess = new BixoFlowProcess();
-            FetcherQueueMgr queueMgr = new FetcherQueueMgr(flowProcess);
+            FetcherPolicy defaultPolicy = new FetcherPolicy();
+            defaultPolicy.setMinResponseRate(0);
+            FetcherQueueMgr queueMgr = new FetcherQueueMgr(flowProcess, defaultPolicy);
             FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFetcher(NUM_THREADS), flowProcess);
 
             Thread t = new Thread(threadMgr);
@@ -64,9 +66,7 @@ public class FetcherManagerTest extends SimulationWebServer {
 
             for (int i = 0; i < 200; i++) {
                 String host = "domain-" + i + ".com";
-                FetcherPolicy policy = new FetcherPolicy();
-                policy.setMinResponseRate(0);
-                FetcherQueue queue = new FetcherQueue(host, policy, 100, flowProcess, new FakeCollector());
+                FetcherQueue queue = queueMgr.createQueue(host, new FakeCollector());
 
                 for (int j = 0; j < 2; j++) {
                     String file = "/page-" + j + ".html";

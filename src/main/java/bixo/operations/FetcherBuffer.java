@@ -5,7 +5,6 @@ import java.util.Iterator;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.config.FetcherPolicy;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.FetcherCounters;
 import bixo.fetcher.FetcherManager;
@@ -45,11 +44,9 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
         super.prepare(flowProcess, operationCall);
 
         // FUTURE KKr - use Cascading process vs creating our own, once it
-        // supports
-        // logging in local mode, and a setStatus() call.
+        // supports logging in local mode, and a setStatus() call.
         // TODO KKr - check for a serialized external reporter in the process,
-        // add
-        // it if it exists.
+        // add it if it exists.
         _flowProcess = new BixoFlowProcess((HadoopFlowProcess) flowProcess);
 
         _queueMgr = new FetcherQueueMgr(_flowProcess);
@@ -69,10 +66,6 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
             // <key> is the PLD grouper, while each entry from <values> is a
             // FetchQueueEntry.
             String domain = group.getString(0);
-            FetcherPolicy policy = new FetcherPolicy();
-
-            // TODO KKr - base maxURLs on fetcher policy, target end of fetch
-            int maxURLs = 30;
 
             // TODO KKr - if domain isn't already an IP address, we want to
             // covert URLs to IP addresses and segment that way, as otherwise
@@ -93,7 +86,8 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
             // URL and adds IP/crawl delay as the key (and filter if blocked). Then
             // group by this, and we're done. Would need good DNS (and probably our
             // own cache in front, for each such function).
-            FetcherQueue queue = new FetcherQueue(domain, policy, maxURLs, _flowProcess, buffCall.getOutputCollector());
+            
+            FetcherQueue queue = _queueMgr.createQueue(domain, buffCall.getOutputCollector());
 
             int skipped = 0;
             while (values.hasNext()) {
