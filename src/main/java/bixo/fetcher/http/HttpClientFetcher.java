@@ -61,9 +61,11 @@ import bixo.datum.ScoredUrlDatum;
 public class HttpClientFetcher implements IHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(HttpClientFetcher.class);
 
-    private static final int SOCKET_TIMEOUT = 10 * 1000;
-    private static final int CONNECTION_TIMEOUT = 10 * 1000;
-    private static final long CONNECTION_POOL_TIMEOUT = 10 * 1000L;
+    // We tried 10 seconds for all of these, but got a number of connection/read timeouts for
+    // sites that would have eventually worked, so bumping it up to 20 seconds.
+    private static final int SOCKET_TIMEOUT = 20 * 1000;
+    private static final int CONNECTION_TIMEOUT = 20 * 1000;
+    private static final long CONNECTION_POOL_TIMEOUT = 20 * 1000L;
     
     private static final int ERROR_CONTENT_LENGTH = 1024;
     public static final int BUFFER_SIZE = 8 * 1024;
@@ -118,7 +120,9 @@ public class HttpClientFetcher implements IHttpFetcher {
             // same time as a page from the server.
             // FUTURE - set this on a per-route (host) basis when we have per-host policies for
             // doing partner crawls. We could define a BixoConnPerRoute class that supports this.
-            ConnPerRouteBean connPerRoute = new ConnPerRouteBean(_fetcherPolicy.getThreadsPerHost() + 1);
+            // FUTURE - reenable threads-per-host support, if we actually need it.
+            // ConnPerRouteBean connPerRoute = new ConnPerRouteBean(_fetcherPolicy.getThreadsPerHost() + 1);
+            ConnPerRouteBean connPerRoute = new ConnPerRouteBean(1 + 1);
             ConnManagerParams.setMaxConnectionsPerRoute(params, connPerRoute);
 
             HttpProtocolParams.setVersion(params, _httpVersion);
