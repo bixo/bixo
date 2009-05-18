@@ -44,15 +44,24 @@ public class FetcherQueue implements IFetchListProvider {
     private TupleEntryCollector _collector;
     private int _numActiveFetchers;
     private long _nextFetchTime;
-    private int _maxURLs;
+    private int _maxUrls;
     private boolean _sorted;
 
-    public FetcherQueue(String domain, FetcherPolicy policy, int maxURLs, BixoFlowProcess process, TupleEntryCollector collector) {
+    public FetcherQueue(String domain, FetcherPolicy policy, BixoFlowProcess process, TupleEntryCollector collector) {
         _domain = domain;
         _policy = policy;
-        _maxURLs = maxURLs;
         _process = process;
         _collector = collector;
+
+        // Figure out how many URLs we can (approximately) fetch during the target crawl time.
+        long targetEndTime = _policy.getCrawlEndTime();
+        if (targetEndTime == FetcherPolicy.NO_CRAWL_END_TIME) {
+            _maxUrls = Integer.MAX_VALUE;
+        } else {
+            long crawlDuration = targetEndTime - System.currentTimeMillis();
+            long delayInMS = 1000L * _policy.getCrawlDelay();
+            _maxUrls = (int)Math.max(1L, crawlDuration / delayInMS);
+        }
 
         _numActiveFetchers = 0;
         _nextFetchTime = System.currentTimeMillis();
@@ -75,7 +84,7 @@ public class FetcherQueue implements IFetchListProvider {
         // TODO KKr - add lock that prevents anyone from adding new items after we've
         // started polling.
         
-        if (_queue.size() < _maxURLs) {
+        if (_queue.size() < _maxUrls) {
             _queue.add(ScoredUrlDatum);
             _sorted = false;
             return true;
@@ -121,17 +130,12 @@ public class FetcherQueue implements IFetchListProvider {
         
         if (_queue.size() == 0) {
             // Nothing to return
-        } else if (_policy.getThreadsPerHost() > 1) {
-            // If we're not being polite, then the only limit is the
-            // number of threads per host.
-            if (_numActiveFetchers < _policy.getThreadsPerHost()) {
-                _numActiveFetchers += 1;
-                // TODO KKr - return up to the limit of our policy.
-                result = new FetchList(this, _process, _collector, _queue.remove(0));
-            }
         } else if ((_numActiveFetchers == 0) && (System.currentTimeMillis() >= _nextFetchTime)) {
             _numActiveFetchers += 1;
             
+            // Make sure we return things in sorted order
+            sort();
+
             int numURLs = Math.min(_queue.size(), _policy.getRequestsPerConnection());
             result = new FetchList(this, _process, _collector);
             for (int i = 0; i < numURLs; i++) {
@@ -178,5 +182,18 @@ public class FetcherQueue implements IFetchListProvider {
     
     public String getDomain() {
         return _domain;
+    }
+    
+    public int getMaxUrls() {
+        return _maxUrls;
+    }
+    
+    public synchronized void setMaxUrls(int maxUrls) {
+        _maxUrls = maxUrls;
+        
+        if (_queue.size() > _maxUrls) {
+            sort();
+            _queue.subList(_maxUrls, _queue.size()).clear();
+        }
     }
 }
