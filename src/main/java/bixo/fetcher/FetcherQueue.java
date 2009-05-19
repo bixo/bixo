@@ -57,10 +57,12 @@ public class FetcherQueue implements IFetchListProvider {
         long targetEndTime = _policy.getCrawlEndTime();
         if (targetEndTime == FetcherPolicy.NO_CRAWL_END_TIME) {
             _maxUrls = Integer.MAX_VALUE;
+            LOGGER.trace("No target end time, unlimited URLs");
         } else {
             long crawlDuration = targetEndTime - System.currentTimeMillis();
             long delayInMS = 1000L * _policy.getCrawlDelay();
-            _maxUrls = (int)Math.max(1L, crawlDuration / delayInMS);
+            _maxUrls = 1 + (int)Math.max(0, crawlDuration / delayInMS);
+            LOGGER.trace(String.format("Target duration of %d seconds, %d max URLs", crawlDuration / 1000, _maxUrls));
         }
 
         _numActiveFetchers = 0;
