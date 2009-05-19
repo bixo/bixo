@@ -1,9 +1,13 @@
 package bixo.pipes;
 
+import java.io.IOException;
+import java.util.Properties;
+
 import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 
 import bixo.cascading.MultiSinkTap;
+import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
@@ -11,9 +15,11 @@ import bixo.fetcher.FakeHttpFetcher;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
+import bixo.operations.FetcherBuffer;
 import bixo.pipes.FetchPipe;
 import bixo.urldb.IUrlNormalizer;
 import bixo.urldb.UrlNormalizer;
+import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;
@@ -24,44 +30,38 @@ import cascading.tap.Lfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntryCollector;
+import cascading.tuple.TupleEntryIterator;
+import cascading.util.Util;
 
-public class FetchPipeTest {
+public class FetchPipeTest extends CascadingTestCase {
 
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
 
-    @Test
-    public void testFetchPipe() throws Exception {
-
-        // First create a sequence file with 1000 UrlDatum tuples in it.
+    private Lfs makeInputData(int numDomains, int numPages) throws IOException {
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), "build/test-data/FetchPipeTest/in", true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
-        for (int i = 0; i < 1000; i++) {
-            UrlDatum url = new UrlDatum("http://" + i, 0, 0, FetchStatusCode.UNFETCHED, null);
-            write.add(url.toTuple());
+        for (int i = 0; i < numDomains; i++) {
+            for (int j = 0; j < numPages; j++) {
+                UrlDatum url = new UrlDatum("http://domain-" + i + ".com/page-" + j + ".html?size=10", 0, 0, FetchStatusCode.UNFETCHED, null);
+                write.add(url.toTuple());
+            }
         }
+        
         write.close();
+        return in;
+    }
+    
+    @Test
+    public void testFetchPipe() throws Exception {
+        Lfs in = makeInputData(100, 1);
 
-        // Create the fetch pipe we'll use to process these fake URLs
         Pipe pipe = new Pipe("urlSource");
         IUrlNormalizer urlNormalizer = new UrlNormalizer();
         PLDGrouping grouping = new PLDGrouping();
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
         FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
-
-        // Test that we correctly generated the sequence file.
-        // Flow flow = flowConnector.connect(in, out, fetchPipe);
-        // flow.complete();
-        // TupleEntryIterator openSink = flow.openSink();
-        // while (openSink.hasNext()) {
-        // System.out.println(openSink.next());
-        // }
-        // now run this again and test the tap
-
-        // Lfs dualLfs = new Lfs(new SequenceFile(Fields.ALL),
-        // "build/test-data/FetchPipeTest/dual", true);
-
-        // Create the output, which is a dual file sink tap.
+        
         String outputPath = "build/test-data/FetchPipeTest/dual";
         Tap status = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD)), outputPath + "/status", true);
         Tap content = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD)), outputPath + "/content", true);
@@ -71,5 +71,38 @@ public class FetchPipeTest {
         FlowConnector flowConnector = new FlowConnector();
         Flow flow = flowConnector.connect(in, sink, fetchPipe);
         flow.complete();
+    }
+    
+    @Test
+    public void testDurationLimit() throws Exception {
+        // Pretend like we have 10 URLs from the same domain
+        Lfs in = makeInputData(1, 10);
+
+        // Create the fetch pipe we'll use to process these fake URLs
+        Pipe pipe = new Pipe("urlSource");
+        IUrlNormalizer urlNormalizer = new UrlNormalizer();
+        PLDGrouping grouping = new PLDGrouping();
+        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
+        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
+        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
+
+        // Create the output
+        String outputPath = "build/test-data/FetchPipeTest/out";
+        Tap out = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath, true);
+
+        // Finally we can run it. Set up our prefs with a FetcherPolicy that has an end time of now,
+        // which means we should get only a single URL from our one domain.
+        Properties properties = new Properties();
+        FetcherPolicy defaultPolicy = new FetcherPolicy();
+        defaultPolicy.setCrawlEndTime(System.currentTimeMillis());
+        properties.put(FetcherBuffer.DEFAULT_FETCHER_POLICY_KEY, Util.serializeBase64(defaultPolicy));
+
+        FlowConnector flowConnector = new FlowConnector(properties);
+        Flow flow = flowConnector.connect(in, out, fetchPipe);
+        flow.complete();
+        
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        validateLength(tupleEntryIterator, 1);
     }
 }
