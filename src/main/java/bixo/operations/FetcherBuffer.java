@@ -1,10 +1,12 @@
 package bixo.operations;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
+import bixo.config.FetcherPolicy;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.FetcherCounters;
 import bixo.fetcher.FetcherManager;
@@ -19,11 +21,14 @@ import cascading.operation.OperationCall;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
+import cascading.util.Util;
 
 @SuppressWarnings( { "serial", "unchecked" })
 public class FetcherBuffer extends BaseOperation implements cascading.operation.Buffer {
     private static Logger LOGGER = Logger.getLogger(FetcherBuffer.class);
 
+    public static final String DEFAULT_FETCHER_POLICY_KEY = "bixo.fetcher.default-policy";
+    
     private FetcherManager _fetcherMgr;
     private FetcherQueueMgr _queueMgr;
     private Thread _fetcherThread;
@@ -49,7 +54,21 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
         // add it if it exists.
         _flowProcess = new BixoFlowProcess((HadoopFlowProcess) flowProcess);
 
-        _queueMgr = new FetcherQueueMgr(_flowProcess);
+        FetcherPolicy defaultPolicy;
+        String policyObj = (String)flowProcess.getProperty(DEFAULT_FETCHER_POLICY_KEY);
+        if (policyObj != null) {
+            try {
+                defaultPolicy = (FetcherPolicy)Util.deserializeBase64(policyObj);
+                LOGGER.trace("Using serialized fetcher policy: " + defaultPolicy);
+            } catch (IOException e) {
+                LOGGER.error("Unexpected exception while deserializing the default fetcher policy", e);
+                throw new RuntimeException("IOException while deserializing default fetcher policy", e);
+            }
+        } else {
+            defaultPolicy = new FetcherPolicy();
+        }
+        
+        _queueMgr = new FetcherQueueMgr(_flowProcess, defaultPolicy);
         _fetcherMgr = new FetcherManager(_queueMgr, _fetcher, _flowProcess);
 
         _fetcherThread = new Thread(_fetcherMgr);
@@ -122,33 +141,39 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
 
     @Override
     public void cleanup(FlowProcess process, OperationCall operationCall) {
-        while (!_fetcherMgr.isDone()) {
-            process.keepAlive();
+        try {
+            while (!_fetcherMgr.isDone()) {
+                process.keepAlive();
 
-            try {
-                Thread.sleep(1000L);
-            } catch (InterruptedException e) {
+                try {
+                    Thread.sleep(1000L);
+                } catch (InterruptedException e) {
+                }
+
             }
 
+            // TODO KKr - this need to interrupt the fetcher thread feels awkward.
+            // I'd rather have
+            // a FetcherManager.create() factory method that returns a FetcherMgr,
+            // but also starts
+            // up the thread. Not sure how to terminate the thread in that case,
+            // unless I no flip
+            // things around and don't make the FetchManager be runnable, but rather
+            // have a run
+            // method that spawns a thread and immediately returns.
+            _fetcherThread.interrupt();
+
+            // TODO KKr - shut down FetcherManager, so that it can do...
+            // httpclient.getConnectionManager().shutdown();
+
+            // Write out counter info we've collected, in case we're running in
+            // local mode.
+            _flowProcess.dumpCounters();
+        } catch (Throwable t) {
+            // If we run into a serious error, just log it and return, so that we
+            // don't lose the entire fetch result.
+            LOGGER.error("Error during cleanup of FetcherBuffer", t);
         }
-
-        // TODO KKr - this need to interrupt the fetcher thread feels awkward.
-        // I'd rather have
-        // a FetcherManager.create() factory method that returns a FetcherMgr,
-        // but also starts
-        // up the thread. Not sure how to terminate the thread in that case,
-        // unless I no flip
-        // things around and don't make the FetchManager be runnable, but rather
-        // have a run
-        // method that spawns a thread and immediately returns.
-        _fetcherThread.interrupt();
-
-        // TODO KKr - shut down FetcherManager, so that it can do...
-        // httpclient.getConnectionManager().shutdown();
-
-        // Write out counter info we've collected, in case we're running in
-        // local mode.
-        _flowProcess.dumpCounters();
     }
 
 }
