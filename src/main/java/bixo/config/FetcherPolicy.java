@@ -107,5 +107,18 @@ public class FetcherPolicy implements Serializable {
         _maxContentSize = maxContentSize;
     }
     
-
+    public String toString() {
+        StringBuilder result = new StringBuilder();
+        result.append("Crawl delay: " + getCrawlDelay());
+        result.append('\r');
+        result.append("Crawl end time: " + getCrawlEndTime());
+        result.append('\r');
+        result.append("Requests per connection: " + getRequestsPerConnection());
+        result.append('\r');
+        result.append("Minimum response rate: " + getMinResponseRate());
+        result.append('\r');
+        result.append("Maximum content size: " + getMaxContentSize());
+        
+        return result.toString();
+    }
 }
