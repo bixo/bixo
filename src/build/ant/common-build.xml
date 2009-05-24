@@ -280,10 +280,6 @@ SOFTWARE.
 		<copy todir="${job.dir}/lib">
 			<fileset refid="libs" />
 		</copy>
-		<!-- copy  conf to target dir  -->
-		<copy todir="${job.dir}">
-			<fileset dir="${basedir}/conf" />
-		</copy>
 		<!-- copy  classes  -->
 		<copy todir="${job.dir}">
 			<fileset dir="${build.dir.main-classes}" />
