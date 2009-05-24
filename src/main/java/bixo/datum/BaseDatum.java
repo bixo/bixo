@@ -43,17 +43,26 @@ public abstract class BaseDatum {
     protected abstract Comparable[] getStandardValues();
     protected abstract Fields getStandardFields();
 
-    public Fields getMetaDataFields() {
+    public static Fields makeMetaDataFields(String... fieldNames) {
+        Arrays.sort(fieldNames);
+        return new Fields(fieldNames);
+    }
+    
+    public static Fields makeMetaDataFields(Map<String, Comparable> metaDataMap) {
         Fields result = new Fields();
-        if (_metaDataMap != null) {
-            String[] keys = _metaDataMap.keySet().toArray(new String[_metaDataMap.size()]);
+        if (metaDataMap != null) {
+            String[] keys = metaDataMap.keySet().toArray(new String[metaDataMap.size()]);
             Arrays.sort(keys);
             for (String key : keys) {
-                result.append(new Fields(key));
+                result = result.append(new Fields(key));
             }
         }
         
         return result;
+    }
+    
+    public Fields getMetaDataFields() {
+        return makeMetaDataFields(_metaDataMap);
     }
     
     public Comparable[] getMetaDataValues() {
