@@ -125,11 +125,10 @@ public class HtmlParser implements IParser {
             return ParseResult.createParseResult(fetchedDatum.getBaseUrl(), new ParseStatus().getEmptyParse());
         }
         
-        // TODO KKr - remove this guy.
+        // TODO KKr - remove this guy, once we know that our fetcher safely limits things.
         byte[] contentInOctets = fetchedDatum.getContent().getBytes();
         if (contentInOctets.length > (64 * 1024L)) {
             LOGGER.warn(String.format("Got big content (%d) for %s", contentInOctets.length, fetchedDatum.getBaseUrl()));
-            return ParseResult.createParseResult(fetchedDatum.getBaseUrl(), new ParseStatus().getEmptyParse());
         }
         
         String text = "";
