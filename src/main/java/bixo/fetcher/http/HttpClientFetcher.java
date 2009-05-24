@@ -238,7 +238,8 @@ public class HttpClientFetcher implements IHttpFetcher {
                     // metrics support for how to do this. Once we fix this, fix
                     // the test to read a smaller (< 20K)
                     // chuck of data.
-                    while (((bytesRead = in.read(buffer, 0, Math.min(buffer.length, targetLength - totalRead))) != -1) && (totalRead < targetLength)) {
+                    while ((totalRead < targetLength) && 
+                                    ((bytesRead = in.read(buffer, 0, Math.min(buffer.length, targetLength - totalRead))) != -1)) {
                         readRequests += 1;
                         totalRead += bytesRead;
 
