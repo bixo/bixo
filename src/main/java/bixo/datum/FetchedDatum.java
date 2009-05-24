@@ -32,13 +32,13 @@ import cascading.tuple.TupleEntry;
 
 public class FetchedDatum extends BaseDatum {
 
-    private final FetchStatusCode _statusCode;
-    private final String _baseUrl;
-    private final String _fetchedUrl;
-    private final long _fetchTime;
-    private final BytesWritable _content;
-    private final String _contentType;
-    private final int _responseRate;
+    private FetchStatusCode _statusCode;
+    private String _baseUrl;
+    private String _fetchedUrl;
+    private long _fetchTime;
+    private BytesWritable _content;
+    private String _contentType;
+    private int _responseRate;
 
     @SuppressWarnings("unchecked")
     public FetchedDatum(FetchStatusCode statusCode, String baseUrl, String redirectedUrl, long fetchTime, BytesWritable content, String contentType, int responseRate, Map<String, Comparable> metaData) {
@@ -98,8 +98,15 @@ public class FetchedDatum extends BaseDatum {
 
     public FetchedDatum(Tuple tuple, Fields metaDataFields) {
         super(tuple, metaDataFields);
-        
-        TupleEntry entry = new TupleEntry(getStandardFields(), tuple);
+        initFromTupleEntry(new TupleEntry(getStandardFields(), tuple));
+    }
+    
+    public FetchedDatum(TupleEntry entry, Fields metaDataFields) {
+        super(entry.getTuple(), metaDataFields);
+        initFromTupleEntry(entry);
+    }
+
+    private void initFromTupleEntry(TupleEntry entry) {
         _statusCode = FetchStatusCode.fromOrdinal(entry.getInteger(STATUS_CODE_FIELD));
         _baseUrl = entry.getString(BASE_URL_FIELD);
         _fetchedUrl = entry.getString(FETCHED_URL_FIELD);
@@ -108,7 +115,7 @@ public class FetchedDatum extends BaseDatum {
         _contentType = entry.getString(CONTENT_TYPE_FIELD);
         _responseRate = entry.getInteger(RESPONSE_RATE_FIELD);
     }
-
+    
     @Override
     public Fields getStandardFields() {
         return FIELDS;
