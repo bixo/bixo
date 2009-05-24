@@ -1,4 +1,4 @@
-package bixo;
+package bixo.pipes;
 
 import java.io.File;
 import java.util.HashMap;
@@ -19,6 +19,7 @@ import org.apache.lucene.search.TopDocs;
 import org.junit.Test;
 
 import bixo.datum.FetchStatusCode;
+import bixo.datum.ParsedDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.FakeHttpFetcher;
 import bixo.fetcher.http.IHttpFetcher;
@@ -34,6 +35,8 @@ import bixo.utils.FieldUtil;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.PlannerException;
+import cascading.operation.Identity;
+import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Lfs;
@@ -41,7 +44,7 @@ import cascading.tap.SinkMode;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntryCollector;
 
-public class TestMetaData {
+public class IndexingMetaDataTest {
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
     private static final int DATA_COUNT = 100;
 
@@ -73,16 +76,18 @@ public class TestMetaData {
 
         ParserPipe parserPipe = new ParserPipe(fetchPipe, new FakeParser(), metaDataField);
 
+        Fields indexedFields = new Fields("text", "metaData");
+        Pipe indexPipe = new Each(parserPipe, new Fields(ParsedDatum.PARSED_TEXT_FIELD, "metaData"), new Identity(indexedFields));
+        
         String out = "build/test-data/TestMetaData/testMetaData/out";
         FileUtil.fullyDelete(new File(out));
-        Lfs indexSinkTap = new Lfs(new IndexScheme(new Fields("text", "metaData"), new Store[] { Store.NO, Store.NO }, new Index[] { Index.NOT_ANALYZED, Index.NOT_ANALYZED }, KeywordAnalyzer.class,
+        Lfs indexSinkTap = new Lfs(new IndexScheme(indexedFields, new Store[] { Store.NO, Store.NO }, new Index[] { Index.NOT_ANALYZED, Index.NOT_ANALYZED }, KeywordAnalyzer.class,
                         MaxFieldLength.UNLIMITED.getLimit()), out, SinkMode.REPLACE);
         try {
-
-            Flow flow = new FlowConnector().connect(in, indexSinkTap, parserPipe);
+            Flow flow = new FlowConnector().connect(in, indexSinkTap, indexPipe);
             flow.complete();
         } catch (PlannerException e) {
-            e.writeDOT("/failedFlow.dot");
+            e.writeDOT("build/failedFlow.dot");
             throw e;
         }
 
