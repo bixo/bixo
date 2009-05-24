@@ -102,7 +102,8 @@ public class RunTestFetcher {
                 queueMgr.offer(queue);
             }
 
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFetcher(10), new BixoFlowProcess());
+            // TODO KKr - use real user agent name here.
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFetcher(10, "Bixo integration test"), new BixoFlowProcess());
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");
             t.start();

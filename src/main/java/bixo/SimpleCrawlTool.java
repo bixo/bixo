@@ -96,7 +96,9 @@ public class SimpleCrawlTool {
             IUrlNormalizer urlNormalizer = new UrlNormalizer();
             PLDGrouping grouping = new PLDGrouping();
             LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
-            IHttpFetcher fetcher = new HttpClientFetcher(options.getMaxThreads());
+            
+            // TODO KKr - use real user agent name here with web site ref, email address, etc.
+            IHttpFetcher fetcher = new HttpClientFetcher(options.getMaxThreads(), "Bixo demo");
             FetchPipe fetchPipe = new FetchPipe(importPipe, urlNormalizer, grouping, scoring, fetcher);
 
             // Finally we can run it.

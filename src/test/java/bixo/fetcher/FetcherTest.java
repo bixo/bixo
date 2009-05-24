@@ -71,7 +71,9 @@ public class FetcherTest {
         IUrlNormalizer urlNormalizer = new UrlNormalizer();
         PLDGrouping grouping = new PLDGrouping();
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
-        IHttpFetcher fetcher = new HttpClientFetcher(10);
+        
+        // TODO KKr - use real user agent name here.
+        IHttpFetcher fetcher = new HttpClientFetcher(10, "Bixo integration test");
         FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
 
         FlowConnector flowConnector = new FlowConnector();

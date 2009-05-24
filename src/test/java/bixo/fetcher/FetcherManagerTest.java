@@ -58,7 +58,9 @@ public class FetcherManagerTest extends SimulationWebServer {
             FetcherPolicy defaultPolicy = new FetcherPolicy();
             defaultPolicy.setMinResponseRate(0);
             FetcherQueueMgr queueMgr = new FetcherQueueMgr(flowProcess, defaultPolicy);
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFetcher(NUM_THREADS), flowProcess);
+            
+            // TODO KKr - use real user agent name here.
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFetcher(NUM_THREADS, "Bixo integration test"), flowProcess);
 
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");

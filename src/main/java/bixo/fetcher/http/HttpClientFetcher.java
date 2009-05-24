@@ -73,21 +73,25 @@ public class HttpClientFetcher implements IHttpFetcher {
     private int _maxThreads;
     private HttpVersion _httpVersion;
     private FetcherPolicy _fetcherPolicy;
-
+    private String _userAgent;
+    
     transient private HttpClient _httpClient;
     
-    public HttpClientFetcher(int maxThreads) {
-        this(maxThreads, HttpVersion.HTTP_1_1, new FetcherPolicy());
+    // TODO KKr - create UserAgent bean that's passed in here, which has
+    // separate fields for email, web site, name.
+    public HttpClientFetcher(int maxThreads, String userAgent) {
+        this(maxThreads, HttpVersion.HTTP_1_1, new FetcherPolicy(), userAgent);
     }
 
-    public HttpClientFetcher(int maxThreads, FetcherPolicy fetcherPolicy) {
-        this(maxThreads, HttpVersion.HTTP_1_1, fetcherPolicy);
+    public HttpClientFetcher(int maxThreads, FetcherPolicy fetcherPolicy, String userAgent) {
+        this(maxThreads, HttpVersion.HTTP_1_1, fetcherPolicy, userAgent);
     }
 
-    public HttpClientFetcher(int maxThreads, HttpVersion httpVersion, FetcherPolicy fetcherPolicy) {
+    public HttpClientFetcher(int maxThreads, HttpVersion httpVersion, FetcherPolicy fetcherPolicy, String userAgent) {
         _maxThreads = maxThreads;
         _httpVersion = httpVersion;
         _fetcherPolicy = fetcherPolicy;
+        _userAgent = userAgent;
         
         // Just to be explicit, we rely on lazy initialization of this so that
         // we don't have to worry about serializing it.
@@ -127,8 +131,7 @@ public class HttpClientFetcher implements IHttpFetcher {
 
             HttpProtocolParams.setVersion(params, _httpVersion);
             
-            // TODO KKr - get user agent string from config.
-            HttpProtocolParams.setUserAgent(params, "bixo");
+            HttpProtocolParams.setUserAgent(params, _userAgent);
             HttpProtocolParams.setContentCharset(params, "UTF-8");
             HttpProtocolParams.setHttpElementCharset(params, "UTF-8");
             HttpProtocolParams.setUseExpectContinue(params, true);

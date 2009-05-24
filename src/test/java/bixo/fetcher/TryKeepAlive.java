@@ -14,6 +14,8 @@ import bixo.fetcher.http.HttpClientFetcher;
 import bixo.utils.DomainNames;
 
 public class TryKeepAlive {
+    // TODO KKr - use real user agent string here.
+    private static final String USER_AGENT = "Bixo keep-alive test";
     private static final String[] APACHE_URLS = {
         "http://camel.apache.org/components.html",
         "http://camel.apache.org/http.html",
@@ -98,7 +100,7 @@ public class TryKeepAlive {
     private static long tryNoKeepaliveHttp10(String[] urls) {
         long startTime = System.currentTimeMillis();
         for (String uri : urls) {
-            HttpClientFetcher fetcher = new HttpClientFetcher(1, HttpVersion.HTTP_1_0, new FetcherPolicy());
+            HttpClientFetcher fetcher = new HttpClientFetcher(1, HttpVersion.HTTP_1_0, new FetcherPolicy(), USER_AGENT);
             fetcher.get(makeSUD(uri));
         }
         long stopTime = System.currentTimeMillis();
@@ -106,7 +108,7 @@ public class TryKeepAlive {
     }
     
     private static long tryHttp10(String[] urls) {
-        HttpClientFetcher fetcher = new HttpClientFetcher(1, HttpVersion.HTTP_1_0, new FetcherPolicy());
+        HttpClientFetcher fetcher = new HttpClientFetcher(1, HttpVersion.HTTP_1_0, new FetcherPolicy(), USER_AGENT);
 
         long startTime = System.currentTimeMillis();
         for (String uri : urls) {
@@ -117,7 +119,7 @@ public class TryKeepAlive {
     }
     
     private static long tryHttp11(String[] urls) {
-        HttpClientFetcher fetcher = new HttpClientFetcher(10, HttpVersion.HTTP_1_1, new FetcherPolicy());
+        HttpClientFetcher fetcher = new HttpClientFetcher(10, HttpVersion.HTTP_1_1, new FetcherPolicy(), USER_AGENT);
         long startTime = System.currentTimeMillis();
         for (String uri : urls) {
             fetcher.get(makeSUD(uri));
