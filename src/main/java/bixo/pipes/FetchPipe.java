@@ -28,7 +28,6 @@ public class FetchPipe extends SubAssembly {
     }
 
     public FetchPipe(Pipe urlProvider, IUrlNormalizer urlNormalizer, IGroupingKeyGenerator keyGenerator, IScoreGenerator scoreGenerator, IHttpFetcher fetcher, Fields metaDataFields) {
-
         Pipe fetch = new Pipe("fetch_pipe", urlProvider);
 
         Fields normalizedFields = NormalizedUrlDatum.FIELDS.append(metaDataFields);
@@ -37,8 +36,8 @@ public class FetchPipe extends SubAssembly {
         Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
         fetch = new Each(fetch, new GroupFunction(metaDataFields, keyGenerator), groupedFields);
 
-        Fields scoreFields = ScoredUrlDatum.FIELDS.append(metaDataFields);
-        fetch = new Each(fetch, new ScoreFunction(scoreGenerator, metaDataFields), scoreFields);
+        Fields scoredFields = ScoredUrlDatum.FIELDS.append(metaDataFields);
+        fetch = new Each(fetch, new ScoreFunction(scoreGenerator, metaDataFields), scoredFields);
 
         fetch = new GroupBy(fetch, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
         fetch = new Every(fetch, new FetcherBuffer(FetchedDatum.FIELDS, metaDataFields, fetcher), Fields.RESULTS);

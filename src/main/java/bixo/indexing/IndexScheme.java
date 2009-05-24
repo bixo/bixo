@@ -120,11 +120,13 @@ public class IndexScheme extends Scheme {
                                 try {
                                     sleep(10 * 1000);
                                 } catch (InterruptedException e) {
+                                    interrupt();
                                 }
                             }
                         }
                     };
                     reporterThread.start();
+                    
                     //
                     indexWriter.optimize();
                     indexWriter.close();
