@@ -44,7 +44,6 @@ public class FetcherQueue implements IFetchListProvider {
     private TupleEntryCollector _collector;
     private int _numActiveFetchers;
     private long _nextFetchTime;
-    private int _maxUrls;
     private boolean _sorted;
 
     public FetcherQueue(String domain, FetcherPolicy policy, BixoFlowProcess process, TupleEntryCollector collector) {
@@ -52,18 +51,6 @@ public class FetcherQueue implements IFetchListProvider {
         _policy = policy;
         _process = process;
         _collector = collector;
-
-        // Figure out how many URLs we can (approximately) fetch during the target crawl time.
-        long targetEndTime = _policy.getCrawlEndTime();
-        if (targetEndTime == FetcherPolicy.NO_CRAWL_END_TIME) {
-            _maxUrls = Integer.MAX_VALUE;
-            LOGGER.trace("No target end time, unlimited URLs");
-        } else {
-            long crawlDuration = targetEndTime - System.currentTimeMillis();
-            long delayInMS = 1000L * _policy.getCrawlDelay();
-            _maxUrls = 1 + (int)Math.max(0, crawlDuration / delayInMS);
-            LOGGER.trace(String.format("Target duration of %d seconds, %d max URLs", crawlDuration / 1000, _maxUrls));
-        }
 
         _numActiveFetchers = 0;
         _nextFetchTime = System.currentTimeMillis();
@@ -82,11 +69,11 @@ public class FetcherQueue implements IFetchListProvider {
      * @param ScoredUrlDatum - item that we'd like to have fetched. Must be valid format.
      * @return - true if we queued the URL
      */
-    public boolean offer(ScoredUrlDatum ScoredUrlDatum) {
+    public synchronized boolean offer(ScoredUrlDatum ScoredUrlDatum) {
         // TODO KKr - add lock that prevents anyone from adding new items after we've
         // started polling.
         
-        if (_queue.size() < _maxUrls) {
+        if (_queue.size() < _policy.getMaxUrls()) {
             _queue.add(ScoredUrlDatum);
             _sorted = false;
             return true;
@@ -95,6 +82,8 @@ public class FetcherQueue implements IFetchListProvider {
         // Since we have to insert, make sure the list is ordered first.
         sort();
 
+        // TODO KKr - should we trim the queue? Given current time, we might have
+        // more than getMaxUrls in the queue already.
         if (ScoredUrlDatum.getScore() <= _queue.get(_queue.size() - 1).getScore()) {
             return false;
         } else {
@@ -121,7 +110,6 @@ public class FetcherQueue implements IFetchListProvider {
         return (_numActiveFetchers == 0) && (_queue.size() == 0);
     }
 
-
     /* (non-Javadoc)
      * @see bixo.fetcher.IFetchItemProvider#poll()
      */
@@ -138,13 +126,13 @@ public class FetcherQueue implements IFetchListProvider {
             // Make sure we return things in sorted order
             sort();
 
-            int numURLs = Math.min(_queue.size(), _policy.getRequestsPerConnection());
+            FetchRequest fetchRequest = _policy.getFetchRequest(_queue.size());
+            int numUrls = fetchRequest.getNumUrls();
             result = new FetchList(this, _process, _collector);
-            for (int i = 0; i < numURLs; i++) {
-                result.add(_queue.remove(0));
-            }
+            result.addAll(_queue.subList(0, numUrls));
+            _queue.subList(0, numUrls).clear();
             
-            _nextFetchTime = System.currentTimeMillis() + (numURLs * _policy.getCrawlDelay() * 1000L);
+            _nextFetchTime = fetchRequest.getNextRequestTime();
             
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("Return list for %s with next fetch time of %d", _domain, _nextFetchTime));
@@ -186,16 +174,4 @@ public class FetcherQueue implements IFetchListProvider {
         return _domain;
     }
     
-    public int getMaxUrls() {
-        return _maxUrls;
-    }
-    
-    public synchronized void setMaxUrls(int maxUrls) {
-        _maxUrls = maxUrls;
-        
-        if (_queue.size() > _maxUrls) {
-            sort();
-            _queue.subList(_maxUrls, _queue.size()).clear();
-        }
-    }
 }

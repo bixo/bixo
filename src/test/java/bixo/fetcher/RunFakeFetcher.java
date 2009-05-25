@@ -53,12 +53,10 @@ public class RunFakeFetcher {
 
             for (int i = 0; i < 10; i++) {
                 String host = "domain-" + i + ".com";
-                int delay = 0 + rand.nextInt(5);
 
-                LOGGER.trace(String.format("Creating queue for %s with delay %d", host, delay));
+                LOGGER.trace(String.format("Creating queue for %s", host));
 
                 FetcherPolicy policy = new FetcherPolicy();
-                policy.setCrawlDelay(delay);
                 FetcherQueue queue = new FetcherQueue(host, policy, flowProcess, new FakeCollector());
 
                 for (int j = 0; j < 5; j++) {

@@ -29,12 +29,38 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import bixo.cascading.BixoFlowProcess;
+import bixo.config.AdaptiveFetcherPolicy;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.ScoredUrlDatum;
 import bixo.utils.DomainNames;
 
 public class FetcherQueueTest {
+    
+    @SuppressWarnings("serial")
+    private class ControlledFetcherPolicy extends FetcherPolicy {
+        private int _maxUrls;
+        private int _numUrlsPerRequest;
+        private int _crawlDelay;
+   
+        public ControlledFetcherPolicy(int maxUrls, int numUrlsPerRequest, int crawlDelay) {
+            _maxUrls = maxUrls;
+            _numUrlsPerRequest = numUrlsPerRequest;
+            _crawlDelay = crawlDelay;
+        }
+
+        @Override
+        public int getMaxUrls() {
+            return _maxUrls;
+        }
+        
+        @Override
+        public FetchRequest getFetchRequest(int maxUrls) {
+            int numUrls = Math.min(_numUrlsPerRequest, maxUrls);
+            long nextFetchTime = System.currentTimeMillis() + (numUrls * _crawlDelay * 1000L);
+            return new FetchRequest(numUrls, nextFetchTime);
+        }
+    }
     
     private static ScoredUrlDatum makeSUD(String url, double score) {
         return new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, DomainNames.getPLD(url), score, null);
@@ -65,9 +91,7 @@ public class FetcherQueueTest {
 
     @Test
     public void testSortedUrls() throws MalformedURLException {
-        FetcherPolicy policy = new FetcherPolicy();
-        policy.setCrawlDelay(0);
-        policy.setRequestsPerConnection(1);
+        FetcherPolicy policy = new ControlledFetcherPolicy(1000, 1, 0);
         
         FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
         Random rand = new Random(1L);
@@ -94,34 +118,12 @@ public class FetcherQueueTest {
         }
 
         Assert.assertEquals(10, totalItems);
-        
-        queue.setMaxUrls(2);
-        curScore = 2.0;
-        totalItems = 0;
-        while (totalItems < 2) {
-            FetchList items = queue.poll();
-            Assert.assertNotNull(items);
-            totalItems += items.size();
-
-            Assert.assertTrue(items.get(0).getScore() <= curScore);
-            for (ScoredUrlDatum item : items) {
-                Assert.assertTrue(item.getScore() <= curScore);
-                curScore = item.getScore();
-            }
-
-            queue.release(items);
-        }
-
-        Assert.assertEquals(2, totalItems);
-        Assert.assertNull(queue.poll());
     }
     
 
     @Test
     public void testCrawlDelay() throws MalformedURLException, InterruptedException {
-        FetcherPolicy policy = new FetcherPolicy();
-        policy.setCrawlDelay(1);
-        policy.setRequestsPerConnection(1);
+        FetcherPolicy policy = new ControlledFetcherPolicy(1000, 1, 1);
         FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
 
         ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 0.5d);
@@ -134,15 +136,13 @@ public class FetcherQueueTest {
         Assert.assertNotNull(items);
         queue.release(items);
         Assert.assertNull(queue.poll());
-        Thread.sleep(policy.getCrawlDelay() * 1000L);
+        Thread.sleep(1000L);
         Assert.assertNotNull(queue.poll());
     }
 
     @Test
     public void testMultipleRequestsPerConnection() throws InterruptedException {
-        FetcherPolicy policy = new FetcherPolicy();
-        policy.setCrawlDelay(1);
-        policy.setRequestsPerConnection(2);
+        FetcherPolicy policy = new ControlledFetcherPolicy(1000, 2, 1);
         
         FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
 
@@ -160,12 +160,49 @@ public class FetcherQueueTest {
         queue.release(items);
         
         Assert.assertNull(queue.poll());
-        Thread.sleep(2 * policy.getCrawlDelay() * 1000L);
+        Thread.sleep(2 * 1000L);
         
         items = queue.poll();
         Assert.assertNotNull(items);
         Assert.assertEquals(1, items.size());
     }
+    
+    @Test
+    public void testAdaptiveFetchPolicyNoDelay() throws InterruptedException {
+        AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(System.currentTimeMillis() + 1000L, 0);
+        
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
+
+        // First, we should be able to queue everything, since there's no minimum crawl delay
+        for (int i = 0; i < 100; i++) {
+            ScoredUrlDatum fetchQueueEntry = makeSUD("http://domain.com/page-" + i + ".html", 1.0);
+            Assert.assertTrue(queue.offer(fetchQueueEntry));
+        }
+
+        // Now we should get back everything we queued in one request.
+        FetchList items = queue.poll();
+        Assert.assertNotNull(items);
+        Assert.assertEquals(100, items.size());
+    }
+    
+    @Test
+    public void testAdaptiveFetchPolicyMinDelay() throws InterruptedException {
+        AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(System.currentTimeMillis() + 2000L, 1);
+        
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
+
+        // We should be able to queue one item, maybe two or three, but definitely not four.
+        ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 1.0d);
+        ScoredUrlDatum fetchItem2 = makeSUD("http://domain.com/page2", 0.5d);
+        ScoredUrlDatum fetchItem3 = makeSUD("http://domain.com/page3", 0.2d);
+        ScoredUrlDatum fetchItem4 = makeSUD("http://domain.com/page4", 0.2d);
+
+        Assert.assertTrue(queue.offer(fetchItem1));
+        queue.offer(fetchItem2);
+        queue.offer(fetchItem3);
+        Assert.assertFalse(queue.offer(fetchItem4));
+    }
+    
     
     // TODO KKr - add test for multiple threads hitting the queue at the same
     // time.

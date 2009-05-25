@@ -24,20 +24,22 @@ package bixo.config;
 
 import java.io.Serializable;
 
+import bixo.fetcher.FetchRequest;
+
 @SuppressWarnings("serial")
 public class FetcherPolicy implements Serializable {
-    public static final int NO_CRAWL_DELAY = 0;
     public static final int NO_MIN_RESPONSE_RATE = 0;
     public static final long NO_CRAWL_END_TIME = 0;
     
-    public static final int DEFAULT_CRAWL_DELAY = 30;
-    public static final int DEFAULT_REQUESTS_PER_CONNECTION = 10;
     public static final int DEFAULT_MIN_RESPONSE_RATE = NO_MIN_RESPONSE_RATE;
     public static final int DEFAULT_MAX_CONTENT_SIZE = 64 * 1024;
     public static final long DEFAULT_CRAWL_END_TIME = NO_CRAWL_END_TIME;
     
-    private int _crawlDelay;			// Delay between requests, in seconds.
-    private int _requestsPerConnection;	// > 1 => using keep-alive.
+    // Interval between batched fetch requests, in seconds.
+    protected static final int DEFAULT_FETCH_INTERVAL = 5 * 60;
+    
+    protected static final int DEFAULT_CRAWL_DELAY = 30;
+
     private int _minResponseRate;        // lower bounds on bytes-per-second
     private int _maxContentSize;        // Max # of bytes to use.
     private long _crawlEndTime;          // When we want the crawl to end
@@ -45,29 +47,40 @@ public class FetcherPolicy implements Serializable {
     // TODO KKr - add RobotExclusion instance here
 
     public FetcherPolicy() {
-        this(DEFAULT_CRAWL_DELAY, DEFAULT_REQUESTS_PER_CONNECTION, DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME);
+        this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME);
     }
 
 
-    public FetcherPolicy(int crawlDelay, int requestsPerConnection, int minResponseRate, int maxContentSize, long crawlEndTime) {
-        _crawlDelay = crawlDelay;
-        _requestsPerConnection = requestsPerConnection;
+    public FetcherPolicy(int minResponseRate, int maxContentSize, long crawlEndTime) {
         _minResponseRate = minResponseRate;
         _maxContentSize = maxContentSize;
         _crawlEndTime = crawlEndTime;
     }
 
-
-    public int getCrawlDelay() {
-        return _crawlDelay;
+    
+    /**
+     * Calculate the maximum number of URLs that could be processed in the remaining time.
+     * 
+     * @return Number of URLs
+     */
+    public int getMaxUrls() {
+        if (_crawlEndTime == NO_CRAWL_END_TIME) {
+            return Integer.MAX_VALUE;
+        } else {
+            return calcMaxUrls(DEFAULT_CRAWL_DELAY);
+        }
     }
 
-
-    public void setCrawlDelay(int crawlDelay) {
-        _crawlDelay = crawlDelay;
+    protected int calcMaxUrls(int crawlDelay) {
+        if (crawlDelay == 0) {
+            return Integer.MAX_VALUE;
+        } else {
+            long crawlDuration = _crawlEndTime - System.currentTimeMillis();
+            long delayInMS = 1000L * crawlDelay;
+            return 1 + (int)Math.max(0, crawlDuration / delayInMS);
+        }
     }
-
-
+    
     public long getCrawlEndTime() {
         return _crawlEndTime;
     }
@@ -75,16 +88,6 @@ public class FetcherPolicy implements Serializable {
 
     public void setCrawlEndTime(long crawlEndTime) {
         _crawlEndTime = crawlEndTime;
-    }
-
-
-    public int getRequestsPerConnection() {
-        return _requestsPerConnection;
-    }
-
-
-    public void setRequestsPerConnection(int requestsPerConnection) {
-        _requestsPerConnection = requestsPerConnection;
     }
 
 
@@ -107,13 +110,16 @@ public class FetcherPolicy implements Serializable {
         _maxContentSize = maxContentSize;
     }
     
+    public FetchRequest getFetchRequest(int maxUrls) {
+        int numUrls = Math.min(maxUrls, DEFAULT_FETCH_INTERVAL / DEFAULT_CRAWL_DELAY);
+        long nextFetchTime = System.currentTimeMillis() + (numUrls * DEFAULT_CRAWL_DELAY * 1000L);
+
+        return new FetchRequest(numUrls, nextFetchTime);
+    }
+    
     public String toString() {
         StringBuilder result = new StringBuilder();
-        result.append("Crawl delay: " + getCrawlDelay());
-        result.append('\r');
         result.append("Crawl end time: " + getCrawlEndTime());
-        result.append('\r');
-        result.append("Requests per connection: " + getRequestsPerConnection());
         result.append('\r');
         result.append("Minimum response rate: " + getMinResponseRate());
         result.append('\r');
