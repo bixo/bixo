@@ -23,6 +23,7 @@
 package bixo.fetcher.http;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.InputStream;
 import java.net.URI;
 
@@ -275,6 +276,9 @@ public class HttpClientFetcher implements IHttpFetcher {
                     // If we're just trying to read in content for an error
                     // case,
                     // we are OK with empty content
+                } finally {
+                    // Make sure the connection is released immediately.
+                    safeClose(in);
                 }
             }
 
@@ -298,6 +302,13 @@ public class HttpClientFetcher implements IHttpFetcher {
         }
     }
 
+    private static void safeClose(Closeable o) {
+        try {
+            o.close();
+        } catch (Exception e) {
+            
+        }
+    }
     private static void safeAbort(HttpRequestBase request) {
         try {
             request.abort();
