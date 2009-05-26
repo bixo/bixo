@@ -33,15 +33,26 @@ public class AdaptiveFetcherPolicy extends FetcherPolicy {
     @Override
     public FetchRequest getFetchRequest(int maxUrls) {
         // we want to fetch maxUrls in the remaining time, but the min delay might constrain us.
-        if (_minCrawlDelay == 0) {
+        
+        if ((_minCrawlDelay == 0) || (maxUrls == 0)) {
             return new FetchRequest(maxUrls, System.currentTimeMillis());
         }
         
-        int numUrls = Math.min(maxUrls, calcMaxUrls(_minCrawlDelay));
+        long remainingTime = getCrawlEndTime() - System.currentTimeMillis();
+        if (remainingTime <= 0) {
+            return new FetchRequest(0, System.currentTimeMillis());
+        }
         
-        // Our next fetch time is either at the end of the fetch cycle (if we had to adaptively cut down the crawl delay), 
-        // or when the normal fetch time would be given the default delay.
-        long nextFetchTime = Math.min(getCrawlEndTime(), System.currentTimeMillis() + (numUrls * DEFAULT_CRAWL_DELAY * 1000L));
+        // Crawl delay must be between _minCrawlDelay and default crawl delay.
+        int remainingSeconds = (int)(remainingTime / 1000L);
+        int crawlDelay = Math.max(_minCrawlDelay, Math.min(DEFAULT_CRAWL_DELAY, remainingSeconds / maxUrls));
+        
+        // Figure out how many URLs we can get in 5 minutes,or the remaining time (whatever is less).
+        int numUrls = Math.min(1 + (Math.min(5 * 60, remainingSeconds) / crawlDelay), maxUrls);
+        
+        // Our next fetch time is either at the end of the fetch cycle (if we couldn't get all of the URLs
+        // due to our min crawl delay) or the calculated value.
+        long nextFetchTime = Math.min(getCrawlEndTime(), System.currentTimeMillis() + ((numUrls - 1) * crawlDelay * 1000L));
         return new FetchRequest(numUrls, nextFetchTime);
     }
 
