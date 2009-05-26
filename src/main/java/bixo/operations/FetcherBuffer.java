@@ -6,6 +6,7 @@ import java.util.Iterator;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
+import bixo.cascading.LoggingFlowReporter;
 import bixo.config.FetcherPolicy;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.FetcherCounters;
@@ -53,7 +54,8 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
         // TODO KKr - check for a serialized external reporter in the process,
         // add it if it exists.
         _flowProcess = new BixoFlowProcess((HadoopFlowProcess) flowProcess);
-
+        _flowProcess.addReporter(new LoggingFlowReporter());
+        
         FetcherPolicy defaultPolicy;
         String policyObj = (String)flowProcess.getProperty(DEFAULT_FETCHER_POLICY_KEY);
         if (policyObj != null) {

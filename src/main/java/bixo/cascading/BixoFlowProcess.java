@@ -51,25 +51,7 @@ public class BixoFlowProcess extends FlowProcess {
         }
     }
     
-    /**
-     * Class used to report locally via a Log4J logger.
-     *
-     */
-    public class LoggingFlowReporter implements IFlowReporter {
-        private Logger _logger = Logger.getLogger(LoggingFlowReporter.class);
-
-        @Override
-        public void setStatus(Level level, String msg) {
-            _logger.log(level, msg);
-        }
-
-        @Override
-        public void setStatus(String msg, Throwable t) {
-            _logger.error(msg, t);
-        }
-    }
-    
-    public class HadoopFlowReporter implements IFlowReporter {
+    private class HadoopFlowReporter implements IFlowReporter {
         private Reporter _reporter;
         
         public HadoopFlowReporter(Reporter reporter) {
