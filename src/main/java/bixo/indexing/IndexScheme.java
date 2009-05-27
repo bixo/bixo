@@ -35,9 +35,10 @@ import cascading.util.Util;
 public class IndexScheme extends Scheme {
     private static final Logger LOGGER = Logger.getLogger(IndexScheme.class);
     
-    private static final String ANALYZER = "bixo.analyzer";
-    private static final String MAX_FIELD_LENGTH = "bixo.maxFieldLength";
-    private static final String SINK_FIELDS = "bixo.fields";
+    private static final String ANALYZER = "bixo.indexer.analyzer";
+    private static final String MAX_FIELD_LENGTH = "bixo.indexer.maxFieldLength";
+    private static final String SINK_FIELDS = "bixo.indexer.fields";
+    private static final String BOOST_FIELD = "bixo.indexer.boostfield";
     private static final String INDEX = "bixo.index";
     private static final String STORE = "bixo.store";
     
@@ -45,21 +46,31 @@ public class IndexScheme extends Scheme {
     private int _maxFieldLeng;
     private Store[] _store;
     private Index[] _index;
-
+    private Fields _boostField;
+    
     public IndexScheme(Fields fieldsToIndex, Store[] store, Index[] index, Class<? extends Analyzer> analyzer, int maxFieldLength) {
+        this(fieldsToIndex, store, index, new Fields(), analyzer, maxFieldLength);
+    }
+    
+    public IndexScheme(Fields fieldsToIndex, Store[] store, Index[] index, Fields boostField, Class<? extends Analyzer> analyzer, int maxFieldLength) {
         if (fieldsToIndex.size() == 0) {
-            throw new IllegalArgumentException("At least one field need to be specified by name");
+            throw new IllegalArgumentException("At least one field must be specified for indexing");
         }
 
+        if (boostField.size() > 1) {
+            throw new IllegalArgumentException("A maximum of one field may be specified for boosting");
+        }
+        
         if ((fieldsToIndex.size() != store.length) || (fieldsToIndex.size() != index.length)) {
             throw new IllegalArgumentException("store[] and index[] need to have same length as fieldsToIndex");
         }
         
-        setSinkFields(fieldsToIndex);
+        setSinkFields(fieldsToIndex.append(boostField));
         _analyzer = analyzer;
         _maxFieldLeng = maxFieldLength;
         _store = store;
         _index = index;
+        _boostField = boostField;
     }
 
     @Override
@@ -68,6 +79,7 @@ public class IndexScheme extends Scheme {
         conf.setOutputValueClass(Tuple.class);
         conf.setOutputFormat(IndexingOutputFormat.class);
         conf.set(SINK_FIELDS, Util.serializeBase64(getSinkFields()));
+        conf.set(BOOST_FIELD, Util.serializeBase64(_boostField));
         conf.setClass(ANALYZER, _analyzer, Analyzer.class);
         conf.setInt(MAX_FIELD_LENGTH, _maxFieldLeng);
         conf.set(INDEX, Util.serializeBase64(_index));
@@ -75,7 +87,7 @@ public class IndexScheme extends Scheme {
         
         LOGGER.info("Initializing Lucene index tap");
         Fields fields = getSinkFields();
-        for (int i = 0; i < fields.size(); i++) {
+        for (int i = 0; i < fields.size() - 1; i++) {
             LOGGER.info("  Field " + fields.get(i) + ": " + _store[i] + ", " + _index[i]);
         }
     }
@@ -112,8 +124,9 @@ public class IndexScheme extends Scheme {
             final Store[] store = (Store[]) Util.deserializeBase64(conf.get(STORE));
 
             int maxFieldLength = conf.getInt(MAX_FIELD_LENGTH, MaxFieldLength.UNLIMITED.getLimit());
-            final Fields sinkFields = (Fields) Util.deserializeBase64(conf.get(SINK_FIELDS));
-
+            final Fields sinkFields = (Fields)Util.deserializeBase64(conf.get(SINK_FIELDS));
+            final boolean hasBoost = ((Fields)Util.deserializeBase64(conf.get(BOOST_FIELD))).size() > 0;
+            
             String tmpFolder = System.getProperty("java.io.tmpdir");
             final File localIndexFolder = new File(tmpFolder, UUID.randomUUID().toString());
             final IndexWriter indexWriter = new IndexWriter(localIndexFolder, analyzer, new MaxFieldLength(maxFieldLength));
@@ -137,7 +150,6 @@ public class IndexScheme extends Scheme {
                     };
                     reporterThread.start();
                     
-                    //
                     LOGGER.info("Optimizing index for " + name);
                     indexWriter.optimize();
                     indexWriter.close();
@@ -155,12 +167,24 @@ public class IndexScheme extends Scheme {
                 @Override
                 public void write(Tuple key, Tuple value) throws IOException {
                     Document doc = new Document();
+                    
                     int size = sinkFields.size();
+                    if (hasBoost) {
+                        size -= 1;
+                    }
+                    
                     for (int i = 0; i < size; i++) {
                         String name = (String) sinkFields.get(i);
                         Comparable comparable = value.get(i);
                         doc.add(new Field(name, "" + comparable.toString(), store[i], index[i]));
                     }
+                    
+                    // We append the boost field at the end, so it's always the last value in the tuple.
+                    if (hasBoost) {
+                        float boost = value.getFloat(size);
+                        doc.setBoost(boost);
+                    }
+                    
                     indexWriter.addDocument(doc);
                 }
 
