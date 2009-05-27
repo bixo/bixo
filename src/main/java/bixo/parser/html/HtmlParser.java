@@ -264,8 +264,9 @@ public class HtmlParser implements IParser {
     @Override
     public ParsedDatum parse(FetchedDatum fetchedDatum) {
         ParseResult result = getParse(fetchedDatum);
-        IParse p = result.get(fetchedDatum.getBaseUrl());        
-        return new ParsedDatum(fetchedDatum.getBaseUrl(), p.getText(), p.getData().getOutlinks(), fetchedDatum.getMetaDataMap());
+        IParse p = result.get(fetchedDatum.getBaseUrl());
+        
+        return new ParsedDatum(fetchedDatum.getBaseUrl(), p.getText(), p.getData().getTitle(), p.getData().getOutlinks(), fetchedDatum.getMetaDataMap());
     }
 
 }
