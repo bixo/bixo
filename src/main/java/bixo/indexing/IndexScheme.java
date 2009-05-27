@@ -14,6 +14,7 @@ import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -32,6 +33,8 @@ import cascading.util.Util;
 
 @SuppressWarnings("serial")
 public class IndexScheme extends Scheme {
+    private static final Logger LOGGER = Logger.getLogger(IndexScheme.class);
+    
     private static final String ANALYZER = "bixo.analyzer";
     private static final String MAX_FIELD_LENGTH = "bixo.maxFieldLength";
     private static final String SINK_FIELDS = "bixo.fields";
@@ -48,9 +51,10 @@ public class IndexScheme extends Scheme {
             throw new IllegalArgumentException("At least one field need to be specified by name");
         }
 
-        if (fieldsToIndex.size() != store.length || fieldsToIndex.size() != index.length) {
+        if ((fieldsToIndex.size() != store.length) || (fieldsToIndex.size() != index.length)) {
             throw new IllegalArgumentException("store[] and index[] need to have same length as fieldsToIndex");
         }
+        
         setSinkFields(fieldsToIndex);
         _analyzer = analyzer;
         _maxFieldLeng = maxFieldLength;
@@ -68,6 +72,12 @@ public class IndexScheme extends Scheme {
         conf.setInt(MAX_FIELD_LENGTH, _maxFieldLeng);
         conf.set(INDEX, Util.serializeBase64(_index));
         conf.set(STORE, Util.serializeBase64(_store));
+        
+        LOGGER.info("Initializing Lucene index tap");
+        Fields fields = getSinkFields();
+        for (int i = 0; i < fields.size(); i++) {
+            LOGGER.info("  Field " + fields.get(i) + ": " + _store[i] + ", " + _index[i]);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -112,7 +122,7 @@ public class IndexScheme extends Scheme {
 
                 @Override
                 public void close(final Reporter reporter) throws IOException {
-                    // hadoop need to know we still working on it.
+                    // Hadoop need to know we still working on it.
                     Thread reporterThread = new Thread() {
                         public void run() {
                             while (!isInterrupted()) {
@@ -128,12 +138,14 @@ public class IndexScheme extends Scheme {
                     reporterThread.start();
                     
                     //
+                    LOGGER.info("Optimizing index for " + name);
                     indexWriter.optimize();
                     indexWriter.close();
                     // now we copy the local folder to the remote one and delete
                     // the older
                     Path dist = FileOutputFormat.getTaskOutputPath(conf, name);
                     FileSystem dstFS = dist.getFileSystem(conf);
+                    LOGGER.info("Copying index from local to " + dist);
                     dstFS.copyFromLocalFile(true, new Path(localIndexFolder.getAbsolutePath()), dist);
                     // we are done and stop the reporter
                     reporterThread.interrupt();
