@@ -65,7 +65,7 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	public boolean offer(FetcherQueue newQueue) {
 		// TODO KKr - return false if we've got too many URLs in memory?
 		// Add at the front of the queue.
-		_queues.add(newQueue);
+	    _queues.add(newQueue);
 		return true;
 	} // offer
 	
@@ -94,7 +94,7 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	    
 	    synchronized (_queues) {
 	        int numQueues = _queues.size();
-
+	        
 	        // We know that we might process the same queue multiple times, or not
 	        // get to all of the queues, because new FetcherQueue elements are being
 	        // added (or removed) by other threads at the same time...but that's OK,

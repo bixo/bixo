@@ -32,6 +32,8 @@ import cascading.tuple.TupleEntryCollector;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
+import bixo.datum.FetchStatusCode;
+import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 
 public class FetcherQueue implements IFetchListProvider {
@@ -55,7 +57,7 @@ public class FetcherQueue implements IFetchListProvider {
         _numActiveFetchers = 0;
         _nextFetchTime = System.currentTimeMillis();
         _sorted = true;
-        _queue = new ArrayList<bixo.datum.ScoredUrlDatum>();
+        _queue = new ArrayList<ScoredUrlDatum>();
 
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("Setting up queue for %s with next fetch time of %d", _domain, _nextFetchTime));
@@ -120,6 +122,8 @@ public class FetcherQueue implements IFetchListProvider {
         
         if (_queue.size() == 0) {
             // Nothing to return
+        } else if ((_policy.getCrawlEndTime() != FetcherPolicy.NO_CRAWL_END_TIME) && (System.currentTimeMillis() >= _policy.getCrawlEndTime())) {
+            abortAll();
         } else if ((_numActiveFetchers == 0) && (System.currentTimeMillis() >= _nextFetchTime)) {
             _numActiveFetchers += 1;
             
@@ -172,6 +176,22 @@ public class FetcherQueue implements IFetchListProvider {
     
     public String getDomain() {
         return _domain;
+    }
+
+
+    /**
+     * Write all entries out as being aborted.
+     */
+    public synchronized void abortAll() {
+        for (ScoredUrlDatum datum : _queue) {
+            synchronized (_collector) {
+                String url = datum.getNormalizedUrl();
+                FetchedDatum result = new FetchedDatum(FetchStatusCode.ABORTED, url, url, 0, null, null, 0, datum.getMetaDataMap());
+                _collector.add(result.toTuple());
+            }
+        }
+        
+        _queue.clear();
     }
     
 }

@@ -28,15 +28,35 @@ import java.util.Random;
 import org.junit.Assert;
 import org.junit.Test;
 
+import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntryCollector;
+
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.AdaptiveFetcherPolicy;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
+import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.utils.DomainNames;
 
 public class FetcherQueueTest {
-    
+    private class MyCollector extends TupleEntryCollector {
+        private int _numCollected;
+        
+        @Override
+        protected void collect(Tuple tuple) {
+            _numCollected += 1;
+            
+            FetchedDatum datum = new FetchedDatum(tuple, new Fields());
+            Assert.assertEquals(FetchStatusCode.ABORTED, datum.getStatusCode());
+        }
+
+        public Object getNumCollected() {
+            return _numCollected;
+        }
+    }
+
     @SuppressWarnings("serial")
     private class ControlledFetcherPolicy extends FetcherPolicy {
         private int _maxUrls;
@@ -44,6 +64,8 @@ public class FetcherQueueTest {
         private int _crawlDelay;
    
         public ControlledFetcherPolicy(int maxUrls, int numUrlsPerRequest, int crawlDelay) {
+            super();
+            
             _maxUrls = maxUrls;
             _numUrlsPerRequest = numUrlsPerRequest;
             _crawlDelay = crawlDelay;
@@ -68,10 +90,10 @@ public class FetcherQueueTest {
     
     @Test
     public void testCrawlDurationLimit() throws MalformedURLException {
-        // Set the target end of the crawl to now, which means we'll only try to fetch a single URL.
         FetcherPolicy policy = new FetcherPolicy();
-        policy.setCrawlEndTime(System.currentTimeMillis());
-        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
+        policy.setCrawlEndTime(System.currentTimeMillis() + 1000);
+        MyCollector collector = new MyCollector();
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), collector);
 
         ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 0.0d);
         ScoredUrlDatum fetchItem2 = makeSUD("http://domain.com/page2", 1.0d);
@@ -203,6 +225,24 @@ public class FetcherQueueTest {
         Assert.assertFalse(queue.offer(fetchItem4));
     }
     
+    @Test
+    public void testAbortingWhenPastEndOfCrawl() throws InterruptedException {
+        FetcherPolicy policy = new FetcherPolicy();
+        policy.setCrawlEndTime(System.currentTimeMillis() + 100);
+        
+        MyCollector collector = new MyCollector();
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), collector);
+
+        ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 1.0d);
+        ScoredUrlDatum fetchItem2 = makeSUD("http://domain.com/page2", 0.5d);
+
+        Assert.assertTrue(queue.offer(fetchItem1));
+        Thread.sleep(100);
+        Assert.assertFalse(queue.offer(fetchItem2));
+        
+        Assert.assertNull(queue.poll());
+        Assert.assertEquals(1, collector.getNumCollected());
+    }
     
     // TODO KKr - add test for multiple threads hitting the queue at the same
     // time.

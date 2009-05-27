@@ -86,39 +86,6 @@ public class FetchPipeTest extends CascadingTestCase {
         flow.complete();
     }
     
-    @Test
-    public void testDurationLimit() throws Exception {
-        // Pretend like we have 10 URLs from the same domain
-        Lfs in = makeInputData(1, 10);
-
-        // Create the fetch pipe we'll use to process these fake URLs
-        Pipe pipe = new Pipe("urlSource");
-        IUrlNormalizer urlNormalizer = new UrlNormalizer();
-        PLDGrouping grouping = new PLDGrouping();
-        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
-        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
-
-        // Create the output
-        String outputPath = "build/test-data/FetchPipeTest/out";
-        Tap out = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath, true);
-
-        // Finally we can run it. Set up our prefs with a FetcherPolicy that has an end time of now,
-        // which means we should get only a single URL from our one domain.
-        Properties properties = new Properties();
-        FetcherPolicy defaultPolicy = new FetcherPolicy();
-        defaultPolicy.setCrawlEndTime(System.currentTimeMillis());
-        properties.put(FetcherBuffer.DEFAULT_FETCHER_POLICY_KEY, Util.serializeBase64(defaultPolicy));
-
-        FlowConnector flowConnector = new FlowConnector(properties);
-        Flow flow = flowConnector.connect(in, out, fetchPipe);
-        flow.complete();
-        
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath);
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
-        validateLength(tupleEntryIterator, 1);
-    }
-    
     @SuppressWarnings("unchecked")
     @Test
     public void testMetaData() throws Exception {
@@ -156,6 +123,49 @@ public class FetchPipeTest extends CascadingTestCase {
             String metaValue = entry.getString("key");
             Assert.assertNotNull(metaValue);
             Assert.assertEquals("value", metaValue);
+        }
+        
+        Assert.assertEquals(1, totalEntries);
+    }
+    
+    @Test
+    public void testDurationLimitSimple() throws Exception {
+        // Pretend like we have 10 URLs from the same domain
+        Lfs in = makeInputData(1, 10);
+
+        // Create the fetch pipe we'll use to process these fake URLs
+        Pipe pipe = new Pipe("urlSource");
+        IUrlNormalizer urlNormalizer = new UrlNormalizer();
+        PLDGrouping grouping = new PLDGrouping();
+        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
+        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
+        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
+
+        // Create the output
+        String outputPath = "build/test-data/FetchPipeTest/out";
+        Tap out = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath, true);
+
+        // Finally we can run it. Set up our prefs with a FetcherPolicy that has an end time of now,
+        // which means we shouldn't fetch any URLs, but they should all be aborted.
+        Properties properties = new Properties();
+        FetcherPolicy defaultPolicy = new FetcherPolicy();
+        defaultPolicy.setCrawlEndTime(System.currentTimeMillis());
+        properties.put(FetcherBuffer.DEFAULT_FETCHER_POLICY_KEY, Util.serializeBase64(defaultPolicy));
+
+        FlowConnector flowConnector = new FlowConnector(properties);
+        Flow flow = flowConnector.connect(in, out, fetchPipe);
+        flow.complete();
+        
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        
+        int totalEntries = 0;
+        while (tupleEntryIterator.hasNext()) {
+            TupleEntry entry = tupleEntryIterator.next();
+            FetchedDatum datum = new FetchedDatum(entry, new Fields());
+            Assert.assertEquals(FetchStatusCode.ABORTED, datum.getStatusCode());
+            
+            totalEntries += 1;
         }
         
         Assert.assertEquals(1, totalEntries);

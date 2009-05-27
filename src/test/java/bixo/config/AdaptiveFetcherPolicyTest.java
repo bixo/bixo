@@ -13,13 +13,14 @@ public class AdaptiveFetcherPolicyTest {
         // Target end is now + 10 seconds, and our min delay is 1 second.
         AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(System.currentTimeMillis() + (10 * 1000), 1);
         
-        // Ask for more than we can get in the remaining time.
-        FetchRequest request = policy.getFetchRequest(100);
+        // Ask for more than we can get in the remaining time, so it has to use a 5 minutes
+        // window.
+        FetchRequest request = policy.getFetchRequest(1000);
         
-        // No way we can get more than 11. Might wind up being 10, depending on how long
+        // No way we can get more than 301. Might wind up being 300, depending on how long
         // it takes this code to execute.
-        Assert.assertTrue(request.getNumUrls() <= 11);
-        Assert.assertTrue(request.getNumUrls() >= 10);
+        Assert.assertTrue(request.getNumUrls() <= 301);
+        Assert.assertTrue(request.getNumUrls() >= 300);
     }
     
     @Test
@@ -38,6 +39,25 @@ public class AdaptiveFetcherPolicyTest {
         Assert.assertTrue(request.getNumUrls() <= 51);
         Assert.assertTrue(request.getNumUrls() >= 50);
         
+        // Our next fetch time should be around 5 minutes.
+        long deltaFromTarget = Math.abs(request.getNextRequestTime() - (now + (5 * 60 * 1000L)));
+        Assert.assertTrue(deltaFromTarget < 100);
+    }
+    
+    @Test
+    public void testPastEndOfTargetDuration() {
+        // If we're at the end of the crawl, we still want to be fetching as otherwise we'll
+        // never end.
+        long now = System.currentTimeMillis();
+        AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(now - 1000, 10);
+        
+        // Ask for more than we can get in the remaining time, so it has to use a 5 minutes
+        // window.
+        FetchRequest request = policy.getFetchRequest(1000);
+        
+        Assert.assertTrue(request.getNumUrls() <= 31);
+        Assert.assertTrue(request.getNumUrls() >= 30);
+
         // Our next fetch time should be around 5 minutes.
         long deltaFromTarget = Math.abs(request.getNextRequestTime() - (now + (5 * 60 * 1000L)));
         Assert.assertTrue(deltaFromTarget < 100);

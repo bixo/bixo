@@ -37,22 +37,21 @@ public class AdaptiveFetcherPolicy extends FetcherPolicy {
         if ((_minCrawlDelay == 0) || (maxUrls == 0)) {
             return new FetchRequest(maxUrls, System.currentTimeMillis());
         }
-        
-        long remainingTime = getCrawlEndTime() - System.currentTimeMillis();
-        if (remainingTime <= 0) {
-            return new FetchRequest(0, System.currentTimeMillis());
-        }
+
+        // Even if we're at the end of the crawl, we still want to do our calculation using our
+        // default fetch interval, to avoid not crawling anything if we run over. We rely on
+        // an external mechanism to do any pruning of remaining URLs, so that they get properly
+        // aborted.
+        long fetchInterval = Math.max(DEFAULT_FETCH_INTERVAL * 1000L, getCrawlEndTime() - System.currentTimeMillis());
         
         // Crawl delay must be between _minCrawlDelay and default crawl delay.
-        int remainingSeconds = (int)(remainingTime / 1000L);
-        int crawlDelay = Math.max(_minCrawlDelay, Math.min(DEFAULT_CRAWL_DELAY, remainingSeconds / maxUrls));
+        int intervalInSeconds = (int)(fetchInterval / 1000L);
+        int crawlDelay = Math.max(_minCrawlDelay, Math.min(DEFAULT_CRAWL_DELAY, intervalInSeconds / maxUrls));
         
         // Figure out how many URLs we can get in 5 minutes,or the remaining time (whatever is less).
-        int numUrls = Math.min(1 + (Math.min(5 * 60, remainingSeconds) / crawlDelay), maxUrls);
+        int numUrls = Math.min(1 + (Math.min(DEFAULT_FETCH_INTERVAL, intervalInSeconds) / crawlDelay), maxUrls);
         
-        // Our next fetch time is either at the end of the fetch cycle (if we couldn't get all of the URLs
-        // due to our min crawl delay) or the calculated value.
-        long nextFetchTime = Math.min(getCrawlEndTime(), System.currentTimeMillis() + ((numUrls - 1) * crawlDelay * 1000L));
+        long nextFetchTime = System.currentTimeMillis() + ((numUrls - 1) * crawlDelay * 1000L);
         return new FetchRequest(numUrls, nextFetchTime);
     }
 
