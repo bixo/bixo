@@ -111,20 +111,19 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
             FetcherQueue queue = _queueMgr.createQueue(domain, buffCall.getOutputCollector());
 
             int skipped = 0;
+            int queued = 0;
             while (values.hasNext()) {
                 Tuple curTuple = values.next().getTuple();
                 ScoredUrlDatum scoreUrl = new ScoredUrlDatum(curTuple, _metaDataFields);
 
-                if (!queue.offer(scoreUrl)) {
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("Skipping URL: " + scoreUrl.getNormalizedUrl());
-                    }
-                    
+                if (queue.offer(scoreUrl)) {
+                    queued += 1;
+                } else {
                     skipped += 1;
                 }
             }
 
-            _flowProcess.increment(FetcherCounters.URLS_QUEUED, queue.size());
+            _flowProcess.increment(FetcherCounters.URLS_QUEUED, queued);
             _flowProcess.increment(FetcherCounters.URLS_SKIPPED, skipped);
 
             // We're going to spin here until the queue manager decides that we
@@ -134,6 +133,9 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                 process.keepAlive();
             }
 
+            LOGGER.info(String.format("Queued %d URLs from %s", queued, domain));
+            LOGGER.debug(String.format("Skipping %d URLs from %s", skipped, domain));
+            
             _flowProcess.increment(FetcherCounters.DOMAINS_QUEUED, 1);
         } catch (Throwable t) {
             LOGGER.error("Exception during reduce", t);
