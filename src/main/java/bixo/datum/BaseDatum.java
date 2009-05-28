@@ -119,7 +119,7 @@ public abstract class BaseDatum {
         return tuple;
     }
 
-    protected static String fieldName(Class clazz, String field) {
+    public static String fieldName(Class clazz, String field) {
         return clazz.getSimpleName() + "-" + field;
     }
     
