@@ -39,13 +39,12 @@ import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
 public class IndexSchemaTest {
-    private static final Fields BOOST_FIELD = new Fields("boost");
-    
+
     @SuppressWarnings({ "unchecked", "serial" })
     public static class CalcBoost extends BaseOperation implements Function {
 
-        public CalcBoost(Fields baseFields) {
-            super(BOOST_FIELD);
+        public CalcBoost() {
+            super(IndexScheme.BOOST_FIELDS);
         }
         
         @Override
@@ -55,8 +54,8 @@ public class IndexSchemaTest {
 
             String value = entry.getString("parsed-content");
             String[] values = value.split(" ");
-            float calcBoost = Float.parseFloat(values[2]);
-            TupleEntry boost = new TupleEntry(BOOST_FIELD, new Tuple(calcBoost));
+            float boostValue = Float.parseFloat(values[2]);
+            TupleEntry boost = new TupleEntry(IndexScheme.BOOST_FIELDS, new Tuple(boostValue));
             collector.add(boost);
         }
     }
@@ -94,15 +93,16 @@ public class IndexSchemaTest {
         Fields indexFields = new Fields("parsed-content");
         Store[] storeSettings = new Store[] { Store.YES };
         Index[] indexSettings = new Index[] { Index.ANALYZED };
-        IndexScheme scheme = new IndexScheme(indexFields, storeSettings, indexSettings, new Fields("boost"), StandardAnalyzer.class, MaxFieldLength.UNLIMITED.getLimit());
+        IndexScheme scheme = new IndexScheme(indexFields, storeSettings, indexSettings, true, StandardAnalyzer.class, MaxFieldLength.UNLIMITED.getLimit());
 
         // Rename the fields from what we've got, to what the Lucene field names should be.
         Pipe indexingPipe = new Pipe("parse importer");
         Fields parseFields = new Fields(ParsedDatum.PARSED_TEXT_FIELD);
         indexingPipe = new Each(indexingPipe, parseFields, new Identity(indexFields));
 
-        // We want to inject in the boost field
-        indexingPipe = new Each(indexingPipe, new CalcBoost(indexFields), Fields.ALL);
+        // We want to inject in the boost field. So we'll pass everything to
+        // the CalcBoost(), and what CalcBoost outputs will be merged in with ALL of the input fields.
+        indexingPipe = new Each(indexingPipe, new CalcBoost(), Fields.ALL);
         
         String out = "build/test-data/IndexSchemaTest/testPipeIntoIndex/out";
         FileUtil.fullyDelete(new File(out));

@@ -23,6 +23,8 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 
+import bixo.datum.BaseDatum;
+
 import cascading.scheme.Scheme;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
@@ -35,42 +37,47 @@ import cascading.util.Util;
 public class IndexScheme extends Scheme {
     private static final Logger LOGGER = Logger.getLogger(IndexScheme.class);
     
-    private static final String ANALYZER = "bixo.indexer.analyzer";
-    private static final String MAX_FIELD_LENGTH = "bixo.indexer.maxFieldLength";
-    private static final String SINK_FIELDS = "bixo.indexer.fields";
-    private static final String BOOST_FIELD = "bixo.indexer.boostfield";
-    private static final String INDEX = "bixo.index";
-    private static final String STORE = "bixo.store";
+    private static final String ANALYZER_KEY = "bixo.indexer.analyzer";
+    private static final String MAX_FIELD_LENGTH_KEY = "bixo.indexer.maxFieldLength";
+    private static final String SINK_FIELDS_KEY = "bixo.indexer.sinkFields";
+    private static final String HAS_BOOST_KEY = "bixo.indexer.hasBoost";
+    private static final String INDEX_SETTINGS_KEY = "bixo.indexer.indexSettings";
+    private static final String STORE_SETTINGS_KEY = "bixo.indexer.storeSettings";
     
+    public static final String BOOST_FIELD = BaseDatum.fieldName(IndexScheme.class, "boost");
+    public static final Fields BOOST_FIELDS = new Fields(BOOST_FIELD);
+
     private Class<? extends Analyzer> _analyzer;
-    private int _maxFieldLeng;
-    private Store[] _store;
-    private Index[] _index;
-    private Fields _boostField;
+    private int _maxFieldLength;
+    private Store[] _storeSettings;
+    private Index[] _indexSettings;
+    private boolean _hasBoost;
     
-    public IndexScheme(Fields fieldsToIndex, Store[] store, Index[] index, Class<? extends Analyzer> analyzer, int maxFieldLength) {
-        this(fieldsToIndex, store, index, new Fields(), analyzer, maxFieldLength);
+    public IndexScheme(Fields fieldsToIndex, Store[] storeSettings, Index[] indexSettings, Class<? extends Analyzer> analyzer, int maxFieldLength) {
+        this(fieldsToIndex, storeSettings, indexSettings, false, analyzer, maxFieldLength);
     }
     
-    public IndexScheme(Fields fieldsToIndex, Store[] store, Index[] index, Fields boostField, Class<? extends Analyzer> analyzer, int maxFieldLength) {
+    public IndexScheme(Fields fieldsToIndex, Store[] storeSettings, Index[] indexSettings, boolean hasBoost, Class<? extends Analyzer> analyzer, int maxFieldLength) {
         if (fieldsToIndex.size() == 0) {
             throw new IllegalArgumentException("At least one field must be specified for indexing");
         }
 
-        if (boostField.size() > 1) {
-            throw new IllegalArgumentException("A maximum of one field may be specified for boosting");
-        }
-        
-        if ((fieldsToIndex.size() != store.length) || (fieldsToIndex.size() != index.length)) {
+        if ((fieldsToIndex.size() != storeSettings.length) || (fieldsToIndex.size() != indexSettings.length)) {
             throw new IllegalArgumentException("store[] and index[] need to have same length as fieldsToIndex");
         }
         
-        setSinkFields(fieldsToIndex.append(boostField));
+        if (hasBoost) {
+            // Boost field has to come at end of tuple, and is always a float.
+            setSinkFields(fieldsToIndex.append(new Fields(BOOST_FIELD)));
+        } else {
+            setSinkFields(fieldsToIndex);
+        }
+        
         _analyzer = analyzer;
-        _maxFieldLeng = maxFieldLength;
-        _store = store;
-        _index = index;
-        _boostField = boostField;
+        _maxFieldLength = maxFieldLength;
+        _storeSettings = storeSettings;
+        _indexSettings = indexSettings;
+        _hasBoost = hasBoost;
     }
 
     @Override
@@ -78,17 +85,17 @@ public class IndexScheme extends Scheme {
         conf.setOutputKeyClass(Tuple.class);
         conf.setOutputValueClass(Tuple.class);
         conf.setOutputFormat(IndexingOutputFormat.class);
-        conf.set(SINK_FIELDS, Util.serializeBase64(getSinkFields()));
-        conf.set(BOOST_FIELD, Util.serializeBase64(_boostField));
-        conf.setClass(ANALYZER, _analyzer, Analyzer.class);
-        conf.setInt(MAX_FIELD_LENGTH, _maxFieldLeng);
-        conf.set(INDEX, Util.serializeBase64(_index));
-        conf.set(STORE, Util.serializeBase64(_store));
+        conf.set(SINK_FIELDS_KEY, Util.serializeBase64(getSinkFields()));
+        conf.setBoolean(HAS_BOOST_KEY, _hasBoost);
+        conf.setClass(ANALYZER_KEY, _analyzer, Analyzer.class);
+        conf.setInt(MAX_FIELD_LENGTH_KEY, _maxFieldLength);
+        conf.set(INDEX_SETTINGS_KEY, Util.serializeBase64(_indexSettings));
+        conf.set(STORE_SETTINGS_KEY, Util.serializeBase64(_storeSettings));
         
         LOGGER.info("Initializing Lucene index tap");
         Fields fields = getSinkFields();
         for (int i = 0; i < fields.size() - 1; i++) {
-            LOGGER.info("  Field " + fields.get(i) + ": " + _store[i] + ", " + _index[i]);
+            LOGGER.info("  Field " + fields.get(i) + ": " + _storeSettings[i] + ", " + _indexSettings[i]);
         }
     }
 
@@ -119,13 +126,13 @@ public class IndexScheme extends Scheme {
         @Override
         public RecordWriter<Tuple, Tuple> getRecordWriter(final FileSystem fs, final JobConf conf, final String name, Progressable progressable) throws IOException {
 
-            Analyzer analyzer = (Analyzer) ReflectionUtils.newInstance(conf.getClass(ANALYZER, Analyzer.class), conf);
-            final Index[] index = (Index[]) Util.deserializeBase64(conf.get(INDEX));
-            final Store[] store = (Store[]) Util.deserializeBase64(conf.get(STORE));
+            Analyzer analyzer = (Analyzer) ReflectionUtils.newInstance(conf.getClass(ANALYZER_KEY, Analyzer.class), conf);
+            final Index[] index = (Index[]) Util.deserializeBase64(conf.get(INDEX_SETTINGS_KEY));
+            final Store[] store = (Store[]) Util.deserializeBase64(conf.get(STORE_SETTINGS_KEY));
 
-            int maxFieldLength = conf.getInt(MAX_FIELD_LENGTH, MaxFieldLength.UNLIMITED.getLimit());
-            final Fields sinkFields = (Fields)Util.deserializeBase64(conf.get(SINK_FIELDS));
-            final boolean hasBoost = ((Fields)Util.deserializeBase64(conf.get(BOOST_FIELD))).size() > 0;
+            int maxFieldLength = conf.getInt(MAX_FIELD_LENGTH_KEY, MaxFieldLength.UNLIMITED.getLimit());
+            final Fields sinkFields = (Fields)Util.deserializeBase64(conf.get(SINK_FIELDS_KEY));
+            final boolean hasBoost = conf.getBoolean(HAS_BOOST_KEY, false);
             
             String tmpFolder = System.getProperty("java.io.tmpdir");
             final File localIndexFolder = new File(tmpFolder, UUID.randomUUID().toString());
