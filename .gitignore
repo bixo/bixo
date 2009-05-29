@@ -9,5 +9,6 @@ build.sh
 *.iml
 *.dot
 trash
+private
 extras/webgraph/tmp
 extras/webgraph/eu-2005.*
