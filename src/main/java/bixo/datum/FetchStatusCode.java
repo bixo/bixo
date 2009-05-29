@@ -24,7 +24,7 @@ package bixo.datum;
 
 public enum FetchStatusCode {
 
-    UNFETCHED,      // Fetch of URL hasn't been attempted yet.
+    UNFETCHED,      // Fetch of URL hasn't been attempted yet. This must be the first, so that its ordinal is 0.
     FETCHED,        // URL was successfully fetched.
     MOVED,          // URL has changed (normalized, permanently redirected)
     ABORTED,        // URL fetch was aborted.
