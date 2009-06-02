@@ -29,9 +29,8 @@ public class HtmlParserTest {
         DataInputStream in = new DataInputStream(new FileInputStream(file));
         in.readFully(bytes);
 
-        FetchedDatum fetchedDatum = new FetchedDatum(FetchStatusCode.FETCHED, path.toExternalForm().toString(), path.toExternalForm().toString(), System.currentTimeMillis(), new BytesWritable(bytes),
-                        "text/html", 0, null);
-
+        FetchedDatum fetchedDatum = new FetchedDatum(FetchStatusCode.FETCHED, path.toExternalForm().toString(), path.toExternalForm().toString(),
+                        System.currentTimeMillis(), null, new BytesWritable(bytes), "text/html", 0, null);
         return fetchedDatum;
     }
 
@@ -51,6 +50,8 @@ public class HtmlParserTest {
 
         Outlink[] outlinks = p.getData().getOutlinks();
         Assert.assertEquals(10, outlinks.length);
+        
+        Assert.assertEquals("TransPac Software", p.getData().getTitle());
     }
 
     @Test
