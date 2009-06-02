@@ -50,7 +50,8 @@ public class MultiSinkTap extends SinkTap {
     private static final Logger LOG = Logger.getLogger(MultiSinkTap.class);
 
     private Tap[] _sinkTaps;
-
+    transient private Path _path;
+    
     public MultiSinkTap(Tap... taps) {
         _sinkTaps = taps;
     }
@@ -66,7 +67,11 @@ public class MultiSinkTap extends SinkTap {
 
     @Override
     public Path getPath() {
-        return new Path("__temporary_multisink" + Integer.toString((int) (10000000 * Math.random())));
+        if (_path == null) {
+            _path = new Path("__temporary_multisink" + Integer.toString((int)(10000000 * Math.random())));
+        }
+        
+        return _path;
     }
 
     @Override
@@ -76,15 +81,17 @@ public class MultiSinkTap extends SinkTap {
 
     @Override
     public void sinkInit(JobConf conf) throws IOException {
-        for (Tap tap : getTaps())
-            tap.sinkInit(new JobConf(conf));
+        for (Tap tap : getTaps()) {
+            tap.sinkInit(conf);
+        }
     }
 
     @Override
     public boolean makeDirs(JobConf conf) throws IOException {
         for (Tap tap : getTaps()) {
-            if (!tap.makeDirs(conf))
+            if (!tap.makeDirs(conf)) {
                 return false;
+            }
         }
 
         return true;
@@ -93,8 +100,9 @@ public class MultiSinkTap extends SinkTap {
     @Override
     public boolean deletePath(JobConf conf) throws IOException {
         for (Tap tap : getTaps()) {
-            if (!tap.deletePath(conf))
+            if (!tap.deletePath(conf)) {
                 return false;
+            }
         }
 
         return true;
@@ -103,8 +111,9 @@ public class MultiSinkTap extends SinkTap {
     @Override
     public boolean pathExists(JobConf conf) throws IOException {
         for (Tap tap : getTaps()) {
-            if (!tap.pathExists(conf))
+            if (!tap.pathExists(conf)) {
                 return false;
+            }
         }
 
         return true;
@@ -114,8 +123,9 @@ public class MultiSinkTap extends SinkTap {
     public long getPathModified(JobConf conf) throws IOException {
         long modified = getTaps()[0].getPathModified(conf);
 
-        for (int i = 1; i < getTaps().length; i++)
+        for (int i = 1; i < getTaps().length; i++) {
             modified = Math.max(getTaps()[i].getPathModified(conf), modified);
+        }
 
         return modified;
     }
@@ -129,14 +139,16 @@ public class MultiSinkTap extends SinkTap {
     @SuppressWarnings("unchecked")
     @Override
     public Scheme getScheme() {
-        if (super.getScheme() != null)
+        if (super.getScheme() != null) {
             return super.getScheme();
+        }
 
         Set<Comparable> fieldNames = new LinkedHashSet<Comparable>();
 
         for (int i = 0; i < getTaps().length; i++) {
-            for (Object o : getTaps()[i].getSinkFields())
+            for (Object o : getTaps()[i].getSinkFields()) {
                 fieldNames.add((Comparable) o);
+            }
         }
 
         Fields allFields = new Fields(fieldNames.toArray(new Comparable[fieldNames.size()]));
@@ -173,7 +185,6 @@ public class MultiSinkTap extends SinkTap {
         int result = super.hashCode();
         result = 31 * result + (_sinkTaps != null ? Arrays.hashCode(_sinkTaps) : 0);
         return result;
-
     }
 
     @SuppressWarnings("unchecked")
@@ -218,7 +229,6 @@ public class MultiSinkTap extends SinkTap {
         public void collect(Object key, Object value) throws IOException {
             for (int i = 0; i < _taps.length; i++) {
                 _taps[i].getScheme().sink((TupleEntry) value, _collectors[i]);
-
             }
         }
     }
