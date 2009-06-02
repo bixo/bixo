@@ -56,6 +56,7 @@ import org.apache.log4j.Logger;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
+import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
 
 @SuppressWarnings("serial")
@@ -207,14 +208,19 @@ public class HttpClientFetcher implements IHttpFetcher {
                 targetLength = ERROR_CONTENT_LENGTH;
             }
 
-            Header[] headers = response.getHeaders(IHttpHeaders.CONTENT_LENGTH);
+            HttpHeaders headerMap = new HttpHeaders();
+            Header[] headers = response.getAllHeaders();
             for (Header header : headers) {
+                headerMap.add(header.getName(), header.getValue());
+            }
+            
+            String contentLength = headerMap.getFirst(IHttpHeaders.CONTENT_LENGTH);
+            if (contentLength != null) {
                 try {
-                    int length = Integer.parseInt(header.getValue());
-                    targetLength = Math.min(targetLength, length);
+                    targetLength = Math.min(targetLength, Integer.parseInt(contentLength));
                 } catch (NumberFormatException e) {
                     // Ignore (and log) invalid content length values.
-                    LOGGER.warn("Invalid content length in header: " + header.getValue());
+                    LOGGER.warn("Invalid content length in header: " + contentLength);
                 }
             }
 
@@ -290,7 +296,7 @@ public class HttpClientFetcher implements IHttpFetcher {
             String redirectedUrl = url;
             // TODO SG used the new enum here.Use different status than fetch if
             // you need to.
-            return new FetchedDatum(fsCode, url, redirectedUrl, System.currentTimeMillis(), new BytesWritable(content), contentType, (int)readRate, scoredUrl.getMetaDataMap());
+            return new FetchedDatum(fsCode, url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, scoredUrl.getMetaDataMap());
         } catch (Throwable t) {
             safeAbort(httpget);
 
@@ -298,7 +304,7 @@ public class HttpClientFetcher implements IHttpFetcher {
             // TODO KKr - use real status for exception, include exception msg
             // somehow.
             // TODO SG should we use FetchStatusCode.ERROR or NEVER_FTEHCED?
-            return new FetchedDatum(FetchStatusCode.ERROR, url, url, System.currentTimeMillis(), null, null, 0, scoredUrl.getMetaDataMap());
+            return new FetchedDatum(FetchStatusCode.ERROR, url, url, System.currentTimeMillis(), null, null, null, 0, scoredUrl.getMetaDataMap());
         }
     }
 

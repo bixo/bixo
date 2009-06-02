@@ -31,7 +31,6 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 public class FetchedDatum extends BaseDatum {
-
     private FetchStatusCode _statusCode;
     private String _baseUrl;
     private String _fetchedUrl;
@@ -39,9 +38,10 @@ public class FetchedDatum extends BaseDatum {
     private BytesWritable _content;
     private String _contentType;
     private int _responseRate;
-
+    private HttpHeaders _headers;
+    
     @SuppressWarnings("unchecked")
-    public FetchedDatum(FetchStatusCode statusCode, String baseUrl, String redirectedUrl, long fetchTime, BytesWritable content, String contentType, int responseRate, Map<String, Comparable> metaData) {
+    public FetchedDatum(FetchStatusCode statusCode, String baseUrl, String redirectedUrl, long fetchTime, HttpHeaders headers, BytesWritable content, String contentType, int responseRate, Map<String, Comparable> metaData) {
         super(metaData);
         
         _statusCode = statusCode;
@@ -51,6 +51,7 @@ public class FetchedDatum extends BaseDatum {
         _content = content;
         _contentType = contentType;
         _responseRate = responseRate;
+        _headers = headers;
     }
 
     public FetchStatusCode getStatusCode() {
@@ -81,6 +82,10 @@ public class FetchedDatum extends BaseDatum {
         return _responseRate;
     }
 
+    public HttpHeaders getHeaders() {
+        return _headers;
+    }
+
     // ======================================================================================
     // Below here is all Cascading-specific implementation
     // ======================================================================================
@@ -93,8 +98,9 @@ public class FetchedDatum extends BaseDatum {
     public static final String CONTENT_FIELD = fieldName(FetchedDatum.class, "content");
     public static final String CONTENT_TYPE_FIELD = fieldName(FetchedDatum.class, "contentType");
     public static final String RESPONSE_RATE_FIELD = fieldName(FetchedDatum.class, "responseRate");
+    public static final String HTTP_HEADERS_FIELD = fieldName(FetchedDatum.class, "httpHeaders");
 
-    public static final Fields FIELDS = new Fields(STATUS_CODE_FIELD, BASE_URL_FIELD, FETCHED_URL_FIELD, FETCH_TIME_FIELD, CONTENT_FIELD, CONTENT_TYPE_FIELD, RESPONSE_RATE_FIELD);
+    public static final Fields FIELDS = new Fields(STATUS_CODE_FIELD, BASE_URL_FIELD, FETCHED_URL_FIELD, FETCH_TIME_FIELD, CONTENT_FIELD, CONTENT_TYPE_FIELD, RESPONSE_RATE_FIELD, HTTP_HEADERS_FIELD);
 
     public FetchedDatum(Tuple tuple, Fields metaDataFields) {
         super(tuple, metaDataFields);
@@ -114,6 +120,7 @@ public class FetchedDatum extends BaseDatum {
         _content = (BytesWritable)entry.get(CONTENT_FIELD);
         _contentType = entry.getString(CONTENT_TYPE_FIELD);
         _responseRate = entry.getInteger(RESPONSE_RATE_FIELD);
+        _headers = new HttpHeaders(entry.getString(HTTP_HEADERS_FIELD));
     }
     
     @Override
@@ -124,7 +131,14 @@ public class FetchedDatum extends BaseDatum {
     @SuppressWarnings("unchecked")
     @Override
     protected Comparable[] getStandardValues() {
-        return new Comparable[] { _statusCode.ordinal(), _baseUrl, _fetchedUrl, _fetchTime, _content, _contentType, _responseRate };
+        return new Comparable[] { _statusCode.ordinal(), _baseUrl, _fetchedUrl, _fetchTime, _content, _contentType, _responseRate, flattenHeaders() };
     }
 
+    private String flattenHeaders() {
+        if (_headers == null) {
+            return null;
+        } else {
+            return _headers.toString();
+        }
+    }
 }

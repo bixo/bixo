@@ -186,7 +186,7 @@ public class FetcherQueue implements IFetchListProvider {
         for (ScoredUrlDatum datum : _queue) {
             synchronized (_collector) {
                 String url = datum.getNormalizedUrl();
-                FetchedDatum result = new FetchedDatum(FetchStatusCode.ABORTED, url, url, 0, null, null, 0, datum.getMetaDataMap());
+                FetchedDatum result = new FetchedDatum(FetchStatusCode.ABORTED, url, url, 0, null, null, null, 0, datum.getMetaDataMap());
                 _collector.add(result.toTuple());
             }
         }

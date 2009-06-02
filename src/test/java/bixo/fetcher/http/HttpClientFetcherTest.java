@@ -86,4 +86,18 @@ public class HttpClientFetcherTest extends SimulationWebServer {
 
     }
     
+    @Test
+    public final void testContentTypeHeader() throws Exception {
+        FetcherPolicy policy = new FetcherPolicy();
+        HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
+        IHttpFetcher fetcher = new HttpClientFetcher(1, policy, USER_AGENT);
+        String url = "http://localhost:8089/simple-page.html";
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1d, null));
+        server.stop();
+        
+        String contentType = result.getHeaders().getFirst(IHttpHeaders.CONTENT_TYPE);
+        Assert.assertNotNull(contentType);
+        Assert.assertEquals("text/html", contentType);
+    }
+    
 }

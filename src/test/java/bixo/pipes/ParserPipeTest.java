@@ -3,6 +3,7 @@ package bixo.pipes;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.mapred.JobConf;
@@ -14,10 +15,10 @@ import org.junit.Test;
 
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
+import bixo.datum.HttpHeaders;
 import bixo.datum.ParsedDatum;
 import bixo.parser.html.HtmlParser;
 import bixo.parser.html.IBixoMetaKeys;
-import bixo.pipes.ParserPipe;
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -66,7 +67,17 @@ public class ParserPipeTest extends CascadingTestCase {
                 archiveRecord.read(content);
 
                 String mimetype = header.getMimetype();
-                FetchedDatum contentTuple = new FetchedDatum(FetchStatusCode.FETCHED, url, url, System.currentTimeMillis(), new BytesWritable(content), mimetype, 0, null);
+                // The Arc headers != HTTP headers, but it's at least some data we can jam
+                // into the FetchedDatum as a test. Note that the Arc headers will have value
+                // types other than a long, so we have do to the conversion.
+                HttpHeaders headers = new HttpHeaders();
+                Set<String> keys = header.getHeaderFieldKeys();
+                for (String key : keys) {
+                    String value = header.getHeaderValue(key).toString();
+                    headers.add(key, value);
+                }
+                
+                FetchedDatum contentTuple = new FetchedDatum(FetchStatusCode.FETCHED, url, url, System.currentTimeMillis(), headers, new BytesWritable(content), mimetype, 0, null);
                 write.add(contentTuple.toTuple());
             }
         }
