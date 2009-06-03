@@ -28,6 +28,8 @@ import java.io.Serializable;
  * Filter or normalize urls
  * 
  */
+
+// TODO sg: we should give access to the metat data in the url filter as well.
 public interface IUrlFilter extends Serializable {
 
     /**
