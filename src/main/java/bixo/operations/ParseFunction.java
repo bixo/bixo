@@ -3,6 +3,7 @@ package bixo.operations;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.parser.IParser;
+import bixo.parser.ParserCounters;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
@@ -26,6 +27,9 @@ public class ParseFunction extends BaseOperation<ParsedDatum> implements Functio
         TupleEntry arguments = functionCall.getArguments();
         FetchedDatum fetchedDatum = new FetchedDatum(arguments.getTuple(), _metaDataFields);
         ParsedDatum parseResult = _parser.parse(fetchedDatum);
+        
+        // TODO KKr - add status to ParsedDatum, use it here to increment parsed vs. failed doc counters.
+        flowProcess.increment(ParserCounters.DOCUMENTS_PARSED, 1);
         functionCall.getOutputCollector().add(parseResult.toTuple());
     }
 }
