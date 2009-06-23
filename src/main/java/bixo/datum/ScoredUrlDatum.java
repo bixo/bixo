@@ -10,6 +10,11 @@ import cascading.tuple.TupleEntry;
 public class ScoredUrlDatum extends GroupedUrlDatum implements Comparable<ScoredUrlDatum> {
     private double _score;
 
+    // Constructor for URL that has never been fetched and has no score.
+    public ScoredUrlDatum(String url) {
+        this(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1.0, null);
+    }
+    
     @SuppressWarnings("unchecked")
     public ScoredUrlDatum(String url, long lastFetched, long lastUpdated, FetchStatusCode lastStatus, String normalizedUrl, String groupKey, double score, Map<String, Comparable> metaData) {
         super(url, lastFetched, lastUpdated, lastStatus, normalizedUrl, groupKey, metaData);
