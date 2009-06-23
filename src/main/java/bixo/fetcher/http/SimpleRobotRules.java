@@ -5,8 +5,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.StringTokenizer;
+
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 
@@ -16,18 +17,23 @@ import bixo.datum.ScoredUrlDatum;
 
 public class SimpleRobotRules implements IRobotRules {
     private static final Logger LOGGER = Logger.getLogger(SimpleRobotRules.class);
-    
-    private static final int NO_PRECEDENCE = Integer.MAX_VALUE;
 
-    private boolean _allowAll;
-    private boolean _allowNone;
-    private RobotRules _robotRules;
+    // These must be lower-case, for matching.
+    private static final String USER_AGENT_FIELD = "user-agent:";
+    private static final String DISALLOW_FIELD = "disallow:";
+    private static final String ALLOW_FIELD = "allow:";
+    private static final String CRAWL_DELAY_FIELD = "crawl-delay:";
+    
+    // If true, then there was a problem getting/parsing robots.txt, and the crawler
+    // should defer visits until some later time.
+    private boolean _deferVisits = false;
+    
+    protected RobotRules _robotRules;
     
     /**
      * Single rule that maps from a path prefix to an allow flag.
-     *
      */
-    private class RobotRule {
+    protected class RobotRule {
         String _prefix;
         boolean _allow;
         
@@ -40,37 +46,26 @@ public class SimpleRobotRules implements IRobotRules {
     /**
      * Result from parsing a single robots.txt file - which means we
      * get a set of rules, and a crawl-delay.
-     * TODO KKr - add support for keep-alive
-     *
      */
-    private class RobotRules {
-        ArrayList<RobotRule> _tmpEntries = new ArrayList<RobotRule>();
-        RobotRule[] _entries = null;
-        private int _crawlDelay = NO_CRAWL_DELAY;
+    protected class RobotRules {
+        ArrayList<RobotRule> _rules = new ArrayList<RobotRule>();
+        private long _crawlDelay = DEFAULT_CRAWL_DELAY;
 
-        private void clearPrefixes() {
-            if (_tmpEntries == null) {
-                _tmpEntries= new ArrayList<RobotRule>();
-                _entries= null;
-            } else {
-                _tmpEntries.clear();
-            }
+        private void clearRules() {
+            _rules.clear();
         }
 
-        private void addPrefix(String prefix, boolean allow) {
-            if (_tmpEntries == null) {
-                _tmpEntries= new ArrayList<RobotRule>();
-                if (_entries != null) {
-                    for (int i= 0; i < _entries.length; i++) 
-                        _tmpEntries.add(_entries[i]);
-                }
-                _entries= null;
+        private void addRule(String prefix, boolean allow) {
+            // Convert old-style case of disallow: <nothing>
+            // into new allow: <nothing>.
+            if (!allow && (prefix.length() == 0)) {
+                allow = true;
             }
-
-            _tmpEntries.add(new RobotRule(prefix, allow));
+            
+            _rules.add(new RobotRule(prefix, allow));
         }
 
-        public int getCrawlDelay() {
+        public long getCrawlDelay() {
             return _crawlDelay;
         }
 
@@ -78,32 +73,82 @@ public class SimpleRobotRules implements IRobotRules {
             _crawlDelay = crawlDelay;
         }
 
+        // TODO KKr - make sure paths are sorted from longest to shortest,
+        // to implement longest match
         public boolean isAllowed(String path) {
-            if (_entries == null) {
-                _entries = _tmpEntries.toArray(new RobotRule[_tmpEntries.size()]);
-                _tmpEntries= null;
-            }
-
-            int pos= 0;
-            int end = _entries.length;
-            while (pos < end) {
-                if (path.startsWith(_entries[pos]._prefix)) {
-                    return _entries[pos]._allow;
+            for (RobotRule rule : _rules) {
+                if (path.startsWith(rule._prefix)) {
+                    return rule._allow;
                 }
-                
-                pos++;
             }
 
             return true;
         }
+
+        /**
+         * Is our ruleset set up to allow all access? Check for special case
+         * we set up, with one rule, "/", allowed.
+         * 
+         * @return true if all URLs are allowed.
+         */
+        public boolean allowAll() {
+            if (_rules.size() == 1) {
+                RobotRule rule = _rules.get(0);
+                return rule._allow; // If we have a single allow, then all are allowed.
+            } else {
+                return false;
+            }
+        }
+
+        /**
+         * Is our ruleset set up to disallow all access? Check for special case
+         * we set up with one rule, "/", not allowed.
+         * 
+         * @return true if no URLs are allowed.
+         */
+        public boolean allowNone() {
+            if (_rules.size() == 1) {
+                RobotRule rule = _rules.get(0);
+                return !rule._allow && rule._prefix.equals("/");
+            } else {
+                return false;
+            }
+        }
     }
     
+    
+    protected SimpleRobotRules() {
+        // Hide default constructor
+    }
+    
+    public SimpleRobotRules(int httpStatus) {
+        if ((httpStatus >= 200) && (httpStatus < 300)) {
+            throw new IllegalStateException("Can't use status code constructor with 2xx response");
+        } else if ((httpStatus >= 300) && (httpStatus < 400)) {
+            // Should only happen if we're getting endless redirects (more than our follow limit), so
+            // treat it as a temporary failure.
+            _deferVisits = true;
+            createAllOrNone(false);
+        } else if (httpStatus == HttpServletResponse.SC_NOT_FOUND) {
+            createAllOrNone(true);
+        } else if ((httpStatus == HttpServletResponse.SC_FORBIDDEN) || (httpStatus == HttpServletResponse.SC_UNAUTHORIZED)) {
+            createAllOrNone(false);
+        } else {
+            // Treat all other status codes as a temporary failure.
+            _deferVisits = true;
+            createAllOrNone(false);
+        }
+    }
+    
+    // TODO KKr - get rid of this version, and add a generic one (robot name, URL) that uses
+    // Java URL code to fetch it, as well as a version that takes an output stream (e.g. from
+    // HttpClient) and a version that takes a String with the content.
     public SimpleRobotRules(String robotName, HttpClientFetcher fetcher, String url) {
         try {
             URL realUrl = new URL(url);
             String urlToFetch = new URL(realUrl, "/robots.txt").toExternalForm();
             
-            ScoredUrlDatum scoredUrl = new ScoredUrlDatum(urlToFetch, 0, 0, FetchStatusCode.UNFETCHED, urlToFetch, null, 1.0, null);
+            ScoredUrlDatum scoredUrl = new ScoredUrlDatum(urlToFetch);
             FetchedDatum result = fetcher.get(scoredUrl);
             
             if (result.getStatusCode() == FetchStatusCode.FETCHED) {
@@ -113,7 +158,7 @@ public class SimpleRobotRules implements IRobotRules {
                 createAllOrNone(true);
             }
         } catch (MalformedURLException e) {
-            LOGGER.warn("Invalid URL: " + url);
+            LOGGER.error("Invalid URL: " + url);
             createAllOrNone(false);
         }
         
@@ -123,49 +168,63 @@ public class SimpleRobotRules implements IRobotRules {
         parseRules(robotName, "url", robotsContent);
     }
     
-    private void createAllOrNone(boolean allowAll) {
-        _robotRules = null;
-        _allowAll = allowAll;
-        _allowNone = !allowAll;
+    protected void createAllOrNone(boolean allowAll) {
+        _robotRules = new RobotRules();
+        _robotRules.addRule("/", allowAll);
     }
     
     @Override
-    public int getCrawlDelay() {
-        if (_robotRules == null) {
-            return NO_CRAWL_DELAY;
-        } else {
-            return _robotRules.getCrawlDelay();
-        }
+    public long getCrawlDelay() {
+        return _robotRules.getCrawlDelay();
     }
 
     @Override
-    public boolean isAllowed(String url) {
-        if (_allowAll) {
-            return true;
-        } else if (_allowNone) {
-            return false;
-        }
-        
+    public boolean getDeferVisits() {
+        return _deferVisits;
+    }
+    
+    protected void setDeferVisits(boolean deferVisits) {
+        _deferVisits = deferVisits;
+    }
+    
+    protected String getPath(String url) throws MalformedURLException {
         String path;
-        
-        try {
-            URL realUrl = new URL(url);
-            path = realUrl.getPath();
-            if ((path == null) || (path.equals(""))) {
-                path= "/";
-            }
-        } catch (MalformedURLException e) {
-            return false;
+
+        URL realUrl = new URL(url);
+        path = realUrl.getPath();
+        if ((path == null) || (path.equals(""))) {
+            path= "/";
         }
-        
+
         try {
             path = URLDecoder.decode(path, "UTF-8");
         } catch (Exception e) {
-          // just ignore it- we can still try to match 
-          // path prefixes
+            // just ignore it- we can still try to match 
+            // path prefixes
+        }
+
+        return path;
+    }
+    
+    @Override
+    public boolean isAllowed(String url) throws MalformedURLException {
+        String path = getPath(url);
+        
+        // Always allow robots.txt
+        if (path.equalsIgnoreCase("/robots.txt")) {
+            return true;
         }
         
-        return _robotRules.isAllowed(path);
+        if (_robotRules.allowAll()) {
+            return true;
+        } else if (_robotRules.allowNone()) {
+            return false;
+        }
+        
+        // We always lower-case the path, as anybody who sets up rules that differ only by case
+        // is insane, but it's more likely that somebody will accidentally put in rules that don't
+        // match their target paths because of case differences.
+        return _robotRules.isAllowed(path.toLowerCase());
     }
     
     /**
@@ -175,7 +234,7 @@ public class SimpleRobotRules implements IRobotRules {
      * @param url - source of robots.txt, for error reporting
      * @param robotContent - raw bytes from robots.txt
      */
-    private void parseRules(String robotName, String url, byte[] robotContent) {
+    protected void parseRules(String robotName, String url, byte[] robotContent) {
         // If there's nothing there, treat it like we have no restrictions.
         if ((robotContent == null) || (robotContent.length == 0)) {
             LOGGER.trace("Missing/empty robots.txt at " + url);
@@ -183,136 +242,139 @@ public class SimpleRobotRules implements IRobotRules {
             return;
         }
 
-        HashMap<String, Integer> robotNames = new HashMap<String, Integer>();
-        robotNames.put(robotName, new Integer(0));
-        robotNames.put("*", new Integer(1));
-
         String content;
         try {
-            content= new String(robotContent, "us-ascii");
+            content = new String(robotContent, "us-ascii");
         } catch (UnsupportedEncodingException e) {
             // Should never happen.
             LOGGER.error("Got unsupported encoding exception for us-ascii");
             content = new String(robotContent);
         }
+
+        // Break on anything that might be used as a line ending. Since tokenizer doesn't
+        // return empty tokens, a \r\n sequence still works since it looks like an empty
+        // string between the \r and \n.
+        StringTokenizer lineParser = new StringTokenizer(content, "\n\r\u0085\u2028\u2029");
+
+        RobotRules curRules = new RobotRules();
+        boolean matchedRealName = false;
+        boolean matchedWildcard = false;
+        boolean addingRules = false;
+        boolean finishedAgentFields = false;
         
-        StringTokenizer lineParser= new StringTokenizer(content, "\n\r");
-
-        RobotRules bestRulesSoFar = null;
-        int bestPrecedenceSoFar = NO_PRECEDENCE;
-
-        RobotRules currentRules = new RobotRules();
-        int currentPrecedence= NO_PRECEDENCE;
-
-        boolean addRules = false;    // in stanza for our robot
-        boolean doneAgents = false;  // detect multiple agent lines
-
+        String targetName = robotName.toLowerCase();
+        
         while (lineParser.hasMoreTokens()) {
             String line = lineParser.nextToken();
 
+            // Get rid of HTML markup, in case some brain-dead webmaster has created an HTML
+            // page for robots.txt. We could do more sophisticated processing here to better
+            // handle bad HTML, but that's a very tiny percentage of all robots.txt files.
+            line = line.replaceAll("<[^>]+>","");
+            
             // trim out comments and whitespace
             int hashPos = line.indexOf("#");
             if (hashPos >= 0) {
                 line = line.substring(0, hashPos);
             }
-            line= line.trim();
+            line= line.trim().toLowerCase();
 
-            if ((line.length() >= 11)  && (line.substring(0, 11).equalsIgnoreCase("User-agent:"))) {
-                if (doneAgents) {
-                    if (currentPrecedence < bestPrecedenceSoFar) {
-                        bestPrecedenceSoFar= currentPrecedence;
-                        bestRulesSoFar= currentRules;
-                        currentPrecedence= NO_PRECEDENCE;
-                        currentRules= new RobotRules();
+            if (line.startsWith(USER_AGENT_FIELD)) {
+                if (matchedRealName) {
+                    if (finishedAgentFields) {
+                        // We're all done.
+                        break;
+                    } else {
+                        // Skip any more of these, once we have a real name match. We're waiting for some
+                        // allow/disallow/crawl delay fields.
+                        continue;
                     }
-                    
-                    addRules= false;
+                } else if (finishedAgentFields) {
+                    // We've got a user agent field, so we haven't yet seen anything that tells us
+                    // we're done with this set of agent names.
+                    finishedAgentFields = false;
+                    addingRules = false;
                 }
                 
-                doneAgents= false;
-
-                String agentNames = line.substring(line.indexOf(":") + 1);
-                agentNames = agentNames.trim();
-                StringTokenizer agentTokenizer = new StringTokenizer(agentNames);
-
-                while (agentTokenizer.hasMoreTokens()) {
-                    // for each agent listed, see if it's us:
-                    String agentName = agentTokenizer.nextToken().toLowerCase();
-
-                    Integer precedenceInt = robotNames.get(agentName);
-
-                    if (precedenceInt != null) {
-                        int precedence= precedenceInt.intValue();
-                        if ((precedence < currentPrecedence) && (precedence < bestPrecedenceSoFar)) {
-                            currentPrecedence= precedence;
-                        }
+                // TODO KKr - catch case of multiple names, log as non-standard.
+                String[] agentNames = line.substring(USER_AGENT_FIELD.length()).trim().split("[ \t,]");
+                for (String agentName : agentNames) {
+                    if (targetName.contains(agentName)) {
+                        matchedRealName = true;
+                        addingRules = true;
+                        curRules.clearRules();  // In case we previously hit a wildcard rule match
+                        break;
+                    } else if (agentName.equals("*") && !matchedWildcard) {
+                        matchedWildcard = true;
+                        addingRules = true;
                     }
                 }
-
-                if (currentPrecedence < bestPrecedenceSoFar) {
-                    addRules= true;
+            } else if (line.startsWith(DISALLOW_FIELD)) {
+                finishedAgentFields = true;
+                
+                if (!addingRules) {
+                    continue;
                 }
-            } else if ((line.length() >= 9) && (line.substring(0, 9).equalsIgnoreCase("Disallow:")) ) {
-                doneAgents = true;
-                String path = line.substring(line.indexOf(":") + 1);
-                path= path.trim();
+                
+                String path = line.substring(DISALLOW_FIELD.length()).trim();
                 
                 try {
                     path = URLDecoder.decode(path, "UTF-8");
                 } catch (Exception e) {
-                    LOGGER.warn("Error parsing robots rules- can't decode path: " + path);
+                    LOGGER.warn("Error parsing robots rules - can't decode path: " + path);
                 }
 
-                if (path.length() == 0) { // "empty rule"
-                    if (addRules) {
-                        currentRules.clearPrefixes();
-                    }
-                } else {  // rule with path
-                    if (addRules) {
-                        currentRules.addPrefix(path, false);
-                    }
+                if (path.length() == 0) {
+                    // Disallow: <nothing> => allow all.
+                    curRules.clearRules();
+                } else {
+                    curRules.addRule(path, false);
+                }
+            } else if (line.startsWith(ALLOW_FIELD)) {
+               finishedAgentFields = true;
+                
+               if (!addingRules) {
+                    continue;
+                }
+                
+                String path = line.substring(ALLOW_FIELD.length()).trim();
+                
+                try {
+                    path = URLDecoder.decode(path, "UTF-8");
+                } catch (Exception e) {
+                    LOGGER.warn("Error parsing robots rules - can't decode path: " + path);
                 }
 
-            } else if ((line.length() >= 6) && (line.substring(0, 6).equalsIgnoreCase("Allow:")) ) {
-                doneAgents= true;
-                String path= line.substring(line.indexOf(":") + 1);
-                path= path.trim();
-
-                if (path.length() == 0) { 
-                    // "empty rule"- treat same as empty disallow
-                    if (addRules)
-                        currentRules.clearPrefixes();
-                } else {  // rule with path
-                    if (addRules)
-                        currentRules.addPrefix(path, true);
+                if (path.length() == 0) {
+                    // Allow: <nothing> => allow all.
+                    curRules.clearRules();
+                } else {
+                    curRules.addRule(path, true);
                 }
-            } else if ((line.length() >= 12) && (line.substring(0, 12).equalsIgnoreCase("Crawl-Delay:"))) {
-                doneAgents = true;
-                if (addRules) {
-                    int crawlDelay = NO_CRAWL_DELAY;
-                    String delay = line.substring("Crawl-Delay:".length(), line.length()).trim();
-                    if (delay.length() > 0) {
-                        try {
-                            crawlDelay = Integer.parseInt(delay) * 1000; // sec to millisec
-                        } catch (Exception e) {
-                            LOGGER.info("can not parse Crawl-Delay: " + e.toString());
-                        }
-                        
-                        currentRules.setCrawlDelay(crawlDelay);
+            } else if (line.startsWith(CRAWL_DELAY_FIELD)) {
+                finishedAgentFields = true;
+                
+                if (!addingRules) {
+                     continue;
+                }
+                 
+                String delayString = line.substring(CRAWL_DELAY_FIELD.length()).trim();
+                if (delayString.length() > 0) {
+                    try {
+                        int delayValue = Integer.parseInt(delayString) * 1000; // sec to millisec
+                        curRules.setCrawlDelay(delayValue);
+                    } catch (Exception e) {
+                        LOGGER.info("Error parsing robots rules - can't decode crawl delay", e);
                     }
                 }
+            } else if (line.contains(":")) {
+                // TODO KKr - info re unknown directive in file.
+                finishedAgentFields = true;
+            } else {
+                // TODO KKr - warning re invalid line in file.
             }
         }
 
-        if (currentPrecedence < bestPrecedenceSoFar) {
-            bestPrecedenceSoFar = currentPrecedence;
-            bestRulesSoFar = currentRules;
-        }
-
-        if (bestPrecedenceSoFar == NO_PRECEDENCE) {
-            createAllOrNone(true);
-        } else {
-            _robotRules = bestRulesSoFar;
-        }
+        _robotRules = curRules;
     }
 }
