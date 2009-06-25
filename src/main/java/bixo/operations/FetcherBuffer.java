@@ -56,6 +56,8 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
         _flowProcess = new BixoFlowProcess((HadoopFlowProcess) flowProcess);
         _flowProcess.addReporter(new LoggingFlowReporter());
         
+        // TODO KKr - remove this support (and fix up searchcrawl's use of it) since you pass
+        // in the default fetch policy via <fetcher>.getFetchPolicy() in the constructor. Doh.
         FetcherPolicy defaultPolicy;
         String policyObj = (String)flowProcess.getProperty(DEFAULT_FETCHER_POLICY_KEY);
         if (policyObj != null) {
@@ -67,7 +69,7 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                 throw new RuntimeException("IOException while deserializing default fetcher policy", e);
             }
         } else {
-            defaultPolicy = new FetcherPolicy();
+            defaultPolicy = _fetcher.getFetcherPolicy();
         }
         
         _queueMgr = new FetcherQueueMgr(_flowProcess, defaultPolicy);
