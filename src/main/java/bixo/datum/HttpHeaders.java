@@ -14,8 +14,26 @@ public class HttpHeaders {
     private static final Logger LOGGER = Logger.getLogger(HttpHeaders.class);
     
     // Patterns used when encoding/decoding header strings
-    private static final Pattern CHARS_TO_ENCODE_PATTERN = Pattern.compile("[\t\n\\\\]");
-    private static final Pattern CHARS_TO_DECODE_PATTERN = Pattern.compile("(\\t|\\n|\\\\)");
+    // These musst match the strings in REPLACEMENT_PATTERNS, and vice versa.
+    private static final Pattern CHARS_TO_ENCODE_PATTERN = Pattern.compile("[\t\n\r\f\\\\]");
+    private static final Pattern CHARS_TO_DECODE_PATTERN = Pattern.compile("(\\t|\\n|\\r|\\f|\\\\)");
+    
+    private static final String[] REPLACEMENT_PATTERNS = {
+        // Convert "\" to "\\"
+        "\\\\", "\\\\\\\\",
+        
+        // Convert <tab> to "\t"
+        "\t", "\\\\t",
+        
+        // Convert <newline> to "\n"
+        "\n", "\\\\n",
+        
+        // Convert <return> to "\r"
+        "\r", "\\\\r",
+        
+        // Convert (formfeed> to "\f"
+        "\f", "\\\\f"
+    };
     
     private Map<String, List<String>> _headers;
     
@@ -30,7 +48,7 @@ public class HttpHeaders {
             return;
         }
         
-        String[] headerLines = encodedAsString.split("\n");
+        String[] headerLines = encodedAsString.split("\f");
         for (String headerLine : headerLines) {
             String[] linePieces = headerLine.split("\t");
             if (linePieces.length != 2) {
@@ -92,7 +110,7 @@ public class HttpHeaders {
                 result.append(encodedKey);
                 result.append('\t');
                 result.append(encodeHeaderString(value));
-                result.append('\n');
+                result.append('\f');
             }
         }
         
@@ -107,9 +125,12 @@ public class HttpHeaders {
         // Common case is nothing to replace, so don't worry about performance if we do have anything
         // that we need to convert.
         if (charMatcher.find()) {
-            // If we have a '\', we need it to be "\\". But regex pattern will be "\\".
-            String result = headerString.replaceAll("\\\\", "\\\\\\\\");
-            return result.replaceAll("\t", "\\\\t").replaceAll("\n", "\\\\n");
+            String result = headerString;
+            for (int i = 0; i < REPLACEMENT_PATTERNS.length; i += 2) {
+                result = result.replaceAll(REPLACEMENT_PATTERNS[i], REPLACEMENT_PATTERNS[i + 1]);
+            }
+            
+            return result;
         } else {
             return headerString;
         }
@@ -118,7 +139,12 @@ public class HttpHeaders {
     private static String decodeHeaderString(String headerString) {
         Matcher charMatcher = CHARS_TO_DECODE_PATTERN.matcher(headerString);
         if (charMatcher.find()) {
-            return headerString.replaceAll("\\\\n", "\n").replaceAll("\\\\t", "\t").replaceAll("\\\\\\\\", "\\\\");
+            String result = headerString;
+            for (int i = 0; i < REPLACEMENT_PATTERNS.length; i += 2) {
+                result = result.replaceAll(REPLACEMENT_PATTERNS[i + 1], REPLACEMENT_PATTERNS[i]);
+            }
+            
+            return result;
         } else {
             return headerString;
         }
