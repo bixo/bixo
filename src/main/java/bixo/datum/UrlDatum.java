@@ -34,6 +34,15 @@ public class UrlDatum extends BaseDatum {
     private long _lastUpdated;
     private FetchStatusCode _lastStatus;
 
+    /**
+     * Constructor for creating UrlDatum for a URL that's never been fetched, and has no metaData.
+     * 
+     * @param url - URL to fetch.
+     */
+    public UrlDatum(String url) {
+        this(url, 0, 0, FetchStatusCode.UNFETCHED, null);
+    }
+    
     @SuppressWarnings("unchecked")
     public UrlDatum(String url, long lastFetched, long lastUpdated, FetchStatusCode lastStatus, Map<String, Comparable> metaData) {
         super(metaData);
