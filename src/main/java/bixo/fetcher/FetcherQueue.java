@@ -123,6 +123,7 @@ public class FetcherQueue implements IFetchListProvider {
         if (_queue.size() == 0) {
             // Nothing to return
         } else if ((_policy.getCrawlEndTime() != FetcherPolicy.NO_CRAWL_END_TIME) && (System.currentTimeMillis() >= _policy.getCrawlEndTime())) {
+            // We're past the end of the target fetch window, so bail.
             abortAll();
         } else if ((_numActiveFetchers == 0) && (System.currentTimeMillis() >= _nextFetchTime)) {
             _numActiveFetchers += 1;
