@@ -67,10 +67,14 @@ public class FetcherPolicy implements Serializable {
         if (_crawlEndTime == NO_CRAWL_END_TIME) {
             return Integer.MAX_VALUE;
         } else {
-            return calcMaxUrls(DEFAULT_CRAWL_DELAY);
+            return calcMaxUrls(getDefaultCrawlDelay());
         }
     }
 
+    public int getDefaultCrawlDelay() {
+        return DEFAULT_CRAWL_DELAY;
+    }
+    
     protected int calcMaxUrls(int crawlDelay) {
         if (crawlDelay == 0) {
             return Integer.MAX_VALUE;
@@ -111,8 +115,9 @@ public class FetcherPolicy implements Serializable {
     }
     
     public FetchRequest getFetchRequest(int maxUrls) {
-        int numUrls = Math.min(maxUrls, DEFAULT_FETCH_INTERVAL / DEFAULT_CRAWL_DELAY);
-        long nextFetchTime = System.currentTimeMillis() + (numUrls * DEFAULT_CRAWL_DELAY * 1000L);
+        int crawlDelay = getDefaultCrawlDelay();
+        int numUrls = Math.min(maxUrls, DEFAULT_FETCH_INTERVAL / crawlDelay);
+        long nextFetchTime = System.currentTimeMillis() + (numUrls * crawlDelay * 1000L);
 
         return new FetchRequest(numUrls, nextFetchTime);
     }
