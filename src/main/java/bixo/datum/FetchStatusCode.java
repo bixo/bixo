@@ -30,6 +30,8 @@ public enum FetchStatusCode {
     ABORTED,        // URL fetch was aborted.
     ERROR;          // URL fetch failed due to an error.
 
+    // TODO KKr - convert to using name strings, vs. ordinal values.
+    
     public static FetchStatusCode fromOrdinal(int i) {
         if (i < 0 || i >= FetchStatusCode.values().length) {
             throw new IndexOutOfBoundsException("Invalid ordinal");
@@ -37,4 +39,19 @@ public enum FetchStatusCode {
         return FetchStatusCode.values()[i];
     }
 
+    public String toString() {
+        if (this == UNFETCHED) {
+            return "UNFETCHED";
+        } else if (this == FETCHED) {
+            return "FETCHED";
+        } else if (this == MOVED) {
+            return "MOVED";
+        } else if (this == ABORTED) {
+            return "ABORTED";
+        } else if (this == ERROR) {
+            return "ERROR";
+        } else  {
+            return "UNKNOWN STATUS";
+        }
+    }
 }

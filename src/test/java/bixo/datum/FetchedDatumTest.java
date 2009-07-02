@@ -1,5 +1,7 @@
 package bixo.datum;
 
+import javax.servlet.http.HttpServletResponse;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -22,7 +24,7 @@ public class FetchedDatumTest {
         
         String value3 = "value3\nwith\nreturns";
         headers.add("key3", value3);
-        FetchedDatum datum = new FetchedDatum(FetchStatusCode.UNFETCHED, url, url, 0, headers, null, null, 0, null);
+        FetchedDatum datum = new FetchedDatum(FetchStatusCode.FETCHED, HttpServletResponse.SC_OK, url, url, 0, headers, null, null, 0, null);
         
         Tuple tuple = datum.toTuple();
         
@@ -32,5 +34,23 @@ public class FetchedDatumTest {
         Assert.assertEquals("value", newHeaders.getFirst(key1));
         Assert.assertEquals(value2, newHeaders.getFirst("key2"));
         Assert.assertEquals(value3, newHeaders.getFirst("key3"));
+    }
+    
+    @Test
+    public void testCreatingFromTextLine() {
+        // TODO KKr - create an Lfs that writes out a FetchedDatum as a TextLine, and then
+        // reads it back in.
+    }
+    
+    @Test
+    public void testToString() {
+        String url = "http://domain.com";
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("status code", "200");
+        FetchedDatum datum = new FetchedDatum(FetchStatusCode.FETCHED, HttpServletResponse.SC_OK, url, url, 0, headers, null, null, 0, null);
+
+        String result = datum.toString();
+        Assert.assertFalse(result.contains("FetchedDatum@"));
     }
 }

@@ -147,16 +147,14 @@ public class HttpClientFetcher implements IHttpFetcher {
             schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
             // FUTURE KKr - support https on port 443
 
-            // Create an HttpClient with the ThreadSafeClientConnManager.
-            // This connection manager must be used if more than one thread will
-            // be using the HttpClient.
+            // Use ThreadSafeClientConnManager since more than one thread will be using the HttpClient.
             ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
             _httpClient = new DefaultHttpClient(cm, params);
 
             params = _httpClient.getParams();
             // FUTURE KKr - support authentication
             HttpClientParams.setAuthenticating(params, false);
-            // TODO KKr - get from config.
+            // TODO KKr - get from fetch policy
             HttpClientParams.setRedirecting(params, true);
             HttpClientParams.setCookiePolicy(params, CookiePolicy.BEST_MATCH);
         }
@@ -178,6 +176,7 @@ public class HttpClientFetcher implements IHttpFetcher {
         
         HttpGet httpget = null;
         String url = scoredUrl.getNormalizedUrl();
+        int httpStatus = FetchedDatum.SC_UNKNOWN;
         
         try {
             LOGGER.trace("Fetching " + url);
@@ -193,18 +192,17 @@ public class HttpClientFetcher implements IHttpFetcher {
 
             long readStartTime = System.currentTimeMillis();
             HttpResponse response = _httpClient.execute(httpget);
-            int statusCode = response.getStatusLine().getStatusCode();
+            httpStatus = response.getStatusLine().getStatusCode();
 
             // Figure out how much data we want to try to fetch.
             int targetLength;
             FetchStatusCode fsCode;
-            if (statusCode == HttpStatus.SC_OK) {
+            if (httpStatus == HttpStatus.SC_OK) {
                 fsCode = FetchStatusCode.FETCHED;
                 targetLength = _fetcherPolicy.getMaxContentSize();
             } else {
                 fsCode = FetchStatusCode.ERROR;
-                // Even for an error case, we can use the response body data for
-                // debugging.
+                // Even for an error case, we can use the response body data for debugging.
                 targetLength = ERROR_CONTENT_LENGTH;
             }
 
@@ -273,9 +271,8 @@ public class HttpClientFetcher implements IHttpFetcher {
                     content = out.toByteArray();
                 } catch (Throwable t) {
                     // TODO KKr - will get get an interrupted exception here if
-                    // we are terminating
-                    // the fetch cycle due to hitting a time limit.
-                    if (statusCode == HttpStatus.SC_OK) {
+                    // we are terminating the fetch cycle due to hitting a time limit.
+                    if (httpStatus == HttpStatus.SC_OK) {
                         throw t;
                     }
 
@@ -296,7 +293,7 @@ public class HttpClientFetcher implements IHttpFetcher {
             String redirectedUrl = url;
             // TODO SG used the new enum here.Use different status than fetch if
             // you need to.
-            return new FetchedDatum(fsCode, url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, scoredUrl.getMetaDataMap());
+            return new FetchedDatum(fsCode, httpStatus, url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, scoredUrl.getMetaDataMap());
         } catch (Throwable t) {
             safeAbort(httpget);
 
@@ -304,7 +301,7 @@ public class HttpClientFetcher implements IHttpFetcher {
             // TODO KKr - use real status for exception, include exception msg
             // somehow.
             // TODO SG should we use FetchStatusCode.ERROR or NEVER_FTEHCED?
-            return new FetchedDatum(FetchStatusCode.ERROR, url, url, System.currentTimeMillis(), null, null, null, 0, scoredUrl.getMetaDataMap());
+            return new FetchedDatum(FetchStatusCode.ERROR, httpStatus, url, url, System.currentTimeMillis(), null, null, null, 0, scoredUrl.getMetaDataMap());
         }
     }
 
