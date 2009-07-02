@@ -542,4 +542,22 @@ public class SimpleRobotRulesTest {
         Assert.assertEquals("testing crawl delay for agent bixo - rule 2", SimpleRobotRules.DEFAULT_CRAWL_DELAY, crawlDelay);
       }
 
+    @Test
+    public void testBrokenKrugleRobotsTxtFile() throws MalformedURLException {
+        final String krugleRobotsTxt = "User-agent: *" + CR
+            + "Disallow: /maintenance.html" + CR
+            + "Disallow: /perl/" + CR
+            + "Disallow: /cgi-bin/" + CR
+            + "Disallow: /examples/" + CR
+            + "Crawl-delay: 3" + CR
+            + "" + CR
+            + "User-agent: googlebot" + CR
+            + "Crawl-delay: 1" + CR
+            + "" + CR
+            + "User-agent: qihoobot" + CR
+            + "Disallow: /";
+        
+        SimpleRobotRules rules = new SimpleRobotRules("googlebot/2.1", krugleRobotsTxt.getBytes());
+        Assert.assertTrue(rules.isAllowed("http://www.krugle.com/examples/index.html"));
+    }
 }
