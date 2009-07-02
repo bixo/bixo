@@ -18,6 +18,16 @@ public class HttpClientFetcherTest extends SimulationWebServer {
     private static final String USER_AGENT = "Bixo test agent";
     
     @Test
+    public final void testNoDomain() throws Exception {
+        IHttpFetcher fetcher = new HttpClientFetcher(1, USER_AGENT);
+        String url = "http://www.facebookxxxxx.com";
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
+
+        Assert.assertEquals(FetchedDatum.SC_UNKNOWN, result.getHttpStatus());
+        Assert.assertTrue(result.getHttpMsg().length() > 0);
+    }
+    
+    @Test
     public final void testSlowServerTermination() throws Exception {
         // Need to read in more than 2 8K blocks currently, due to how
         // HttpClientFetcher

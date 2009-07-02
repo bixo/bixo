@@ -100,7 +100,8 @@ public class TryKeepAlive {
     private static long tryNoKeepaliveHttp10(String[] urls) {
         long startTime = System.currentTimeMillis();
         for (String uri : urls) {
-            HttpClientFetcher fetcher = new HttpClientFetcher(1, HttpVersion.HTTP_1_0, new FetcherPolicy(), USER_AGENT);
+            HttpClientFetcher fetcher = new HttpClientFetcher(1, new FetcherPolicy(), USER_AGENT);
+            fetcher.setHttpVersion(HttpVersion.HTTP_1_0);
             fetcher.get(makeSUD(uri));
         }
         long stopTime = System.currentTimeMillis();
@@ -108,7 +109,8 @@ public class TryKeepAlive {
     }
     
     private static long tryHttp10(String[] urls) {
-        HttpClientFetcher fetcher = new HttpClientFetcher(1, HttpVersion.HTTP_1_0, new FetcherPolicy(), USER_AGENT);
+        HttpClientFetcher fetcher = new HttpClientFetcher(1, new FetcherPolicy(), USER_AGENT);
+        fetcher.setHttpVersion(HttpVersion.HTTP_1_0);
 
         long startTime = System.currentTimeMillis();
         for (String uri : urls) {
@@ -119,7 +121,9 @@ public class TryKeepAlive {
     }
     
     private static long tryHttp11(String[] urls) {
-        HttpClientFetcher fetcher = new HttpClientFetcher(10, HttpVersion.HTTP_1_1, new FetcherPolicy(), USER_AGENT);
+        HttpClientFetcher fetcher = new HttpClientFetcher(10, new FetcherPolicy(), USER_AGENT);
+        fetcher.setHttpVersion(HttpVersion.HTTP_1_1);
+
         long startTime = System.currentTimeMillis();
         for (String uri : urls) {
             fetcher.get(makeSUD(uri));
