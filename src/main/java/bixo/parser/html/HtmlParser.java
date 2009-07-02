@@ -83,7 +83,7 @@ public class HtmlParser implements IParser {
      * @param content <code>byte[]</code> representation of an html file
      */
 
-    private static String sniffCharacterEncoding(byte[] content) {
+    public static String sniffCharacterEncoding(byte[] content) {
         int length = content.length < CHUNK_SIZE ? 
                         content.length : CHUNK_SIZE;
 
