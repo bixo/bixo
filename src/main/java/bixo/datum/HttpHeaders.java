@@ -108,6 +108,8 @@ public class HttpHeaders {
             String encodedKey = encodeHeaderString(key);
             for (String value : values) {
                 result.append(encodedKey);
+                // TODO KKr - use ":" instead of tab, to avoid problems
+                // with parsing output of TextLine cascading tap (uses tabs)
                 result.append('\t');
                 result.append(encodeHeaderString(value));
                 result.append('\f');

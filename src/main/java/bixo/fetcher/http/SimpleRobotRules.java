@@ -227,6 +227,30 @@ public class SimpleRobotRules implements IRobotRules {
         return _robotRules.isAllowed(path.toLowerCase());
     }
     
+    // TODO KKr - catch & report/log issues with the file
+    // contains HTML
+    // has unknown directives
+    // missing user-agent: (got directives other than sitemap before first user-agent)
+    // no allow/disallow directive - e.g. Google skips crawl-delay:
+    // missing ':' after field name
+    // misspelled field names (dissallow, useragent, user-agents)
+    // multiple agent names on one line
+    // multiple matches for agent name (two sections for '*', for example)
+    // conflicting rules (allow & disallow specified for same prefix)
+    // invalid path (doesn't start with '/', contains invalid URL characters)
+    // uses Google wildcard syntax
+    // relies on Google longest path ordering (has longer prefix after shorter prefix)
+    // multiple sitemaps
+    // multiple crawl delays in same record
+    // multiple allows or disallows w/same prefix in same record
+    // wildcard in user agent name
+    // invalid user agent name (restricted charset from RFP)
+    // invalid crawl delay value
+    // out-of-bounds crawl delay value
+    // invalid sitemap URL
+    // mixed domain sitemap URL - must be from same domain as where we got robots.txt?
+    // file size exceeds bounds (e.g. 32K)
+    // 
     /**
      * Parse the indicated robots.txt file and set up our internal state with the results.
      * 
