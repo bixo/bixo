@@ -8,6 +8,7 @@ build.properties
 build.sh
 *.iml
 *.dot
+*.hprof
 trash
 private
 extras/webgraph/tmp
