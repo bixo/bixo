@@ -24,8 +24,11 @@ package bixo.fetcher.http;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Map;
 
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.http.Header;
@@ -153,28 +156,15 @@ public class HttpClientFetcher implements IHttpFetcher {
         }
     }
 
-    @Override
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) {
-        init();
-        
-        HttpGet httpget = null;
-        String url = scoredUrl.getNormalizedUrl();
+    @SuppressWarnings("unchecked")
+    private FetchedDatum doGet(String url, Map<String, Comparable> metaData) throws IOException, URISyntaxException {
+        LOGGER.trace("Fetching " + url);
+        HttpGet getter = new HttpGet(new URI(url));
         int httpStatus = FetchedDatum.SC_UNKNOWN;
         
         try {
-            LOGGER.trace("Fetching " + url);
-            httpget = new HttpGet(new URI(url));
-            // FUTURE KKr - support If-Modified-Since header
-            // TODO KKr get host from meta-data
-//            if (host != null) {
-//                // Set the host explicitly, in case we're using IP addresses, so
-//                // that
-//                // domain handling works on the target server.
-//                httpget.addHeader("Host", host);
-//            }
-
             long readStartTime = System.currentTimeMillis();
-            HttpResponse response = _httpClient.execute(httpget);
+            HttpResponse response = _httpClient.execute(getter);
             httpStatus = response.getStatusLine().getStatusCode();
 
             // Figure out how much data we want to try to fetch.
@@ -185,6 +175,7 @@ public class HttpClientFetcher implements IHttpFetcher {
                 targetLength = _fetcherPolicy.getMaxContentSize();
             } else {
                 fsCode = FetchStatusCode.ERROR;
+
                 // Even for an error case, we can use the response body data for debugging.
                 targetLength = ERROR_CONTENT_LENGTH;
             }
@@ -194,7 +185,7 @@ public class HttpClientFetcher implements IHttpFetcher {
             for (Header header : headers) {
                 headerMap.add(header.getName(), header.getValue());
             }
-            
+
             String contentLength = headerMap.getFirst(IHttpHeaders.CONTENT_LENGTH);
             if (contentLength != null) {
                 try {
@@ -207,8 +198,7 @@ public class HttpClientFetcher implements IHttpFetcher {
 
             // Now finally read in response body, up to targetLength bytes.
             // FUTURE KKr - use content-type to exclude/include data, as that's
-            // a more accurate
-            // way to skip unwanted content versus relying on suffix.
+            // a more accurate way to skip unwanted content versus relying on suffix.
             byte[] content = null;
             long readRate = 0;
             HttpEntity entity = response.getEntity();
@@ -244,7 +234,7 @@ public class HttpClientFetcher implements IHttpFetcher {
                         // Also don't bail if we've read everything we need.
                         if ((readRequests > 1) && (totalRead < targetLength) && (readRate < minResponseRate)) {
                             fsCode = FetchStatusCode.ABORTED;
-                            safeAbort(httpget);
+                            safeAbort(getter);
                             break;
                         }
 
@@ -252,16 +242,22 @@ public class HttpClientFetcher implements IHttpFetcher {
                     }
 
                     content = out.toByteArray();
-                } catch (Throwable t) {
-                    // TODO KKr - will get get an interrupted exception here if
-                    // we are terminating the fetch cycle due to hitting a time limit.
-                    if (httpStatus == HttpStatus.SC_OK) {
-                        throw t;
+                } catch (IOException e) {
+                    // We don't need to abort if there's an IOException
+                    
+                    if (fsCode == FetchStatusCode.FETCHED) {
+                        throw e;
+                    } else {
+                        // Ignore exceptions that happen while we're just reading in content for the fetch failed case.
                     }
-
-                    // If we're just trying to read in content for an error
-                    // case,
-                    // we are OK with empty content
+                } catch (RuntimeException e) {
+                    safeAbort(getter);
+                    
+                    if (fsCode == FetchStatusCode.FETCHED) {
+                        throw e;
+                    } else {
+                        // Ignore exceptions that happen while we're just reading in content for the fetch failed case.
+                    }
                 } finally {
                     // Make sure the connection is released immediately.
                     safeClose(in);
@@ -276,29 +272,50 @@ public class HttpClientFetcher implements IHttpFetcher {
             String redirectedUrl = url;
             // TODO SG used the new enum here.Use different status than fetch if
             // you need to.
-            return new FetchedDatum(fsCode, httpStatus, url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, scoredUrl.getMetaDataMap());
-        } catch (Throwable t) {
-            safeAbort(httpget);
-
-            LOGGER.debug("Exception while fetching url " + url, t);
+            return new FetchedDatum(fsCode, httpStatus, url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
+        } catch (Exception e) {
+            LOGGER.debug("Exception while fetching url " + url, e);
             // TODO KKr - use real status for exception, include exception msg somehow. Could create a more
             // generic fetch status, that has a fetch status code, http status, message, etc. and a call to
             // return true if the fetch succeeded, and another to return true if the fetch failed. Both might
             // be false if the fetch was aborted, for example. Cheesy hack is to use a special header value
             // that has the exception in it. Though putting errors inside of "fetched datum" seems a bit odd
             // to begin with, as this is something that hasn't actually been fetched.
-            
-            FetchedDatum result = new FetchedDatum(FetchStatusCode.ERROR, httpStatus, url, url, System.currentTimeMillis(), null, null, null, 0, scoredUrl.getMetaDataMap());
-            result.setHttpMsg(t.getClass().getSimpleName() + ": " + t.getMessage());
-            return result;
+
+            return FetchedDatum.createErrorDatum(url, e.getClass().getSimpleName() + ": " + e.getMessage(), metaData);
         }
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Override
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) {
+        init();
+        
+        String msg = "";
+        String url = scoredUrl.getNormalizedUrl();
+        Map<String, Comparable> metaData = scoredUrl.getMetaDataMap();
+        
+        // Because of potentially stale connections, we need to retry if we get an IOException
+        for (int i = 0; i < 2; i++) {
+            try {
+                return doGet(url, metaData);
+            } catch (IOException e) {
+                // Ignore, so we'll try N times.
+                LOGGER.debug("Retrying HTTP GET request - potentially stale connection");
+                msg = e.getMessage();
+            } catch (URISyntaxException e) {
+                return FetchedDatum.createErrorDatum(url, e.getMessage(), metaData);
+            }
+        }
+        
+        return FetchedDatum.createErrorDatum(url, msg, metaData);
     }
 
     private static void safeClose(Closeable o) {
         try {
             o.close();
         } catch (Exception e) {
-            
+            // Ignore any errors
         }
     }
     
