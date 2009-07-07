@@ -62,6 +62,13 @@ public class FetchedDatum extends BaseDatum {
         _headers = headers;
     }
 
+    @SuppressWarnings("unchecked")
+    public static FetchedDatum createErrorDatum(String url, String msg, Map<String, Comparable> metaData) {
+        FetchedDatum result = new FetchedDatum(FetchStatusCode.ERROR, FetchedDatum.SC_UNKNOWN, url, url, System.currentTimeMillis(), null, null, null, 0, metaData);
+        result.setHttpMsg(msg);
+        return result;
+    }
+    
     public FetchStatusCode getStatusCode() {
         return _statusCode;
     }
