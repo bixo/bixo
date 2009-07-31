@@ -102,8 +102,7 @@ public class NodeWalker {
   }
   
   /**
-   * Returns true if there are more nodes on the current stack.
-   * @return
+   * @return true if there are more nodes on the current stack.
    */
   public boolean hasNext() {
     return (nodes.size() > 0);

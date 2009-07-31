@@ -198,7 +198,7 @@ public class EncodingDetector {
     /**
      * Guess the encoding with the previously specified list of clues.
      *
-     * @param content Content instance
+     * @param fetchedDatum container for fetched content
      * @param defaultValue Default encoding to return if no encoding can be
      * detected with enough confidence. Note that this will <b>not</b> be
      * normalized with {@link EncodingDetector#resolveEncodingAlias}

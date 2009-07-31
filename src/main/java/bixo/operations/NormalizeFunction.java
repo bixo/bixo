@@ -18,7 +18,7 @@ public class NormalizeFunction extends BaseOperation implements Function {
     /**
      * Create Cascading function to create normalized URL field from input URL field
      * 
-     * @param inputField - Field that contains the input URL
+     * @param inputFieldName - Name of field that contains the input URL
      * @param outputField - Field that contains the normalized URL
      * @param urlNormalizer - Class to use for normalization
      */

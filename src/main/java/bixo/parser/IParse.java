@@ -18,7 +18,8 @@
 package bixo.parser;
 
 /** The result of parsing a page's raw content.
- * @see Parser#getParse(Content)
+ * 
+ * @see bixo.parser.html.HtmlParser#getParse(FetchedDatum)
  */
 public interface IParse {
   

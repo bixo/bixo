@@ -66,7 +66,8 @@ public class ParseResult implements Iterable<Map.Entry<Text, IParse>> {
 
     /**
      * Checks whether the result is empty.
-     * @return
+     * 
+     * @return true if there are no parse results.
      */
     public boolean isEmpty() {
         return parseMap.isEmpty();

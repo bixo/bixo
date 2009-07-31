@@ -17,7 +17,7 @@ import org.mortbay.http.handler.AbstractHttpHandler;
 /**
  * A webserver serving content out of a webgraph.
  * 
- * @see webgraph.dsi.unimi.it/
+ * @see <a href="http://webgraph.dsi.unimi.it/">WebGraph framework</a>
  * 
  */
 public class WebgraphWebServer extends SimulationWebServer {
@@ -49,6 +49,7 @@ public class WebgraphWebServer extends SimulationWebServer {
 
     }
 
+    @SuppressWarnings("serial")
     private class WebgraphHandler extends AbstractHttpHandler {
 
         private static final String NODE = "/node/";

@@ -302,20 +302,20 @@ SOFTWARE.
 	<target name="doc" depends="compile" description="--> create javadoc">
 		<mkdir dir="${build.javadoc}" />
 		<ivy:cachepath pathid="build.path.id" conf="compile" />
-		<javadoc packagenames="sf.net.katta"
+		<javadoc packagenames="${doc.package}"
 		         destdir="${build.javadoc}"
 		         author="true"
 		         version="true"
 		         use="true"
 		         windowtitle="${name} ${version} API"
 		         doctitle="${name} ${version} API"
-		         bottom="Copyright &amp;copy; ${year} 101tec Inc.">
+		         bottom="Copyright &amp;copy; ${doc.year} 101tec Inc.">
 			<packageset dir="${main.src.dir}" />
 			<link href="${javadoc.link.java}" />
 			<classpath>
 				<path refid="build.path.id" />
 			</classpath>
-			<group title="katta" packages="sf.net.katta*" />
+			<group title="${doc.title}" packages="${doc.package}*" />
 		</javadoc>
 	</target>
 </project>
