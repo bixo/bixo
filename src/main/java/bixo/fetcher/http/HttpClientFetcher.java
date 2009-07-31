@@ -264,8 +264,8 @@ public class HttpClientFetcher implements IHttpFetcher {
                 }
             }
 
-            // Note that getContentType can return null
-            String contentType = entity.getContentType().getValue();
+            // Note that getContentType can return null, e.g. if we got a 404 (not found) error.
+            String contentType = entity.getContentType() == null ? null : entity.getContentType().getValue();
 
             // TODO KKr - handle redirects, real content type, what about
             // charset? Do we need to capture HTTP headers?
