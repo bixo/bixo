@@ -1,8 +1,15 @@
 package bixo.fetcher.http;
 
+import java.io.IOException;
+
 import org.junit.Assert;
 import org.junit.Test;
+import org.mortbay.http.HttpException;
+import org.mortbay.http.HttpListener;
+import org.mortbay.http.HttpRequest;
+import org.mortbay.http.HttpResponse;
 import org.mortbay.http.HttpServer;
+import org.mortbay.http.SocketListener;
 
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
@@ -17,6 +24,35 @@ import bixo.fetcher.simulation.SimulationWebServer;
 public class HttpClientFetcherTest extends SimulationWebServer {
     private static final String USER_AGENT = "Bixo test agent";
     
+    @SuppressWarnings("serial")
+    private class TerminatingHandler extends ResourcesResponseHandler {
+        
+        private boolean _firstRequest = true;
+        private HttpServer _server;
+        
+        public void setServer(HttpServer server) {
+            _server = server;
+        }
+        
+        @Override
+        public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+            if (_firstRequest) {
+                _firstRequest = false;
+                super.handle(pathInContext, pathParams, request, response);
+            } else {
+                // Need to terminate the connection.
+                response.getOutputStream().close();
+                
+                try {
+                    _server.stop(false);
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+    
     @Test
     public final void testNoDomain() throws Exception {
         IHttpFetcher fetcher = new HttpClientFetcher(1, USER_AGENT);
@@ -25,6 +61,27 @@ public class HttpClientFetcherTest extends SimulationWebServer {
 
         Assert.assertEquals(FetchedDatum.SC_UNKNOWN, result.getHttpStatus());
         Assert.assertTrue(result.getHttpMsg().length() > 0);
+    }
+    
+    @Test
+    public final void testStaleConnection() throws Exception {
+        HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
+        SocketListener sl = (SocketListener)server.getListeners()[0];
+        sl.setLingerTimeSecs(-1);
+
+        IHttpFetcher fetcher = new HttpClientFetcher(1, USER_AGENT);
+        String url = "http://localhost:8089/simple-page.html";
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
+        Assert.assertEquals(FetchStatusCode.FETCHED, result.getStatusCode());
+        
+        // TODO KKr - control keep-alive (linger?) value for Jetty, so we can set it
+        // to something short and thus make this sleep delay much shorter.
+        Thread.sleep(2000);
+        
+        result = fetcher.get(new ScoredUrlDatum(url));
+        server.stop();
+        
+        Assert.assertEquals(FetchStatusCode.FETCHED, result.getStatusCode());
     }
     
     @Test
