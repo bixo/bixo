@@ -101,7 +101,7 @@ SOFTWARE.
 
 	<target name="job"
 	        depends="compile"
-	        description="creates a Hadoop ready jar will all dependencies">
+	        description="--> creates a Hadoop ready jar with all dependencies">
 
 		<ivy:cachepath pathid="job.path.id" conf="job" />
 		<copy todir="${build.dir}/lib" flatten="true">
@@ -181,7 +181,9 @@ SOFTWARE.
 	<!-- Generating eclipse file                                            -->
 	<!-- ================================================================== -->
 
-	<target name="eclipse" depends="resolve, clean-eclipse">
+	<target name="eclipse"
+		depends="resolve, clean-eclipse"
+		description="--> creates Eclipse project files">
 
 		<ivy:cachepath pathid="eclipse.path.id" conf="eclipse" />
 		<ivy:cachepath pathid="test.path.id" conf="test" />
