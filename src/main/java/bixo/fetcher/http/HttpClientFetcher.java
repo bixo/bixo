@@ -71,7 +71,8 @@ public class HttpClientFetcher implements IHttpFetcher {
     private static final int DEFAULT_SOCKET_TIMEOUT = 30 * 1000;
     private static final int DEFAULT_CONNECTION_TIMEOUT = 30 * 1000;
     
-    // This should never actually be a timeout we hit.
+    // This should never actually be a timeout we hit, since we manage the number of
+    // fetcher threads to be <= the maxThreads value used to configure an IHttpFetcher.
     private static final long CONNECTION_POOL_TIMEOUT = 20 * 1000L;
     
     private static final int ERROR_CONTENT_LENGTH = 1024;
@@ -186,6 +187,8 @@ public class HttpClientFetcher implements IHttpFetcher {
                 headerMap.add(header.getName(), header.getValue());
             }
 
+            // Get the length from the headers. If we don't get a length, not sure what
+            // the right thing to do is.
             String contentLength = headerMap.getFirst(IHttpHeaders.CONTENT_LENGTH);
             if (contentLength != null) {
                 try {
@@ -219,26 +222,29 @@ public class HttpClientFetcher implements IHttpFetcher {
                     // metrics support for how to do this. Once we fix this, fix
                     // the test to read a smaller (< 20K)
                     // chuck of data.
-                    while ((totalRead < targetLength) && 
-                                    ((bytesRead = in.read(buffer, 0, Math.min(buffer.length, targetLength - totalRead))) != -1)) {
+                    while ((bytesRead = in.read(buffer, 0, Math.min(buffer.length, targetLength - totalRead))) != -1) {
                         readRequests += 1;
                         totalRead += bytesRead;
+                        out.write(buffer, 0, bytesRead);
 
-                        // Assume read time is at least one microsecond, to
-                        // avoid DBZ exception.
+                        // Assume read time is at least one microsecond, to avoid DBZ exception.
                         long totalReadTime = Math.max(1, System.currentTimeMillis() - readStartTime);
                         readRate = (totalRead * 1000L) / totalReadTime;
 
-                        // Don't bail on the first read cycle, as we can get a
-                        // hiccup starting out.
+                        // Don't bail on the first read cycle, as we can get a hiccup starting out.
                         // Also don't bail if we've read everything we need.
                         if ((readRequests > 1) && (totalRead < targetLength) && (readRate < minResponseRate)) {
                             fsCode = FetchStatusCode.ABORTED;
                             safeAbort(getter);
                             break;
                         }
-
-                        out.write(buffer, 0, bytesRead);
+                        
+                        // Do explicit abort if we're truncating, as that's the only safe way to terminate
+                        // a keep-alive connection.
+                        if (totalRead >= targetLength) {
+                            safeAbort(getter);
+                            break;
+                        }
                     }
 
                     content = out.toByteArray();
