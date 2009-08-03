@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.tools;
 
 import java.util.Random;
 
@@ -30,6 +30,10 @@ import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.ScoredUrlDatum;
+import bixo.fetcher.FetcherManager;
+import bixo.fetcher.FetcherQueue;
+import bixo.fetcher.FetcherQueueMgr;
+import bixo.fetcher.simulation.FakeHttpFetcher;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 

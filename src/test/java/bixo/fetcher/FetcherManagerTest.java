@@ -10,6 +10,7 @@ import bixo.datum.FetchStatusCode;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.http.HttpClientFetcher;
 import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.SimulationWebServer;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;

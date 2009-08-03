@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.tools;
 
 import java.io.File;
 import java.net.MalformedURLException;

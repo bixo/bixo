@@ -1,4 +1,4 @@
-package bixo.fetcher;
+package bixo.tools;
 
 import java.net.InetAddress;
 import java.net.MalformedURLException;

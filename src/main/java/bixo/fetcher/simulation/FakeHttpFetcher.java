@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher;
+package bixo.fetcher.simulation;
 
 import java.net.URL;
 import java.util.Random;
