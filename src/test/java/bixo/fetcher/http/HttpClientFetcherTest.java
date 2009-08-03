@@ -1,13 +1,7 @@
 package bixo.fetcher.http;
 
-import java.io.IOException;
-
 import org.junit.Assert;
 import org.junit.Test;
-import org.mortbay.http.HttpException;
-import org.mortbay.http.HttpListener;
-import org.mortbay.http.HttpRequest;
-import org.mortbay.http.HttpResponse;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
 
@@ -17,41 +11,10 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.RandomResponseHandler;
 import bixo.fetcher.ResourcesResponseHandler;
-import bixo.fetcher.http.HttpClientFetcher;
-import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.SimulationWebServer;
 
 public class HttpClientFetcherTest extends SimulationWebServer {
     private static final String USER_AGENT = "Bixo test agent";
-    
-    @SuppressWarnings("serial")
-    private class TerminatingHandler extends ResourcesResponseHandler {
-        
-        private boolean _firstRequest = true;
-        private HttpServer _server;
-        
-        public void setServer(HttpServer server) {
-            _server = server;
-        }
-        
-        @Override
-        public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
-            if (_firstRequest) {
-                _firstRequest = false;
-                super.handle(pathInContext, pathParams, request, response);
-            } else {
-                // Need to terminate the connection.
-                response.getOutputStream().close();
-                
-                try {
-                    _server.stop(false);
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }
-    }
     
     @Test
     public final void testNoDomain() throws Exception {
@@ -138,6 +101,28 @@ public class HttpClientFetcherTest extends SimulationWebServer {
         server.stop();
 
         Assert.assertTrue("Content size should be truncated", result.getContent().getLength() <= policy.getMaxContentSize());
+    }
+    
+    @Test
+    public final void testTruncationWithKeepAlive() throws Exception {
+        HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
+
+        FetcherPolicy policy = new FetcherPolicy();
+        policy.setMaxContentSize(1000);
+        IHttpFetcher fetcher = new HttpClientFetcher(1, policy, USER_AGENT);
+        
+        ScoredUrlDatum datumToFetch = new ScoredUrlDatum("http://localhost:8089/karlie.html");
+        
+        FetchedDatum result1 = fetcher.get(datumToFetch);
+        Assert.assertEquals(FetchStatusCode.FETCHED, result1.getStatusCode());
+        
+        FetchedDatum result2 = fetcher.get(datumToFetch);
+        Assert.assertEquals(FetchStatusCode.FETCHED, result2.getStatusCode());
+
+        // Verify that we got the same data from each fetch request.
+        Assert.assertEquals(result1.getContent(), result2.getContent());
+
+        server.stop();
     }
     
     @Test
