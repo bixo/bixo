@@ -33,7 +33,9 @@ public class ScoreFunction extends BaseOperation<NullContext> implements Functio
 
         try {
             generatedScore = _scoreGenerator.generateScore(groupedUrl);
-            funCall.getOutputCollector().add(new Tuple(generatedScore));
+            if (generatedScore != IScoreGenerator.SKIP_URL_SCORE) {
+                funCall.getOutputCollector().add(new Tuple(generatedScore));
+            }
         } catch (IOException e) {
             // we throw the exception here to get this data into the trap
             throw new RuntimeException("Unable to generate score for: " + groupedUrl, e);

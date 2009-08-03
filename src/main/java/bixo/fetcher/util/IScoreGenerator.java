@@ -28,7 +28,8 @@ import java.io.Serializable;
 import bixo.datum.GroupedUrlDatum;
 
 public interface IScoreGenerator extends Serializable {
-
+    public static final double SKIP_URL_SCORE = Double.NEGATIVE_INFINITY;
+    
     double generateScore(GroupedUrlDatum urlTuple) throws IOException;
 
 }

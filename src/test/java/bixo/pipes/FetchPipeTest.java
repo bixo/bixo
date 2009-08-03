@@ -14,9 +14,11 @@ import bixo.config.FetcherPolicy;
 import bixo.datum.BaseDatum;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
+import bixo.datum.GroupedUrlDatum;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.FakeHttpFetcher;
 import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.simulation.FakeHttpFetcher;
+import bixo.fetcher.util.IScoreGenerator;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
 import bixo.operations.FetcherBuffer;
@@ -43,6 +45,15 @@ public class FetchPipeTest extends CascadingTestCase {
 
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
 
+    @SuppressWarnings("serial")
+    private static class SkippedScoreGenerator implements IScoreGenerator {
+
+        @Override
+        public double generateScore(GroupedUrlDatum urlTuple) throws IOException {
+            return IScoreGenerator.SKIP_URL_SCORE;
+        }
+    }
+    
     private Lfs makeInputData(int numDomains, int numPages) throws IOException {
         return makeInputData(numDomains, numPages, null);
     }
@@ -126,6 +137,30 @@ public class FetchPipeTest extends CascadingTestCase {
         }
         
         Assert.assertEquals(1, totalEntries);
+    }
+    
+    @Test
+    public void testSkippingURLsByScore() throws Exception {
+        Lfs in = makeInputData(1, 1);
+
+        Pipe pipe = new Pipe("urlSource");
+        IUrlNormalizer urlNormalizer = new UrlNormalizer();
+        PLDGrouping grouping = new PLDGrouping();
+        IScoreGenerator scoring = new SkippedScoreGenerator();
+        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
+        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
+        
+        String outputPath = "build/test-data/FetchPipeTest/out";
+        Tap out = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath, true);
+
+        // Finally we can run it.
+        FlowConnector flowConnector = new FlowConnector();
+        Flow flow = flowConnector.connect(in, out, fetchPipe);
+        flow.complete();
+        
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        Assert.assertFalse(tupleEntryIterator.hasNext());
     }
     
     @Test
