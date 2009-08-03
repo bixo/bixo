@@ -23,10 +23,15 @@
 package bixo.fetcher;
 
 import java.io.File;
+import java.io.IOException;
+
+import junit.framework.Assert;
 
 import org.apache.hadoop.fs.FileUtil;
 import org.junit.Test;
 
+import bixo.config.FakeUserFetcherPolicy;
+import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.HttpClientFetcher;
 import bixo.fetcher.http.IHttpFetcher;
@@ -43,25 +48,30 @@ import cascading.pipe.Pipe;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Lfs;
 import cascading.tuple.Fields;
+import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 
 public class FetcherTest {
     private static final long TEN_DAYS = 1000 * 60 * 60 * 24 * 10;
 
-    @Test
-    public void testRunFetcher() throws Exception {
-        // create url db
-        String workingFolder = "build/test-data/FetcherTest/working";
+    private static final String USER_AGENT = "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.2) Gecko/2008092313 Ubuntu/8.04 (hardy) Firefox/3.1.6";
+    
+    private String makeUrlDB(String workingFolder, String inputPath) throws IOException {
 
-        // we might dont want to regenerate that all the time..
+        // We don't want to regenerate this DB all the time.
         if (!new File(workingFolder, UrlImporter.URL_DB_NAME).exists()) {
             UrlImporter urlImporter = new UrlImporter();
-            String inputPath = "src/test-data/top10urls.txt";
             FileUtil.fullyDelete(new File(workingFolder));
             urlImporter.importUrls(inputPath, workingFolder);
         }
 
-        String inputPath = workingFolder + "/" + UrlImporter.URL_DB_NAME;
+        return workingFolder + "/" + UrlImporter.URL_DB_NAME;
+    }
+    
+    @Test
+    public void testStaleConnection() throws Exception {
+        String workingFolder = "build/test-data/FetcherTest-stale/working";
+        String inputPath = makeUrlDB(workingFolder, "src/test-data/facebook-artists.txt");
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
         String outPath = workingFolder + "/" + "FetcherTest" + TimeStampUtil.nowWithUnderLine();
         Lfs out = new Lfs(new SequenceFile(Fields.ALL), outPath, true);
@@ -72,18 +82,49 @@ public class FetcherTest {
         PLDGrouping grouping = new PLDGrouping();
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         
-        // TODO KKr - use real user agent name here.
-        IHttpFetcher fetcher = new HttpClientFetcher(10, "Bixo integration test");
+        IHttpFetcher fetcher = new HttpClientFetcher(10, new FakeUserFetcherPolicy(5), USER_AGENT);
         FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
 
         FlowConnector flowConnector = new FlowConnector();
 
         Flow flow = flowConnector.connect(in, out, fetchPipe);
         flow.complete();
+    }
+
+    @Test
+    public void testRunFetcher() throws Exception {
+        String workingFolder = "build/test-data/FetcherTest-run/working";
+        String inputPath = makeUrlDB(workingFolder, "src/test-data/top10urls.txt");
+        Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
+        String outPath = workingFolder + "/" + "FetcherTest" + TimeStampUtil.nowWithUnderLine();
+        Lfs out = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath, true);
+
+        Pipe pipe = new Pipe("urlSource");
+
+        IUrlNormalizer urlNormalizer = new UrlNormalizer();
+        PLDGrouping grouping = new PLDGrouping();
+        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
+        
+        IHttpFetcher fetcher = new HttpClientFetcher(10, USER_AGENT);
+        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
+
+        FlowConnector flowConnector = new FlowConnector();
+
+        Flow flow = flowConnector.connect(in, out, fetchPipe);
+        flow.complete();
+        
+        // Test for 10 good fetches.
+        Fields metaDataFields = new Fields();
+        int fetchedPages = 0;
         TupleEntryIterator openSink = flow.openSink();
         while (openSink.hasNext()) {
-            System.out.println(openSink.next());
+            TupleEntry entry = openSink.next();
+            FetchedDatum datum = new FetchedDatum(entry, metaDataFields);
+            Assert.assertEquals(200, datum.getHttpStatus());
+            fetchedPages += 1;
         }
 
+        Assert.assertEquals(10, fetchedPages);
     }
+    
 }
