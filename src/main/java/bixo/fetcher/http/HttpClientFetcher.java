@@ -30,13 +30,18 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Map;
 
+import javax.net.ssl.SSLHandshakeException;
+
+import org.apache.commons.httpclient.NoHttpResponseException;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.params.CookiePolicy;
@@ -54,6 +59,8 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
@@ -76,8 +83,9 @@ public class HttpClientFetcher implements IHttpFetcher {
     private static final long CONNECTION_POOL_TIMEOUT = 20 * 1000L;
     
     private static final int ERROR_CONTENT_LENGTH = 1024;
-    public static final int BUFFER_SIZE = 8 * 1024;
-
+    private static final int BUFFER_SIZE = 8 * 1024;
+    private static final int MAX_RETRY_COUNT = 3;
+    
     private int _maxThreads;
     private HttpVersion _httpVersion;
     private int _socketTimeout;
@@ -85,7 +93,29 @@ public class HttpClientFetcher implements IHttpFetcher {
     private FetcherPolicy _fetcherPolicy;
     private String _userAgent;
     
-    transient private HttpClient _httpClient;
+    transient private DefaultHttpClient _httpClient;
+    
+    private static class MyRequestRetryHandler implements HttpRequestRetryHandler {
+
+        @Override
+        public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
+            if (executionCount >= MAX_RETRY_COUNT) {
+                // Do not retry if over max retry count
+                return false;
+            } else if (exception instanceof NoHttpResponseException) {
+                // Retry if the server dropped connection on us
+                return true;
+            } else if (exception instanceof SSLHandshakeException) {
+                // Do not retry on SSL handshake exception
+                return false;
+            }
+            
+            HttpRequest request = (HttpRequest)context.getAttribute(ExecutionContext.HTTP_REQUEST);
+            boolean idempotent = !(request instanceof HttpEntityEnclosingRequest); 
+            // Retry if the request is considered idempotent 
+            return idempotent;
+        }
+    }
     
     // TODO KKr - create UserAgent bean that's passed in here, which has
     // separate fields for email, web site, name.
@@ -158,9 +188,9 @@ public class HttpClientFetcher implements IHttpFetcher {
     }
 
     @SuppressWarnings("unchecked")
-    private FetchedDatum doGet(String url, Map<String, Comparable> metaData) throws IOException, URISyntaxException {
-        LOGGER.trace("Fetching " + url);
-        HttpGet getter = new HttpGet(new URI(url));
+    private FetchedDatum doGet(URI uri, Map<String, Comparable> metaData) {
+        LOGGER.trace("Fetching " + uri);
+        HttpGet getter = new HttpGet(uri);
         int httpStatus = FetchedDatum.SC_UNKNOWN;
         
         try {
@@ -189,13 +219,19 @@ public class HttpClientFetcher implements IHttpFetcher {
 
             // Get the length from the headers. If we don't get a length, not sure what
             // the right thing to do is.
-            String contentLength = headerMap.getFirst(IHttpHeaders.CONTENT_LENGTH);
-            if (contentLength != null) {
+            boolean truncated = false;
+            String contentLengthStr = headerMap.getFirst(IHttpHeaders.CONTENT_LENGTH);
+            if (contentLengthStr != null) {
                 try {
-                    targetLength = Math.min(targetLength, Integer.parseInt(contentLength));
+                    int contentLength = Integer.parseInt(contentLengthStr);
+                    if (contentLength > targetLength) {
+                        truncated = true;
+                    } else {
+                        targetLength = contentLength;
+                    }
                 } catch (NumberFormatException e) {
                     // Ignore (and log) invalid content length values.
-                    LOGGER.warn("Invalid content length in header: " + contentLength);
+                    LOGGER.warn("Invalid content length in header: " + contentLengthStr);
                 }
             }
 
@@ -222,7 +258,8 @@ public class HttpClientFetcher implements IHttpFetcher {
                     // metrics support for how to do this. Once we fix this, fix
                     // the test to read a smaller (< 20K)
                     // chuck of data.
-                    while ((bytesRead = in.read(buffer, 0, Math.min(buffer.length, targetLength - totalRead))) != -1) {
+                    while ((totalRead < targetLength) &&
+                           ((bytesRead = in.read(buffer, 0, Math.min(buffer.length, targetLength - totalRead))) != -1)) {
                         readRequests += 1;
                         totalRead += bytesRead;
                         out.write(buffer, 0, bytesRead);
@@ -238,13 +275,12 @@ public class HttpClientFetcher implements IHttpFetcher {
                             safeAbort(getter);
                             break;
                         }
-                        
-                        // Do explicit abort if we're truncating, as that's the only safe way to terminate
-                        // a keep-alive connection.
-                        if (totalRead >= targetLength) {
-                            safeAbort(getter);
-                            break;
-                        }
+                    }
+
+                    // Do explicit abort if we're truncating, as that's the only safe way to terminate
+                    // a keep-alive connection.
+                    if (truncated || (in.available() > 0)) {
+                        safeAbort(getter);
                     }
 
                     content = out.toByteArray();
@@ -275,12 +311,12 @@ public class HttpClientFetcher implements IHttpFetcher {
 
             // TODO KKr - handle redirects, real content type, what about
             // charset? Do we need to capture HTTP headers?
-            String redirectedUrl = url;
+            String redirectedUrl = uri.toString();
             // TODO SG used the new enum here.Use different status than fetch if
             // you need to.
-            return new FetchedDatum(fsCode, httpStatus, url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
+            return new FetchedDatum(fsCode, httpStatus, uri.toString(), redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
         } catch (Exception e) {
-            LOGGER.debug("Exception while fetching url " + url, e);
+            LOGGER.debug("Exception while fetching url " + uri, e);
             // TODO KKr - use real status for exception, include exception msg somehow. Could create a more
             // generic fetch status, that has a fetch status code, http status, message, etc. and a call to
             // return true if the fetch succeeded, and another to return true if the fetch failed. Both might
@@ -288,7 +324,7 @@ public class HttpClientFetcher implements IHttpFetcher {
             // that has the exception in it. Though putting errors inside of "fetched datum" seems a bit odd
             // to begin with, as this is something that hasn't actually been fetched.
 
-            return FetchedDatum.createErrorDatum(url, e.getClass().getSimpleName() + ": " + e.getMessage(), metaData);
+            return FetchedDatum.createErrorDatum(uri.toString(), e.getClass().getSimpleName() + ": " + e.getMessage(), metaData);
         }
     }
     
@@ -296,25 +332,16 @@ public class HttpClientFetcher implements IHttpFetcher {
     @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) {
         init();
-        
-        String msg = "";
+
         String url = scoredUrl.getNormalizedUrl();
         Map<String, Comparable> metaData = scoredUrl.getMetaDataMap();
         
-        // Because of potentially stale connections, we need to retry if we get an IOException
-        for (int i = 0; i < 2; i++) {
-            try {
-                return doGet(url, metaData);
-            } catch (IOException e) {
-                // Ignore, so we'll try N times.
-                LOGGER.debug("Retrying HTTP GET request - potentially stale connection");
-                msg = e.getMessage();
-            } catch (URISyntaxException e) {
-                return FetchedDatum.createErrorDatum(url, e.getMessage(), metaData);
-            }
+        try {
+            URI uri = new URI(url);
+            return doGet(uri, metaData);
+        } catch (URISyntaxException e) {
+            return FetchedDatum.createErrorDatum(url, e.getMessage(), metaData);
         }
-        
-        return FetchedDatum.createErrorDatum(url, msg, metaData);
     }
 
     private static void safeClose(Closeable o) {
@@ -383,7 +410,8 @@ public class HttpClientFetcher implements IHttpFetcher {
             // Use ThreadSafeClientConnManager since more than one thread will be using the HttpClient.
             ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
             _httpClient = new DefaultHttpClient(cm, params);
-
+            _httpClient.setHttpRequestRetryHandler(new MyRequestRetryHandler());
+            
             params = _httpClient.getParams();
             // FUTURE KKr - support authentication
             HttpClientParams.setAuthenticating(params, false);
