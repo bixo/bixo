@@ -5,6 +5,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
@@ -26,6 +28,17 @@ public class UrlNormalizer implements IUrlNormalizer {
     private static final String RESERVED_PATH_CHARS = "%/?#";
     
     private static final String HEX_CODES = "0123456789abcdefABCDEF";
+    
+    // Match "/xx/../" in the url, where xx consists of chars, different then "/"
+    // (slash) and needs to have at least one char different from "."
+    // Also match a leading "/../" in the URL. Both can be replaced by just "/"
+    private static final Pattern RELATIVE_PATH_PATTERN = Pattern.compile("(/[^/]*[^/.]{1}[^/]*/\\.\\./|^(/\\.\\./)+)");
+    
+    // Match against default pages such as /index.html, etc. 
+    private static final Pattern DEFAULT_PAGE_PATTERN = Pattern.compile("/((?i)index|default)\\.((?i)js[pf]{1}?[afx]?|cgi|cfm|asp[x]?|[psx]?htm[l]?|php[3456]?)(\\?|&|#|$)");
+    
+    // Remove things that look like session ids from the query portion of a URL.
+    private static final Pattern SESSION_ID_PATTERN = Pattern.compile("([;_]?((?i)l|j|bv_)?((?i)sid|phpsessid|sessionid)=.*?)(\\?|&|#|$)");
     
     private String encodeCodePoint(int codepoint) {
         try {
@@ -133,23 +146,39 @@ public class UrlNormalizer implements IUrlNormalizer {
     // Now we get to re-encode the path and query portions of the URL, but we have
     // to split up the path as otherwise '/' => %2F.
     public String normalizePath(String path) {
+        // First, handle relative paths
+        Matcher matcher = RELATIVE_PATH_PATTERN.matcher(path);
+        while (matcher.find()) {
+            path = path.substring(0, matcher.start()) + "/" + path.substring(matcher.end());
+            matcher = RELATIVE_PATH_PATTERN.matcher(path);
+        }
+        
+        // Next, get rid of any default page.
+        matcher = DEFAULT_PAGE_PATTERN.matcher(path);
+        if (matcher.find()) {
+            path = path.substring(0, matcher.start()) + "/" + matcher.group(3) + path.substring(matcher.end());
+        }
+        
         String[] pathParts = path.split("/");
         
         StringBuilder newPath = new StringBuilder();
         for (String pathPart : pathParts) {
-            newPath.append(encodeUrlComponent(decodeUrl(pathPart), RESERVED_PATH_CHARS));
-            newPath.append('/');
-        }
-        
-        if (!path.endsWith("/")) {
-            newPath.setLength(newPath.length() - 1);
+            if (pathPart.length() > 0) {
+                newPath.append('/');
+                newPath.append(encodeUrlComponent(decodeUrl(pathPart), RESERVED_PATH_CHARS));
+            }
         }
         
         if (newPath.length() == 0) {
             return "/";
-        } else {
-            return newPath.toString();
         }
+
+        // Preserve state of final / in path
+        if (path.endsWith("/") && (newPath.charAt(newPath.length() - 1) != '/')) {
+            newPath.append('/');
+        }
+        
+        return newPath.toString();
     }
 
     
@@ -163,6 +192,11 @@ public class UrlNormalizer implements IUrlNormalizer {
         StringBuilder newQuery = new StringBuilder();
         String[] queryParts = query.split("&");
         for (String queryPart : queryParts) {
+            if (queryPart.length() == 0) {
+                // Strip out empty query parts, e.g. q=1&&z=2
+                continue;
+            }
+            
             String[] keyValues = splitOnChar(queryPart, '=');
             if (keyValues.length == 1) {
                 newQuery.append(encodeUrlComponent(decodeUrl(keyValues[0]), RESERVED_QUERY_CHARS));
@@ -182,7 +216,10 @@ public class UrlNormalizer implements IUrlNormalizer {
         }
 
         // Remove last '&'
-        newQuery.setLength(newQuery.length() - 1);
+        if ((newQuery.length() > 0) && (newQuery.charAt(newQuery.length() - 1) == '&')) {
+            newQuery.setLength(newQuery.length() - 1);
+        }
+        
         return newQuery.toString();
     }
 
@@ -218,11 +255,20 @@ public class UrlNormalizer implements IUrlNormalizer {
             result = "http://" + result;
         }
         
+        // Danger, hack! Some sites have session ids that look like http://domain.com/page.html;jsessionid=xxx,
+        // or even http://domain.com/page.html;jsessionid=xxx&q=z. So we always want to try to get rid of
+        // session ids first, before doing any other processing.
+        Matcher matcher = SESSION_ID_PATTERN.matcher(result);
+        if (matcher.find()) {
+            result = result.substring(0, matcher.start()) + matcher.group(4) + result.substring(matcher.end());
+        }
+        
         URL testUrl;
         
         try {
             String decodedUrl = result.replace("+", "%20");
             testUrl = new URL(decodedUrl);
+            url = testUrl.toExternalForm();
         } catch (MalformedURLException e) {
             // Not a valid URL we know about, so in this case we're just going to
             // return it as-is, other than the stripping we did.
@@ -256,12 +302,13 @@ public class UrlNormalizer implements IUrlNormalizer {
         if ((anchor != null) && (query == null) && (pos != -1) && (url.charAt(pos - 1) == '/')) {
             anchor = "#" + normalizeQuery(anchor);
             query = "";
-        } else if (query != null) {
-            anchor = "";
-            query = "?" + normalizeQuery(query);
         } else {
             anchor = "";
-            query = "";
+            query = normalizeQuery(query);
+            
+            if (query.length() > 0) {
+                query = "?" + query;
+            }
         }
         
         try {
@@ -274,6 +321,5 @@ public class UrlNormalizer implements IUrlNormalizer {
         
         return testUrl.toExternalForm();
     }
-
 
 }
