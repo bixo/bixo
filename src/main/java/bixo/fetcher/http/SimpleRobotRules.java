@@ -143,7 +143,7 @@ public class SimpleRobotRules implements IRobotRules {
     // TODO KKr - get rid of this version, and add a generic one (robot name, URL) that uses
     // Java URL code to fetch it, as well as a version that takes an output stream (e.g. from
     // HttpClient) and a version that takes a String with the content.
-    public SimpleRobotRules(String robotName, HttpClientFetcher fetcher, String url) {
+    public SimpleRobotRules(String robotName, SimpleHttpFetcher fetcher, String url) {
         try {
             URL realUrl = new URL(url);
             String urlToFetch = new URL(realUrl, "/robots.txt").toExternalForm();

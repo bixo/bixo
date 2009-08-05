@@ -13,12 +13,12 @@ import bixo.fetcher.RandomResponseHandler;
 import bixo.fetcher.ResourcesResponseHandler;
 import bixo.fetcher.simulation.SimulationWebServer;
 
-public class HttpClientFetcherTest extends SimulationWebServer {
+public class SimpleHttpFetcherTest extends SimulationWebServer {
     private static final String USER_AGENT = "Bixo test agent";
     
     @Test
     public final void testNoDomain() throws Exception {
-        IHttpFetcher fetcher = new HttpClientFetcher(1, USER_AGENT);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, USER_AGENT);
         String url = "http://www.facebookxxxxx.com";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
 
@@ -32,7 +32,7 @@ public class HttpClientFetcherTest extends SimulationWebServer {
         SocketListener sl = (SocketListener)server.getListeners()[0];
         sl.setLingerTimeSecs(-1);
 
-        IHttpFetcher fetcher = new HttpClientFetcher(1, USER_AGENT);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, USER_AGENT);
         String url = "http://localhost:8089/simple-page.html";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         Assert.assertEquals(FetchStatusCode.FETCHED, result.getStatusCode());
@@ -59,7 +59,7 @@ public class HttpClientFetcherTest extends SimulationWebServer {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setMinResponseRate(20000);
 
-        IHttpFetcher fetcher = new HttpClientFetcher(1, policy, USER_AGENT);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
 
         String url = "http://localhost:8089/test.html";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1d, null));
@@ -81,7 +81,7 @@ public class HttpClientFetcherTest extends SimulationWebServer {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setMinResponseRate(FetcherPolicy.NO_MIN_RESPONSE_RATE);
 
-        IHttpFetcher fetcher = new HttpClientFetcher(1, policy, USER_AGENT);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
 
         String url = "http://localhost:8089/test.html";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1d, null));
@@ -95,7 +95,7 @@ public class HttpClientFetcherTest extends SimulationWebServer {
     public final void testLargeContent() throws Exception {
         FetcherPolicy policy = new FetcherPolicy();
         HttpServer server = startServer(new RandomResponseHandler(policy.getMaxContentSize() * 2), 8089);
-        IHttpFetcher fetcher = new HttpClientFetcher(1, policy, USER_AGENT);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
         String url = "http://localhost:8089/test.html";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1d, null));
         server.stop();
@@ -109,7 +109,7 @@ public class HttpClientFetcherTest extends SimulationWebServer {
 
         FetcherPolicy policy = new FetcherPolicy();
         policy.setMaxContentSize(1000);
-        IHttpFetcher fetcher = new HttpClientFetcher(1, policy, USER_AGENT);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
         
         ScoredUrlDatum datumToFetch = new ScoredUrlDatum("http://localhost:8089/karlie.html");
         
@@ -129,7 +129,7 @@ public class HttpClientFetcherTest extends SimulationWebServer {
     public final void testLargeHtml() throws Exception {
         FetcherPolicy policy = new FetcherPolicy();
         HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
-        IHttpFetcher fetcher = new HttpClientFetcher(1, policy, USER_AGENT);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
         String url = "http://localhost:8089/karlie.html";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1d, null));
         server.stop();
@@ -142,7 +142,7 @@ public class HttpClientFetcherTest extends SimulationWebServer {
     public final void testContentTypeHeader() throws Exception {
         FetcherPolicy policy = new FetcherPolicy();
         HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
-        IHttpFetcher fetcher = new HttpClientFetcher(1, policy, USER_AGENT);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
         String url = "http://localhost:8089/simple-page.html";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1d, null));
         server.stop();

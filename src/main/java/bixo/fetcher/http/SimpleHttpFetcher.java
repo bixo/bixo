@@ -70,8 +70,8 @@ import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
 
 @SuppressWarnings("serial")
-public class HttpClientFetcher implements IHttpFetcher {
-    private static Logger LOGGER = Logger.getLogger(HttpClientFetcher.class);
+public class SimpleHttpFetcher implements IHttpFetcher {
+    private static Logger LOGGER = Logger.getLogger(SimpleHttpFetcher.class);
 
     // We tried 10 seconds for all of these, but got a number of connection/read timeouts for
     // sites that would have eventually worked, so bumping it up to 30 seconds.
@@ -119,11 +119,11 @@ public class HttpClientFetcher implements IHttpFetcher {
     
     // TODO KKr - create UserAgent bean that's passed in here, which has
     // separate fields for email, web site, name.
-    public HttpClientFetcher(int maxThreads, String userAgent) {
+    public SimpleHttpFetcher(int maxThreads, String userAgent) {
         this(maxThreads, new FetcherPolicy(), userAgent);
     }
 
-    public HttpClientFetcher(int maxThreads, FetcherPolicy fetcherPolicy, String userAgent) {
+    public SimpleHttpFetcher(int maxThreads, FetcherPolicy fetcherPolicy, String userAgent) {
         _maxThreads = maxThreads;
         _fetcherPolicy = fetcherPolicy;
         _userAgent = userAgent;

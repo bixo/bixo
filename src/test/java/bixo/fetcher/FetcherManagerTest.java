@@ -8,7 +8,7 @@ import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.http.HttpClientFetcher;
+import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.SimulationWebServer;
@@ -61,7 +61,7 @@ public class FetcherManagerTest extends SimulationWebServer {
             FetcherQueueMgr queueMgr = new FetcherQueueMgr(flowProcess, defaultPolicy);
             
             // TODO KKr - use real user agent name here.
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFetcher(NUM_THREADS, "Bixo integration test"), flowProcess);
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new SimpleHttpFetcher(NUM_THREADS, "Bixo integration test"), flowProcess);
 
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");

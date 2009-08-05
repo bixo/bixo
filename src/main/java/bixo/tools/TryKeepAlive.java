@@ -10,7 +10,7 @@ import org.apache.http.HttpVersion;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.http.HttpClientFetcher;
+import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.utils.DomainNames;
 
 public class TryKeepAlive {
@@ -100,7 +100,7 @@ public class TryKeepAlive {
     private static long tryNoKeepaliveHttp10(String[] urls) {
         long startTime = System.currentTimeMillis();
         for (String uri : urls) {
-            HttpClientFetcher fetcher = new HttpClientFetcher(1, new FetcherPolicy(), USER_AGENT);
+            SimpleHttpFetcher fetcher = new SimpleHttpFetcher(1, new FetcherPolicy(), USER_AGENT);
             fetcher.setHttpVersion(HttpVersion.HTTP_1_0);
             fetcher.get(makeSUD(uri));
         }
@@ -109,7 +109,7 @@ public class TryKeepAlive {
     }
     
     private static long tryHttp10(String[] urls) {
-        HttpClientFetcher fetcher = new HttpClientFetcher(1, new FetcherPolicy(), USER_AGENT);
+        SimpleHttpFetcher fetcher = new SimpleHttpFetcher(1, new FetcherPolicy(), USER_AGENT);
         fetcher.setHttpVersion(HttpVersion.HTTP_1_0);
 
         long startTime = System.currentTimeMillis();
@@ -121,7 +121,7 @@ public class TryKeepAlive {
     }
     
     private static long tryHttp11(String[] urls) {
-        HttpClientFetcher fetcher = new HttpClientFetcher(10, new FetcherPolicy(), USER_AGENT);
+        SimpleHttpFetcher fetcher = new SimpleHttpFetcher(10, new FetcherPolicy(), USER_AGENT);
         fetcher.setHttpVersion(HttpVersion.HTTP_1_1);
 
         long startTime = System.currentTimeMillis();

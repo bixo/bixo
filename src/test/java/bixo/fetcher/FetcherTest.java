@@ -33,7 +33,7 @@ import org.junit.Test;
 import bixo.config.FakeUserFetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.http.HttpClientFetcher;
+import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
@@ -82,7 +82,7 @@ public class FetcherTest {
         PLDGrouping grouping = new PLDGrouping();
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         
-        IHttpFetcher fetcher = new HttpClientFetcher(10, new FakeUserFetcherPolicy(5), USER_AGENT);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(10, new FakeUserFetcherPolicy(5), USER_AGENT);
         FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
 
         FlowConnector flowConnector = new FlowConnector();
@@ -105,7 +105,7 @@ public class FetcherTest {
         PLDGrouping grouping = new PLDGrouping();
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         
-        IHttpFetcher fetcher = new HttpClientFetcher(10, USER_AGENT);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(10, USER_AGENT);
         FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
 
         FlowConnector flowConnector = new FlowConnector();

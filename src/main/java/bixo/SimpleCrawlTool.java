@@ -11,7 +11,7 @@ import bixo.cascading.NullContext;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.http.HttpClientFetcher;
+import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.PLDGrouping;
@@ -98,7 +98,7 @@ public class SimpleCrawlTool {
             LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
             
             // TODO KKr - use real user agent name here with web site ref, email address, etc.
-            IHttpFetcher fetcher = new HttpClientFetcher(options.getMaxThreads(), "Bixo demo");
+            IHttpFetcher fetcher = new SimpleHttpFetcher(options.getMaxThreads(), "Bixo demo");
             FetchPipe fetchPipe = new FetchPipe(importPipe, urlNormalizer, grouping, scoring, fetcher);
 
             // Finally we can run it.

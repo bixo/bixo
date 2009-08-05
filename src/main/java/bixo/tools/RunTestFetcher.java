@@ -40,7 +40,7 @@ import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.FetcherManager;
 import bixo.fetcher.FetcherQueue;
 import bixo.fetcher.FetcherQueueMgr;
-import bixo.fetcher.http.HttpClientFetcher;
+import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.utils.DomainNames;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Lfs;
@@ -103,7 +103,7 @@ public class RunTestFetcher {
             }
 
             // TODO KKr - use real user agent name here.
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new HttpClientFetcher(10, "Bixo integration test"), new BixoFlowProcess());
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new SimpleHttpFetcher(10, "Bixo integration test"), new BixoFlowProcess());
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");
             t.start();

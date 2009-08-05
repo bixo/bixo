@@ -14,7 +14,7 @@ public class RunHttpClientFetcher {
         // Set up for no minimum response rate.
         FetcherPolicy policy = new FetcherPolicy();
         // TODO KKr - use real user agent here.
-        IHttpFetcher fetcher = new HttpClientFetcher(1, policy, "Bixo integration test agent");
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, "Bixo integration test agent");
 
         String url = "http://telenovelas.censuratv.net/noticias/elrostrodeanaliacanal9-argentina-elrostrodeanalia-canal9/";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1d, null));
