@@ -41,7 +41,7 @@ public class FetcherQueueMgrTest {
         MyCollector collector = new MyCollector();
         FetcherQueue newQueue = queueMgr.createQueue("domain.com", collector);
         
-        ScoredUrlDatum scoredDatum = new ScoredUrlDatum("http://domain.com", 0, 0, FetchStatusCode.UNFETCHED, "http://domain.com", "domain.com", 1.0, null);
+        ScoredUrlDatum scoredDatum = new ScoredUrlDatum("http://domain.com", 0, 0, FetchStatusCode.UNFETCHED, "domain.com-30000", 1.0, null);
         Assert.assertTrue(newQueue.offer(scoredDatum));
         Assert.assertTrue(queueMgr.offer(newQueue));
         

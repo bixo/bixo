@@ -85,7 +85,7 @@ public class FetcherQueueTest {
     }
     
     private static ScoredUrlDatum makeSUD(String url, double score) {
-        return new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, DomainNames.getPLD(url), score, null);
+        return new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, DomainNames.getPLD(url) + "-30000", score, null);
     }
     
     @Test
@@ -106,7 +106,7 @@ public class FetcherQueueTest {
         FetchList items = queue.poll();
         Assert.assertNotNull(items);
         Assert.assertEquals(1, items.size());
-        Assert.assertTrue(items.get(0).getNormalizedUrl().equals("http://domain.com/page2"));
+        Assert.assertTrue(items.get(0).getUrl().equals("http://domain.com/page2"));
 
         Assert.assertNull(queue.poll());
     }

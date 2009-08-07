@@ -95,7 +95,7 @@ public class RunTestFetcher {
                 List<String> urls = domainMap.get(pld);
                 System.out.println("Adding " + urls.size() + " URLs for " + pld);
                 for (String url : urls) {
-                    ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 0.5d, null);
+                    ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 0.5d, null);
                     queue.offer(urlScore);
                 }
 

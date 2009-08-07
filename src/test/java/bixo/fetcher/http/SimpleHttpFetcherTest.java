@@ -62,7 +62,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
 
         String url = "http://localhost:8089/test.html";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1d, null));
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1d, null));
         server.stop();
 
         // Since our SlowResponseHandler is returning 10000 bytes in 1 second, we should
@@ -84,7 +84,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
 
         String url = "http://localhost:8089/test.html";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1d, null));
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1d, null));
         server.stop();
 
         FetchStatusCode statusCode = result.getStatusCode();
@@ -97,7 +97,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         HttpServer server = startServer(new RandomResponseHandler(policy.getMaxContentSize() * 2), 8089);
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
         String url = "http://localhost:8089/test.html";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1d, null));
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1d, null));
         server.stop();
 
         Assert.assertTrue("Content size should be truncated", result.getContent().getLength() <= policy.getMaxContentSize());
@@ -131,7 +131,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
         String url = "http://localhost:8089/karlie.html";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1d, null));
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1d, null));
         server.stop();
 
         Assert.assertTrue("Content size should be truncated", result.getContent().getLength() <= policy.getMaxContentSize());
@@ -144,7 +144,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
         String url = "http://localhost:8089/simple-page.html";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1d, null));
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1d, null));
         server.stop();
         
         String contentType = result.getHeaders().getFirst(IHttpHeaders.CONTENT_TYPE);

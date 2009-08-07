@@ -17,7 +17,7 @@ public class RunHttpClientFetcher {
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, "Bixo integration test agent");
 
         String url = "http://telenovelas.censuratv.net/noticias/elrostrodeanaliacanal9-argentina-elrostrodeanalia-canal9/";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1d, null));
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1d, null));
         FetchStatusCode statusCode = result.getStatusCode();
         System.out.println("Status = " + statusCode);
     }

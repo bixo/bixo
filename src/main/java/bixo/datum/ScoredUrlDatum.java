@@ -12,12 +12,12 @@ public class ScoredUrlDatum extends GroupedUrlDatum implements Comparable<Scored
 
     // Constructor for URL that has never been fetched and has no score.
     public ScoredUrlDatum(String url) {
-        this(url, 0, 0, FetchStatusCode.UNFETCHED, url, null, 1.0, null);
+        this(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1.0, null);
     }
     
     @SuppressWarnings("unchecked")
-    public ScoredUrlDatum(String url, long lastFetched, long lastUpdated, FetchStatusCode lastStatus, String normalizedUrl, String groupKey, double score, Map<String, Comparable> metaData) {
-        super(url, lastFetched, lastUpdated, lastStatus, normalizedUrl, groupKey, metaData);
+    public ScoredUrlDatum(String url, long lastFetched, long lastUpdated, FetchStatusCode lastStatus, String groupKey, double score, Map<String, Comparable> metaData) {
+        super(url, lastFetched, lastUpdated, lastStatus, groupKey, metaData);
         _score = score;
     }
 
@@ -41,7 +41,7 @@ public class ScoredUrlDatum extends GroupedUrlDatum implements Comparable<Scored
             // fetching pages from the same area of the website.
 
             // TODO SG adding a simple sting comparison for now.
-            return getNormalizedUrl().compareTo(o.getNormalizedUrl());
+            return getUrl().compareTo(o.getUrl());
         }
     }
 
