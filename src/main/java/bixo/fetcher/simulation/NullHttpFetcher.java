@@ -20,25 +20,38 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher.util;
+package bixo.fetcher.simulation;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URISyntaxException;
 
-import bixo.datum.NormalizedUrlDatum;
-import bixo.utils.DomainNames;
+import bixo.config.FetcherPolicy;
+import bixo.datum.FetchedDatum;
+import bixo.datum.ScoredUrlDatum;
+import bixo.exceptions.BixoFetchException;
+import bixo.fetcher.http.IHttpFetcher;
 
 @SuppressWarnings("serial")
-public class PLDGrouping implements IGroupingKeyGenerator {
+public class NullHttpFetcher implements IHttpFetcher {
 
     @Override
-    public String getGroupingKey(NormalizedUrlDatum urlDatum) throws IOException {
-        try {
-            return DomainNames.getPLD(new URL(urlDatum.getNormalizedUrl()));
-        } catch (MalformedURLException e) {
-            throw new IOException("Unable to parse url string into URL object.", e);
-        }
+    public int getMaxThreads() {
+        return 1;
     }
 
+    @Override
+    public FetcherPolicy getFetcherPolicy() {
+        return new FetcherPolicy();
+    }
+
+    @Override
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) {
+        String url = scoredUrl.getUrl();
+        return FetchedDatum.createErrorDatum(url, "NullHttpFetcher always returns not found", scoredUrl.getMetaDataMap());
+    }
+
+    @Override
+    public byte[] get(String url) throws IOException, URISyntaxException, BixoFetchException {
+        return new byte[0];
+    }
 }

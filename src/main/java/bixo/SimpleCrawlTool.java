@@ -11,13 +11,11 @@ import bixo.cascading.NullContext;
 import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
-import bixo.fetcher.util.PLDGrouping;
+import bixo.fetcher.util.SimpleGroupingKeyGenerator;
 import bixo.pipes.FetchPipe;
-import bixo.urldb.IUrlNormalizer;
-import bixo.urldb.UrlNormalizer;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -33,7 +31,10 @@ import cascading.tuple.Fields;
 
 public class SimpleCrawlTool {
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
-
+    
+    // TODO KKr - use real user agent string
+    private static final String USER_AGENT = "bixo demo";
+    
     @SuppressWarnings("serial")
     private static class CreateUrlFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
@@ -93,13 +94,12 @@ public class SimpleCrawlTool {
 
             // Create the sub-assembly that runs the fetch job
             Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFunction());
-            IUrlNormalizer urlNormalizer = new UrlNormalizer();
-            PLDGrouping grouping = new PLDGrouping();
+            SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT);
             LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
             
             // TODO KKr - use real user agent name here with web site ref, email address, etc.
-            IHttpFetcher fetcher = new SimpleHttpFetcher(options.getMaxThreads(), "Bixo demo");
-            FetchPipe fetchPipe = new FetchPipe(importPipe, urlNormalizer, grouping, scoring, fetcher);
+            IHttpFetcher fetcher = new SimpleHttpFetcher(options.getMaxThreads(), USER_AGENT);
+            FetchPipe fetchPipe = new FetchPipe(importPipe, grouping, scoring, fetcher);
 
             // Finally we can run it.
             FlowConnector flowConnector = new FlowConnector();

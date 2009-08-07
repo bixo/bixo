@@ -23,14 +23,11 @@ import bixo.datum.ParsedDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
+import bixo.fetcher.simulation.NullHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
-import bixo.fetcher.util.PLDGrouping;
+import bixo.fetcher.util.SimpleGroupingKeyGenerator;
 import bixo.indexing.IndexScheme;
 import bixo.parser.FakeParser;
-import bixo.pipes.FetchPipe;
-import bixo.pipes.ParserPipe;
-import bixo.urldb.IUrlNormalizer;
-import bixo.urldb.UrlNormalizer;
 import bixo.utils.FieldUtil;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -47,6 +44,7 @@ import cascading.tuple.TupleEntryCollector;
 public class IndexingMetaDataTest {
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
     private static final int DATA_COUNT = 100;
+    private static final String USER_AGENT_FAKE_FETCHING = "user agent for fake fetching";
 
     @SuppressWarnings("unchecked")
     @Test
@@ -65,14 +63,13 @@ public class IndexingMetaDataTest {
         write.close();
 
         Pipe pipe = new Pipe("urlSource");
-        IUrlNormalizer urlNormalizer = new UrlNormalizer();
-        PLDGrouping grouping = new PLDGrouping();
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), false);
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, DATA_COUNT);
 
         Fields metaDataField = new Fields("metaData");
 
-        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher, metaDataField);
+        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher, metaDataField);
 
         ParserPipe parserPipe = new ParserPipe(fetchPipe, new FakeParser(), metaDataField);
 

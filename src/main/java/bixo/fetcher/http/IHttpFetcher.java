@@ -22,11 +22,14 @@
  */
 package bixo.fetcher.http;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.net.URISyntaxException;
 
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
+import bixo.exceptions.BixoFetchException;
 
 public interface IHttpFetcher extends Serializable {
     public FetcherPolicy getFetcherPolicy();
@@ -34,4 +37,17 @@ public interface IHttpFetcher extends Serializable {
 
     // TODO KKr - rename this to be fetch()
     public FetchedDatum get(ScoredUrlDatum scoredUrl);
+    
+    /**
+     * Raw version of fetcher, for use when getting robots.txt (for example)
+     * 
+     * @param url - URL to fetch
+     * @return - byte array of data.
+     * 
+     * @throws IOException
+     * @throws URISyntaxException
+     * @throws BixoFetchException 
+     */
+    public byte[] get(String url) throws IOException, URISyntaxException, BixoFetchException;
+
 }

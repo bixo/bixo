@@ -18,13 +18,11 @@ import bixo.datum.GroupedUrlDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
+import bixo.fetcher.simulation.NullHttpFetcher;
 import bixo.fetcher.util.IScoreGenerator;
 import bixo.fetcher.util.LastFetchScoreGenerator;
-import bixo.fetcher.util.PLDGrouping;
+import bixo.fetcher.util.SimpleGroupingKeyGenerator;
 import bixo.operations.FetcherBuffer;
-import bixo.pipes.FetchPipe;
-import bixo.urldb.IUrlNormalizer;
-import bixo.urldb.UrlNormalizer;
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -42,9 +40,9 @@ import cascading.tuple.TupleEntryIterator;
 import cascading.util.Util;
 
 public class FetchPipeTest extends CascadingTestCase {
-
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
-
+    private static final String USER_AGENT_FAKE_FETCHING = "user agent for fake fetching";
+    
     @SuppressWarnings("serial")
     private static class SkippedScoreGenerator implements IScoreGenerator {
 
@@ -80,11 +78,10 @@ public class FetchPipeTest extends CascadingTestCase {
         Lfs in = makeInputData(100, 1);
 
         Pipe pipe = new Pipe("urlSource");
-        IUrlNormalizer urlNormalizer = new UrlNormalizer();
-        PLDGrouping grouping = new PLDGrouping();
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), true);
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
-        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
+        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
         
         String outputPath = "build/test-data/FetchPipeTest/dual";
         Tap status = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD)), outputPath + "/status", true);
@@ -105,11 +102,10 @@ public class FetchPipeTest extends CascadingTestCase {
         Lfs in = makeInputData(1, 1, metaData);
 
         Pipe pipe = new Pipe("urlSource");
-        IUrlNormalizer urlNormalizer = new UrlNormalizer();
-        PLDGrouping grouping = new PLDGrouping();
-        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
-        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher, new Fields("key"));
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), true);
+        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
+        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher, new Fields("key"));
         
         String outputPath = "build/test-data/FetchPipeTest/dual";
         Fields contentFields = FetchedDatum.FIELDS.append(new Fields("key"));
@@ -144,11 +140,10 @@ public class FetchPipeTest extends CascadingTestCase {
         Lfs in = makeInputData(1, 1);
 
         Pipe pipe = new Pipe("urlSource");
-        IUrlNormalizer urlNormalizer = new UrlNormalizer();
-        PLDGrouping grouping = new PLDGrouping();
-        IScoreGenerator scoring = new SkippedScoreGenerator();
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
-        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), true);
+        IScoreGenerator scoring = new SkippedScoreGenerator();
+        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
         
         String outputPath = "build/test-data/FetchPipeTest/out";
         Tap out = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath, true);
@@ -170,11 +165,10 @@ public class FetchPipeTest extends CascadingTestCase {
 
         // Create the fetch pipe we'll use to process these fake URLs
         Pipe pipe = new Pipe("urlSource");
-        IUrlNormalizer urlNormalizer = new UrlNormalizer();
-        PLDGrouping grouping = new PLDGrouping();
-        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
-        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), true);
+        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
+        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
 
         // Create the output
         String outputPath = "build/test-data/FetchPipeTest/out";

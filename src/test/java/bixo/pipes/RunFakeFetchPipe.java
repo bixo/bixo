@@ -12,11 +12,9 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
+import bixo.fetcher.simulation.NullHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
-import bixo.fetcher.util.PLDGrouping;
-import bixo.pipes.FetchPipe;
-import bixo.urldb.IUrlNormalizer;
-import bixo.urldb.UrlNormalizer;
+import bixo.fetcher.util.SimpleGroupingKeyGenerator;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -33,8 +31,8 @@ import cascading.tuple.Fields;
 
 public class RunFakeFetchPipe {
     private static final Logger LOGGER = Logger.getLogger(RunFakeFetchPipe.class);
-
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
+    private static final String USER_AGENT_FAKE_FETCHING = "user agent for fake fetching";
 
     // TODO KKr - discuss use of context w/Chris.
     @SuppressWarnings("serial")
@@ -76,11 +74,10 @@ public class RunFakeFetchPipe {
 
             Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFunction());
 
-            IUrlNormalizer urlNormalizer = new UrlNormalizer();
-            PLDGrouping grouping = new PLDGrouping();
+            SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), false);
             LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
             IHttpFetcher fetcher = new FakeHttpFetcher(true, 10);
-            FetchPipe fetchPipe = new FetchPipe(importPipe, urlNormalizer, grouping, scoring, fetcher);
+            FetchPipe fetchPipe = new FetchPipe(importPipe, grouping, scoring, fetcher);
 
             // Create the output, which is a dual file sink tap.
             String outputPath = "build/test-data/RunFakeFetchPipe/dual";

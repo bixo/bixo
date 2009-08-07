@@ -33,14 +33,12 @@ import org.junit.Test;
 import bixo.config.FakeUserFetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
-import bixo.fetcher.util.PLDGrouping;
+import bixo.fetcher.util.SimpleGroupingKeyGenerator;
 import bixo.pipes.FetchPipe;
-import bixo.urldb.IUrlNormalizer;
 import bixo.urldb.UrlImporter;
-import bixo.urldb.UrlNormalizer;
 import bixo.utils.TimeStampUtil;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -78,12 +76,11 @@ public class FetcherTest {
 
         Pipe pipe = new Pipe("urlSource");
 
-        IUrlNormalizer urlNormalizer = new UrlNormalizer();
-        PLDGrouping grouping = new PLDGrouping();
+        IHttpFetcher fetcher = new SimpleHttpFetcher(10, new FakeUserFetcherPolicy(5), USER_AGENT);
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT, fetcher, true);
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         
-        IHttpFetcher fetcher = new SimpleHttpFetcher(10, new FakeUserFetcherPolicy(5), USER_AGENT);
-        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
+        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
 
         FlowConnector flowConnector = new FlowConnector();
 
@@ -101,12 +98,10 @@ public class FetcherTest {
 
         Pipe pipe = new Pipe("urlSource");
 
-        IUrlNormalizer urlNormalizer = new UrlNormalizer();
-        PLDGrouping grouping = new PLDGrouping();
-        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
-        
         IHttpFetcher fetcher = new SimpleHttpFetcher(10, USER_AGENT);
-        FetchPipe fetchPipe = new FetchPipe(pipe, urlNormalizer, grouping, scoring, fetcher);
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT, fetcher, true);
+        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
+        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
 
         FlowConnector flowConnector = new FlowConnector();
 

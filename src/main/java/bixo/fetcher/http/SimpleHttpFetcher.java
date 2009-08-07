@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -68,6 +69,7 @@ import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
+import bixo.exceptions.BixoFetchException;
 
 @SuppressWarnings("serial")
 public class SimpleHttpFetcher implements IHttpFetcher {
@@ -188,152 +190,143 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     }
 
     @SuppressWarnings("unchecked")
-    private FetchedDatum doGet(URI uri, Map<String, Comparable> metaData) {
+    private FetchedDatum doGet(URI uri, Map<String, Comparable> metaData) throws IOException {
         LOGGER.trace("Fetching " + uri);
         HttpGet getter = new HttpGet(uri);
         int httpStatus = FetchedDatum.SC_UNKNOWN;
-        
-        try {
-            long readStartTime = System.currentTimeMillis();
-            HttpResponse response = _httpClient.execute(getter);
-            httpStatus = response.getStatusLine().getStatusCode();
 
-            // Figure out how much data we want to try to fetch.
-            int targetLength;
-            FetchStatusCode fsCode;
-            if (httpStatus == HttpStatus.SC_OK) {
-                fsCode = FetchStatusCode.FETCHED;
-                targetLength = _fetcherPolicy.getMaxContentSize();
-            } else {
-                fsCode = FetchStatusCode.ERROR;
+        long readStartTime = System.currentTimeMillis();
+        HttpResponse response = _httpClient.execute(getter);
+        httpStatus = response.getStatusLine().getStatusCode();
 
-                // Even for an error case, we can use the response body data for debugging.
-                targetLength = ERROR_CONTENT_LENGTH;
-            }
+        // Figure out how much data we want to try to fetch.
+        int targetLength;
+        FetchStatusCode fsCode;
+        if (httpStatus == HttpStatus.SC_OK) {
+            fsCode = FetchStatusCode.FETCHED;
+            targetLength = _fetcherPolicy.getMaxContentSize();
+        } else {
+            fsCode = FetchStatusCode.ERROR;
 
-            HttpHeaders headerMap = new HttpHeaders();
-            Header[] headers = response.getAllHeaders();
-            for (Header header : headers) {
-                headerMap.add(header.getName(), header.getValue());
-            }
-
-            // Get the length from the headers. If we don't get a length, not sure what
-            // the right thing to do is.
-            boolean truncated = false;
-            String contentLengthStr = headerMap.getFirst(IHttpHeaders.CONTENT_LENGTH);
-            if (contentLengthStr != null) {
-                try {
-                    int contentLength = Integer.parseInt(contentLengthStr);
-                    if (contentLength > targetLength) {
-                        truncated = true;
-                    } else {
-                        targetLength = contentLength;
-                    }
-                } catch (NumberFormatException e) {
-                    // Ignore (and log) invalid content length values.
-                    LOGGER.warn("Invalid content length in header: " + contentLengthStr);
-                }
-            }
-
-            // Now finally read in response body, up to targetLength bytes.
-            // FUTURE KKr - use content-type to exclude/include data, as that's
-            // a more accurate way to skip unwanted content versus relying on suffix.
-            byte[] content = null;
-            long readRate = 0;
-            HttpEntity entity = response.getEntity();
-
-            if (entity != null) {
-                InputStream in = entity.getContent();
-
-                try {
-                    byte[] buffer = new byte[BUFFER_SIZE];
-                    int bytesRead = 0;
-                    int totalRead = 0;
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-                    int readRequests = 0;
-                    int minResponseRate = _fetcherPolicy.getMinResponseRate();
-                    // TODO KKr - we need to monitor the rate while reading a
-                    // single block. Look at HttpClient
-                    // metrics support for how to do this. Once we fix this, fix
-                    // the test to read a smaller (< 20K)
-                    // chuck of data.
-                    while ((totalRead < targetLength) &&
-                           ((bytesRead = in.read(buffer, 0, Math.min(buffer.length, targetLength - totalRead))) != -1)) {
-                        readRequests += 1;
-                        totalRead += bytesRead;
-                        out.write(buffer, 0, bytesRead);
-
-                        // Assume read time is at least one microsecond, to avoid DBZ exception.
-                        long totalReadTime = Math.max(1, System.currentTimeMillis() - readStartTime);
-                        readRate = (totalRead * 1000L) / totalReadTime;
-
-                        // Don't bail on the first read cycle, as we can get a hiccup starting out.
-                        // Also don't bail if we've read everything we need.
-                        if ((readRequests > 1) && (totalRead < targetLength) && (readRate < minResponseRate)) {
-                            fsCode = FetchStatusCode.ABORTED;
-                            safeAbort(getter);
-                            break;
-                        }
-                    }
-
-                    // Do explicit abort if we're truncating, as that's the only safe way to terminate
-                    // a keep-alive connection.
-                    if (truncated || (in.available() > 0)) {
-                        safeAbort(getter);
-                    }
-
-                    content = out.toByteArray();
-                } catch (IOException e) {
-                    // We don't need to abort if there's an IOException
-                    
-                    if (fsCode == FetchStatusCode.FETCHED) {
-                        throw e;
-                    } else {
-                        // Ignore exceptions that happen while we're just reading in content for the fetch failed case.
-                    }
-                } catch (RuntimeException e) {
-                    safeAbort(getter);
-                    
-                    if (fsCode == FetchStatusCode.FETCHED) {
-                        throw e;
-                    } else {
-                        // Ignore exceptions that happen while we're just reading in content for the fetch failed case.
-                    }
-                } finally {
-                    // Make sure the connection is released immediately.
-                    safeClose(in);
-                }
-            }
-
-            // Note that getContentType can return null, e.g. if we got a 404 (not found) error.
-            String contentType = entity.getContentType() == null ? null : entity.getContentType().getValue();
-
-            // TODO KKr - handle redirects, real content type, what about
-            // charset? Do we need to capture HTTP headers?
-            String redirectedUrl = uri.toString();
-            // TODO SG used the new enum here.Use different status than fetch if
-            // you need to.
-            return new FetchedDatum(fsCode, httpStatus, uri.toString(), redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
-        } catch (Exception e) {
-            LOGGER.debug("Exception while fetching url " + uri, e);
-            // TODO KKr - use real status for exception, include exception msg somehow. Could create a more
-            // generic fetch status, that has a fetch status code, http status, message, etc. and a call to
-            // return true if the fetch succeeded, and another to return true if the fetch failed. Both might
-            // be false if the fetch was aborted, for example. Cheesy hack is to use a special header value
-            // that has the exception in it. Though putting errors inside of "fetched datum" seems a bit odd
-            // to begin with, as this is something that hasn't actually been fetched.
-
-            return FetchedDatum.createErrorDatum(uri.toString(), e.getClass().getSimpleName() + ": " + e.getMessage(), metaData);
+            // Even for an error case, we can use the response body data for debugging.
+            targetLength = ERROR_CONTENT_LENGTH;
         }
+
+        HttpHeaders headerMap = new HttpHeaders();
+        Header[] headers = response.getAllHeaders();
+        for (Header header : headers) {
+            headerMap.add(header.getName(), header.getValue());
+        }
+
+        // Get the length from the headers. If we don't get a length, not sure what
+        // the right thing to do is.
+        boolean truncated = false;
+        String contentLengthStr = headerMap.getFirst(IHttpHeaders.CONTENT_LENGTH);
+        if (contentLengthStr != null) {
+            try {
+                int contentLength = Integer.parseInt(contentLengthStr);
+                if (contentLength > targetLength) {
+                    truncated = true;
+                } else {
+                    targetLength = contentLength;
+                }
+            } catch (NumberFormatException e) {
+                // Ignore (and log) invalid content length values.
+                LOGGER.warn("Invalid content length in header: " + contentLengthStr);
+            }
+        }
+
+        // Now finally read in response body, up to targetLength bytes.
+        // FUTURE KKr - use content-type to exclude/include data, as that's
+        // a more accurate way to skip unwanted content versus relying on suffix.
+        byte[] content = null;
+        long readRate = 0;
+        HttpEntity entity = response.getEntity();
+
+        if (entity != null) {
+            InputStream in = entity.getContent();
+
+            try {
+                byte[] buffer = new byte[BUFFER_SIZE];
+                int bytesRead = 0;
+                int totalRead = 0;
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+                int readRequests = 0;
+                int minResponseRate = _fetcherPolicy.getMinResponseRate();
+                // TODO KKr - we need to monitor the rate while reading a
+                // single block. Look at HttpClient
+                // metrics support for how to do this. Once we fix this, fix
+                // the test to read a smaller (< 20K)
+                // chuck of data.
+                while ((totalRead < targetLength) &&
+                                ((bytesRead = in.read(buffer, 0, Math.min(buffer.length, targetLength - totalRead))) != -1)) {
+                    readRequests += 1;
+                    totalRead += bytesRead;
+                    out.write(buffer, 0, bytesRead);
+
+                    // Assume read time is at least one microsecond, to avoid DBZ exception.
+                    long totalReadTime = Math.max(1, System.currentTimeMillis() - readStartTime);
+                    readRate = (totalRead * 1000L) / totalReadTime;
+
+                    // Don't bail on the first read cycle, as we can get a hiccup starting out.
+                    // Also don't bail if we've read everything we need.
+                    if ((readRequests > 1) && (totalRead < targetLength) && (readRate < minResponseRate)) {
+                        fsCode = FetchStatusCode.ABORTED;
+                        safeAbort(getter);
+                        break;
+                    }
+                }
+
+                // Do explicit abort if we're truncating, as that's the only safe way to terminate
+                // a keep-alive connection.
+                if (truncated || (in.available() > 0)) {
+                    safeAbort(getter);
+                }
+
+                content = out.toByteArray();
+            } catch (IOException e) {
+                // We don't need to abort if there's an IOException
+
+                if (fsCode == FetchStatusCode.FETCHED) {
+                    throw e;
+                } else {
+                    // Ignore exceptions that happen while we're just reading in content for the fetch failed case.
+                }
+            } catch (RuntimeException e) {
+                safeAbort(getter);
+
+                if (fsCode == FetchStatusCode.FETCHED) {
+                    throw e;
+                } else {
+                    // Ignore exceptions that happen while we're just reading in content for the fetch failed case.
+                }
+            } finally {
+                // Make sure the connection is released immediately.
+                safeClose(in);
+            }
+        }
+
+        // Note that getContentType can return null, e.g. if we got a 404 (not found) error.
+        String contentType = entity.getContentType() == null ? null : entity.getContentType().getValue();
+
+        // TODO KKr - handle redirects, real content type, what about
+        // charset? Do we need to capture HTTP headers?
+        String redirectedUrl = uri.toString();
+        // TODO SG used the new enum here.Use different status than fetch if
+        // you need to.
+        return new FetchedDatum(fsCode, httpStatus, uri.toString(), redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
     }
     
     @SuppressWarnings("unchecked")
     @Override
+    // TODO KKr - have this throw errors (e.g. BixoFetchError) and exceptions, versus
+    // returning a FetchedDatum that has missing content, message in it that we extract,
+    // and other such ugliness.
     public FetchedDatum get(ScoredUrlDatum scoredUrl) {
         init();
 
-        String url = scoredUrl.getNormalizedUrl();
+        String url = scoredUrl.getUrl();
         Map<String, Comparable> metaData = scoredUrl.getMetaDataMap();
         
         try {
@@ -341,9 +334,37 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             return doGet(uri, metaData);
         } catch (URISyntaxException e) {
             return FetchedDatum.createErrorDatum(url, e.getMessage(), metaData);
+        } catch (Exception e) {
+            LOGGER.debug("Exception while fetching url: " + url, e);
+            
+            // TODO KKr - use real status for exception, include exception msg somehow. Could create a more
+            // generic fetch status, that has a fetch status code, http status, message, etc. and a call to
+            // return true if the fetch succeeded, and another to return true if the fetch failed. Both might
+            // be false if the fetch was aborted, for example. Cheesy hack is to use a special header value
+            // that has the exception in it. Though putting errors inside of "fetched datum" seems a bit odd
+            // to begin with, as this is something that hasn't actually been fetched.
+
+            return FetchedDatum.createErrorDatum(url, e.getClass().getSimpleName() + ": " + e.getMessage(), metaData);
         }
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public byte[] get(String url) throws IOException, URISyntaxException, BixoFetchException {
+        init();
+        
+        FetchedDatum result = doGet(new URI(url), new HashMap<String, Comparable>());
+        
+        if (result.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
+            return new byte[0];
+        } else if (result.getHttpStatus() == HttpStatus.SC_OK) {
+            return result.getContent().getBytes();
+        } else {
+            throw new BixoFetchException(result.getHttpStatus(), result.getHttpMsg());
+        }
+    }
+
+    
     private static void safeClose(Closeable o) {
         try {
             o.close();
@@ -392,7 +413,6 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             ConnManagerParams.setMaxConnectionsPerRoute(params, connPerRoute);
 
             HttpProtocolParams.setVersion(params, _httpVersion);
-            
             HttpProtocolParams.setUserAgent(params, _userAgent);
             HttpProtocolParams.setContentCharset(params, "UTF-8");
             HttpProtocolParams.setHttpElementCharset(params, "UTF-8");

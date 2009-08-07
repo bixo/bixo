@@ -14,21 +14,24 @@ import org.mortbay.http.handler.AbstractHttpHandler;
 
 @SuppressWarnings("serial")
 public class ResourcesResponseHandler extends AbstractHttpHandler {
+    private String _testContext = "";
     
     /**
      * Create an HTTP response handler that sends data back from files on the classpath
      * TODO KKr - use regular Jetty support for this, via setting up HttpContext
      * 
-     * @param length - number of bytes to return
-     * @param duration - duration for response, in milliseconds.
      */
     public ResourcesResponseHandler() {
+    }
+    
+    public ResourcesResponseHandler(String testContext) {
+        _testContext = testContext;
     }
     
     @Override
     public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
         // Get the resource.
-        URL path = ResourcesResponseHandler.class.getResource(pathInContext);
+        URL path = ResourcesResponseHandler.class.getResource(_testContext + pathInContext);
         if (path == null) {
             throw new HttpException(404, "Resource not found: " + pathInContext);
         }

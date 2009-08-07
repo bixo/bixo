@@ -1,0 +1,4 @@
+User-agent: testAgent
+Allow: /allowed
+Disallow: /disallowed
+Crawl-Delay: 10

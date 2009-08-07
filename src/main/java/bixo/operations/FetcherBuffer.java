@@ -14,6 +14,7 @@ import bixo.fetcher.FetcherManager;
 import bixo.fetcher.FetcherQueue;
 import bixo.fetcher.FetcherQueueMgr;
 import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.util.IGroupingKeyGenerator;
 import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
@@ -86,61 +87,70 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
         TupleEntry group = buffCall.getGroup();
 
         try {
-            // <key> is the PLD grouper, while each entry from <values> is a
-            // FetchQueueEntry.
-            String domain = group.getString(0);
+            // <key> is the output of the IGroupingKeyGenerator used. This should
+            // be either one of the special values (for URLs that shouldn't be fetched),
+            // as defined via static values in IGroupingKeyGenerator, or it will be
+            // <key>-<crawl delay in ms>
+            String key = group.getString(0);
 
-            // TODO KKr - if domain isn't already an IP address, we want to
-            // covert URLs to IP addresses and segment that way, as otherwise
-            // keep-alive doesn't buy us much if (as on large sites) xxx.domain
-            // can go to different servers. Which means breaking it up here
-            // into sorted lists, and creating a queue with the list of items
-            // to be fetched (moving list logic elsewhere??)
-            
-            // Really what we want is to create N queues for N unique combinations
-            // of IP address and robots.txt. Which means having a mapping from
-            // hostname (full) to IP/robots, and another one from IP/robots to queues.
-            // So you get a hostname, and if it doesn't exist in the first table then
-            // you map it to IP/robots. If IP/robots doesn't exist in the second table,
-            // you create a new queue. Then you add the URL to the right queue.
-            //
-            // This should handle polite crawling (by IP, and robots.txt). Makes me
-            // think we might want to handle this as a regular function that takes
-            // URL and adds IP/crawl delay as the key (and filter if blocked). Then
-            // group by this, and we're done. Would need good DNS (and probably our
-            // own cache in front, for each such function).
-            
-            FetcherQueue queue = _queueMgr.createQueue(domain, buffCall.getOutputCollector());
+            // TODO KKr - output zombie FetchedUrlDatum w/new field communicating this
+            // to the FetchPipe, to split off these entries for URL DB updating.
+            if (key.equals(IGroupingKeyGenerator.BLOCKED_GROUPING_KEY)) {
+                LOGGER.debug(String.format("Blocked %d URLs", emptyBuffer(values)));
 
-            int skipped = 0;
-            int queued = 0;
-            while (values.hasNext()) {
-                Tuple curTuple = values.next().getTuple();
-                ScoredUrlDatum scoreUrl = new ScoredUrlDatum(curTuple, _metaDataFields);
+                // URL was blocked by robots.txt
+            } else if (key.equals(IGroupingKeyGenerator.UNKNOWN_HOST_GROUPING_KEY)) {
+                LOGGER.debug(String.format("Host not found for %d URLs", emptyBuffer(values)));
 
-                if (queue.offer(scoreUrl)) {
-                    queued += 1;
-                } else {
-                    skipped += 1;
+                // Couldn't resolve hostname to IP address.
+            } else if (key.equals(IGroupingKeyGenerator.DEFERRED_GROUPING_KEY)) {
+                LOGGER.debug(String.format("Robots.txt problems deferred processing of %d URLs", emptyBuffer(values)));
+
+                // Problem getting/processing robots.txt
+            } else {
+                int dividerPos = key.lastIndexOf('-');
+                if (dividerPos == -1) {
+                    throw new RuntimeException("Invalid grouping key: " + key);
                 }
+
+                String ipAddress = key.substring(0, dividerPos);
+                int crawlDelay = Integer.parseInt(key.substring(dividerPos + 1));
+                
+                // TODO KKr - use crawlDelay when creating the queue. Queue no longer needs
+                // fetch policy for filtering, does need policy for other things (like grouping)
+                FetcherQueue queue = _queueMgr.createQueue(ipAddress, buffCall.getOutputCollector());
+
+                int skipped = 0;
+                int queued = 0;
+                while (values.hasNext()) {
+                    Tuple curTuple = values.next().getTuple();
+                    ScoredUrlDatum scoreUrl = new ScoredUrlDatum(curTuple, _metaDataFields);
+
+                    if (queue.offer(scoreUrl)) {
+                        queued += 1;
+                    } else {
+                        skipped += 1;
+                    }
+                }
+
+                _flowProcess.increment(FetcherCounters.URLS_QUEUED, queued);
+                _flowProcess.increment(FetcherCounters.URLS_SKIPPED, skipped);
+
+                // We're going to spin here until the queue manager decides that we
+                // have available space for this next queue.
+                // TODO KKr - have timeout here based on target fetch duration.
+                while (!_queueMgr.offer(queue)) {
+                    process.keepAlive();
+                }
+
+                LOGGER.info(String.format("Queued %d URLs from %s", queued, ipAddress));
+                LOGGER.debug(String.format("Skipped %d URLs from %s", skipped, ipAddress));
+
+                _flowProcess.increment(FetcherCounters.DOMAINS_QUEUED, 1);
             }
 
-            _flowProcess.increment(FetcherCounters.URLS_QUEUED, queued);
-            _flowProcess.increment(FetcherCounters.URLS_SKIPPED, skipped);
-
-            // We're going to spin here until the queue manager decides that we
-            // have available space for this next queue.
-            // TODO KKr - have timeout here based on target fetch duration.
-            while (!_queueMgr.offer(queue)) {
-                process.keepAlive();
-            }
-
-            LOGGER.info(String.format("Queued %d URLs from %s", queued, domain));
-            LOGGER.debug(String.format("Skipping %d URLs from %s", skipped, domain));
-            
-            _flowProcess.increment(FetcherCounters.DOMAINS_QUEUED, 1);
         } catch (Throwable t) {
-            LOGGER.error("Exception during reduce", t);
+            LOGGER.error("Exception during creating of fetcher queues", t);
         }
 
     }
@@ -182,4 +192,13 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
         }
     }
 
+    private int emptyBuffer(Iterator<TupleEntry> values) {
+        int result = 0;
+        while (values.hasNext()) {
+            values.next();
+            result += 1;
+        }
+        
+        return result;
+    }
 }
