@@ -28,7 +28,6 @@ import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;
 import cascading.scheme.SequenceFile;
-import cascading.scheme.TextLine;
 import cascading.tap.Hfs;
 import cascading.tap.Lfs;
 import cascading.tap.Tap;
@@ -83,14 +82,45 @@ public class FetchPipeTest extends CascadingTestCase {
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
         
-        String outputPath = "build/test-data/FetchPipeTest/dual";
-        Tap status = new Hfs(new TextLine(new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD), new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD)), outputPath + "/status", true);
-        Tap content = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD)), outputPath + "/content", true);
+        String outputPath = "build/test-data/FetchPipeTest/testFetchPipe";
+        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
+        Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
 
         // Finally we can run it.
         FlowConnector flowConnector = new FlowConnector();
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
+        
+        // Werify 100 fetched and 100 status entries were saved.
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        
+        Fields metaDataFields = new Fields();
+        int totalEntries = 0;
+        while (tupleEntryIterator.hasNext()) {
+            TupleEntry entry = tupleEntryIterator.next();
+            totalEntries += 1;
+
+            // Verify we can convert properly
+            new FetchedDatum(entry, metaDataFields);
+        }
+        
+        Assert.assertEquals(100, totalEntries);
+        tupleEntryIterator.close();
+        
+        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
+        tupleEntryIterator = validate.openForRead(new JobConf());
+        totalEntries = 0;
+        while (tupleEntryIterator.hasNext()) {
+            TupleEntry entry = tupleEntryIterator.next();
+            totalEntries += 1;
+
+            // Verify we can convert properly
+            StatusDatum sd = new StatusDatum(entry, metaDataFields);
+            Assert.assertEquals(UrlStatus.FETCHED, sd.getStatus());
+        }
+        
+        Assert.assertEquals(100, totalEntries);
     }
     
     @SuppressWarnings("unchecked")
@@ -108,12 +138,11 @@ public class FetchPipeTest extends CascadingTestCase {
         
         String outputPath = "build/test-data/FetchPipeTest/dual";
         Fields contentFields = FetchedDatum.FIELDS.append(new Fields("key"));
-        Tap status = new Hfs(new TextLine(new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD), new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD)), outputPath + "/status", true);
         Tap content = new Hfs(new SequenceFile(contentFields), outputPath + "/content", true);
 
         // Finally we can run it.
         FlowConnector flowConnector = new FlowConnector();
-        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(null, content), fetchPipe);
         flow.complete();
         
         Lfs validate = new Lfs(new SequenceFile(contentFields), outputPath + "/content");
@@ -144,12 +173,11 @@ public class FetchPipeTest extends CascadingTestCase {
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
         
         String outputPath = "build/test-data/FetchPipeTest/out";
-        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
         Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
         
         // Finally we can run it.
         FlowConnector flowConnector = new FlowConnector();
-        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(null, content), fetchPipe);
         flow.complete();
         
         Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
@@ -171,7 +199,6 @@ public class FetchPipeTest extends CascadingTestCase {
 
         // Create the output
         String outputPath = "build/test-data/FetchPipeTest/out";
-        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
         Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
 
         // Finally we can run it. Set up our prefs with a FetcherPolicy that has an end time of now,
@@ -182,7 +209,7 @@ public class FetchPipeTest extends CascadingTestCase {
         properties.put(FetcherBuffer.DEFAULT_FETCHER_POLICY_KEY, Util.serializeBase64(defaultPolicy));
 
         FlowConnector flowConnector = new FlowConnector(properties);
-        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(null, content), fetchPipe);
         flow.complete();
         
         Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
