@@ -34,7 +34,6 @@ public abstract class BaseFetchException extends Exception {
         public int compareTo(NoFetchException e) {
             return compareToBase(e);
         }
-
     }
 
     // Special value used when processing tuples in the FetchPipe, for fetches that worked.
@@ -50,7 +49,7 @@ public abstract class BaseFetchException extends Exception {
     
     protected BaseFetchException() {
         super();
-        _url = null;
+        _url = "";
     }
     
     protected BaseFetchException(String url) {
