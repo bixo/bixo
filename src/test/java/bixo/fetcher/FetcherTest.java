@@ -35,13 +35,13 @@ import bixo.config.FakeUserFetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
+import bixo.datum.UrlStatus;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.SimpleGroupingKeyGenerator;
 import bixo.pipes.FetchPipe;
 import bixo.urldb.UrlImporter;
-import bixo.utils.TimeStampUtil;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;
@@ -70,10 +70,10 @@ public class FetcherTest {
     
     @Test
     public void testStaleConnection() throws Exception {
-        String workingFolder = "build/test-data/FetcherTest-stale/working";
+        String workingFolder = "build/test-data/FetcherTest-testStaleConnection/working";
         String inputPath = makeUrlDB(workingFolder, "src/test-data/facebook-artists.txt");
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
-        String outPath = workingFolder + "/FetcherTest-testStaleConnection";
+        String outPath = "build/test-data/FetcherTest-testStaleConnection/out";
         Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath + "/content", true);
         Lfs status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outPath + "/status", true);
         
@@ -89,6 +89,16 @@ public class FetcherTest {
 
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
+        
+        // Test for all valid fetches.
+        Lfs validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outPath + "/status");
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        Fields metaDataFields = new Fields();
+        while (tupleEntryIterator.hasNext()) {
+            TupleEntry entry = tupleEntryIterator.next();
+            StatusDatum sd = new StatusDatum(entry, metaDataFields);
+            Assert.assertEquals(UrlStatus.FETCHED, sd.getStatus());
+        }
     }
 
     @Test
@@ -98,7 +108,6 @@ public class FetcherTest {
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
         String outPath = workingFolder + "/FetcherTest-testRunFetcher";
         Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath + "/content", true);
-        Lfs status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outPath + "/status", true);
 
         Pipe pipe = new Pipe("urlSource");
 
@@ -109,7 +118,7 @@ public class FetcherTest {
 
         FlowConnector flowConnector = new FlowConnector();
 
-        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(null, content), fetchPipe);
         flow.complete();
         
         // Test for 10 good fetches.
