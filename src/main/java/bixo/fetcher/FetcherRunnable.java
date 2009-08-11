@@ -23,18 +23,16 @@
 package bixo.fetcher;
 
 import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
+import bixo.exceptions.BixoFetchException;
 import bixo.fetcher.http.IHttpFetcher;
+import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
 public class FetcherRunnable implements Runnable {
-    private static final Logger LOGGER = Logger.getLogger(FetcherRunnable.class);
-    
     private IHttpFetcher _httpFetcher;
     private FetchList _items;
 
@@ -43,49 +41,46 @@ public class FetcherRunnable implements Runnable {
         _items = items;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void run() {
         BixoFlowProcess process = _items.getProcess();
+        TupleEntryCollector collector = _items.getCollector();
 
-        // FUTURE KKr - when fetching the last item, send a Connection: close
+        // TODO KKr - when fetching the last item, send a Connection: close
         // header to let the server know it doesn't need to keep the socket open.
         for (ScoredUrlDatum item : _items) {
-            boolean fetching = false;
-            
             try {
-                fetching = true;
                 process.increment(FetcherCounters.URLS_FETCHING, 1);
                 long startTime = System.currentTimeMillis();
                 FetchedDatum result = _httpFetcher.get(item);
                 long deltaTime = System.currentTimeMillis() - startTime;
                 process.decrement(FetcherCounters.URLS_FETCHING, 1);
+
                 process.increment(FetcherCounters.FETCHED_TIME, (int)deltaTime);
-                fetching = false;
-                
-                if (result.getStatusCode() == FetchStatusCode.FETCHED) {
-                    process.increment(FetcherCounters.URLS_FETCHED, 1);
-                    process.increment(FetcherCounters.FETCHED_BYTES, result.getContent().getLength());
-                    process.setStatus(Level.TRACE, "Fetched " + result);
-                } else {
-                    process.increment(FetcherCounters.URLS_FAILED, 1);
-                    process.setStatus(Level.ERROR, "Failed to fetch " + result);
-                }
-                
+                process.increment(FetcherCounters.URLS_FETCHED, 1);
+                process.increment(FetcherCounters.FETCHED_BYTES, result.getContent().getLength());
+                process.setStatus(Level.TRACE, "Fetched " + result);
+
                 // Cascading _collectors aren't thread-safe.
-                TupleEntryCollector collector = _items.getCollector();
                 synchronized (collector) {
-                    collector.add(result.toTuple());
+                    Tuple tuple = result.toTuple();
+                    // We have to write out a placeholder, so Cascading doesn't complain about the field
+                    // value being missing from the tuple.
+                    tuple.add((Comparable)BixoFetchException.NO_FETCH_EXCEPTION);
+                    collector.add(tuple);
                 }
-            } catch (Throwable t) {
-                t.printStackTrace();
-                LOGGER.error(t);
-                
-                if (fetching) {
-                    process.decrement(FetcherCounters.URLS_FETCHING, 1);
-                }
-                
+            } catch (BixoFetchException e) {
+                FetchedDatum result = new FetchedDatum(item);
+                process.decrement(FetcherCounters.URLS_FETCHING, 1);
                 process.increment(FetcherCounters.URLS_FAILED, 1);
-                process.setStatus("Failed to fetch " + item, t);
+
+                // Write out place-holder FetchedDatum with exception.
+                synchronized (collector) {
+                    Tuple tuple = result.toTuple();
+                    tuple.add((Comparable)e);
+                    collector.add(tuple);
+                }
             }
         }
 

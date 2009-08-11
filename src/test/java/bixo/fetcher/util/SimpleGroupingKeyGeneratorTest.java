@@ -8,7 +8,6 @@ import org.apache.http.HttpStatus;
 import org.junit.Test;
 import org.mortbay.http.HttpServer;
 
-import bixo.datum.FetchStatusCode;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.FixedStatusResponseHandler;
 import bixo.fetcher.ResourcesResponseHandler;
@@ -22,7 +21,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
         SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("user agent");
         
         String url = "http://totalbogusdomainxxx.com";
-        UrlDatum urlDatum = new UrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null);
+        UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
         Assert.assertEquals(IGroupingKeyGenerator.UNKNOWN_HOST_GROUPING_KEY, key);
     }
@@ -32,7 +31,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
         HttpServer server = startServer(new FixedStatusResponseHandler(HttpStatus.SC_NOT_FOUND), 8089);
         SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("user agent");
         String url = "http://localhost:8089/page.html";
-        UrlDatum urlDatum = new UrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null);
+        UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
         server.stop();
 
@@ -44,7 +43,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
         HttpServer server = startServer(new FixedStatusResponseHandler(HttpStatus.SC_INTERNAL_SERVER_ERROR), 8089);
         SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("user agent");
         String url = "http://localhost:8089/page.html";
-        UrlDatum urlDatum = new UrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null);
+        UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
         server.stop();
 
@@ -57,12 +56,12 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
         SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("testAgent");
         
         String url = "http://localhost:8089/allowed/page.html";
-        UrlDatum urlDatum = new UrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null);
+        UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
         Assert.assertEquals("127.0.0.1-10000", key);
         
         url = "http://localhost:8089/disallowed/page.html";
-        urlDatum = new UrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null);
+        urlDatum = new UrlDatum(url);
         key = keyGen.getGroupingKey(urlDatum);
         Assert.assertEquals(IGroupingKeyGenerator.BLOCKED_GROUPING_KEY, key);
 
@@ -74,7 +73,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
         HttpServer server = startServer(new FixedStatusResponseHandler(HttpStatus.SC_NOT_FOUND), 8089);
         SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("user agent", null, true);
         String url = "http://localhost:8089/page.html";
-        UrlDatum urlDatum = new UrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null);
+        UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
         server.stop();
 
@@ -87,7 +86,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
         SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("testAgent", null, true);
         
         String url = "http://localhost:8089/";
-        UrlDatum urlDatum = new UrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null);
+        UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
         server.stop();
 

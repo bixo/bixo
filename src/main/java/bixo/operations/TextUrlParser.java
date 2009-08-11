@@ -22,8 +22,8 @@
  */
 package bixo.operations;
 
-import bixo.datum.FetchStatusCode;
 import bixo.datum.UrlDatum;
+import bixo.datum.UrlStatus;
 import bixo.urldb.IUrlFilter;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
@@ -62,7 +62,8 @@ public class TextUrlParser extends BaseOperation<String> implements Function<Str
                 return;
             }
         }
+        
         // emit link with default values
-        call.getOutputCollector().add(new UrlDatum(url, System.currentTimeMillis(), 0l, FetchStatusCode.UNFETCHED, null).toTuple());
+        call.getOutputCollector().add(new UrlDatum(url, System.currentTimeMillis(), 0l, UrlStatus.UNFETCHED, null).toTuple());
     }
 }

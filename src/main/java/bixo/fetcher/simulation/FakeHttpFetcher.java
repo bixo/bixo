@@ -22,9 +22,7 @@
  */
 package bixo.fetcher.simulation;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,10 +33,11 @@ import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.BixoFetchException;
+import bixo.exceptions.HttpFetchException;
+import bixo.exceptions.UrlFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 
 @SuppressWarnings("serial")
@@ -77,44 +76,36 @@ public class FakeHttpFetcher implements IHttpFetcher {
 
     @SuppressWarnings("unchecked")
     @Override
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) {
-        String url = scoredUrl.getUrl();
-        Map<String, Comparable> metaData = scoredUrl.getMetaDataMap();
-        
-        try {
-            return doGet(new URL(url), metaData);
-        } catch (MalformedURLException e) {
-            return FetchedDatum.createErrorDatum(url, e.getMessage(), metaData);
-        } catch (Exception e) {
-            LOGGER.debug("Exception while fetching url: " + url, e);
-            
-            // TODO KKr - use real status for exception, include exception msg somehow. Could create a more
-            // generic fetch status, that has a fetch status code, http status, message, etc. and a call to
-            // return true if the fetch succeeded, and another to return true if the fetch failed. Both might
-            // be false if the fetch was aborted, for example. Cheesy hack is to use a special header value
-            // that has the exception in it. Though putting errors inside of "fetched datum" seems a bit odd
-            // to begin with, as this is something that hasn't actually been fetched.
-
-            return FetchedDatum.createErrorDatum(url, e.getClass().getSimpleName() + ": " + e.getMessage(), metaData);
-        }
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BixoFetchException {
+        return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public byte[] get(String url) throws IOException, URISyntaxException, BixoFetchException {
-        FetchedDatum result = doGet(new URL(url), new HashMap<String, Comparable>());
-        
-        if (result.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
-            return new byte[0];
-        } else if (result.getHttpStatus() == HttpStatus.SC_OK) {
+    public byte[] get(String url) throws BixoFetchException {
+        try {
+            FetchedDatum result = doGet(url, new HashMap<String, Comparable>());
             return result.getContent().getBytes();
-        } else {
-            throw new BixoFetchException(result.getHttpStatus(), result.getHttpMsg());
+        } catch (HttpFetchException e) {
+            if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
+                return new byte[0];
+            } else {
+                throw e;
+            }
         }
     }
     
     @SuppressWarnings("unchecked")
-    private FetchedDatum doGet(URL theUrl, Map<String, Comparable> metaData) throws BixoFetchException {
+    private FetchedDatum doGet(String url, Map<String, Comparable> metaData) throws BixoFetchException {
+        LOGGER.trace("Fake fetching " + url);
+        
+        URL theUrl;
+        try {
+            theUrl = new URL(url);
+        } catch (MalformedURLException e) {
+            throw new UrlFetchException(url, e.getMessage());
+        }
+        
         int statusCode = HttpStatus.SC_OK;
         int contentSize = 10000;
         int bytesPerSecond = 100000;
@@ -142,11 +133,10 @@ public class FakeHttpFetcher implements IHttpFetcher {
         }
 
         if (statusCode != HttpStatus.SC_OK) {
-            throw new BixoFetchException(statusCode, "Exception requests from FakeHttpFetcher");
+            throw new HttpFetchException(url, "Exception requested from FakeHttpFetcher", statusCode, null);
         }
-        
+
         // Now we want to delay for as long as it would take to fill in the data.
-        String url = theUrl.toExternalForm();
         float duration = (float) contentSize / (float) bytesPerSecond;
         LOGGER.trace(String.format("Fake fetching %d bytes at %d bps (%fs) from %s", contentSize, bytesPerSecond, duration, url));
         try {
@@ -155,7 +145,7 @@ public class FakeHttpFetcher implements IHttpFetcher {
             // Break out of our delay, but preserve interrupt state.
             Thread.currentThread().interrupt();
         }
-        
-        return new FetchedDatum(FetchStatusCode.FETCHED, HttpStatus.SC_OK, url, url, System.currentTimeMillis(), null, new BytesWritable(new byte[contentSize]), "text/html", bytesPerSecond, metaData);
+
+        return new FetchedDatum(url, url, System.currentTimeMillis(), null, new BytesWritable(new byte[contentSize]), "text/html", bytesPerSecond, metaData);
     }
 }

@@ -8,6 +8,8 @@ import org.apache.log4j.Logger;
 import bixo.cascading.BixoFlowProcess;
 import bixo.cascading.LoggingFlowReporter;
 import bixo.config.FetcherPolicy;
+import bixo.datum.BaseDatum;
+import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.FetcherCounters;
 import bixo.fetcher.FetcherManager;
@@ -31,6 +33,8 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
 
     public static final String DEFAULT_FETCHER_POLICY_KEY = "bixo.fetcher.default-policy";
     
+    private static final Fields FETCH_EXCEPTION_FIELD = new Fields(BaseDatum.fieldName(FetcherBuffer.class, "fetch-exception"));
+    
     private FetcherManager _fetcherMgr;
     private FetcherQueueMgr _queueMgr;
     private Thread _fetcherThread;
@@ -39,8 +43,10 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
 
     private final Fields _metaDataFields;
 
-    public FetcherBuffer(Fields outFields, Fields metaDataFields, IHttpFetcher fetcher) {
-        super(outFields.append(metaDataFields));
+    public FetcherBuffer(Fields metaDataFields, IHttpFetcher fetcher) {
+        // We're going to output a tuple that contains a FetchedDatum, plus meta-data,
+        // plus a BixoFetchException object.
+        super(FetchedDatum.FIELDS.append(metaDataFields).append(FETCH_EXCEPTION_FIELD));
 
         _metaDataFields = metaDataFields;
         _fetcher = fetcher;

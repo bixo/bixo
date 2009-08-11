@@ -35,8 +35,8 @@ import org.apache.hadoop.mapred.JobConf;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.ScoredUrlDatum;
+import bixo.datum.UrlStatus;
 import bixo.fetcher.FetcherManager;
 import bixo.fetcher.FetcherQueue;
 import bixo.fetcher.FetcherQueueMgr;
@@ -95,7 +95,7 @@ public class RunTestFetcher {
                 List<String> urls = domainMap.get(pld);
                 System.out.println("Adding " + urls.size() + " URLs for " + pld);
                 for (String url : urls) {
-                    ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 0.5d, null);
+                    ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0, 0, UrlStatus.UNFETCHED, null, 0.5d, null);
                     queue.offer(urlScore);
                 }
 

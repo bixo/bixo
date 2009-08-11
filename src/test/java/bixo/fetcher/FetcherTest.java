@@ -28,10 +28,12 @@ import java.io.IOException;
 import junit.framework.Assert;
 
 import org.apache.hadoop.fs.FileUtil;
+import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 
 import bixo.config.FakeUserFetcherPolicy;
 import bixo.datum.FetchedDatum;
+import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
@@ -71,9 +73,10 @@ public class FetcherTest {
         String workingFolder = "build/test-data/FetcherTest-stale/working";
         String inputPath = makeUrlDB(workingFolder, "src/test-data/facebook-artists.txt");
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
-        String outPath = workingFolder + "/" + "FetcherTest" + TimeStampUtil.nowWithUnderLine();
-        Lfs out = new Lfs(new SequenceFile(Fields.ALL), outPath, true);
-
+        String outPath = workingFolder + "/FetcherTest-testStaleConnection";
+        Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath + "/content", true);
+        Lfs status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outPath + "/status", true);
+        
         Pipe pipe = new Pipe("urlSource");
 
         IHttpFetcher fetcher = new SimpleHttpFetcher(10, new FakeUserFetcherPolicy(5), USER_AGENT);
@@ -84,7 +87,7 @@ public class FetcherTest {
 
         FlowConnector flowConnector = new FlowConnector();
 
-        Flow flow = flowConnector.connect(in, out, fetchPipe);
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
     }
 
@@ -93,8 +96,9 @@ public class FetcherTest {
         String workingFolder = "build/test-data/FetcherTest-run/working";
         String inputPath = makeUrlDB(workingFolder, "src/test-data/top10urls.txt");
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
-        String outPath = workingFolder + "/" + "FetcherTest" + TimeStampUtil.nowWithUnderLine();
-        Lfs out = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath, true);
+        String outPath = workingFolder + "/FetcherTest-testRunFetcher";
+        Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath + "/content", true);
+        Lfs status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outPath + "/status", true);
 
         Pipe pipe = new Pipe("urlSource");
 
@@ -105,17 +109,17 @@ public class FetcherTest {
 
         FlowConnector flowConnector = new FlowConnector();
 
-        Flow flow = flowConnector.connect(in, out, fetchPipe);
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
         
         // Test for 10 good fetches.
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath + "/content");
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
         Fields metaDataFields = new Fields();
         int fetchedPages = 0;
-        TupleEntryIterator openSink = flow.openSink();
-        while (openSink.hasNext()) {
-            TupleEntry entry = openSink.next();
-            FetchedDatum datum = new FetchedDatum(entry, metaDataFields);
-            Assert.assertEquals(200, datum.getHttpStatus());
+        while (tupleEntryIterator.hasNext()) {
+            TupleEntry entry = tupleEntryIterator.next();
+            new FetchedDatum(entry, metaDataFields);
             fetchedPages += 1;
         }
 

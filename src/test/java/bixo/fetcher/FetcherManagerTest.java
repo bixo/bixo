@@ -6,10 +6,10 @@ import org.mortbay.http.HttpServer;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.http.SimpleHttpFetcher;
+import bixo.datum.UrlStatus;
 import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.SimulationWebServer;
 import cascading.tuple.Tuple;
@@ -75,7 +75,7 @@ public class FetcherManagerTest extends SimulationWebServer {
                     String file = "/page-" + j + ".html";
 
                     String url = "http://localhost:8089" + file;
-                    ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1.0f - (float) j, null);
+                    ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0, 0, UrlStatus.UNFETCHED, null, 1.0f - (float) j, null);
                     queue.offer(urlScore);
                 }
 

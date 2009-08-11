@@ -28,13 +28,14 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import cascading.tuple.TupleEntryCollector;
-
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
+import bixo.exceptions.AbortedFetchReason;
+import bixo.exceptions.AbortedFetchException;
+import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntryCollector;
 
 public class FetcherQueue implements IFetchListProvider {
     private static Logger LOGGER = Logger.getLogger(FetcherQueue.class);
@@ -124,7 +125,7 @@ public class FetcherQueue implements IFetchListProvider {
             // Nothing to return
         } else if ((_policy.getCrawlEndTime() != FetcherPolicy.NO_CRAWL_END_TIME) && (System.currentTimeMillis() >= _policy.getCrawlEndTime())) {
             // We're past the end of the target fetch window, so bail.
-            abortAll();
+            abortAll(AbortedFetchReason.TIME_LIMIT);
         } else if ((_numActiveFetchers == 0) && (System.currentTimeMillis() >= _nextFetchTime)) {
             _numActiveFetchers += 1;
             
@@ -183,12 +184,13 @@ public class FetcherQueue implements IFetchListProvider {
     /**
      * Write all entries out as being aborted.
      */
-    public synchronized void abortAll() {
+    public synchronized void abortAll(AbortedFetchReason reason) {
         for (ScoredUrlDatum datum : _queue) {
             synchronized (_collector) {
                 String url = datum.getUrl();
-                FetchedDatum result = new FetchedDatum(FetchStatusCode.ABORTED, FetchedDatum.SC_UNKNOWN, url, url, 0, null, null, null, 0, datum.getMetaDataMap());
-                _collector.add(result.toTuple());
+                Tuple result = new FetchedDatum(url, url, 0, null, null, null, 0, datum.getMetaDataMap()).toTuple();
+                result.add(new AbortedFetchException(url, reason));
+                _collector.add(result);
             }
         }
         

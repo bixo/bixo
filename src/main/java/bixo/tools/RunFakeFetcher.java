@@ -28,8 +28,8 @@ import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.ScoredUrlDatum;
+import bixo.datum.UrlStatus;
 import bixo.fetcher.FetcherManager;
 import bixo.fetcher.FetcherQueue;
 import bixo.fetcher.FetcherQueueMgr;
@@ -67,7 +67,7 @@ public class RunFakeFetcher {
                     String file = "/page-" + j + ".html";
 
                     String url = "http://www." + host + file;
-                    ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0,0, FetchStatusCode.UNFETCHED, null, rand.nextFloat(), null);
+                    ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0,0, UrlStatus.UNFETCHED, null, rand.nextFloat(), null);
                     queue.offer(urlScore);
                 }
 

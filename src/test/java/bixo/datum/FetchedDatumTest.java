@@ -24,7 +24,7 @@ public class FetchedDatumTest {
         
         String value3 = "value3\nwith\nreturns";
         headers.add("key3", value3);
-        FetchedDatum datum = new FetchedDatum(FetchStatusCode.FETCHED, HttpServletResponse.SC_OK, url, url, 0, headers, null, null, 0, null);
+        FetchedDatum datum = new FetchedDatum(url, url, 0, headers, null, null, 0, null);
         
         Tuple tuple = datum.toTuple();
         
@@ -48,7 +48,7 @@ public class FetchedDatumTest {
         
         HttpHeaders headers = new HttpHeaders();
         headers.add("status code", "200");
-        FetchedDatum datum = new FetchedDatum(FetchStatusCode.FETCHED, HttpServletResponse.SC_OK, url, url, 0, headers, null, null, 0, null);
+        FetchedDatum datum = new FetchedDatum(url, url, 0, headers, null, null, 0, null);
 
         String result = datum.toString();
         Assert.assertFalse(result.contains("FetchedDatum@"));

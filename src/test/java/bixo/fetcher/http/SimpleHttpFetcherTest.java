@@ -6,9 +6,11 @@ import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
 
 import bixo.config.FetcherPolicy;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
+import bixo.exceptions.AbortedFetchException;
+import bixo.exceptions.AbortedFetchReason;
+import bixo.exceptions.IOFetchException;
 import bixo.fetcher.RandomResponseHandler;
 import bixo.fetcher.ResourcesResponseHandler;
 import bixo.fetcher.simulation.SimulationWebServer;
@@ -20,10 +22,13 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
     public final void testNoDomain() throws Exception {
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, USER_AGENT);
         String url = "http://www.facebookxxxxx.com";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
-
-        Assert.assertEquals(FetchedDatum.SC_UNKNOWN, result.getHttpStatus());
-        Assert.assertTrue(result.getHttpMsg().length() > 0);
+        
+        try {
+            fetcher.get(new ScoredUrlDatum(url));
+            Assert.fail("Exception not thrown");
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof IOFetchException);
+        }
     }
     
     @Test
@@ -34,17 +39,14 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
 
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, USER_AGENT);
         String url = "http://localhost:8089/simple-page.html";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
-        Assert.assertEquals(FetchStatusCode.FETCHED, result.getStatusCode());
+        fetcher.get(new ScoredUrlDatum(url));
         
         // TODO KKr - control keep-alive (linger?) value for Jetty, so we can set it
         // to something short and thus make this sleep delay much shorter.
         Thread.sleep(2000);
         
-        result = fetcher.get(new ScoredUrlDatum(url));
+        fetcher.get(new ScoredUrlDatum(url));
         server.stop();
-        
-        Assert.assertEquals(FetchStatusCode.FETCHED, result.getStatusCode());
     }
     
     @Test
@@ -62,13 +64,13 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
 
         String url = "http://localhost:8089/test.html";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1d, null));
+        try {
+            fetcher.get(new ScoredUrlDatum(url));
+            Assert.fail("Aborted fetch exception not thrown");
+        } catch (AbortedFetchException e) {
+            Assert.assertEquals(AbortedFetchReason.SLOW_RESPONSE_RATE, e.getAbortReason());
+        }
         server.stop();
-
-        // Since our SlowResponseHandler is returning 10000 bytes in 1 second, we should
-        // get a aborted result.
-        FetchStatusCode statusCode = result.getStatusCode();
-        Assert.assertEquals(FetchStatusCode.ABORTED, statusCode);
     }
 
     @Test
@@ -84,11 +86,8 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
 
         String url = "http://localhost:8089/test.html";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1d, null));
+        fetcher.get(new ScoredUrlDatum(url));
         server.stop();
-
-        FetchStatusCode statusCode = result.getStatusCode();
-        Assert.assertEquals(FetchStatusCode.FETCHED, statusCode);
     }
     
     @Test
@@ -97,7 +96,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         HttpServer server = startServer(new RandomResponseHandler(policy.getMaxContentSize() * 2), 8089);
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
         String url = "http://localhost:8089/test.html";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1d, null));
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
 
         Assert.assertTrue("Content size should be truncated", result.getContent().getLength() <= policy.getMaxContentSize());
@@ -114,10 +113,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         ScoredUrlDatum datumToFetch = new ScoredUrlDatum("http://localhost:8089/karlie.html");
         
         FetchedDatum result1 = fetcher.get(datumToFetch);
-        Assert.assertEquals(FetchStatusCode.FETCHED, result1.getStatusCode());
-        
         FetchedDatum result2 = fetcher.get(datumToFetch);
-        Assert.assertEquals(FetchStatusCode.FETCHED, result2.getStatusCode());
 
         // Verify that we got the same data from each fetch request.
         Assert.assertEquals(result1.getContent(), result2.getContent());
@@ -131,7 +127,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
         String url = "http://localhost:8089/karlie.html";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1d, null));
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
 
         Assert.assertTrue("Content size should be truncated", result.getContent().getLength() <= policy.getMaxContentSize());
@@ -144,7 +140,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
         String url = "http://localhost:8089/simple-page.html";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1d, null));
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
         
         String contentType = result.getHeaders().getFirst(IHttpHeaders.CONTENT_TYPE);

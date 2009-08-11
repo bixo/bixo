@@ -3,8 +3,8 @@ package bixo.pipes;
 import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 
-import bixo.datum.FetchStatusCode;
 import bixo.datum.UrlDatum;
+import bixo.datum.UrlStatus;
 import bixo.urldb.ValidUrlFilter;
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
@@ -36,8 +36,7 @@ public class UrlDbPipeTest extends CascadingTestCase {
             String url = "http://" + i;
             long lastUpdated = System.currentTimeMillis();
             long lastFetched = System.currentTimeMillis();
-            FetchStatusCode lastStatus = FetchStatusCode.UNFETCHED;
-            UrlDatum datum = new UrlDatum(url, lastFetched, lastUpdated, lastStatus, null);
+            UrlDatum datum = new UrlDatum(url, lastFetched, lastUpdated, UrlStatus.UNFETCHED, null);
             write1.add(datum.toTuple());
         }
 
@@ -48,8 +47,7 @@ public class UrlDbPipeTest extends CascadingTestCase {
             String url = "http://" + i;
             long lastUpdated = System.currentTimeMillis();
             long lastFetched = System.currentTimeMillis();
-            FetchStatusCode lastStatus = FetchStatusCode.FETCHED;
-            UrlDatum datum = new UrlDatum(url, lastFetched, lastUpdated, lastStatus, null);
+            UrlDatum datum = new UrlDatum(url, lastFetched, lastUpdated, UrlStatus.UNFETCHED, null);
             write2.add(datum.toTuple());
         }
         TupleEntryCollector write3 = in3.openForWrite(new JobConf());
@@ -58,8 +56,7 @@ public class UrlDbPipeTest extends CascadingTestCase {
             String url = "http://" + i;
             long lastUpdated = System.currentTimeMillis();
             long lastFetched = System.currentTimeMillis();
-            FetchStatusCode lastStatus = FetchStatusCode.UNFETCHED;
-            UrlDatum datum = new UrlDatum(url, lastFetched, lastUpdated, lastStatus, null);
+            UrlDatum datum = new UrlDatum(url, lastFetched, lastUpdated, UrlStatus.UNFETCHED, null);
             write3.add(datum.toTuple());
         }
 

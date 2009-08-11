@@ -33,7 +33,8 @@ import java.util.HashSet;
 import org.apache.http.HttpStatus;
 
 import bixo.datum.UrlDatum;
-import bixo.exceptions.BixoFetchException;
+import bixo.exceptions.HttpFetchException;
+import bixo.exceptions.IOFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.http.SimpleRobotRules;
@@ -116,9 +117,9 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
                 robotsUrl = new URL(url.getProtocol(), host, url.getPort(), "/robots.txt").toExternalForm();
                 byte[] robotsContent = _robotsFetcher.get(robotsUrl);
                 robotRules = new SimpleRobotRules(_userAgent, robotsContent);
-            } catch (BixoFetchException e) {
+            } catch (HttpFetchException e) {
                 robotRules = new SimpleRobotRules(e.getHttpStatus());
-            } catch (IOException e) {
+            } catch (IOFetchException e) {
                 // Couldn't load robots.txt for some reason (e.g. ConnectTimeoutException), so
                 // treat it like a server internal error case.
                 robotRules = new SimpleRobotRules(HttpStatus.SC_INTERNAL_SERVER_ERROR);

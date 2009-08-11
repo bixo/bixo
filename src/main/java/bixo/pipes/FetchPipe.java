@@ -1,24 +1,184 @@
 package bixo.pipes;
 
+import java.io.IOException;
+import java.security.InvalidParameterException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.OutputCollector;
+
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
+import bixo.datum.StatusDatum;
+import bixo.exceptions.BixoFetchException;
+import bixo.exceptions.NoFetchException;
 import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
+import bixo.fetcher.util.LastFetchScoreGenerator;
+import bixo.fetcher.util.SimpleGroupingKeyGenerator;
 import bixo.operations.FetcherBuffer;
 import bixo.operations.GroupFunction;
 import bixo.operations.ScoreFunction;
+import cascading.flow.FlowProcess;
+import cascading.operation.BaseOperation;
+import cascading.operation.Function;
+import cascading.operation.FunctionCall;
 import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
+import cascading.scheme.Scheme;
+import cascading.tap.SinkTap;
+import cascading.tap.Tap;
 import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
 public class FetchPipe extends SubAssembly {
+    // Pipe that outputs FetchedDatum tuples, for URLs that were fetched.
+    public static final String FETCHED_PIPE_NAME = "fetched";
+    
+    // Pipe that outputs StatusDatum tuples, for all URLs being processed.
+    public static final String STATUS_PIPE_NAME = "status";
+    
+    private static class NullScheme extends Scheme {
+        
+        public NullScheme(Fields sourceFields) {
+            super(sourceFields);
+        }
+        
+        @SuppressWarnings("unchecked")
+        @Override
+        public void sink(TupleEntry arg0, OutputCollector arg1) throws IOException { }
 
+        @Override
+        public void sinkInit(Tap arg0, JobConf arg1) throws IOException { }
+
+        @Override
+        public Tuple source(Object arg0, Object arg1) {
+            throw new RuntimeException("Can't be a source");
+        }
+
+        @Override
+        public void sourceInit(Tap arg0, JobConf arg1) throws IOException {
+            throw new RuntimeException("Can't be a source");
+        }
+    }
+
+    private static class NullSinkTap extends SinkTap {
+
+        public NullSinkTap(Fields sourceFields) {
+            super(new NullScheme(sourceFields));
+        }
+        
+        @Override
+        public boolean deletePath(JobConf arg0) throws IOException {
+            return false;
+        }
+
+        @Override
+        public Path getPath() {
+            return new Path("" + new Random().nextLong());
+        }
+
+        @Override
+        public long getPathModified(JobConf arg0) throws IOException {
+            return 0;
+        }
+
+        @Override
+        public boolean makeDirs(JobConf arg0) throws IOException {
+            return false;
+        }
+
+        @Override
+        public boolean pathExists(JobConf arg0) throws IOException {
+            return true;
+        }
+    }
+    
+    @SuppressWarnings({ "unchecked", "serial" })
+    private static class FilterErrorsFunction extends BaseOperation implements Function {
+        private int _fieldPos;
+        private int[] _fieldsToCopy;
+        
+        // Only output FetchedDatum tuples for input where we were able to fetch the URL.
+        public FilterErrorsFunction(Fields resultFields) {
+            super(resultFields.size() + 1, resultFields);
+            
+            // Location of extra field added during fetch, that contains fetch error
+            _fieldPos = resultFields.size();
+            
+            // Create array used to extract the fields we need that correspond to
+            // the FetchedDatum w/o the exception tacked on the end.
+            _fieldsToCopy = new int[resultFields.size()];
+            for (int i = 0; i < _fieldsToCopy.length; i++) {
+                _fieldsToCopy[i] = i;
+            }
+        }
+
+        @Override
+        public void operate(FlowProcess process, FunctionCall funcCall) {
+            Tuple t = funcCall.getArguments().getTuple();
+            BixoFetchException result = (BixoFetchException)t.get(_fieldPos);
+            
+            if (result instanceof NoFetchException) {
+                funcCall.getOutputCollector().add(t.get(_fieldsToCopy));
+            }
+        }
+    }
+
+    @SuppressWarnings({ "unchecked", "serial" })
+    private static class MakeStatusFunction extends BaseOperation implements Function {
+        private int _fieldPos;
+        private Fields _metaDataFields;
+        
+        // Output an appropriate StatusDatum based on whether we were able to fetch
+        // the URL or not.
+        public MakeStatusFunction(Fields inputFields, Fields metaDataFields) {
+            super(StatusDatum.FIELDS.append(metaDataFields));
+            
+            // Location of extra field added during fetch, that contains fetch error
+            _fieldPos = inputFields.size();
+            
+            _metaDataFields = metaDataFields;
+        }
+
+        @Override
+        public void operate(FlowProcess process, FunctionCall funcCall) {
+            Tuple t = funcCall.getArguments().getTuple();
+            FetchedDatum fd = new FetchedDatum(t, _metaDataFields);
+            BixoFetchException result = (BixoFetchException)t.get(_fieldPos);
+            StatusDatum status;
+            
+            if (result == BixoFetchException.NO_FETCH_EXCEPTION) {
+                status = new StatusDatum(fd.getBaseUrl(), fd.getHeaders(), fd.getMetaDataMap());
+            } else {
+                status = new StatusDatum(fd.getBaseUrl(), result, fd.getMetaDataMap());
+            }
+            
+            funcCall.getOutputCollector().add(status.toTuple());
+        }
+    }
+
+    /**
+     * Create FetchPipe with default SimpleXXX classes and default parameters.
+     * 
+     * @param urlProvider Source for URLs - must output UrlDatum tuples
+     * @param userAgent name to use during fetching
+     */
+    public FetchPipe(Pipe urlProvider, String userAgent) {
+        this(urlProvider, new SimpleGroupingKeyGenerator(userAgent), new LastFetchScoreGenerator(), new SimpleHttpFetcher(userAgent), new Fields());
+    }
+    
     public FetchPipe(Pipe urlProvider, IGroupingKeyGenerator keyGenerator, IScoreGenerator scoreGenerator, IHttpFetcher fetcher) {
         this(urlProvider, keyGenerator, scoreGenerator, fetcher, new Fields());
     }
@@ -33,8 +193,40 @@ public class FetchPipe extends SubAssembly {
         fetch = new Each(fetch, new ScoreFunction(scoreGenerator, metaDataFields), scoredFields);
 
         fetch = new GroupBy(fetch, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
-        fetch = new Every(fetch, new FetcherBuffer(FetchedDatum.FIELDS, metaDataFields, fetcher), Fields.RESULTS);
+        fetch = new Every(fetch, new FetcherBuffer(metaDataFields, fetcher), Fields.RESULTS);
 
-        setTails(fetch);
+        Fields fetchedFields = FetchedDatum.FIELDS.append(metaDataFields);
+        Pipe fetched = new Pipe(FETCHED_PIPE_NAME, new Each(fetch, new FilterErrorsFunction(fetchedFields)));
+        Pipe status = new Pipe(STATUS_PIPE_NAME, new Each(fetch, new MakeStatusFunction(fetchedFields, metaDataFields)));
+        
+        setTails(fetched, status);
+    }
+    
+    public Pipe getTailPipe(String pipeName) {
+        String[] pipeNames = getTailNames();
+        for (int i = 0; i < pipeNames.length; i++) {
+            if (pipeName.equals(pipeNames[i])) {
+                return getTails()[i];
+            }
+        }
+        
+        throw new InvalidParameterException("Invalid pipe name: " + pipeName);
+    }
+
+    public static Map<String, Tap> makeSinkMap(Tap statusSink, Tap fetchedSink) {
+        HashMap<String, Tap> result = new HashMap<String, Tap>(2);
+        
+        if (statusSink == null) {
+            statusSink = new NullSinkTap(StatusDatum.FIELDS);
+        }
+        
+        if (fetchedSink == null) {
+            fetchedSink = new NullSinkTap(FetchedDatum.FIELDS);
+        }
+        
+        result.put(STATUS_PIPE_NAME, statusSink);
+        result.put(FETCHED_PIPE_NAME, fetchedSink);
+        
+        return result;
     }
 }

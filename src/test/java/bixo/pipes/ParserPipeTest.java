@@ -5,8 +5,6 @@ import java.net.URL;
 import java.util.Iterator;
 import java.util.Set;
 
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.archive.io.ArchiveReader;
@@ -15,7 +13,6 @@ import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.junit.Test;
 
-import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.ParsedDatum;
@@ -79,7 +76,7 @@ public class ParserPipeTest extends CascadingTestCase {
                     headers.add(key, value);
                 }
                 
-                FetchedDatum contentTuple = new FetchedDatum(FetchStatusCode.FETCHED, HttpServletResponse.SC_OK, url, url, System.currentTimeMillis(), headers, new BytesWritable(content), mimetype, 0, null);
+                FetchedDatum contentTuple = new FetchedDatum(url, url, System.currentTimeMillis(), headers, new BytesWritable(content), mimetype, 0, null);
                 write.add(contentTuple.toTuple());
             }
         }

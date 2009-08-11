@@ -9,13 +9,13 @@ import org.apache.hadoop.mapred.JobConf;
 import org.junit.Assert;
 import org.junit.Test;
 
-import bixo.cascading.MultiSinkTap;
 import bixo.config.FetcherPolicy;
 import bixo.datum.BaseDatum;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
+import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
+import bixo.datum.UrlStatus;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.NullHttpFetcher;
@@ -63,7 +63,7 @@ public class FetchPipeTest extends CascadingTestCase {
         TupleEntryCollector write = in.openForWrite(new JobConf());
         for (int i = 0; i < numDomains; i++) {
             for (int j = 0; j < numPages; j++) {
-                UrlDatum url = new UrlDatum("http://domain-" + i + ".com/page-" + j + ".html?size=10", 0, 0, FetchStatusCode.UNFETCHED, metaData);
+                UrlDatum url = new UrlDatum("http://domain-" + i + ".com/page-" + j + ".html?size=10", 0, 0, UrlStatus.UNFETCHED, metaData);
                 Tuple tuple = url.toTuple();
                 write.add(tuple);
             }
@@ -84,13 +84,12 @@ public class FetchPipeTest extends CascadingTestCase {
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
         
         String outputPath = "build/test-data/FetchPipeTest/dual";
-        Tap status = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD)), outputPath + "/status", true);
+        Tap status = new Hfs(new TextLine(new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD), new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD)), outputPath + "/status", true);
         Tap content = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD)), outputPath + "/content", true);
-        Tap sink = new MultiSinkTap(status, content);
 
         // Finally we can run it.
         FlowConnector flowConnector = new FlowConnector();
-        Flow flow = flowConnector.connect(in, sink, fetchPipe);
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
     }
     
@@ -109,13 +108,12 @@ public class FetchPipeTest extends CascadingTestCase {
         
         String outputPath = "build/test-data/FetchPipeTest/dual";
         Fields contentFields = FetchedDatum.FIELDS.append(new Fields("key"));
-        Tap status = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD)), outputPath + "/status", true);
+        Tap status = new Hfs(new TextLine(new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD), new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD)), outputPath + "/status", true);
         Tap content = new Hfs(new SequenceFile(contentFields), outputPath + "/content", true);
-        Tap sink = new MultiSinkTap(status, content);
 
         // Finally we can run it.
         FlowConnector flowConnector = new FlowConnector();
-        Flow flow = flowConnector.connect(in, sink, fetchPipe);
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
         
         Lfs validate = new Lfs(new SequenceFile(contentFields), outputPath + "/content");
@@ -146,14 +144,15 @@ public class FetchPipeTest extends CascadingTestCase {
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
         
         String outputPath = "build/test-data/FetchPipeTest/out";
-        Tap out = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath, true);
-
+        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
+        Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+        
         // Finally we can run it.
         FlowConnector flowConnector = new FlowConnector();
-        Flow flow = flowConnector.connect(in, out, fetchPipe);
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
         
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath);
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
         TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
         Assert.assertFalse(tupleEntryIterator.hasNext());
     }
@@ -172,7 +171,8 @@ public class FetchPipeTest extends CascadingTestCase {
 
         // Create the output
         String outputPath = "build/test-data/FetchPipeTest/out";
-        Tap out = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath, true);
+        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
+        Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
 
         // Finally we can run it. Set up our prefs with a FetcherPolicy that has an end time of now,
         // which means we shouldn't fetch any URLs, but they should all be aborted.
@@ -182,22 +182,12 @@ public class FetchPipeTest extends CascadingTestCase {
         properties.put(FetcherBuffer.DEFAULT_FETCHER_POLICY_KEY, Util.serializeBase64(defaultPolicy));
 
         FlowConnector flowConnector = new FlowConnector(properties);
-        Flow flow = flowConnector.connect(in, out, fetchPipe);
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
         
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath);
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
         TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
-        
-        int totalEntries = 0;
-        while (tupleEntryIterator.hasNext()) {
-            TupleEntry entry = tupleEntryIterator.next();
-            FetchedDatum datum = new FetchedDatum(entry, new Fields());
-            Assert.assertEquals(FetchStatusCode.ABORTED, datum.getStatusCode());
-            
-            totalEntries += 1;
-        }
-        
-        Assert.assertEquals(1, totalEntries);
+        Assert.assertFalse(tupleEntryIterator.hasNext());
     }
     
 

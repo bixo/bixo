@@ -12,7 +12,7 @@ public class GroupedUrlDatum extends UrlDatum {
     private String _groupKey;
 
     @SuppressWarnings("unchecked")
-    public GroupedUrlDatum(String url, long lastFetched, long lastUpdated, FetchStatusCode lastStatus, String groupKey, Map<String, Comparable> metaData) {
+    public GroupedUrlDatum(String url, long lastFetched, long lastUpdated, UrlStatus lastStatus, String groupKey, Map<String, Comparable> metaData) {
         super(url, lastFetched, lastUpdated, lastStatus, metaData);
         _groupKey = groupKey;
     }

@@ -6,23 +6,17 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.io.BytesWritable;
 import org.junit.Assert;
 import org.junit.Test;
 
-import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.parser.IParse;
 import bixo.parser.IParser;
 import bixo.parser.ParseResult;
-import bixo.parser.html.HtmlParser;
-import bixo.parser.html.IBixoMetaKeys;
 
 public class HtmlParserTest {
 
@@ -32,8 +26,8 @@ public class HtmlParserTest {
         DataInputStream in = new DataInputStream(new FileInputStream(file));
         in.readFully(bytes);
 
-        FetchedDatum fetchedDatum = new FetchedDatum(FetchStatusCode.FETCHED, HttpServletResponse.SC_OK, path.toExternalForm().toString(), path.toExternalForm().toString(),
-                        System.currentTimeMillis(), null, new BytesWritable(bytes), "text/html", 0, null);
+        String url = path.toExternalForm().toString();
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), null, new BytesWritable(bytes), "text/html", 0, null);
         return fetchedDatum;
     }
 

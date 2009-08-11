@@ -7,8 +7,8 @@ import java.net.URL;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.MultiSinkTap;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
+import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
@@ -48,7 +48,7 @@ public class RunFakeFetchPipe {
             try {
                 URL url = new URL(urlAsString);
 
-                UrlDatum urlDatum = new UrlDatum(url.toString(), 0, 0, FetchStatusCode.UNFETCHED, null);
+                UrlDatum urlDatum = new UrlDatum(url.toString());
 
                 funcCall.getOutputCollector().add(urlDatum.toTuple());
             } catch (MalformedURLException e) {
@@ -81,7 +81,7 @@ public class RunFakeFetchPipe {
 
             // Create the output, which is a dual file sink tap.
             String outputPath = "build/test-data/RunFakeFetchPipe/dual";
-            Tap status = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD)), outputPath + "/status",
+            Tap status = new Hfs(new TextLine(new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD), new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD)), outputPath + "/status",
                             true);
             Tap content = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD)), outputPath + "/content",
                             true);

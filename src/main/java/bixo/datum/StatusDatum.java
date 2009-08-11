@@ -24,65 +24,58 @@ package bixo.datum;
 
 import java.util.Map;
 
+import bixo.exceptions.BixoFetchException;
+
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
-public class UrlDatum extends BaseDatum {
-    private String _url;
-    private long _lastFetched;
-    private long _lastUpdated;
-    private UrlStatus _lastStatus;
-
+@SuppressWarnings("unchecked")
+public class StatusDatum extends BaseDatum {
+    private final String _url;
+    private UrlStatus _status;
+    private final HttpHeaders _headers;
+    private final BixoFetchException _exception;
+    
     /**
-     * Constructor for creating UrlDatum for a URL that's never been fetched, and has no metaData.
+     * Constructor for creating StatusDatum for a URL that was fetched successfully.
      * 
-     * @param url - URL to fetch.
+     * @param url URL that we fetched.
+     * @param headers Headers returned by server.
+     * @param metaData User-provided meta-data.
      */
-    public UrlDatum(String url) {
-        this(url, 0, 0, UrlStatus.UNFETCHED, null);
+    public StatusDatum(String url, HttpHeaders headers, Map<String, Comparable> metaData) {
+        this(url, UrlStatus.FETCHED, headers, BixoFetchException.NO_FETCH_EXCEPTION, metaData);
+    }
+    
+    public StatusDatum(String url, BixoFetchException e, Map<String, Comparable> metaData) {
+        this(url, e.mapToUrlStatus(), null, e, metaData);
     }
     
     @SuppressWarnings("unchecked")
-    public UrlDatum(String url, long lastFetched, long lastUpdated, UrlStatus lastStatus, Map<String, Comparable> metaData) {
+    public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BixoFetchException e, Map<String, Comparable> metaData) {
         super(metaData);
         
         _url = url;
-        _lastFetched = lastFetched;
-        _lastUpdated = lastUpdated;
-        _lastStatus = lastStatus;
+        _status = status;
+        _headers = headers;
+        _exception = e;
     }
 
     public String getUrl() {
         return _url;
     }
 
-    public void setUrl(String url) {
-        _url = url;
+    public UrlStatus getStatus() {
+        return _status;
     }
 
-    public long getLastFetched() {
-        return _lastFetched;
+    public HttpHeaders getHeaders() {
+        return _headers;
     }
 
-    public void setLastFetched(long lastFetched) {
-        _lastFetched = lastFetched;
-    }
-
-    public long getLastUpdated() {
-        return _lastUpdated;
-    }
-
-    public void setLastUpdated(long lastUpdated) {
-        _lastUpdated = lastUpdated;
-    }
-
-    public UrlStatus getLastStatus() {
-        return _lastStatus;
-    }
-
-    public void setLastStatus(UrlStatus lastStatus) {
-        _lastStatus = lastStatus;
+    public BixoFetchException getException() {
+        return _exception;
     }
 
     // ======================================================================================
@@ -90,21 +83,21 @@ public class UrlDatum extends BaseDatum {
     // ======================================================================================
     
     // Cascading field names that correspond to the datum fields.
-    public static final String URL_FIELD = fieldName(UrlDatum.class, "url");
-    public static final String LAST_FETCHED_FIELD = fieldName(UrlDatum.class, "lastFetched");
-    public static final String LAST_UPDATED_FIELD = fieldName(UrlDatum.class, "lastUpdated");
-    public static final String LAST_STATUS_FIELD = fieldName(UrlDatum.class, "lastStatus");
+    public static final String URL_FIELD = fieldName(StatusDatum.class, "url");
+    public static final String STATUS_FIELD = fieldName(StatusDatum.class, "status");
+    public static final String HEADERS_FIELD = fieldName(StatusDatum.class, "headers");
+    public static final String EXCEPTION_FIELD = fieldName(StatusDatum.class, "exception");
         
-    public static final Fields FIELDS = new Fields(URL_FIELD, LAST_FETCHED_FIELD, LAST_UPDATED_FIELD, LAST_STATUS_FIELD);
+    public static final Fields FIELDS = new Fields(URL_FIELD, STATUS_FIELD, HEADERS_FIELD, EXCEPTION_FIELD);
     
-    public UrlDatum(Tuple tuple, Fields metaDataFields) {
+    public StatusDatum(Tuple tuple, Fields metaDataFields) {
         super(tuple, metaDataFields);
         
         TupleEntry entry = new TupleEntry(getStandardFields(), tuple);
         _url = entry.getString(URL_FIELD);
-        _lastFetched = entry.getLong(LAST_FETCHED_FIELD);
-        _lastUpdated = entry.getLong(LAST_UPDATED_FIELD);
-        _lastStatus = UrlStatus.valueOf(entry.getString(LAST_STATUS_FIELD));
+        _status = UrlStatus.valueOf(entry.getString(STATUS_FIELD));
+        _headers = new HttpHeaders(entry.getString(HEADERS_FIELD));
+        _exception = (BixoFetchException)entry.get(EXCEPTION_FIELD);
     }
     
     @Override
@@ -115,7 +108,8 @@ public class UrlDatum extends BaseDatum {
     @SuppressWarnings("unchecked")
     @Override
     protected Comparable[] getStandardValues() {
-        return new Comparable[] { _url, _lastFetched, _lastUpdated, _lastStatus.name() };
+        return new Comparable[] { _url, _status.name(), _headers == null ? "" : _headers.toString(), (Comparable)_exception };
     }
+
 
 }

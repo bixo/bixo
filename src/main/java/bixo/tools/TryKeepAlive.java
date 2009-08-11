@@ -8,8 +8,9 @@ import java.net.UnknownHostException;
 import org.apache.http.HttpVersion;
 
 import bixo.config.FetcherPolicy;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.ScoredUrlDatum;
+import bixo.datum.UrlStatus;
+import bixo.exceptions.BixoFetchException;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.utils.DomainNames;
 
@@ -63,7 +64,7 @@ public class TryKeepAlive {
 
     
     private static ScoredUrlDatum makeSUD(String url) {
-        return new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, DomainNames.getPLD(url), 1.0d, null);
+        return new ScoredUrlDatum(url, 0, 0, UrlStatus.UNFETCHED, DomainNames.getPLD(url), 1.0d, null);
     }
 
     private static class UrlWithHost implements Comparable<UrlWithHost> {
@@ -97,7 +98,7 @@ public class TryKeepAlive {
         return new UrlWithHost(ipUrl.toString(), host);
     }
     
-    private static long tryNoKeepaliveHttp10(String[] urls) {
+    private static long tryNoKeepaliveHttp10(String[] urls) throws BixoFetchException {
         long startTime = System.currentTimeMillis();
         for (String uri : urls) {
             SimpleHttpFetcher fetcher = new SimpleHttpFetcher(1, new FetcherPolicy(), USER_AGENT);
@@ -108,7 +109,7 @@ public class TryKeepAlive {
         return stopTime - startTime;
     }
     
-    private static long tryHttp10(String[] urls) {
+    private static long tryHttp10(String[] urls) throws BixoFetchException {
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(1, new FetcherPolicy(), USER_AGENT);
         fetcher.setHttpVersion(HttpVersion.HTTP_1_0);
 
@@ -120,7 +121,7 @@ public class TryKeepAlive {
         return stopTime - startTime;
     }
     
-    private static long tryHttp11(String[] urls) {
+    private static long tryHttp11(String[] urls) throws BixoFetchException {
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(10, new FetcherPolicy(), USER_AGENT);
         fetcher.setHttpVersion(HttpVersion.HTTP_1_1);
 

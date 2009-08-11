@@ -22,13 +22,13 @@
  */
 package bixo.fetcher.simulation;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
+import org.apache.http.HttpStatus;
 
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.BixoFetchException;
+import bixo.exceptions.HttpFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 
 @SuppressWarnings("serial")
@@ -45,13 +45,12 @@ public class NullHttpFetcher implements IHttpFetcher {
     }
 
     @Override
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) {
-        String url = scoredUrl.getUrl();
-        return FetchedDatum.createErrorDatum(url, "NullHttpFetcher always returns not found", scoredUrl.getMetaDataMap());
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BixoFetchException {
+        throw new HttpFetchException(scoredUrl.getUrl(), "All requests throw 404 exception", HttpStatus.SC_NOT_FOUND, null);
     }
 
     @Override
-    public byte[] get(String url) throws IOException, URISyntaxException, BixoFetchException {
+    public byte[] get(String url) throws BixoFetchException {
         return new byte[0];
     }
 }

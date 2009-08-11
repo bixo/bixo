@@ -44,8 +44,6 @@ public class FetcherPolicy implements Serializable {
     private int _maxContentSize;        // Max # of bytes to use.
     private long _crawlEndTime;          // When we want the crawl to end
     
-    // TODO KKr - add RobotExclusion instance here
-
     public FetcherPolicy() {
         this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME);
     }

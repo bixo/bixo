@@ -35,9 +35,11 @@ import cascading.tuple.TupleEntryCollector;
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.AdaptiveFetcherPolicy;
 import bixo.config.FetcherPolicy;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
+import bixo.datum.UrlStatus;
+import bixo.exceptions.AbortedFetchException;
+import bixo.exceptions.AbortedFetchReason;
 import bixo.utils.DomainNames;
 
 public class FetcherQueueTest {
@@ -48,8 +50,11 @@ public class FetcherQueueTest {
         protected void collect(Tuple tuple) {
             _numCollected += 1;
             
-            FetchedDatum datum = new FetchedDatum(tuple, new Fields());
-            Assert.assertEquals(FetchStatusCode.ABORTED, datum.getStatusCode());
+            // Verify we can convert tuple to FetchedDatum
+            new FetchedDatum(tuple, new Fields());
+            
+            AbortedFetchException e = (AbortedFetchException)tuple.get(FetchedDatum.FIELDS.size());
+            Assert.assertEquals(AbortedFetchReason.TIME_LIMIT, e.getAbortReason());
         }
 
         public Object getNumCollected() {
@@ -85,7 +90,7 @@ public class FetcherQueueTest {
     }
     
     private static ScoredUrlDatum makeSUD(String url, double score) {
-        return new ScoredUrlDatum(url, 0, 0, FetchStatusCode.UNFETCHED, DomainNames.getPLD(url) + "-30000", score, null);
+        return new ScoredUrlDatum(url, 0, 0, UrlStatus.UNFETCHED, DomainNames.getPLD(url) + "-30000", score, null);
     }
     
     @Test

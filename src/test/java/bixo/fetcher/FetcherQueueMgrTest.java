@@ -5,10 +5,11 @@ import org.junit.Test;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
-import cascading.tuple.Fields;
+import bixo.datum.UrlStatus;
+import bixo.exceptions.AbortedFetchException;
+import bixo.exceptions.AbortedFetchReason;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
@@ -17,12 +18,16 @@ public class FetcherQueueMgrTest {
     private class MyCollector extends TupleEntryCollector {
         private int _numCollected;
         
+        @SuppressWarnings("unchecked")
         @Override
         protected void collect(Tuple tuple) {
             _numCollected += 1;
             
-            FetchedDatum datum = new FetchedDatum(tuple, new Fields());
-            Assert.assertEquals(FetchStatusCode.ABORTED, datum.getStatusCode());
+            Comparable error = tuple.get(FetchedDatum.FIELDS.size());
+            Assert.assertTrue(error instanceof AbortedFetchException);
+            AbortedFetchException afe = (AbortedFetchException)error;
+            Assert.assertEquals("http://domain.com", afe.getUrl());
+            Assert.assertEquals(AbortedFetchReason.TIME_LIMIT, afe.getAbortReason());
         }
 
         public Object getNumCollected() {
@@ -41,7 +46,7 @@ public class FetcherQueueMgrTest {
         MyCollector collector = new MyCollector();
         FetcherQueue newQueue = queueMgr.createQueue("domain.com", collector);
         
-        ScoredUrlDatum scoredDatum = new ScoredUrlDatum("http://domain.com", 0, 0, FetchStatusCode.UNFETCHED, "domain.com-30000", 1.0, null);
+        ScoredUrlDatum scoredDatum = new ScoredUrlDatum("http://domain.com", 0, 0, UrlStatus.UNFETCHED, "domain.com-30000", 1.0, null);
         Assert.assertTrue(newQueue.offer(scoredDatum));
         Assert.assertTrue(queueMgr.offer(newQueue));
         

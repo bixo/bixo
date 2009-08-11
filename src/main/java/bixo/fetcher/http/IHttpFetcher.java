@@ -22,9 +22,7 @@
  */
 package bixo.fetcher.http;
 
-import java.io.IOException;
 import java.io.Serializable;
-import java.net.URISyntaxException;
 
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
@@ -36,18 +34,18 @@ public interface IHttpFetcher extends Serializable {
     public int getMaxThreads();
 
     // TODO KKr - rename this to be fetch()
-    public FetchedDatum get(ScoredUrlDatum scoredUrl);
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BixoFetchException;
     
     /**
-     * Raw version of fetcher, for use when getting robots.txt (for example)
+     * Raw version of fetcher, for use when getting robots.txt (for example).
+     * The one significant difference is that if the resource doesn't exist, what
+     * gets returned is a zero-length byte[] array, versus an HttpFetchException.
      * 
      * @param url - URL to fetch
      * @return - byte array of data.
      * 
-     * @throws IOException
-     * @throws URISyntaxException
      * @throws BixoFetchException 
      */
-    public byte[] get(String url) throws IOException, URISyntaxException, BixoFetchException;
+    public byte[] get(String url) throws BixoFetchException;
 
 }

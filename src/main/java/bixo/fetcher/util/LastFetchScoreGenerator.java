@@ -26,9 +26,18 @@ import bixo.datum.GroupedUrlDatum;
 
 @SuppressWarnings("serial")
 public class LastFetchScoreGenerator implements IScoreGenerator {
+    private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
+
+    public static final long DEFAULT_FETCH_INTERVAL = TEN_DAYS;
+    
     private final long _now;
     private final long _interval;
 
+    public LastFetchScoreGenerator() {
+        _now = System.currentTimeMillis();
+        _interval = DEFAULT_FETCH_INTERVAL;
+    }
+    
     public LastFetchScoreGenerator(long now, long interval) {
         _now = now;
         _interval = interval;

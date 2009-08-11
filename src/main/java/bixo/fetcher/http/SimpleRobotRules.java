@@ -7,13 +7,13 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-import javax.servlet.http.HttpServletResponse;
-
+import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
-import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
+import bixo.exceptions.HttpFetchException;
+import bixo.exceptions.IOFetchException;
 
 public class SimpleRobotRules implements IRobotRules {
     private static final Logger LOGGER = Logger.getLogger(SimpleRobotRules.class);
@@ -122,22 +122,7 @@ public class SimpleRobotRules implements IRobotRules {
     }
     
     public SimpleRobotRules(int httpStatus) {
-        if ((httpStatus >= 200) && (httpStatus < 300)) {
-            throw new IllegalStateException("Can't use status code constructor with 2xx response");
-        } else if ((httpStatus >= 300) && (httpStatus < 400)) {
-            // Should only happen if we're getting endless redirects (more than our follow limit), so
-            // treat it as a temporary failure.
-            _deferVisits = true;
-            createAllOrNone(false);
-        } else if (httpStatus == HttpServletResponse.SC_NOT_FOUND) {
-            createAllOrNone(true);
-        } else if ((httpStatus == HttpServletResponse.SC_FORBIDDEN) || (httpStatus == HttpServletResponse.SC_UNAUTHORIZED)) {
-            createAllOrNone(false);
-        } else {
-            // Treat all other status codes as a temporary failure.
-            _deferVisits = true;
-            createAllOrNone(false);
-        }
+        createAllOrNone(httpStatus);
     }
     
     // TODO KKr - get rid of this version, and add a generic one (robot name, URL) that uses
@@ -147,21 +132,21 @@ public class SimpleRobotRules implements IRobotRules {
         try {
             URL realUrl = new URL(url);
             String urlToFetch = new URL(realUrl, "/robots.txt").toExternalForm();
-            
+
             ScoredUrlDatum scoredUrl = new ScoredUrlDatum(urlToFetch);
             FetchedDatum result = fetcher.get(scoredUrl);
-            
-            if (result.getStatusCode() == FetchStatusCode.FETCHED) {
-                parseRules(robotName, urlToFetch, result.getContent().getBytes());
-            } else {
-                // TODO KKr - treat forbidden as ALLOW_NONE
-                createAllOrNone(true);
-            }
+            parseRules(robotName, urlToFetch, result.getContent().getBytes());
         } catch (MalformedURLException e) {
             LOGGER.error("Invalid URL: " + url);
             createAllOrNone(false);
+        } catch (HttpFetchException e) {
+            createAllOrNone(e.getHttpStatus());
+        } catch (IOFetchException e) {
+            createAllOrNone(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } catch (Exception e) {
+            LOGGER.error("Unexpected exception fetching robots.txt: " + url);
+            createAllOrNone(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
-        
     }
     
     public SimpleRobotRules(String robotName, byte[] robotsContent) {
@@ -173,6 +158,25 @@ public class SimpleRobotRules implements IRobotRules {
         _robotRules.addRule("/", allowAll);
     }
     
+    protected void createAllOrNone(int httpStatus) {
+        if ((httpStatus >= 200) && (httpStatus < 300)) {
+            throw new IllegalStateException("Can't use status code constructor with 2xx response");
+        } else if ((httpStatus >= 300) && (httpStatus < 400)) {
+            // Should only happen if we're getting endless redirects (more than our follow limit), so
+            // treat it as a temporary failure.
+            _deferVisits = true;
+            createAllOrNone(false);
+        } else if (httpStatus == HttpStatus.SC_NOT_FOUND) {
+            createAllOrNone(true);
+        } else if ((httpStatus == HttpStatus.SC_FORBIDDEN) || (httpStatus == HttpStatus.SC_UNAUTHORIZED)) {
+            createAllOrNone(false);
+        } else {
+            // Treat all other status codes as a temporary failure.
+            _deferVisits = true;
+            createAllOrNone(false);
+        }
+    }
+
     @Override
     public long getCrawlDelay() {
         return _robotRules.getCrawlDelay();

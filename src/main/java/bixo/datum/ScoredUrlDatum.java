@@ -12,11 +12,11 @@ public class ScoredUrlDatum extends GroupedUrlDatum implements Comparable<Scored
 
     // Constructor for URL that has never been fetched and has no score.
     public ScoredUrlDatum(String url) {
-        this(url, 0, 0, FetchStatusCode.UNFETCHED, null, 1.0, null);
+        this(url, 0, 0, UrlStatus.UNFETCHED, null, 1.0, null);
     }
     
     @SuppressWarnings("unchecked")
-    public ScoredUrlDatum(String url, long lastFetched, long lastUpdated, FetchStatusCode lastStatus, String groupKey, double score, Map<String, Comparable> metaData) {
+    public ScoredUrlDatum(String url, long lastFetched, long lastUpdated, UrlStatus lastStatus, String groupKey, double score, Map<String, Comparable> metaData) {
         super(url, lastFetched, lastUpdated, lastStatus, groupKey, metaData);
         _score = score;
     }

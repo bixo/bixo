@@ -18,9 +18,9 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TopDocs;
 import org.junit.Test;
 
-import bixo.datum.FetchStatusCode;
 import bixo.datum.ParsedDatum;
 import bixo.datum.UrlDatum;
+import bixo.datum.UrlStatus;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.NullHttpFetcher;
@@ -57,7 +57,7 @@ public class IndexingMetaDataTest {
         for (int i = 0; i < DATA_COUNT; i++) {
             HashMap<String, Comparable> map = new HashMap<String, Comparable>();
             map.put("metaData", "metaData" + i);
-            UrlDatum url = new UrlDatum("http://" + i, 0, 0, FetchStatusCode.UNFETCHED, map);
+            UrlDatum url = new UrlDatum("http://" + i, 0, 0, UrlStatus.UNFETCHED, map);
             write.add(url.toTuple());
         }
         write.close();
@@ -71,7 +71,7 @@ public class IndexingMetaDataTest {
 
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher, metaDataField);
 
-        ParserPipe parserPipe = new ParserPipe(fetchPipe, new FakeParser(), metaDataField);
+        ParserPipe parserPipe = new ParserPipe(fetchPipe.getTailPipe(FetchPipe.FETCHED_PIPE_NAME), new FakeParser(), metaDataField);
 
         Fields indexedFields = new Fields("text", "metaData");
         Pipe indexPipe = new Each(parserPipe, new Fields(ParsedDatum.PARSED_TEXT_FIELD, "metaData"), new Identity(indexedFields));

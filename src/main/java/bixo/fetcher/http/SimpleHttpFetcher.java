@@ -65,11 +65,15 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
+import bixo.exceptions.AbortedFetchReason;
+import bixo.exceptions.AbortedFetchException;
 import bixo.exceptions.BixoFetchException;
+import bixo.exceptions.HttpFetchException;
+import bixo.exceptions.IOFetchException;
+import bixo.exceptions.UrlFetchException;
 
 @SuppressWarnings("serial")
 public class SimpleHttpFetcher implements IHttpFetcher {
@@ -80,11 +84,12 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     private static final int DEFAULT_SOCKET_TIMEOUT = 30 * 1000;
     private static final int DEFAULT_CONNECTION_TIMEOUT = 30 * 1000;
     
+    private static final int DEFAULT_MAX_THREADS = 1;
+    
     // This should never actually be a timeout we hit, since we manage the number of
     // fetcher threads to be <= the maxThreads value used to configure an IHttpFetcher.
     private static final long CONNECTION_POOL_TIMEOUT = 20 * 1000L;
     
-    private static final int ERROR_CONTENT_LENGTH = 1024;
     private static final int BUFFER_SIZE = 8 * 1024;
     private static final int MAX_RETRY_COUNT = 3;
     
@@ -117,6 +122,10 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             // Retry if the request is considered idempotent 
             return idempotent;
         }
+    }
+    
+    public SimpleHttpFetcher(String userAgent) {
+        this(DEFAULT_MAX_THREADS, userAgent);
     }
     
     // TODO KKr - create UserAgent bean that's passed in here, which has
@@ -190,36 +199,61 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     }
 
     @SuppressWarnings("unchecked")
-    private FetchedDatum doGet(URI uri, Map<String, Comparable> metaData) throws IOException {
-        LOGGER.trace("Fetching " + uri);
-        HttpGet getter = new HttpGet(uri);
-        int httpStatus = FetchedDatum.SC_UNKNOWN;
+    @Override
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BixoFetchException {
+        init();
 
-        long readStartTime = System.currentTimeMillis();
-        HttpResponse response = _httpClient.execute(getter);
-        httpStatus = response.getStatusLine().getStatusCode();
+        return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
+    }
 
-        // Figure out how much data we want to try to fetch.
-        int targetLength;
-        FetchStatusCode fsCode;
-        if (httpStatus == HttpStatus.SC_OK) {
-            fsCode = FetchStatusCode.FETCHED;
-            targetLength = _fetcherPolicy.getMaxContentSize();
-        } else {
-            fsCode = FetchStatusCode.ERROR;
-
-            // Even for an error case, we can use the response body data for debugging.
-            targetLength = ERROR_CONTENT_LENGTH;
+    @SuppressWarnings("unchecked")
+    @Override
+    public byte[] get(String url) throws BixoFetchException {
+        init();
+        
+        try {
+            FetchedDatum result = doGet(url, new HashMap<String, Comparable>());
+            return result.getContent().getBytes();
+        } catch (HttpFetchException e) {
+            if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
+                return new byte[0];
+            } else {
+                throw e;
+            }
         }
+    }
 
+    @SuppressWarnings("unchecked")
+    private FetchedDatum doGet(String url, Map<String, Comparable> metaData) throws BixoFetchException {
+        LOGGER.trace("Fetching " + url);
+        
+        HttpGet getter;
+        HttpResponse response;
+        long readStartTime;
         HttpHeaders headerMap = new HttpHeaders();
-        Header[] headers = response.getAllHeaders();
-        for (Header header : headers) {
-            headerMap.add(header.getName(), header.getValue());
-        }
+        
+        try {
+            getter = new HttpGet(new URI(url));
+            readStartTime = System.currentTimeMillis();
+            response = _httpClient.execute(getter);
+            
+            Header[] headers = response.getAllHeaders();
+            for (Header header : headers) {
+                headerMap.add(header.getName(), header.getValue());
+            }
 
-        // Get the length from the headers. If we don't get a length, not sure what
-        // the right thing to do is.
+            int httpStatus = response.getStatusLine().getStatusCode();
+            if (httpStatus != HttpStatus.SC_OK) {
+                throw new HttpFetchException(url, "Error fetching " + url, httpStatus, headerMap);
+            }
+        } catch (IOException e) {
+            throw new IOFetchException(url, e);
+        } catch (URISyntaxException e) {
+            throw new UrlFetchException(url, e.getMessage());
+        }
+        
+        // Figure out how much data we want to try to fetch.
+        int targetLength = _fetcherPolicy.getMaxContentSize();
         boolean truncated = false;
         String contentLengthStr = headerMap.getFirst(IHttpHeaders.CONTENT_LENGTH);
         if (contentLengthStr != null) {
@@ -242,11 +276,13 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         byte[] content = null;
         long readRate = 0;
         HttpEntity entity = response.getEntity();
-
+        boolean needAbort = true;
+        
         if (entity != null) {
-            InputStream in = entity.getContent();
-
+            InputStream in = null;
+            
             try {
+                in = entity.getContent();
                 byte[] buffer = new byte[BUFFER_SIZE];
                 int bytesRead = 0;
                 int totalRead = 0;
@@ -272,98 +308,32 @@ public class SimpleHttpFetcher implements IHttpFetcher {
                     // Don't bail on the first read cycle, as we can get a hiccup starting out.
                     // Also don't bail if we've read everything we need.
                     if ((readRequests > 1) && (totalRead < targetLength) && (readRate < minResponseRate)) {
-                        fsCode = FetchStatusCode.ABORTED;
-                        safeAbort(getter);
-                        break;
+                        throw new AbortedFetchException(url, AbortedFetchReason.SLOW_RESPONSE_RATE);
                     }
                 }
 
-                // Do explicit abort if we're truncating, as that's the only safe way to terminate
-                // a keep-alive connection.
-                if (truncated || (in.available() > 0)) {
-                    safeAbort(getter);
-                }
-
                 content = out.toByteArray();
+                needAbort = truncated || (in.available() > 0);
             } catch (IOException e) {
                 // We don't need to abort if there's an IOException
-
-                if (fsCode == FetchStatusCode.FETCHED) {
-                    throw e;
-                } else {
-                    // Ignore exceptions that happen while we're just reading in content for the fetch failed case.
-                }
-            } catch (RuntimeException e) {
-                safeAbort(getter);
-
-                if (fsCode == FetchStatusCode.FETCHED) {
-                    throw e;
-                } else {
-                    // Ignore exceptions that happen while we're just reading in content for the fetch failed case.
-                }
+                throw new IOFetchException(url, e);
             } finally {
+                if (needAbort) {
+                    safeAbort(getter);
+                }
+                
                 // Make sure the connection is released immediately.
                 safeClose(in);
             }
         }
 
-        // Note that getContentType can return null, e.g. if we got a 404 (not found) error.
+        // Note that getContentType can return null.
         String contentType = entity.getContentType() == null ? null : entity.getContentType().getValue();
 
-        // TODO KKr - handle redirects, real content type, what about
-        // charset? Do we need to capture HTTP headers?
-        String redirectedUrl = uri.toString();
-        // TODO SG used the new enum here.Use different status than fetch if
-        // you need to.
-        return new FetchedDatum(fsCode, httpStatus, uri.toString(), redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
+        // TODO KKr - handle redirects
+        String redirectedUrl = url;
+        return new FetchedDatum(url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
     }
-    
-    @SuppressWarnings("unchecked")
-    @Override
-    // TODO KKr - have this throw errors (e.g. BixoFetchError) and exceptions, versus
-    // returning a FetchedDatum that has missing content, message in it that we extract,
-    // and other such ugliness.
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) {
-        init();
-
-        String url = scoredUrl.getUrl();
-        Map<String, Comparable> metaData = scoredUrl.getMetaDataMap();
-        
-        try {
-            URI uri = new URI(url);
-            return doGet(uri, metaData);
-        } catch (URISyntaxException e) {
-            return FetchedDatum.createErrorDatum(url, e.getMessage(), metaData);
-        } catch (Exception e) {
-            LOGGER.debug("Exception while fetching url: " + url, e);
-            
-            // TODO KKr - use real status for exception, include exception msg somehow. Could create a more
-            // generic fetch status, that has a fetch status code, http status, message, etc. and a call to
-            // return true if the fetch succeeded, and another to return true if the fetch failed. Both might
-            // be false if the fetch was aborted, for example. Cheesy hack is to use a special header value
-            // that has the exception in it. Though putting errors inside of "fetched datum" seems a bit odd
-            // to begin with, as this is something that hasn't actually been fetched.
-
-            return FetchedDatum.createErrorDatum(url, e.getClass().getSimpleName() + ": " + e.getMessage(), metaData);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public byte[] get(String url) throws IOException, URISyntaxException, BixoFetchException {
-        init();
-        
-        FetchedDatum result = doGet(new URI(url), new HashMap<String, Comparable>());
-        
-        if (result.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
-            return new byte[0];
-        } else if (result.getHttpStatus() == HttpStatus.SC_OK) {
-            return result.getContent().getBytes();
-        } else {
-            throw new BixoFetchException(result.getHttpStatus(), result.getHttpMsg());
-        }
-    }
-
     
     private static void safeClose(Closeable o) {
         try {

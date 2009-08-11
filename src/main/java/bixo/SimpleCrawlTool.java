@@ -8,8 +8,8 @@ import org.kohsuke.args4j.CmdLineParser;
 
 import bixo.cascading.MultiSinkTap;
 import bixo.cascading.NullContext;
-import bixo.datum.FetchStatusCode;
 import bixo.datum.FetchedDatum;
+import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
@@ -45,7 +45,7 @@ public class SimpleCrawlTool {
         @Override
         public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
             String urlAsString = funcCall.getArguments().getString("line");
-            UrlDatum urlDatum = new UrlDatum(urlAsString, 0, 0, FetchStatusCode.UNFETCHED, null);
+            UrlDatum urlDatum = new UrlDatum(urlAsString);
             funcCall.getOutputCollector().add(urlDatum.toTuple());
         }
     }
@@ -88,7 +88,7 @@ public class SimpleCrawlTool {
             Tap in = new Hfs(new TextLine(), inputFile.getCanonicalPath());
             
             // Create the output (sink tap), which is a dual file sink tap.
-            Tap status = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.STATUS_CODE_FIELD)), outputDirName + "/status", true);
+            Tap status = new Hfs(new TextLine(new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD), new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD)), outputDirName + "/status", true);
             Tap content = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD)), outputDirName + "/content", true);
             Tap sink = new MultiSinkTap(status, content);
 
