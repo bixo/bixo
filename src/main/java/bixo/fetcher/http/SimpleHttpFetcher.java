@@ -70,7 +70,7 @@ import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.AbortedFetchReason;
 import bixo.exceptions.AbortedFetchException;
-import bixo.exceptions.BixoFetchException;
+import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.UrlFetchException;
@@ -200,7 +200,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
 
     @SuppressWarnings("unchecked")
     @Override
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BixoFetchException {
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
         init();
 
         return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
@@ -208,7 +208,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
 
     @SuppressWarnings("unchecked")
     @Override
-    public byte[] get(String url) throws BixoFetchException {
+    public byte[] get(String url) throws BaseFetchException {
         init();
         
         try {
@@ -224,7 +224,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     }
 
     @SuppressWarnings("unchecked")
-    private FetchedDatum doGet(String url, Map<String, Comparable> metaData) throws BixoFetchException {
+    private FetchedDatum doGet(String url, Map<String, Comparable> metaData) throws BaseFetchException {
         LOGGER.trace("Fetching " + url);
         
         HttpGet getter;

@@ -1,21 +1,15 @@
 package bixo.pipes;
 
-import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.OutputCollector;
-
+import bixo.cascading.NullSinkTap;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.StatusDatum;
-import bixo.exceptions.BixoFetchException;
-import bixo.exceptions.NoFetchException;
+import bixo.exceptions.BaseFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.IGroupingKeyGenerator;
@@ -34,12 +28,9 @@ import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
-import cascading.scheme.Scheme;
-import cascading.tap.SinkTap;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
-import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
 public class FetchPipe extends SubAssembly {
@@ -48,62 +39,6 @@ public class FetchPipe extends SubAssembly {
     
     // Pipe that outputs StatusDatum tuples, for all URLs being processed.
     public static final String STATUS_PIPE_NAME = "status";
-    
-    private static class NullScheme extends Scheme {
-        
-        public NullScheme(Fields sourceFields) {
-            super(sourceFields);
-        }
-        
-        @SuppressWarnings("unchecked")
-        @Override
-        public void sink(TupleEntry arg0, OutputCollector arg1) throws IOException { }
-
-        @Override
-        public void sinkInit(Tap arg0, JobConf arg1) throws IOException { }
-
-        @Override
-        public Tuple source(Object arg0, Object arg1) {
-            throw new RuntimeException("Can't be a source");
-        }
-
-        @Override
-        public void sourceInit(Tap arg0, JobConf arg1) throws IOException {
-            throw new RuntimeException("Can't be a source");
-        }
-    }
-
-    private static class NullSinkTap extends SinkTap {
-
-        public NullSinkTap(Fields sourceFields) {
-            super(new NullScheme(sourceFields));
-        }
-        
-        @Override
-        public boolean deletePath(JobConf arg0) throws IOException {
-            return false;
-        }
-
-        @Override
-        public Path getPath() {
-            return new Path("" + new Random().nextLong());
-        }
-
-        @Override
-        public long getPathModified(JobConf arg0) throws IOException {
-            return 0;
-        }
-
-        @Override
-        public boolean makeDirs(JobConf arg0) throws IOException {
-            return false;
-        }
-
-        @Override
-        public boolean pathExists(JobConf arg0) throws IOException {
-            return true;
-        }
-    }
     
     @SuppressWarnings({ "unchecked", "serial" })
     private static class FilterErrorsFunction extends BaseOperation implements Function {
@@ -128,9 +63,9 @@ public class FetchPipe extends SubAssembly {
         @Override
         public void operate(FlowProcess process, FunctionCall funcCall) {
             Tuple t = funcCall.getArguments().getTuple();
-            BixoFetchException result = (BixoFetchException)t.get(_fieldPos);
+            BaseFetchException result = (BaseFetchException)t.get(_fieldPos);
             
-            if (result instanceof NoFetchException) {
+            if (!result.isRealFetchExcception()) {
                 funcCall.getOutputCollector().add(t.get(_fieldsToCopy));
             }
         }
@@ -156,10 +91,10 @@ public class FetchPipe extends SubAssembly {
         public void operate(FlowProcess process, FunctionCall funcCall) {
             Tuple t = funcCall.getArguments().getTuple();
             FetchedDatum fd = new FetchedDatum(t, _metaDataFields);
-            BixoFetchException result = (BixoFetchException)t.get(_fieldPos);
+            BaseFetchException result = (BaseFetchException)t.get(_fieldPos);
             StatusDatum status;
             
-            if (result == BixoFetchException.NO_FETCH_EXCEPTION) {
+            if (result == BaseFetchException.NO_FETCH_EXCEPTION) {
                 status = new StatusDatum(fd.getBaseUrl(), fd.getHeaders(), fd.getMetaDataMap());
             } else {
                 status = new StatusDatum(fd.getBaseUrl(), result, fd.getMetaDataMap());

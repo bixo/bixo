@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.BixoFetchException;
+import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.UrlFetchException;
 import bixo.fetcher.http.IHttpFetcher;
@@ -76,13 +76,13 @@ public class FakeHttpFetcher implements IHttpFetcher {
 
     @SuppressWarnings("unchecked")
     @Override
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BixoFetchException {
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
         return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public byte[] get(String url) throws BixoFetchException {
+    public byte[] get(String url) throws BaseFetchException {
         try {
             FetchedDatum result = doGet(url, new HashMap<String, Comparable>());
             return result.getContent().getBytes();
@@ -96,7 +96,7 @@ public class FakeHttpFetcher implements IHttpFetcher {
     }
     
     @SuppressWarnings("unchecked")
-    private FetchedDatum doGet(String url, Map<String, Comparable> metaData) throws BixoFetchException {
+    private FetchedDatum doGet(String url, Map<String, Comparable> metaData) throws BaseFetchException {
         LOGGER.trace("Fake fetching " + url);
         
         URL theUrl;

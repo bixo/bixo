@@ -9,7 +9,7 @@ import org.apache.hadoop.io.WritableComparable;
 import bixo.datum.UrlStatus;
 
 @SuppressWarnings({ "serial" })
-public class UrlFetchException extends BixoFetchException implements WritableComparable<UrlFetchException> {
+public class UrlFetchException extends BaseFetchException implements WritableComparable<UrlFetchException> {
     
     public UrlFetchException() {
         super();

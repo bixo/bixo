@@ -27,7 +27,7 @@ import org.apache.http.HttpStatus;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.BixoFetchException;
+import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 
@@ -45,12 +45,12 @@ public class NullHttpFetcher implements IHttpFetcher {
     }
 
     @Override
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BixoFetchException {
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
         throw new HttpFetchException(scoredUrl.getUrl(), "All requests throw 404 exception", HttpStatus.SC_NOT_FOUND, null);
     }
 
     @Override
-    public byte[] get(String url) throws BixoFetchException {
+    public byte[] get(String url) throws BaseFetchException {
         return new byte[0];
     }
 }

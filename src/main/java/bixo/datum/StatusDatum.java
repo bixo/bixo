@@ -24,7 +24,7 @@ package bixo.datum;
 
 import java.util.Map;
 
-import bixo.exceptions.BixoFetchException;
+import bixo.exceptions.BaseFetchException;
 
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
@@ -32,10 +32,10 @@ import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("unchecked")
 public class StatusDatum extends BaseDatum {
-    private final String _url;
+    private String _url;
     private UrlStatus _status;
-    private final HttpHeaders _headers;
-    private final BixoFetchException _exception;
+    private HttpHeaders _headers;
+    private BaseFetchException _exception;
     
     /**
      * Constructor for creating StatusDatum for a URL that was fetched successfully.
@@ -45,15 +45,15 @@ public class StatusDatum extends BaseDatum {
      * @param metaData User-provided meta-data.
      */
     public StatusDatum(String url, HttpHeaders headers, Map<String, Comparable> metaData) {
-        this(url, UrlStatus.FETCHED, headers, BixoFetchException.NO_FETCH_EXCEPTION, metaData);
+        this(url, UrlStatus.FETCHED, headers, BaseFetchException.NO_FETCH_EXCEPTION, metaData);
     }
     
-    public StatusDatum(String url, BixoFetchException e, Map<String, Comparable> metaData) {
+    public StatusDatum(String url, BaseFetchException e, Map<String, Comparable> metaData) {
         this(url, e.mapToUrlStatus(), null, e, metaData);
     }
     
     @SuppressWarnings("unchecked")
-    public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BixoFetchException e, Map<String, Comparable> metaData) {
+    public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BaseFetchException e, Map<String, Comparable> metaData) {
         super(metaData);
         
         _url = url;
@@ -74,7 +74,7 @@ public class StatusDatum extends BaseDatum {
         return _headers;
     }
 
-    public BixoFetchException getException() {
+    public BaseFetchException getException() {
         return _exception;
     }
 
@@ -92,12 +92,19 @@ public class StatusDatum extends BaseDatum {
     
     public StatusDatum(Tuple tuple, Fields metaDataFields) {
         super(tuple, metaDataFields);
-        
-        TupleEntry entry = new TupleEntry(getStandardFields(), tuple);
+        initFromTupleEntry(new TupleEntry(getStandardFields(), tuple));
+    }
+    
+    public StatusDatum(TupleEntry entry, Fields metaDataFields) {
+        super(entry.getTuple(), metaDataFields);
+        initFromTupleEntry(entry);
+    }
+    
+    private void initFromTupleEntry(TupleEntry entry) {
         _url = entry.getString(URL_FIELD);
         _status = UrlStatus.valueOf(entry.getString(STATUS_FIELD));
         _headers = new HttpHeaders(entry.getString(HEADERS_FIELD));
-        _exception = (BixoFetchException)entry.get(EXCEPTION_FIELD);
+        _exception = (BaseFetchException)entry.get(EXCEPTION_FIELD);
     }
     
     @Override

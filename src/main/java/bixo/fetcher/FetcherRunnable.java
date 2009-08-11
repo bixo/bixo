@@ -27,7 +27,7 @@ import org.apache.log4j.Level;
 import bixo.cascading.BixoFlowProcess;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.BixoFetchException;
+import bixo.exceptions.BaseFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
@@ -67,10 +67,10 @@ public class FetcherRunnable implements Runnable {
                     Tuple tuple = result.toTuple();
                     // We have to write out a placeholder, so Cascading doesn't complain about the field
                     // value being missing from the tuple.
-                    tuple.add((Comparable)BixoFetchException.NO_FETCH_EXCEPTION);
+                    tuple.add((Comparable)BaseFetchException.NO_FETCH_EXCEPTION);
                     collector.add(tuple);
                 }
-            } catch (BixoFetchException e) {
+            } catch (BaseFetchException e) {
                 FetchedDatum result = new FetchedDatum(item);
                 process.decrement(FetcherCounters.URLS_FETCHING, 1);
                 process.increment(FetcherCounters.URLS_FAILED, 1);

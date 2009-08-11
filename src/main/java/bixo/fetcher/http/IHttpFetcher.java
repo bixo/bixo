@@ -27,14 +27,14 @@ import java.io.Serializable;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.BixoFetchException;
+import bixo.exceptions.BaseFetchException;
 
 public interface IHttpFetcher extends Serializable {
     public FetcherPolicy getFetcherPolicy();
     public int getMaxThreads();
 
     // TODO KKr - rename this to be fetch()
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BixoFetchException;
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException;
     
     /**
      * Raw version of fetcher, for use when getting robots.txt (for example).
@@ -44,8 +44,8 @@ public interface IHttpFetcher extends Serializable {
      * @param url - URL to fetch
      * @return - byte array of data.
      * 
-     * @throws BixoFetchException 
+     * @throws BaseFetchException 
      */
-    public byte[] get(String url) throws BixoFetchException;
+    public byte[] get(String url) throws BaseFetchException;
 
 }

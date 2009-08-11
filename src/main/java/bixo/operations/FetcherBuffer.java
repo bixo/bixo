@@ -45,7 +45,7 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
 
     public FetcherBuffer(Fields metaDataFields, IHttpFetcher fetcher) {
         // We're going to output a tuple that contains a FetchedDatum, plus meta-data,
-        // plus a BixoFetchException object.
+        // plus a BaseFetchException object.
         super(FetchedDatum.FIELDS.append(metaDataFields).append(FETCH_EXCEPTION_FIELD));
 
         _metaDataFields = metaDataFields;
