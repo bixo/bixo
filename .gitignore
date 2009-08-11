@@ -13,4 +13,4 @@ trash
 private
 extras/webgraph/tmp
 extras/webgraph/eu-2005.*
-junitvmwatcher*.properties
+junit*.properties
