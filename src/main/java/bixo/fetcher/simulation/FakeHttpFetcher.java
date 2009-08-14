@@ -34,6 +34,7 @@ import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
+import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
@@ -146,6 +147,8 @@ public class FakeHttpFetcher implements IHttpFetcher {
             Thread.currentThread().interrupt();
         }
 
-        return new FetchedDatum(url, url, System.currentTimeMillis(), null, new BytesWritable(new byte[contentSize]), "text/html", bytesPerSecond, metaData);
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("x-responserate", "" + bytesPerSecond);
+        return new FetchedDatum(url, url, System.currentTimeMillis(), headers, new BytesWritable(new byte[contentSize]), "text/html", bytesPerSecond, metaData);
     }
 }
