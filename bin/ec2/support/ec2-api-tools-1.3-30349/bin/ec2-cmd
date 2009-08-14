@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# This script "concentrates" all of our Java invocations into a single location
+# for maintainability.
+
+# 'Globals'
+EC2_HOME=${EC2_HOME:-EC2_HOME is not set}
+LIBDIR=$EC2_HOME/lib
+
+# Check our Java env
+JAVA_HOME=${JAVA_HOME:?JAVA_HOME is not set}
+
+# If a classpath exists preserve it
+CP=$CLASSPATH
+
+# Check for cygwin bash so we use the correct path separator
+case "`uname`" in
+	CYGWIN*) cygwin=true;;
+esac 
+
+# ---- Start of Cygwin test ----
+
+cygprop=""
+
+# And add our own libraries too
+if [ "$cygwin" == "true" ] ; then
+	cygprop="-Dec2.cygwin=true"
+
+	# Make sure that when using Cygwin we use Unix 
+	# Semantics for EC2_HOME
+	if [ -n "$EC2_HOME" ]
+	then
+		if echo $EC2_HOME|egrep -q '[[:alpha:]]:\\'
+		then
+			echo
+			echo " *INFO* Your EC2_HOME variable needs to specified as a Unix path under Cygwin"
+			echo
+		fi
+	fi
+
+# ---- End of Cygwin Tests ----
+
+	for jar in $(ls $LIBDIR/*.jar) ; do
+		cygjar=$(cygpath -w -a $jar)
+		CP="${CP};$cygjar"
+	done
+else 
+	for jar in $(ls $LIBDIR/*.jar) ; do
+		CP=${CP}:$jar
+	done
+fi
+
+CMD=$1
+shift
+"$JAVA_HOME/bin/java" $EC2_JVM_ARGS $cygprop -classpath "$CP" com.amazon.aes.webservices.client.cmd.$CMD "$@"

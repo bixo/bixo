@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+EC2_HOME=${EC2_HOME:?EC2_HOME is not set}
+$EC2_HOME/bin/ec2-cmd DescribeAddresses "$@"
