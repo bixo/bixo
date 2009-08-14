@@ -33,7 +33,7 @@ SOFTWARE.
 
 	<target name="clean" description="--> clean the project">
 		<echo>cleaning ${ant.project.name}</echo>
-		<delete includeemptydirs="true">
+		<delete includeemptydirs="true" failonerror="false">
 			<fileset dir="${build.dir}" excludes="classes-*-eclipse/" />
 		</delete>
 	</target>
