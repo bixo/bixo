@@ -1,0 +1,498 @@
+-------------
+Version 0.7.0
+-------------
+
+COCKPIT
+- Added ability to view and manage Amazon CloudFront distributions using
+  a dialog box.
+- Added support for configuring Requester Pays buckets.
+- Improved support for DevPay credentials, which can now be set and saved 
+  directly in the login dialog box instead of only in a properties file.
+- User preferences can now be remembered on your computer, so they do not need
+  to be re-set every time you start Cockpit.
+- Improved dialog box for generating Signed URLs. URLs for multiple objects
+  can now be generated at once.
+
+SYNCHRONIZE
+- AWS credentials and the cryptographic password can now be provided via prompts
+  on the command-line, rather than merely through a properties file.
+- Added the --credentials option, which allows AWS credentials to be loaded from 
+  an encrypted file rather than an insecure properties file. The encrypted file 
+  can be created with the AWSCredentials API or the Cockpit application.
+- Synchronize will act as an anonymous client if empty values are provided
+  as the AWS access and secret keys. When the S3 connection is anonymous, only 
+  public buckets will be accessible.
+- Fixed a bug that prevented Synchronize from recognizing duplicate file names
+  when uploading to an S3 subdirectory path when using the --batch option.  
+- Synchronize will now prompt for HTTP Proxy login credentials if required. If
+  proxy credentials are pre-specified in the jets3t.properties file, you should
+  not be prompted.
+- Improved handling of uploads of many files where the files must first be 
+  transformed (compressed or encrypted). In this case, files are now transformed
+  and uploaded in batches, where the batch size is set by the 
+  synchronize.properties setting 'upload.transformed-files-batch-size'
+  
+
+TOOLKIT
+
+  * General
+
+- Added initial implementation of CloudFront service.
+- Added property "cloudfront-service.internal-error-retry-max" for defining the
+  retry limit for CloudFront internal service errors.
+- Added support for configuring and accessing Requester Pays buckets.
+- Added property "httpclient.requester-pays-buckets-enabled" for defining whether
+  the RestS3Service supports Requester Pays buckets by default.
+- Improved support for accessing S3 using DevPay credentials with a new
+  credentials class for defining and storing these credentials: 
+  AWSDevPayCredentials
+- Added a class (AWSDevPayProduct) to represent a DevPay product, and to load 
+  information about pre-defined products from the properties file 
+  devpay_products.properties.
+- Improved the interpretation of .jets3t-ignore files so that child paths or
+  arbitrary paths can be specified and ignored. For example, to ignore all CVS
+  directories you can now add a single ignore path at the top level: **/CVS
+
+  * REST Implementation
+
+- Added support for proxy authentication settings in jets3t.properties:
+  "proxy-user", "proxy-password", and "proxy-domain"
+- The service's HTTP proxy settings can be updated an reapplied on-demand using
+  a range of #initHttpProxy methods.
+- Added property settings to allow the default HTTP and HTTPS ports to be 
+  changed, which can be handy when running the service through a proxy for 
+  testing: s3service.s3-endpoint-http-port, s3service.s3-endpoint-https-port
+- The HttpConnectionManager and HttpClient objects used by the REST service can
+  now be reinitialised on-demand using the #initHttpConnection method.
+- The underlying HttpClient and HttpConnectionManager objects can be accessed 
+  to provide greater control and flexibility after a service is created.
+- The automatic time adjustment performed in response to RequestTimeTooSkewed
+  errors will now work through proxies.
+
+KUDOS TO:
+
+David Kavanagh for sample code that helped improve HTTP proxy support and 
+configurability.
+
+Nikolas Coukouma of Zmanda Inc. for patches to significantly improve support
+for Amazon DevPay in the library and Cockpit applications.
+
+Allan Frank for a patch that helped improved the Synchronize application's
+handling of uploads.
+
+-------------
+Version 0.6.1
+-------------
+
+COCKPIT
+- Added support for copying or moving objects within and between buckets.
+- Added dialog to assist in moving/renaming multiple objects within a bucket.
+- Added support for updating objects with new metadata values.
+- Fixed issue where downloading items to a directory containing many files and 
+  directories (eg 250K+) would cause Cockpit to fail with OutOfMemory errors.
+- Added a Confirm Password field to the encryption settings, to help prevent 
+  problems where a password is mistyped.
+- Cockpit can now generate valid signed GET URLs for DevPay S3 accounts.
+    
+
+SYNCHRONIZE
+- Synchonize now recognizes when you have specified a partial S3 path when 
+  synchronizing DOWN. A partial path is one that does not exactly match a
+  directory path. Partial paths can now act as a prefix test that identifies
+  objects in an S3 path, where only the objects in S3 that match the prefix are
+  downloaded. For example, in a bucket that has a Docs subdirectory containing
+  objects named with a timestamp prefix, the S3 path "my-bucket/Docs/2008" will 
+  identify the objects in the Docs subdirectory with names beginning with 2008.
+- Added --batch option that causes Synchronize to compare and download/upload 
+  files in batches of 1000, rather than all at once. This option will reduce the 
+  memory required to synchronize buckets with many objects, and will allow file
+  transfers to commence as soon as possible rather than after the slow
+  comparison process.
+- Added --skipmetadata option that causes Synchronize to skip the retrieval of 
+  object metadata information from S3. This makes synchs much faster for large 
+  buckets, but leave the app with less info to make decisions.
+- Added --reportlevel option that allows the user to control how much report
+  detail is printed, from 0 (no reporting) to 3 (all reporting).
+- Added --move option that deletes local files after they have been uploaded to
+  S3, or deletes objects from S3 after they have been downloaded.
+- Property settings in the synchronize.properties file, or in the file referred
+  to by the --properties option, will override properties of the same name in
+  jets3t.properties. This makes it easy to create task-specific properties
+  files.
+
+
+TOOLKIT
+
+  * General
+
+- Added support for the new Copy Object functionality that allows you to copy,
+  move, rename and update objects in your S3 account. These operations are
+  available through the S3Service as the methods copyObject, moveObject,
+  renameObject and updateObjectMetadata.
+- Added support for conditional copying of objects, based on ETag and 
+  Modified Date comparisons.
+- Made it easier to verify that your data is correctly stored in S3 without 
+  corruption during transit, by calculating Content-MD5 hash values by default
+  in commonly-used S3Object constructors and providing S3Object#verifyData 
+  methods that make it easy to verify data downloaded from S3.  
+- Added basic support for accessing DevPay S3 accounts. DevPay user and product
+  tokens can be provided to the S3Service class directly using the 
+  #setDevPayUserToken and #setDevPayProductToken methods, and default token
+  values can be specified in the jets3t.properties file using the settings
+  "devpay.user-token" and "devpay.product-token".
+- Modified Bucket Logging Status changing behaviour to update ACL settings of
+  the target bucket before (re)directing log files to the bucket.
+- Fixed bug in RestS3Service that caused failures in some circumstances when 
+  buckets were created with the "US" location.
+- S3Service instances can now be configured individually by providing a
+  JetS3tProperties object when constructing the service. The property values
+  in this object can also be updated programmatically after the object has
+  been constructed.
+- FileComparer now supports an optional setting that makes it assume local files 
+  are the latest version when there is a clash between the modification dates 
+  and hash values of a local file and an object stored in S3. This option should
+  only be used as a work-around for users who synchronize Microsoft Excel files
+  to S3, as these are the only documents that exhibit the mismatch. To enable
+  the option, set the jets3t.properties item 
+  "filecomparer.assume-local-latest-in-mismatch" to true.
+- Added support to FileComparer for listing objects based on prefix "partitions"
+  that allow a bucket to be listed by multiple simultaneous threads. This can
+  speed up listings for large buckets containing many virtual subdirectories.
+  To use multiple partitions when building S3 object maps, configure the
+  jets3t.properties item "filecomparer.bucket-listing.<bucketname>" to specify
+  a delimiter string and a traversal depth value separated by a comma, eg:
+  filecomparer.bucket-listing.my-bucket=/,2
+  to partition the bucket my-bucket based on the '/' delimiter to a depth of
+  2 virtual subdirectories.
+
+
+  * REST Implementation
+
+- Added support for the new Copy Object functionality, and conditional copying.
+- The XML parsing code now copes better when object names contain a carriage 
+  return character. A work-around is applied to prevent the Java XML parser
+  from misinterpreting these characters, a fault which could cause some objects
+  to become un-deletable. This new feature is enabled by default, but can be
+  disabled with the jets3t.properties setting "xmlparser.sanitize-listings".
+- Changed default AuthenticationPreemptive setting for HttpClient connections 
+  from true to false, to improve compatibility with NTLM proxies. Preemptive
+  auth can be turned on by setting "httpclient.authentication-preemptive" to 
+  true in jets3t.properties.
+- Refactored repeatable input streams implementations to recognize and support
+  standard InputStream objects that can be reset. Thanks to Keith Bonawitz for
+  the idea and patch for this.
+
+
+  * Multi-threaded Service
+
+- Added a new listObjects method that performs a multi-threaded listing of a
+  bucket's contents. You provide an array of prefix strings which serve to 
+  divide your objects into a number of "partitions", and the service performs
+  these prefix-based listings in parallel. See 
+  src/org/jets3t/samples/ThreadedObjectListing.java for example usage.
+- Added a new notification event ServiceEvent#EVENT_IGNORED_ERRORS that provides
+  information about exceptions that were ignored during a multi-threaded S3 
+  operation. Exceptions are only ignored if the JetS3t property
+  "s3service.ignore-exceptions-in-multi" is set to true.
+
+KUDOS TO:
+
+Shlomo Swidler for numerous improvements to the project's technical 
+documentation and code.
+
+Keith Bonawitz for a patch to improve the handling of data re-transmissions 
+using reset-able input streams.
+
+
+-------------
+Version 0.6.0
+-------------
+
+COCKPIT
+
+- Added support for buckets located in Europe (EU location)
+- Generate signed GET URLs based on virtual host names.
+- Encryption algorithm can be changed in the preferences dialog.
+- Progress dialogs modified to fix display problems with JDK version 6.
+- Fixed bug causing encrypted files not to be automatically recognized
+  and decrypted in some cases
+
+SYNCHRONIZE
+
+- Added --properties option that allows an explicit properties filename to
+  be specified on the command line.
+- Added --nodelete option that keeps items on the destination that have been
+  removed from the source. This is similar to --keepfiles except that files
+  may still be reverted with the --nodelete option.
+- Added --noprogress option that prevents progress messages from being 
+  printed to the console, for cases where these messages pollute log files.
+  This option is similar to --quiet, except the action report is printed.
+- Added the --acl option that allows Access Control List settings to be applied
+  on the command line. Value must be one of: PRIVATE, PUBLIC_READ, 
+  PUBLIC_READ_WRITE
+- Added property setting to ignore missing source directories when uploading.
+- Progress status messages shortened to fit into 80 character width consoles.
+
+
+UPLOADER
+
+- Improved skinning capabilities.
+
+
+COCKPIT LITE
+
+- New Gatekeeper-compatible client application that allows almost all S3 
+  operations to be performed by a client via Gatekeeper-provided 
+  signed URLs.
+  
+  
+GATEKEEPER
+
+- Extended interfaces and default implementations to provide URL signing
+  for all operations performed by the new Cockpit Lite application.
+- Improved support for web proxies.
+  
+
+TOOLKIT
+
+  * General
+
+- S3Service class can now generate POST forms to allow web browsers to upload
+  files or data directly to S3.
+- Added support for buckets located in the EU. Due to this change, the 
+  "s3service.end-point-host" property is now obsolete.
+- Added a default bucket location configuration setting in 
+  jets3t.properties: "s3service.default-bucket-location". If you do not
+  use an explicit bucket location when you use the bucket creation API
+  method, the bucket will be created in this default location.
+- Fixed bugs that caused uploads greater than 2GB to fail 
+  (Expect: 100-Continue is now supported)
+- Added the Bouncy Castle security provider to the suite, increasing the number
+  of cipher algorithms available for encrypting files.
+- The method S3Service.listObjectsChunked now includes Common Prefixes in the
+  result object returned.
+- Corrected the metadata name for the original date object metadata item, which
+  was originally mis-typed as "jets3t-original-file-date-iso860". This name is
+  now "jets3t-original-file-date-iso8601" (added "1" to the end). JetS3t
+  tools remain compatible with the original metadata name.
+- The FileComparer class used by JetS3t applications can now be configured to
+  use pre-generated <filename>.md5 files as a source for MD5 hash values, 
+  removing the need for hash values to be calculated for every synchronization 
+  operation - and potentially saving a great deal of time when you are 
+  synchronizing large files whose content changes rarely. This feature is
+  controlled by a group of propery settings in jets3t.properties: 
+  filecomparer.use-md5-files, filecomparer.generate-md5-files, 
+  filecomparer.skip-upload-of-md5-files.
+- File listings as built using the FileComparer.buildFileMap() methods can be
+  set not to include place-holder objects to represent empty directories 
+  (mimetype "application/x-directory") with the new configuration setting
+  uploads.storeEmptyDirectories.
+
+  * REST S3 Service
+
+- Added support for configuring TCP window sizes. In jets3t.properties, the
+  settings httpclient.socket-receive-buffer and httpclient.socket-send-buffer 
+  are applied to the Socket send and receive buffers used by the underlying
+  HttpClient library.
+- The REST implementation can now automatically cope with RequestTimeTooSkewed
+  errors caused by the client computer's clock disagreeing with S3 about the
+  current time. If this happens, JetS3t will look up the time according to S3
+  and compensate for the difference between the S3 clock and the client's clock.
+- Rudimentary upload bandwidth throttling using the jets3t.properties setting
+  httpclient.read-throttle, which is specified in KB/s.
+- Proxy settings are now configurable via the jets3t.properties settings:
+  httpclient.proxy-autodetect, httpclient.proxy-host, httpclient.proxy-port
+- Upgraded HTTPClient library to version 3.1
+
+  * Multi-threaded Service
+  
+- Administration actions can have more threads assigned than upload/download 
+  actions with the new configuration setting s3service.admin-max-thread-count.
+  These connections run much faster with more threads and as they are light 
+  weight they less likely to fail with higher thread counts.
+- Fixed S3ServiceSimpleMulti class to work with download sets larger than the
+  number of available HTTP connections. Objects' data is now cached in temp
+  files automatically.
+- The S3ServiceMulti@downloadObjects methods will restore the original last 
+  modified date of downloaded objects if the downloads.restoreLastModifiedDate
+  configuration property is set to true. As these methods are used by the JetS3t
+  applications, setting this property to true will allow file dates to be 
+  retained across synchronizations performed by Cockpit and Synchronize. 
+  The original last modified date must be available in the object's metadata
+  item named "jets3t-original-file-date-iso8601".
+
+
+KUDOS TO:
+
+Alexis Agahi for a fix to BytesProgressWatcher.
+
+Pradyumna Lenka for an example update to support the EU bucket location.
+
+Andrea Barbieri of Moving Image Research for suggestions, feedback and quality 
+control.
+
+
+SPONSORS:
+
+The JetS3t project has been generously supported with sponsorship from 
+Moving Image Research : http://www.movingimageresearch.com/
+
+-------------
+Version 0.5.0
+-------------
+
+COCKPIT
+
+- Login credentials can now be stored in S3.
+- Added a dialog for configuring Bucket Logging.
+- Objects can be filtered by prefix and/or delimiter strings.
+- Third-party buckets can be added without first logging in.
+- User can cancel the listing of objects in large buckets.
+- Files being sent to s3 are only opened when necessary, removing the potential
+  for too many files to be open at once (exceeding an Operating System 
+  imposed limit).
+- When uploading files, specific file/directory paths can be ignored 
+  using .jets3t-ignore settings files.
+- Access Control List permissions of uploaded files can be set to PRIVATE, 
+  PUBLIC_READ or PUBLIC_READ_WRITE
+
+
+SYNCHRONIZE
+
+- Progress status messages are displayed for long-running processes.
+- Files being sent to s3 are only opened when necessary, removing the potential
+  for too many files to be open at once (exceeding an Operating System 
+  imposed limit).
+- When uploading files, specific file/directory paths can be ignored 
+  using .jets3t-ignore settings files.
+- Access Control List permissions of uploaded files can be set to PRIVATE, 
+  PUBLIC_READ or PUBLIC_READ_WRITE
+
+
+UPLOADER
+
+A new applet/application to allow third parties without AWS accounts or 
+credentials to upload files to an S3 account. The Uploader provides a simple 
+wizard-based GUI allowing end-users to provide information, choose the 
+file(s) they will upload, and see upload progress.
+
+The Uploader is highly configurable via the uploader.properties file, with 
+settings to configure: user input fields, explanatory text messages, 
+names/images/tooltips for buttons at each stage in the wizard, basic skinning 
+of the Uploader (an example HTML-like skin is included), and branding.
+
+The Uploader is designed to work closely with a Gatekeeper server, which 
+provides the Uploader with signed URLs to allow it to perform uploads.
+
+
+GATEKEEPER
+
+A new servlet that acts as a Gatekeeper server for S3 operations. The servlet
+receives requests for S3 operations (GET, HEAD, PUT, DELETE) and responds to 
+these requests with either a signed URL allowing the operation, or a message 
+stating that the operation will not be allowed.
+
+Basic decision-making functionality is included with the Gatekeeper Servlet, 
+however it is straight-forward to obtain more advanced control over the 
+Gatekeeper's behaviour by implementing the relevant Java interfaces. There 
+are specific interfaces for: allowing/denying requests, signing URLs, and 
+assigning unique transaction IDs for a request.
+
+The Gatekeeper is designed to work closely with the Uploader application, 
+providing it with signed URLs so the Uploader can add items to an S3 account 
+without the end-user having any access to the AWS account credentials.
+
+
+TOOLKIT
+
+  * General
+
+- Properties for many aspects of jets3t behaviour can be set by the 
+  user in a properties file.
+- Support for getting/setting Server Access Logging for buckets.
+- Improved encryption mechanism, which now uses PBE-based encryption and 
+  allows users to set their preferred algorithm. 
+  NOTE: All changes *should* be backwards compatible, but due to these 
+  changes there may be an increased risk of data loss for encrypted items.
+- New methods to chunk bucket listings, allowing for better handling of 
+  buckets with many objects.
+- A limit to the maximum number of simultaneous communication threads 
+  (ie those interacting with S3) is now imposed. This limit can be set in 
+  the properties file, and defaults to 50.
+- Signed URLs can be generated for GET, HEAD, PUT and DELETE requests
+- Fixed bug where object keys/names with special characters were not 
+  correctly encoded.
+- DNS caching is limited to 300 seconds.
+- When an object's data comes from a file, the file can be opened only when 
+  necessary rather than being opened as soon as the object is created.
+- Added documentation for advanced options settings and logging
+  
+  * REST/HTTP implementation
+  
+- Requests that fail due to S3 Internal Server error are retried a 
+  configurable number of times, with an increasing delay between each 
+  retry attempt.
+- The REST/HTTP implementation is now less fussy about object key names, 
+  and will allow unusual names such as full URL strings etc.
+- Can detect (in some circumstances) a browser's proxy settings when run 
+  inside an applet context, and allows for callbacks to a credentials 
+  provider object when authentication is required (eg for proxies 
+  requiring username/password)
+- Signed URLs can be used to perform GET, HEAD, PUT and DELETE operations 
+  without the need for knowledge of AWS credentials.
+- Added a utility method putObjectWithSignedUrl to upload objects to S3 
+  using only a signed PUT URL (ie no AWS credentials are required).
+- Configurable user agent string.
+- Sends an upload object's MD5 data hash to S3 in the header Content-MD5, 
+  to confirm no data corruption has taken place on the wire.
+
+  * SOAP implementation
+
+- Tests for data corruption on the wire by matching ETag returned by S3 with 
+  expected MD5 hash value.
+
+  * Multi-threaded Service
+
+- Signed URLs can be used to perform GET, HEAD, PUT and DELETE operations of 
+  multiple items at a time, without the need for knowledge of AWS credentials.
+
+
+KNOWN ISSUES
+
+  * General
+  
+- Uploading or downloading multiple large files can result in connection 
+  errors if the network connection is flooded. The chances of such errors 
+  can be reduced by using low values (eg 2) for for the jets3t.properties 
+  settings s3service.max-thread-count and httpclient.max-connections.
+  
+  * Cockpit
+  
+- Copy & paste and Drag & drop doesn't work on some versions of Linux, 
+  making it difficult to enter AWS credentials.
+
+
+SPONSORS
+
+The JetS3t project has been generously supported with sponsorship from the 
+following organisations. 
+
+* Moving Image Research : http://www.movingimageresearch.com/
+
+  Moving Image Research (MIR) is a technology company with deep roots in 
+  media science offering software, network services, and consulting.
+
+
+CONTRIBUTORS
+
+Thankyou to the following contributors, who helped make this release possible:
+
+- Moving Image Research, Andrea Barbieri (http://www.movingimageresearch.com/)
+- Angel Vera (gunfus)
+
+
+
+-------------
+Version 0.4.0
+-------------
+Initial public release.
