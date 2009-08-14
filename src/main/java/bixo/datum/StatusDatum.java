@@ -45,7 +45,7 @@ public class StatusDatum extends BaseDatum {
      * @param metaData User-provided meta-data.
      */
     public StatusDatum(String url, HttpHeaders headers, Map<String, Comparable> metaData) {
-        this(url, UrlStatus.FETCHED, headers, BaseFetchException.NO_FETCH_EXCEPTION, metaData);
+        this(url, UrlStatus.FETCHED, headers, null, metaData);
     }
     
     public StatusDatum(String url, BaseFetchException e, Map<String, Comparable> metaData) {
@@ -115,7 +115,7 @@ public class StatusDatum extends BaseDatum {
     @SuppressWarnings("unchecked")
     @Override
     protected Comparable[] getStandardValues() {
-        return new Comparable[] { _url, _status.name(), _headers == null ? "" : _headers.toString(), (Comparable)_exception };
+        return new Comparable[] { _url, _status.name(), _headers == null ? null : _headers.toString(), (Comparable)_exception };
     }
 
 

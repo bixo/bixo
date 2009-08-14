@@ -63,9 +63,9 @@ public class FetchPipe extends SubAssembly {
         @Override
         public void operate(FlowProcess process, FunctionCall funcCall) {
             Tuple t = funcCall.getArguments().getTuple();
-            BaseFetchException result = (BaseFetchException)t.get(_fieldPos);
             
-            if (!result.isRealFetchExcception()) {
+            // If we get a "no error" string instead of an exception, it's a good fetch.
+            if (t.get(_fieldPos) instanceof String) {
                 funcCall.getOutputCollector().add(t.get(_fieldsToCopy));
             }
         }
@@ -91,13 +91,13 @@ public class FetchPipe extends SubAssembly {
         public void operate(FlowProcess process, FunctionCall funcCall) {
             Tuple t = funcCall.getArguments().getTuple();
             FetchedDatum fd = new FetchedDatum(t, _metaDataFields);
-            BaseFetchException result = (BaseFetchException)t.get(_fieldPos);
+            Comparable result = t.get(_fieldPos);
             StatusDatum status;
             
-            if (result == BaseFetchException.NO_FETCH_EXCEPTION) {
+            if (result instanceof String) {
                 status = new StatusDatum(fd.getBaseUrl(), fd.getHeaders(), fd.getMetaDataMap());
             } else {
-                status = new StatusDatum(fd.getBaseUrl(), result, fd.getMetaDataMap());
+                status = new StatusDatum(fd.getBaseUrl(), (BaseFetchException)result, fd.getMetaDataMap());
             }
             
             funcCall.getOutputCollector().add(status.toTuple());

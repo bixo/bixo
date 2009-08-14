@@ -67,7 +67,7 @@ public class FetcherRunnable implements Runnable {
                     Tuple tuple = result.toTuple();
                     // We have to write out a placeholder, so Cascading doesn't complain about the field
                     // value being missing from the tuple.
-                    tuple.add((Comparable)BaseFetchException.NO_FETCH_EXCEPTION);
+                    tuple.add("no error");
                     collector.add(tuple);
                 }
             } catch (BaseFetchException e) {

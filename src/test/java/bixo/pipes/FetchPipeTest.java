@@ -13,6 +13,7 @@ import bixo.config.FetcherPolicy;
 import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
+import bixo.datum.HttpHeaders;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
@@ -70,6 +71,34 @@ public class FetchPipeTest extends CascadingTestCase {
         
         write.close();
         return in;
+    }
+    
+    @Test
+    public void testHeadersInStatus() throws Exception {
+        Lfs in = makeInputData(1, 1);
+
+        Pipe pipe = new Pipe("urlSource");
+        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), true);
+        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
+        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
+        
+        String outputPath = "build/test-data/FetchPipeTest-testHeadersInStatus/out";
+        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath, true);
+        
+        // Finally we can run it.
+        FlowConnector flowConnector = new FlowConnector();
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, null), fetchPipe);
+        flow.complete();
+        
+        Lfs validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        Assert.assertTrue(tupleEntryIterator.hasNext());
+        StatusDatum sd = new StatusDatum(tupleEntryIterator.next(), new Fields());
+        Assert.assertEquals(UrlStatus.FETCHED, sd.getStatus());
+        HttpHeaders headers = sd.getHeaders();
+        Assert.assertNotNull(headers);
+        Assert.assertTrue(headers.getNames().size() > 0);
     }
     
     @Test
