@@ -120,10 +120,10 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                 }
 
                 String ipAddress = key.substring(0, dividerPos);
-                int crawlDelay = Integer.parseInt(key.substring(dividerPos + 1));
                 
                 // TODO KKr - use crawlDelay when creating the queue. Queue no longer needs
                 // fetch policy for filtering, does need policy for other things (like grouping)
+                // int crawlDelay = Integer.parseInt(key.substring(dividerPos + 1));
                 FetcherQueue queue = _queueMgr.createQueue(ipAddress, buffCall.getOutputCollector());
 
                 int skipped = 0;
