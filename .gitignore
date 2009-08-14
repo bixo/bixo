@@ -2,6 +2,7 @@
 .classpath
 .project
 .settings/
+.local.*
 build
 build-eclipse
 build.properties
