@@ -1,4 +1,4 @@
-package bixo.utils;
+package bixo.tools;
 
 import java.io.BufferedReader;
 import java.io.File;
