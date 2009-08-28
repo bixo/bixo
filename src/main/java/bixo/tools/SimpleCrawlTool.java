@@ -73,7 +73,6 @@ public class SimpleCrawlTool {
     }
 
     private static void printUsageAndExit(CmdLineParser parser) {
-        System.err.println("java bixo.SimpleCrawlTool.Main -inputfile <input file for URLs> -outputDir <output directory> [options...]");
         parser.printUsage(System.err);
         System.exit(-1);
     }
