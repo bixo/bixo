@@ -17,18 +17,23 @@ Bixo is released under the MIT license.
 Building
 ===============================
 
+See http://bixo.101tec.com/documentation/building-bixo/ for full details.
+
 You need Apache Ant 1.7 or higher. 
-In the project root type:
-ant -p
 
-To  clean, run the tests and integration tests and build a jar type:
-ant clean test it jar
+To get a list of valid targets:
 
-To build a distribution type:
-ant dist
+% cd <project directory>
+% ant -p
 
-To build a eclipse project type:
-ant eclipse
-Than choose "import existing project" in eclipse.
+To  clean, run the tests and build a jar:
+
+% ant clean test jar
+
+To create Eclipse project files:
+
+% ant eclipse
+
+Than choose "Import existing project" in Eclipse, and select the Bixo project directory.
 
 
