@@ -52,8 +52,14 @@ public class FetcherQueueMgr implements IFetchListProvider {
         _queues = new ConcurrentLinkedQueue<FetcherQueue>();
     }
     
-	public FetcherQueue createQueue(String domain, TupleEntryCollector collector) {
-	    return new FetcherQueue(domain, _defaultPolicy, _process, collector);
+	public FetcherQueue createQueue(String domain, TupleEntryCollector collector, long crawlDelay) {
+	    if (crawlDelay == _defaultPolicy.getCrawlDelay()) {
+	        return new FetcherQueue(domain, _defaultPolicy, _process, collector);
+	    } else {
+	        FetcherPolicy customPolicy = new FetcherPolicy(_defaultPolicy.getMinResponseRate(),
+	                        _defaultPolicy.getMaxContentSize(), _defaultPolicy.getCrawlEndTime(), crawlDelay);
+	        return new FetcherQueue(domain, customPolicy, _process, collector);
+	    }
 	}
 	
 	/**

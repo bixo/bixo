@@ -91,7 +91,7 @@ public class RunTestFetcher {
             FetcherQueueMgr queueMgr = new FetcherQueueMgr(process, defaultPolicy);
             
             for (String pld : domainMap.keySet()) {
-                FetcherQueue queue = queueMgr.createQueue(pld, tupleEntryCollector);
+                FetcherQueue queue = queueMgr.createQueue(pld, tupleEntryCollector, 30);
                 List<String> urls = domainMap.get(pld);
                 System.out.println("Adding " + urls.size() + " URLs for " + pld);
                 for (String url : urls) {

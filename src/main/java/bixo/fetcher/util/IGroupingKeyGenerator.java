@@ -47,4 +47,5 @@ public interface IGroupingKeyGenerator extends Serializable {
      * @throws IOException
      */
     public String getGroupingKey(UrlDatum urlDatum) throws IOException;
+    
 }

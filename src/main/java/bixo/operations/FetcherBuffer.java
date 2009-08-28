@@ -17,6 +17,7 @@ import bixo.fetcher.FetcherQueue;
 import bixo.fetcher.FetcherQueueMgr;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.IGroupingKeyGenerator;
+import bixo.utils.GroupingKey;
 import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
@@ -99,7 +100,7 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
             // <key>-<crawl delay in ms>
             String key = group.getString(0);
 
-            // TODO KKr - output zombie FetchedUrlDatum w/new field communicating this
+            // TODO KKr - output zombie FetchedUrlDatum w/new BaseFetchException communicating this
             // to the FetchPipe, to split off these entries for URL DB updating.
             if (key.equals(IGroupingKeyGenerator.BLOCKED_GROUPING_KEY)) {
                 LOGGER.debug(String.format("Blocked %d URLs", emptyBuffer(values)));
@@ -114,17 +115,9 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
 
                 // Problem getting/processing robots.txt
             } else {
-                int dividerPos = key.lastIndexOf('-');
-                if (dividerPos == -1) {
-                    throw new RuntimeException("Invalid grouping key: " + key);
-                }
-
-                String ipAddress = key.substring(0, dividerPos);
-                
-                // TODO KKr - use crawlDelay when creating the queue. Queue no longer needs
-                // fetch policy for filtering, does need policy for other things (like grouping)
-                // int crawlDelay = Integer.parseInt(key.substring(dividerPos + 1));
-                FetcherQueue queue = _queueMgr.createQueue(ipAddress, buffCall.getOutputCollector());
+                String domain = GroupingKey.getDomainFromKey(key);
+                long crawlDelay = GroupingKey.getCrawlDelayFromKey(key);
+                FetcherQueue queue = _queueMgr.createQueue(domain, buffCall.getOutputCollector(), crawlDelay);
 
                 int skipped = 0;
                 int queued = 0;
@@ -149,8 +142,8 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                     process.keepAlive();
                 }
 
-                LOGGER.info(String.format("Queued %d URLs from %s", queued, ipAddress));
-                LOGGER.debug(String.format("Skipped %d URLs from %s", skipped, ipAddress));
+                LOGGER.info(String.format("Queued %d URLs from %s", queued, domain));
+                LOGGER.debug(String.format("Skipped %d URLs from %s", skipped, domain));
 
                 _flowProcess.increment(FetcherCounters.DOMAINS_QUEUED, 1);
             }

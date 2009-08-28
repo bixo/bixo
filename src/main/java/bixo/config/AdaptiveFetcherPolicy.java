@@ -4,37 +4,29 @@ import bixo.fetcher.FetchRequest;
 
 @SuppressWarnings("serial")
 public class AdaptiveFetcherPolicy extends FetcherPolicy {
-    private int _minCrawlDelay;
-    
-    public AdaptiveFetcherPolicy(long crawlEndTime, int minCrawlDelay) {
-        super(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, crawlEndTime);
+    public AdaptiveFetcherPolicy(long crawlEndTime, long crawlDelay) {
+        super(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, crawlEndTime, crawlDelay);
         
         if (crawlEndTime == FetcherPolicy.NO_CRAWL_END_TIME) {
             throw new IllegalArgumentException("crawlEndTime must be set");
         }
 
-        _minCrawlDelay = minCrawlDelay;
     }
     
-    public AdaptiveFetcherPolicy(int minResponseRate, int maxContentSize, long crawlEndTime, int minCrawlDelay) {
-        super(minResponseRate, maxContentSize, crawlEndTime);
-        _minCrawlDelay = minCrawlDelay;
-    }
-    
-    public void setMinCrawlDelay(int minCrawlDelay) {
-        _minCrawlDelay = minCrawlDelay;
+    public AdaptiveFetcherPolicy(int minResponseRate, int maxContentSize, long crawlEndTime, long crawlDelay) {
+        super(minResponseRate, maxContentSize, crawlEndTime, crawlDelay);
     }
     
     @Override
     public int getMaxUrls() {
-        return calcMaxUrls(_minCrawlDelay);
+        return calcMaxUrls();
     }
     
     @Override
     public FetchRequest getFetchRequest(int maxUrls) {
         // we want to fetch maxUrls in the remaining time, but the min delay might constrain us.
         
-        if ((_minCrawlDelay == 0) || (maxUrls == 0)) {
+        if ((getCrawlDelay() == 0) || (maxUrls == 0)) {
             return new FetchRequest(maxUrls, System.currentTimeMillis());
         }
 
@@ -42,16 +34,15 @@ public class AdaptiveFetcherPolicy extends FetcherPolicy {
         // default fetch interval, to avoid not crawling anything if we run over. We rely on
         // an external mechanism to do any pruning of remaining URLs, so that they get properly
         // aborted.
-        long fetchInterval = Math.max(DEFAULT_FETCH_INTERVAL * 1000L, getCrawlEndTime() - System.currentTimeMillis());
+        long fetchInterval = Math.max(DEFAULT_FETCH_INTERVAL, getCrawlEndTime() - System.currentTimeMillis());
         
         // Crawl delay must be between _minCrawlDelay and default crawl delay.
-        int intervalInSeconds = (int)(fetchInterval / 1000L);
-        int crawlDelay = Math.max(_minCrawlDelay, Math.min(DEFAULT_CRAWL_DELAY, intervalInSeconds / maxUrls));
+        long crawlDelay = Math.max(getCrawlDelay(), Math.min(DEFAULT_CRAWL_DELAY, fetchInterval / maxUrls));
         
         // Figure out how many URLs we can get in 5 minutes,or the remaining time (whatever is less).
-        int numUrls = Math.min(1 + (Math.min(DEFAULT_FETCH_INTERVAL, intervalInSeconds) / crawlDelay), maxUrls);
+        int numUrls = Math.min(1 + (int)(Math.min(DEFAULT_FETCH_INTERVAL, fetchInterval) / crawlDelay), maxUrls);
         
-        long nextFetchTime = System.currentTimeMillis() + ((numUrls - 1) * crawlDelay * 1000L);
+        long nextFetchTime = System.currentTimeMillis() + ((numUrls - 1) * crawlDelay);
         return new FetchRequest(numUrls, nextFetchTime);
     }
 

@@ -66,14 +66,14 @@ public class FetcherQueueTest {
     private class ControlledFetcherPolicy extends FetcherPolicy {
         private int _maxUrls;
         private int _numUrlsPerRequest;
-        private int _crawlDelay;
    
-        public ControlledFetcherPolicy(int maxUrls, int numUrlsPerRequest, int crawlDelay) {
+        public ControlledFetcherPolicy(int maxUrls, int numUrlsPerRequest, long crawlDelay) {
             super();
             
             _maxUrls = maxUrls;
             _numUrlsPerRequest = numUrlsPerRequest;
-            _crawlDelay = crawlDelay;
+            
+            setCrawlDelay(crawlDelay);
         }
 
         @Override
@@ -84,7 +84,7 @@ public class FetcherQueueTest {
         @Override
         public FetchRequest getFetchRequest(int maxUrls) {
             int numUrls = Math.min(_numUrlsPerRequest, maxUrls);
-            long nextFetchTime = System.currentTimeMillis() + (numUrls * _crawlDelay * 1000L);
+            long nextFetchTime = System.currentTimeMillis() + (numUrls * _crawlDelay);
             return new FetchRequest(numUrls, nextFetchTime);
         }
     }
@@ -150,7 +150,7 @@ public class FetcherQueueTest {
 
     @Test
     public void testCrawlDelay() throws MalformedURLException, InterruptedException {
-        FetcherPolicy policy = new ControlledFetcherPolicy(1000, 1, 1);
+        FetcherPolicy policy = new ControlledFetcherPolicy(1000, 1, 1 * 1000L);
         FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
 
         ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 0.5d);
@@ -169,7 +169,7 @@ public class FetcherQueueTest {
 
     @Test
     public void testMultipleRequestsPerConnection() throws InterruptedException {
-        FetcherPolicy policy = new ControlledFetcherPolicy(1000, 2, 1);
+        FetcherPolicy policy = new ControlledFetcherPolicy(1000, 2, 1 * 1000L);
         
         FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
 
@@ -214,7 +214,7 @@ public class FetcherQueueTest {
     
     @Test
     public void testAdaptiveFetchPolicyMinDelay() throws InterruptedException {
-        AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(System.currentTimeMillis() + 2000L, 1);
+        AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(System.currentTimeMillis() + 2000L, 1 * 1000L);
         
         FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
 

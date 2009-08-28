@@ -44,7 +44,7 @@ public class FetcherQueueMgrTest {
         FetcherQueueMgr queueMgr = new FetcherQueueMgr(process, defaultPolicy);
         
         MyCollector collector = new MyCollector();
-        FetcherQueue newQueue = queueMgr.createQueue("domain.com", collector);
+        FetcherQueue newQueue = queueMgr.createQueue("domain.com", collector, 1);
         
         ScoredUrlDatum scoredDatum = new ScoredUrlDatum("http://domain.com", 0, 0, UrlStatus.UNFETCHED, "domain.com-30000", 1.0, null);
         Assert.assertTrue(newQueue.offer(scoredDatum));

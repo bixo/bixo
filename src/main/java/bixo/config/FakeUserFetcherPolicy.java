@@ -7,21 +7,21 @@ import bixo.fetcher.FetchRequest;
 public class FakeUserFetcherPolicy extends FetcherPolicy {
     
     // Set requests to be about 60 seconds apart (on average)
-    private static final int DEFAULT_USER_CRAWL_DELAY = 60;
+    private static final long DEFAULT_USER_CRAWL_DELAY = 60 * 1000L;
     
-    private int _crawlDelay = DEFAULT_USER_CRAWL_DELAY;
+    private long _crawlDelay = DEFAULT_USER_CRAWL_DELAY;
     
     public FakeUserFetcherPolicy() {
     }
         
-    public FakeUserFetcherPolicy(int crawlDelay) {
+    public FakeUserFetcherPolicy(long crawlDelay) {
         _crawlDelay = crawlDelay;
     }
         
     @Override
     public FetchRequest getFetchRequest(int maxUrls) {
         // Set up the next request to have random variance.
-        double baseDelay = _crawlDelay * 1000.0;
+        double baseDelay = _crawlDelay;
         double delayVariance = (Math.random() * baseDelay) - (baseDelay/2.0);
         long nextRequestTime = System.currentTimeMillis() + Math.round(baseDelay + delayVariance);
         FetchRequest result = new FetchRequest(Math.min(maxUrls, 1), nextRequestTime);
@@ -29,7 +29,7 @@ public class FakeUserFetcherPolicy extends FetcherPolicy {
     }
 
     @Override
-    public int getDefaultCrawlDelay() {
+    public long getDefaultCrawlDelay() {
         return _crawlDelay;
     }
 }

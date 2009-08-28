@@ -36,23 +36,25 @@ public class FetcherPolicy implements Serializable {
     public static final long DEFAULT_CRAWL_END_TIME = NO_CRAWL_END_TIME;
     
     // Interval between batched fetch requests, in seconds.
-    protected static final int DEFAULT_FETCH_INTERVAL = 5 * 60;
+    protected static final long DEFAULT_FETCH_INTERVAL = 5 * 60 * 1000L;
     
-    protected static final int DEFAULT_CRAWL_DELAY = 30;
+    protected static final long DEFAULT_CRAWL_DELAY = 30 * 1000L;
 
     private int _minResponseRate;        // lower bounds on bytes-per-second
     private int _maxContentSize;        // Max # of bytes to use.
     private long _crawlEndTime;          // When we want the crawl to end
+    protected long _crawlDelay;            // Delay (in seconds) between requests
     
     public FetcherPolicy() {
-        this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME);
+        this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME, DEFAULT_CRAWL_DELAY);
     }
 
 
-    public FetcherPolicy(int minResponseRate, int maxContentSize, long crawlEndTime) {
+    public FetcherPolicy(int minResponseRate, int maxContentSize, long crawlEndTime, long crawlDelay) {
         _minResponseRate = minResponseRate;
         _maxContentSize = maxContentSize;
         _crawlEndTime = crawlEndTime;
+        _crawlDelay = crawlDelay;
     }
 
     
@@ -65,23 +67,25 @@ public class FetcherPolicy implements Serializable {
         if (_crawlEndTime == NO_CRAWL_END_TIME) {
             return Integer.MAX_VALUE;
         } else {
-            return calcMaxUrls(getDefaultCrawlDelay());
+            return calcMaxUrls();
         }
     }
 
-    public int getDefaultCrawlDelay() {
+    
+    public long getDefaultCrawlDelay() {
         return DEFAULT_CRAWL_DELAY;
     }
     
-    protected int calcMaxUrls(int crawlDelay) {
-        if (crawlDelay == 0) {
+    
+    protected int calcMaxUrls() {
+        if (_crawlDelay == 0) {
             return Integer.MAX_VALUE;
         } else {
             long crawlDuration = _crawlEndTime - System.currentTimeMillis();
-            long delayInMS = 1000L * crawlDelay;
-            return 1 + (int)Math.max(0, crawlDuration / delayInMS);
+            return 1 + (int)Math.max(0, crawlDuration / _crawlDelay);
         }
     }
+    
     
     public long getCrawlEndTime() {
         return _crawlEndTime;
@@ -112,13 +116,24 @@ public class FetcherPolicy implements Serializable {
         _maxContentSize = maxContentSize;
     }
     
+    
+    public long getCrawlDelay() {
+        return _crawlDelay;
+    }
+    
+    
+    public void setCrawlDelay(long crawlDelay) {
+        _crawlDelay = crawlDelay;
+    }
+    
+    
     public FetchRequest getFetchRequest(int maxUrls) {
-        int crawlDelay = getDefaultCrawlDelay();
-        int numUrls = Math.min(maxUrls, DEFAULT_FETCH_INTERVAL / crawlDelay);
-        long nextFetchTime = System.currentTimeMillis() + (numUrls * crawlDelay * 1000L);
+        int numUrls = Math.min(maxUrls, (int)(DEFAULT_FETCH_INTERVAL / _crawlDelay));
+        long nextFetchTime = System.currentTimeMillis() + (numUrls * _crawlDelay);
 
         return new FetchRequest(numUrls, nextFetchTime);
     }
+    
     
     public String toString() {
         StringBuilder result = new StringBuilder();
@@ -127,6 +142,8 @@ public class FetcherPolicy implements Serializable {
         result.append("Minimum response rate: " + getMinResponseRate());
         result.append('\r');
         result.append("Maximum content size: " + getMaxContentSize());
+        result.append('\r');
+        result.append("Crawl delay in msec: " + getCrawlDelay());
         
         return result.toString();
     }

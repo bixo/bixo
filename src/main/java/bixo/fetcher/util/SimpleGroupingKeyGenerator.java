@@ -39,6 +39,7 @@ import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.http.SimpleRobotRules;
 import bixo.utils.DomainNames;
+import bixo.utils.GroupingKey;
 
 /**
  * Generate a key that consists of the URL's IP address or PLD, followed by a '-', followed
@@ -134,11 +135,7 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
         if (robotRules.getDeferVisits()) {
             return DEFERRED_GROUPING_KEY;
         } else if (robotRules.isAllowed(urlStr)) {
-            if (_usePLD) {
-                return DomainNames.getPLD(host) + "-" + robotRules.getCrawlDelay();
-            } else {
-                return ia.getHostAddress() + "-" + robotRules.getCrawlDelay();
-            }
+            return GroupingKey.makeGroupingKey(_usePLD ? DomainNames.getPLD(host) : ia.getHostAddress(), robotRules.getCrawlDelay());
         } else {
             return BLOCKED_GROUPING_KEY;
         }

@@ -4,7 +4,7 @@ import java.net.MalformedURLException;
 
 
 public interface IRobotRules {
-    public static final long DEFAULT_CRAWL_DELAY = 30 * 1000;
+    public static final long DEFAULT_CRAWL_DELAY = 30 * 1000L;
     
     /**
      * Get Crawl-Delay, in milliseconds. This returns DEFAULT_CRAWL_DELAY if not set.

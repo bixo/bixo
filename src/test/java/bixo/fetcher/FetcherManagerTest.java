@@ -69,7 +69,7 @@ public class FetcherManagerTest extends SimulationWebServer {
 
             for (int i = 0; i < 200; i++) {
                 String host = "domain-" + i + ".com";
-                FetcherQueue queue = queueMgr.createQueue(host, new FakeCollector());
+                FetcherQueue queue = queueMgr.createQueue(host, new FakeCollector(), 1);
 
                 for (int j = 0; j < 2; j++) {
                     String file = "/page-" + j + ".html";

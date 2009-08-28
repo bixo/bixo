@@ -11,7 +11,7 @@ public class AdaptiveFetcherPolicyTest {
     @Test
     public void testMinDelayLimit() {
         // Target end is now + 10 seconds, and our min delay is 1 second.
-        AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(System.currentTimeMillis() + (10 * 1000), 1);
+        AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(System.currentTimeMillis() + (10 * 1000), 1000L);
         
         // Ask for more than we can get in the remaining time, so it has to use a 5 minutes
         // window.
@@ -27,7 +27,7 @@ public class AdaptiveFetcherPolicyTest {
     public void testFiveMinuteWindow() {
         // Target end is now + 600 seconds (10 minutes), and our min delay is 1 second.
         long now = System.currentTimeMillis();
-        AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(now + (600 * 1000), 1);
+        AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(now + (600 * 1000), 1000L);
 
         // Ask for more than will fit in the duration assuming a 30 second delay, but less than what
         // would be constrained by the 1 second min delay.
@@ -49,7 +49,7 @@ public class AdaptiveFetcherPolicyTest {
         // If we're at the end of the crawl, we still want to be fetching as otherwise we'll
         // never end.
         long now = System.currentTimeMillis();
-        AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(now - 1000, 10);
+        AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(now - 1000, 10 * 1000L);
         
         // Ask for more than we can get in the remaining time, so it has to use a 5 minutes
         // window.

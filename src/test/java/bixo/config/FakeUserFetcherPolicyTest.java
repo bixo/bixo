@@ -12,7 +12,7 @@ public class FakeUserFetcherPolicyTest {
     @Test
     public void testDefaultDelay() {
         FakeUserFetcherPolicy policy = new FakeUserFetcherPolicy();
-        Assert.assertEquals(60, policy.getDefaultCrawlDelay());
+        Assert.assertEquals(60 * 1000L, policy.getDefaultCrawlDelay());
     }
     
     @Test

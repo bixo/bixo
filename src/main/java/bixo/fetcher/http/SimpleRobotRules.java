@@ -69,7 +69,7 @@ public class SimpleRobotRules implements IRobotRules {
             return _crawlDelay;
         }
 
-        public void setCrawlDelay(int crawlDelay) {
+        public void setCrawlDelay(long crawlDelay) {
             _crawlDelay = crawlDelay;
         }
 
@@ -389,7 +389,7 @@ public class SimpleRobotRules implements IRobotRules {
                 String delayString = line.substring(CRAWL_DELAY_FIELD.length()).trim();
                 if (delayString.length() > 0) {
                     try {
-                        int delayValue = Integer.parseInt(delayString) * 1000; // sec to millisec
+                        long delayValue = Integer.parseInt(delayString) * 1000L; // sec to millisec
                         curRules.setCrawlDelay(delayValue);
                     } catch (Exception e) {
                         LOGGER.info("Error parsing robots rules - can't decode crawl delay", e);
