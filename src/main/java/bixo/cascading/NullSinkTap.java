@@ -28,7 +28,6 @@ public class NullSinkTap extends SinkTap {
 
 	}
 
-	@SuppressWarnings("serial")
 	private static class NullScheme extends Scheme {
 	    
 	    public NullScheme(Fields sourceFields) {
