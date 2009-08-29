@@ -1,8 +1,10 @@
-package bixo.fetcher.http;
+package bixo.tools;
 
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
+import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.SimpleHttpFetcher;
 
 public class RunHttpClientFetcher {
 
