@@ -70,10 +70,10 @@ public class FetcherTest {
     
     @Test
     public void testStaleConnection() throws Exception {
-        String workingFolder = "build/test-data/FetcherTest-testStaleConnection/working";
-        String inputPath = makeUrlDB(workingFolder, "src/test-data/facebook-artists.txt");
+        String workingFolder = "build/it/FetcherTest-testStaleConnection/working";
+        String inputPath = makeUrlDB(workingFolder, "src/it/resources/facebook-artists.txt");
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
-        String outPath = "build/test-data/FetcherTest-testStaleConnection/out";
+        String outPath = "build/it/FetcherTest-testStaleConnection/out";
         Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath + "/content", true);
         Lfs status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outPath + "/status", true);
         
@@ -103,8 +103,8 @@ public class FetcherTest {
 
     @Test
     public void testRunFetcher() throws Exception {
-        String workingFolder = "build/test-data/FetcherTest-run/working";
-        String inputPath = makeUrlDB(workingFolder, "src/test-data/top10urls.txt");
+        String workingFolder = "build/it/FetcherTest-run/working";
+        String inputPath = makeUrlDB(workingFolder, "src/it/resources/top10urls.txt");
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
         String outPath = workingFolder + "/FetcherTest-testRunFetcher";
         Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath + "/content", true);
