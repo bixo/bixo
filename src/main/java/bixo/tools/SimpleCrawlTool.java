@@ -60,7 +60,7 @@ public class SimpleCrawlTool {
             String urlAsString = funcCall.getArguments().getString("line");
             if (urlAsString.length() > 0) {
                 try {
-                    // Validaee the URL
+                    // Validate the URL
                     new URL(urlAsString);
                     
                     UrlDatum urlDatum = new UrlDatum(urlAsString);
