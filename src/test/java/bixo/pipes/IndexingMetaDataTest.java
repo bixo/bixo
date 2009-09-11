@@ -51,7 +51,7 @@ public class IndexingMetaDataTest {
     public void testMetaData() throws Exception {
         // we want to pass meta data all the way through to the index.
 
-        Lfs in = new Lfs(new SequenceFile(FieldUtil.combine(UrlDatum.FIELDS, new Fields("metaData"))), "build/test-data/TestMetaData/testMetaData/in", true);
+        Lfs in = new Lfs(new SequenceFile(FieldUtil.combine(UrlDatum.FIELDS, new Fields("metaData"))), "build/test/TestMetaData/testMetaData/in", true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
 
         for (int i = 0; i < DATA_COUNT; i++) {
@@ -76,7 +76,7 @@ public class IndexingMetaDataTest {
         Fields indexedFields = new Fields("text", "metaData");
         Pipe indexPipe = new Each(parserPipe, new Fields(ParsedDatum.PARSED_TEXT_FIELD, "metaData"), new Identity(indexedFields));
         
-        String out = "build/test-data/TestMetaData/testMetaData/out";
+        String out = "build/test/TestMetaData/testMetaData/out";
         FileUtil.fullyDelete(new File(out));
         Lfs indexSinkTap = new Lfs(new IndexScheme(indexedFields, new Store[] { Store.NO, Store.NO }, new Index[] { Index.NOT_ANALYZED, Index.NOT_ANALYZED }, KeywordAnalyzer.class,
                         MaxFieldLength.UNLIMITED.getLimit()), out, SinkMode.REPLACE);

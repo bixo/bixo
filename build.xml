@@ -31,14 +31,14 @@ SOFTWARE.
 	<!-- Integration Tests                                                  -->
 	<!-- ================================================================== -->
 
-	<target name="compile-integration-test" depends="compile, compile-test">
+	<target name="compile-integration-test" depends="compile">
 		<echo>*** Building Integration Tests Sources ***</echo>
 		<mkdir dir="${build.dir.it-classes}" />
 		<ivy:cachepath pathid="test.path.id" conf="test" />
 		<path id="test.path">
 			<path refid="test.path.id" />
 			<pathelement location="${build.dir.main-classes}" />
-			<pathelement location="${build.dir.test-classes}" />
+			<pathelement location="${build.dir.it-classes}" />
 		</path>
 
 		<javac encoding="${build.encoding}"
@@ -55,14 +55,11 @@ SOFTWARE.
 		</javac>
 	</target>
 
-	<target name="it"
+	<target name="test-it"
 	        depends="jar, compile-integration-test"
 	        description="--> run integration tests">
 		<delete dir="${build.dir.it-reports}" />
 		<mkdir dir="${build.dir.it-reports}" />
-
-		<delete dir="${build.dir.test-data}" />
-		<mkdir dir="${build.dir.test-data}" />
 
 		<ivy:cachepath pathid="test.path.id" conf="test" />
 
@@ -77,8 +74,8 @@ SOFTWARE.
 			<classpath>
 				<pathelement location="${build.dir.main-classes}" />
 				<pathelement location="${build.dir.it-classes}" />
-				<pathelement location="${build.dir.test-classes}" />
-				<pathelement location="${test.res.dir}" />
+				<pathelement location="${main.res.dir}" />
+				<pathelement location="${it.res.dir}" />
 				<path refid="test.path.id" />
 				<fileset file="${build.dir}/${ant.project.name}.jar" />
 			</classpath>
@@ -124,7 +121,7 @@ SOFTWARE.
 	<!-- ================================================================== -->
 
 	<target name="dist"
-	        depends="test, it, coverage, jar, doc"
+	        depends="test, test-it, coverage, jar, doc"
 	        description="--> creates a distribution">
 
 		<delete dir="${build.dir.dist}" />
@@ -192,6 +189,7 @@ SOFTWARE.
 		         classpathref="eclipse.path.id" />
 		<mkdir dir="${build.dir.main-classes-eclipse}" />
 		<mkdir dir="${build.dir.test-classes-eclipse}" />
+		<mkdir dir="${build.dir.it-classes-eclipse}" />
 		<eclipse>
 			<settings>
 				<jdtcore compilercompliance="6.0" />
@@ -203,13 +201,16 @@ SOFTWARE.
 
 				<source path="${basedir}/src/main/java"
 				        output="${build.dir.main-classes-eclipse}" />
+				<source path="${basedir}/src/main/resources"
+				        output="${build.dir.main-classes-eclipse}" />
 				<source path="${basedir}/src/test/java"
 				        output="${build.dir.test-classes-eclipse}" />
 				<source path="${basedir}/src/test/resources"
 				        output="${build.dir.test-classes-eclipse}" />
-				<source path="${basedir}/src/test/integration"
-				        output="${build.dir.test-classes-eclipse}" />
-
+				<source path="${basedir}/src/it/java"
+				        output="${build.dir.it-classes-eclipse}" />
+				<source path="${basedir}/src/it/resources"
+				        output="${build.dir.it-classes-eclipse}" />
 
 				<!-- extras -->
 				<!-- we do not yet have extra modules, but it is just a question of time :) -->

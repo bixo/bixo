@@ -62,7 +62,7 @@ public class IndexSchemaTest {
     
     @Test
     public void testIndexSink() throws Exception {
-        String out = "build/test-data/IndexSchemaTest/testIndexSink/out";
+        String out = "build/test/IndexSchemaTest/testIndexSink/out";
 
         Lfs lfs = new Lfs(new IndexScheme(new Fields("text"), new Store[] { Store.NO }, new Index[] { Index.NOT_ANALYZED }, StandardAnalyzer.class, MaxFieldLength.UNLIMITED.getLimit()), out,
                         SinkMode.REPLACE);
@@ -79,7 +79,7 @@ public class IndexSchemaTest {
     @Test
     public void testPipeIntoIndex() throws Exception {
 
-        String in = "build/test-data/IndexSchemaTest/testPipeIntoIndex/in";
+        String in = "build/test/IndexSchemaTest/testPipeIntoIndex/in";
 
         Lfs lfs = new Lfs(new SequenceFile(ParsedDatum.FIELDS), in, SinkMode.REPLACE);
         TupleEntryCollector write = lfs.openForWrite(new JobConf());
@@ -104,7 +104,7 @@ public class IndexSchemaTest {
         // the CalcBoost(), and what CalcBoost outputs will be merged in with ALL of the input fields.
         indexingPipe = new Each(indexingPipe, new CalcBoost(), Fields.ALL);
         
-        String out = "build/test-data/IndexSchemaTest/testPipeIntoIndex/out";
+        String out = "build/test/IndexSchemaTest/testPipeIntoIndex/out";
         FileUtil.fullyDelete(new File(out));
         Lfs indexSinkTap = new Lfs(scheme, out, SinkMode.REPLACE);
         

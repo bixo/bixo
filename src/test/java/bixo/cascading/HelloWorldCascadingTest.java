@@ -54,11 +54,11 @@ public class HelloWorldCascadingTest extends ClusterTestCase {
   @Test
   public void testHello() throws Exception {
 
-    String inputPath = "src/test-data/sometext.txt";
+    String inputPath = "src/test/resources/sometext.txt";
     if (!new File(inputPath).exists()) {
       fail("data file not found");
     }
-    String outputPath = "build/test-data/HelloWorldCascadingTest/testHello";
+    String outputPath = "build/test/HelloWorldCascadingTest/testHello";
     new File(outputPath).mkdirs();
 
     copyFromLocal(inputPath);

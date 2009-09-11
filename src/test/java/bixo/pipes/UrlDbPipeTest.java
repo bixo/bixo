@@ -23,11 +23,11 @@ public class UrlDbPipeTest extends CascadingTestCase {
     @Test
     public void testUrlDbPipe() throws Exception {
 
-        Lfs in1 = new Lfs(new SequenceFile(UrlDatum.FIELDS), "build/test-data/UrlDbPipeTest/in1", true);
-        Lfs in2 = new Lfs(new SequenceFile(UrlDatum.FIELDS), "build/test-data/UrlDbPipeTest/in2", true);
-        Lfs in3 = new Lfs(new SequenceFile(UrlDatum.FIELDS), "build/test-data/UrlDbPipeTest/in3", true);
+        Lfs in1 = new Lfs(new SequenceFile(UrlDatum.FIELDS), "build/test/UrlDbPipeTest/in1", true);
+        Lfs in2 = new Lfs(new SequenceFile(UrlDatum.FIELDS), "build/test/UrlDbPipeTest/in2", true);
+        Lfs in3 = new Lfs(new SequenceFile(UrlDatum.FIELDS), "build/test/UrlDbPipeTest/in3", true);
 
-        Tap out = new Lfs(new SequenceFile(UrlDatum.FIELDS), "build/test-data/UrlDbPipeTest/out", true);
+        Tap out = new Lfs(new SequenceFile(UrlDatum.FIELDS), "build/test/UrlDbPipeTest/out", true);
 
         TupleEntryCollector write1 = in1.openForWrite(new JobConf());
 

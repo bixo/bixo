@@ -39,8 +39,8 @@ public class UrlImporterTest extends CascadingTestCase {
     @Test
     public void testImportFiles() throws Exception {
         UrlImporter urlImporter = new UrlImporter();
-        String inputPath = "src/test-data/top10urls.txt";
-        String workingFolder = "build/test-data/UrlImporterTest/working";
+        String inputPath = "src/test/resources/urls.txt";
+        String workingFolder = "build/test/UrlImporterTest/working";
         FileUtil.fullyDelete(new File(workingFolder));
         urlImporter.importUrls(inputPath, workingFolder);
 

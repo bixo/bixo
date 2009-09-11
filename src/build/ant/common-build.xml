@@ -153,8 +153,6 @@ SOFTWARE.
 	<target name="test" depends="compile-test" description="--> run tests">
 		<delete dir="${build.dir.test-reports}" />
 		<mkdir dir="${build.dir.test-reports}" />
-		<delete dir="${build.dir.test-data}" />
-		<mkdir dir="${build.dir.test-data}" />
 
 		<ivy:cachepath pathid="test.path.id" conf="test" />
 		<ivy:cachepath pathid="instrument.path.id" conf="instrument" />

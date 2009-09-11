@@ -59,7 +59,7 @@ public class FetchPipeTest extends CascadingTestCase {
     @SuppressWarnings("unchecked")
     private Lfs makeInputData(int numDomains, int numPages, Map<String, Comparable> metaData) throws IOException {
         Fields sfFields = UrlDatum.FIELDS.append(BaseDatum.makeMetaDataFields(metaData));
-        Lfs in = new Lfs(new SequenceFile(sfFields), "build/test-data/FetchPipeTest/in", true);
+        Lfs in = new Lfs(new SequenceFile(sfFields), "build/test/FetchPipeTest/in", true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
         for (int i = 0; i < numDomains; i++) {
             for (int j = 0; j < numPages; j++) {
@@ -83,7 +83,7 @@ public class FetchPipeTest extends CascadingTestCase {
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
         
-        String outputPath = "build/test-data/FetchPipeTest-testHeadersInStatus/out";
+        String outputPath = "build/test/FetchPipeTest-testHeadersInStatus/out";
         Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath, true);
         
         // Finally we can run it.
@@ -111,7 +111,7 @@ public class FetchPipeTest extends CascadingTestCase {
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
         
-        String outputPath = "build/test-data/FetchPipeTest/testFetchPipe";
+        String outputPath = "build/test/FetchPipeTest/testFetchPipe";
         Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
         Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
 
@@ -165,7 +165,7 @@ public class FetchPipeTest extends CascadingTestCase {
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher, new Fields("key"));
         
-        String outputPath = "build/test-data/FetchPipeTest/dual";
+        String outputPath = "build/test/FetchPipeTest/dual";
         Fields contentFields = FetchedDatum.FIELDS.append(new Fields("key"));
         Tap content = new Hfs(new SequenceFile(contentFields), outputPath + "/content", true);
 
@@ -201,7 +201,7 @@ public class FetchPipeTest extends CascadingTestCase {
         IScoreGenerator scoring = new SkippedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
         
-        String outputPath = "build/test-data/FetchPipeTest/out";
+        String outputPath = "build/test/FetchPipeTest/out";
         Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
         
         // Finally we can run it.
@@ -227,7 +227,7 @@ public class FetchPipeTest extends CascadingTestCase {
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
 
         // Create the output
-        String outputPath = "build/test-data/FetchPipeTest/out";
+        String outputPath = "build/test/FetchPipeTest/out";
         Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
 
         // Finally we can run it. Set up our prefs with a FetcherPolicy that has an end time of now,

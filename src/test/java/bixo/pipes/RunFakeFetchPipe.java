@@ -80,7 +80,7 @@ public class RunFakeFetchPipe {
             FetchPipe fetchPipe = new FetchPipe(importPipe, grouping, scoring, fetcher);
 
             // Create the output, which is a dual file sink tap.
-            String outputPath = "build/test-data/RunFakeFetchPipe/dual";
+            String outputPath = "build/test/RunFakeFetchPipe/dual";
             Tap status = new Hfs(new TextLine(new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD), new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD)), outputPath + "/status",
                             true);
             Tap content = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD)), outputPath + "/content",

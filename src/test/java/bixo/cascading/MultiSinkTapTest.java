@@ -24,7 +24,7 @@ public class MultiSinkTapTest extends CascadingTestCase {
     @Test
     public void testMultiTap() throws Exception {
 
-        String in = "build/test-data/MultiSinkTapTest/testMultiTap/in";
+        String in = "build/test/MultiSinkTapTest/testMultiTap/in";
         Lfs lfs = new Lfs(new TextLine(), in, SinkMode.REPLACE);
         TupleEntryCollector write = lfs.openForWrite(new JobConf());
         for (int i = 0; i < 10; i++) {
@@ -37,7 +37,7 @@ public class MultiSinkTapTest extends CascadingTestCase {
         Tap source = new Hfs(new TextLine(new Fields("line")), in);
         Pipe pipe = new Pipe("test");
         pipe = new Each(pipe, new RegexSplitter(new Fields("left", "right", "content"), "\t"));
-        String outputPath = "build/test-data/MultiSinkTapTest/testMultiTap/out";
+        String outputPath = "build/test/MultiSinkTapTest/testMultiTap/out";
         Tap lhsSink = new Hfs(new TextLine(new Fields("key", "value"), new Fields("left", "content")), outputPath + "/multisink/lhs", true);
         Tap rhsSink = new Hfs(new TextLine(new Fields("key", "value"), new Fields("right", "content")), outputPath + "/multisink/rhs", true);
 

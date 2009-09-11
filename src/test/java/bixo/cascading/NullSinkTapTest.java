@@ -20,7 +20,7 @@ import cascading.tuple.TupleEntryCollector;
 public class NullSinkTapTest {
 	@Test
 	public void testNullSinkTap() throws IOException {
-        Lfs in = new Lfs(new SequenceFile(new Fields("input")), "build/test-data/NullSinkTapTest/in", true);
+        Lfs in = new Lfs(new SequenceFile(new Fields("input")), "build/test/NullSinkTapTest/in", true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
         Tuple tuple = new Tuple("value");
         write.add(tuple);

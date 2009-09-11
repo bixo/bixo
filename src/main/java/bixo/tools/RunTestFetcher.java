@@ -82,7 +82,7 @@ public class RunTestFetcher {
 
             // setup output
             JobConf conf = new JobConf();
-            String out = "build/test-data/RunTestFetcher/working";
+            String out = "build/test/RunTestFetcher/working";
             TupleEntryCollector tupleEntryCollector = new Lfs(new SequenceFile(Fields.ALL), out, true).openForWrite(conf);
 
             BixoFlowProcess process = new BixoFlowProcess();
