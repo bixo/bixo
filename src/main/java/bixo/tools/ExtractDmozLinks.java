@@ -8,21 +8,27 @@ import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ExtractDmozLinks {
 
     public static void main(String[] args) {
-        // <Topic r:id="Top/Adult/Arts/Animation/Anime/Fan_Works/Fan_Art">
-        Pattern topicPattern = Pattern.compile("[ \t]*<Topic[ \t]+r:id[ \t]*=[ \t]*\"([^\"]+)\">.*");
-        Matcher topicMatcher = topicPattern.matcher("");
         
-        //   <link r:resource="http://www.geocities.com/kaseychan17/index.html"/>
-        Pattern resourcePattern = Pattern.compile("[ \t]*<link(1|)[ \t]+r:resource[ \t]*=[ \t]*\"([^\"]+)\".*");
-        Matcher resourceMatcher = resourcePattern.matcher("");
-
         try {
+            Properties properties = new Properties();
+            properties.load(new FileInputStream("src/main/resources/dmoz.properties"));
+            String adultTopic = properties.getProperty("topics.adult");
+            
+            // <Topic r:id="Top/Adult/Arts/Animation/Anime/Fan_Works/Fan_Art">
+            Pattern topicPattern = Pattern.compile("[ \t]*<Topic[ \t]+r:id[ \t]*=[ \t]*\"([^\"]+)\">.*");
+            Matcher topicMatcher = topicPattern.matcher("");
+
+            //   <link r:resource="http://www.geocities.com/kaseychan17/index.html"/>
+            Pattern resourcePattern = Pattern.compile("[ \t]*<link(1|)[ \t]+r:resource[ \t]*=[ \t]*\"([^\"]+)\".*");
+            Matcher resourceMatcher = resourcePattern.matcher("");
+
             String inputFile = args[0];
             PrintStream outputStream;
             if (args.length == 2) {
@@ -33,12 +39,12 @@ public class ExtractDmozLinks {
 
             InputStreamReader isr = new InputStreamReader(new FileInputStream(inputFile), "UTF-8");
             BufferedReader reader = new BufferedReader(isr);
-            
+
             int numLines = 0;
             int numUrls = 0;
-            
+
             boolean inGoodTopic = false;
-            
+
             String curLine;
             String urlString;
             while ((curLine = reader.readLine()) != null) {
@@ -74,10 +80,10 @@ public class ExtractDmozLinks {
 
                 if (checkForTopic && (topicMatcher.reset(curLine).matches())) {
                     // Skip all adult links...we'll get some, but less this way.
-                    inGoodTopic = !topicMatcher.group(1).contains("/Adult");
+                    inGoodTopic = !topicMatcher.group(1).contains(adultTopic);
                 }
             }
-            
+
             System.out.println("Processed " + numLines + " lines of input");
             System.out.println("Found " + numUrls + " URLs");
         } catch (Exception e) {
