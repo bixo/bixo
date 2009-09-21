@@ -19,12 +19,147 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 -->
-<project name="bixo-core" default="test" xmlns:ivy="antlib:org.apache.ivy.ant">
+<project name="bixo-core" default="test">
 
 	<property name="root.dir" value="${basedir}" />
-	<!-- all standard ant tasks are in the common build file-->
-	<import file="${root.dir}/src/build/ant/common-build.xml" />
+	<property file="${root.dir}/src/build/build.properties" />
 
+
+	<!-- ================================================================== -->
+	<!-- General cleaning sources                                           -->
+	<!-- ================================================================== -->
+
+	<target name="clean" description="--> clean the project">
+		<echo>cleaning ${ant.project.name}</echo>
+		<delete includeemptydirs="true" failonerror="false">
+			<fileset dir="${build.dir}" excludes="classes-*-eclipse/" />
+		</delete>
+	</target>
+
+
+	<!-- ================================================================== -->
+	<!-- Maven                                                              -->
+	<!-- ================================================================== -->
+
+<target name="mvn-init" unless="compile.classpath" xmlns:artifact="urn:maven-artifact-ant">
+	<path id="maven.ant.tasks.classpath" path="${lib.dir}/maven-ant-tasks-2.0.10.jar" />
+	
+    <typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant"
+        classpathref="maven.ant.tasks.classpath"/>
+        
+    <condition property="maven.repo.local" value="${maven.repo.local}" else="${user.home}/.m2/repository">
+        <isset property="maven.repo.local"/>
+    </condition>
+    
+    <echo>maven.repo.local=${maven.repo.local}</echo>
+    <artifact:localRepository id="local.repository" path="${maven.repo.local}"/>
+    <artifact:pom file="pom.xml" id="maven.project"/>
+    <artifact:dependencies pathId="compile.classpath" filesetId="compile.fileset" useScope="compile">
+        <pom refid="maven.project"/>
+        <localRepository refid="local.repository"/>
+    </artifact:dependencies>
+    <artifact:dependencies pathId="test.classpath" filesetId="test.fileset" useScope="test">
+        <pom refid="maven.project"/>
+        <localRepository refid="local.repository"/>
+    </artifact:dependencies>
+    <artifact:dependencies pathId="runtime.classpath" filesetId="runtime.fileset" useScope="runtime">
+        <pom refid="maven.project"/>
+        <localRepository refid="local.repository"/>
+    </artifact:dependencies>
+</target>
+
+	<!-- ================================================================== -->
+	<!-- Build sources                                                      -->
+	<!-- ================================================================== -->
+
+	<target name="compile"
+	        depends="mvn-init"
+	        description="--> compile main classes">
+		<mkdir dir="${build.dir.main-classes}" />
+		<javac encoding="${build.encoding}"
+		       srcdir="${main.src.dir}"
+		       includes="**/*.java"
+		       destdir="${build.dir.main-classes}"
+		       debug="${javac.debug}"
+		       optimize="${javac.optimize}"
+		       target="${javac.version}"
+		       source="${javac.version}"
+		       deprecation="${javac.deprecation}">
+			<compilerarg line="${javac.args} ${javac.args.warnings}" />
+			<classpath refid="compile.classpath" />
+		</javac>
+	</target>
+
+
+	<!-- ================================================================== -->
+	<!-- Unit Tests                                                         -->
+	<!-- ================================================================== -->
+
+	<target name="compile-test" depends="compile">
+		<echo>*** Building Unit Tests Sources ***</echo>
+		<mkdir dir="${build.dir.test-classes}" />
+		<path id="test.path">
+			<pathelement location="${build.dir.main-classes}" />
+		</path>
+
+		<javac encoding="${build.encoding}"
+		       srcdir="${test.src.dir}"
+		       includes="**/*.java"
+		       destdir="${build.dir.test-classes}"
+		       debug="${javac.debug}"
+		       optimize="${javac.optimize}"
+		       target="${javac.version}"
+		       source="${javac.version}"
+		       deprecation="${javac.deprecation}">
+			<compilerarg line="${javac.args} ${javac.args.warnings}" />
+			<classpath refid="test.classpath" />
+			<classpath refid="test.path" />
+		</javac>
+	</target>
+
+	<target name="test"
+		    depends="compile-test"
+			description="--> run unit tests">
+		<delete dir="${build.dir.test-reports}" />
+		<mkdir dir="${build.dir.test-reports}" />
+
+		<junit showoutput="false"
+		       printsummary="yes"
+		       haltonfailure="no"
+		       fork="yes"
+		       maxmemory="256m"
+		       dir="${basedir}"
+		       errorProperty="tests.failed"
+		       failureProperty="tests.failed">
+			<sysproperty key="net.sourceforge.cobertura.datafile"
+			             file="${reports.dir}/bixo_coverage.ser" />
+			<classpath>
+				<pathelement location="${instrumented.dir}" />
+				<pathelement location="${build.dir.main-classes}" />
+				<pathelement location="${build.dir.test-classes}" />
+				<pathelement location="${test.res.dir}" />
+				<path refid="test.classpath" />
+			</classpath>
+			<formatter type="plain" />
+			<batchtest fork="yes"
+			           todir="${build.dir.test-reports}"
+			           unless="testcase">
+				<fileset dir="${test.src.dir}">
+					<include name="**/*Test.java" unless="testcase" />
+					<exclude name="**/Abstract*.java" unless="testcase" />
+					<exclude name="**/ExtendedTestCase.java"
+					         unless="testcase" />
+					<include name="${testcase}" if="testcase" />
+				</fileset>
+			</batchtest>
+			<batchtest fork="yes"
+			           todir="${build.dir.test-reports}"
+			           if="testcase">
+				<fileset dir="${test.src.dir}" includes="**/${testcase}.java" />
+			</batchtest>
+		</junit>
+		<fail if="tests.failed">Tests failed!</fail>
+	</target>
 
 
 	<!-- ================================================================== -->
@@ -34,9 +169,7 @@ SOFTWARE.
 	<target name="compile-integration-test" depends="compile">
 		<echo>*** Building Integration Tests Sources ***</echo>
 		<mkdir dir="${build.dir.it-classes}" />
-		<ivy:cachepath pathid="test.path.id" conf="test" />
 		<path id="test.path">
-			<path refid="test.path.id" />
 			<pathelement location="${build.dir.main-classes}" />
 			<pathelement location="${build.dir.it-classes}" />
 		</path>
@@ -51,6 +184,7 @@ SOFTWARE.
 		       source="${javac.version}"
 		       deprecation="${javac.deprecation}">
 			<compilerarg line="${javac.args} ${javac.args.warnings}" />
+			<classpath refid="test.classpath" />
 			<classpath refid="test.path" />
 		</javac>
 	</target>
@@ -60,8 +194,6 @@ SOFTWARE.
 	        description="--> run integration tests">
 		<delete dir="${build.dir.it-reports}" />
 		<mkdir dir="${build.dir.it-reports}" />
-
-		<ivy:cachepath pathid="test.path.id" conf="test" />
 
 		<junit showoutput="no"
 		       printsummary="yes"
@@ -76,7 +208,7 @@ SOFTWARE.
 				<pathelement location="${build.dir.it-classes}" />
 				<pathelement location="${main.res.dir}" />
 				<pathelement location="${it.res.dir}" />
-				<path refid="test.path.id" />
+				<path refid="test.classpath" />
 				<fileset file="${build.dir}/${ant.project.name}.jar" />
 			</classpath>
 			<formatter type="plain" />
@@ -90,27 +222,79 @@ SOFTWARE.
 		<fail if="tests.failed">Tests failed!</fail>
 	</target>
 
+
+	<!-- ================================================================== -->
+	<!-- Build jar of sources                                               -->
+	<!-- ================================================================== -->
+
+	<target name="jar" depends="compile">
+
+		<tstamp>
+			<format property="timestamp" pattern="MMM dd yyyy, HH:mm:ss" />
+		</tstamp>
+
+		<jar jarfile="${build.dir}/${jar.name}"
+		     basedir="${build.dir.main-classes}">
+			<manifest>
+				<section name="bixo">
+					<attribute name="Implementation-Vendor"
+					           value="101tec inc" />
+					<attribute name="Implementation-Title"
+					           value="${ant.project.name}" />
+					<attribute name="Implementation-Version"
+					           value="${version}" />
+					<attribute name="Compile-Time" value="${timestamp}" />
+					<attribute name="Compiled-By" value="${user.name}" />
+					<!-- TODO as soon we can extract the version from git we need to add this
+					-->
+				</section>
+			</manifest>
+		</jar>
+	</target>
+
+
+	<!-- ================================================================== -->
+	<!-- Java Doc                                                           -->
+	<!-- ================================================================== -->
+
+	<target name="doc" depends="compile" description="--> create javadoc">
+		<mkdir dir="${build.javadoc}" />
+		<javadoc packagenames="${javadoc.package}"
+		         destdir="${build.javadoc}"
+		         author="true"
+		         version="true"
+		         use="true"
+		         windowtitle="${name} ${version} API"
+		         doctitle="${name} ${version} API"
+		         bottom="Copyright &amp;copy; ${javadoc.year} 101tec Inc.">
+			<packageset dir="${main.src.dir}" />
+			<link href="${javadoc.link.java}" />
+			<classpath>
+				<path refid="compile.classpath" />
+			</classpath>
+			<group title="${javadoc.title}" packages="${javadoc.package}*" />
+		</javadoc>
+	</target>
+
+
 	<!-- ================================================================== -->
 	<!-- Hadoop job jar                                                     -->
 	<!-- ================================================================== -->
 
-
-
 	<target name="job"
 	        depends="compile"
-	        description="--> creates a Hadoop ready jar with all dependencies">
+	        description="--> create a Hadoop ready jar with all dependencies">
 
-		<ivy:cachepath pathid="job.path.id" conf="job" />
-		<copy todir="${build.dir}/lib" flatten="true">
-			<path refid="job.path.id" />
+		<copy todir="${build.dir}/runtime-libs" flatten="true">
+			<path refid="runtime.classpath" />
 		</copy>
 
-		<jar destfile="${build.dir}/${ant.project.name}-job-${version}.jar" compress="true">
+		<jar destfile="${build.dir}/${job.name}" compress="true">
 			<fileset dir="${build.dir.main-classes}" />
-			<fileset dir="${build.dir}" includes="lib/" />
+			<fileset dir="${build.dir}" includes="runtime-libs/" />
 
 			<manifest>
-				<!--<attribute name="Main-Class" value="${main.class.name}" />-->
+				<attribute name="Main-Class" value="${job.main.class}" />
 			</manifest>
 		</jar>
 	</target>
@@ -121,52 +305,61 @@ SOFTWARE.
 	<!-- ================================================================== -->
 
 	<target name="dist"
-	        depends="test, test-it, coverage, jar, doc"
-	        description="--> creates a distribution">
+	        depends="test, test-it, jar, doc"
+	        description="--> create a tarball distribution">
 
 		<delete dir="${build.dir.dist}" />
-		<!-- creating a fileset for pulling all libs from ivycache cuz disk space is cheap -->
-		<ivy:cachefileset conf="compile" setid="libs" />
 
 		<!-- create target directory -->
 		<mkdir dir="${build.dir.dist}" />
 		<mkdir dir="${build.dir.dist}/bin" />
 		<mkdir dir="${build.dir.dist}/docs" />
+		<mkdir dir="${build.dir.dist}/docs/licenses" />
 		<mkdir dir="${build.dir.dist}/docs/javadoc" />
 		<mkdir dir="${build.dir.dist}/docs/reports" />
 		<mkdir dir="${build.dir.dist}/lib" />
+		<mkdir dir="${build.dir.dist}/repo" />
 		<mkdir dir="${build.dir.dist}/src" />
 
 		<!-- copy launch script to target -->
 		<copy todir="${build.dir.dist}/bin">
 			<fileset dir="${basedir}/bin" />
 		</copy>
+		
 		<!-- copy  javadoc to target dir  -->
 		<copy todir="${build.dir.dist}/docs/javadoc">
 			<fileset dir="${build.javadoc}" />
 		</copy>
-		<!-- copy reports to target dir  -->
-		<copy todir="${build.dir.dist}/docs/reports" failonerror="no">
-			<fileset dir="${coverage.html.dir}" />
-		</copy>
-		<!-- copy ivy cache to lib -->
+		
+		<!-- copy any raw libs -->
 		<copy todir="${build.dir.dist}/lib" flatten="true">
-			<fileset refid="libs" />
+			<fileset dir="${lib.dir}" />
 		</copy>
+		
+		<!-- copy our local maven repo -->
+		<copy todir="${build.dir.dist}/repo">
+			<fileset dir="${basedir}/repo" />
+		</copy>
+		
 		<!-- copy src -->
 		<copy todir="${build.dir.dist}/src">
 			<fileset dir="${basedir}/src" />
 		</copy>
+		
 		<!-- copy project jar to dist dir -->
 		<copy todir="${build.dir.dist}">
 			<fileset file="${build.dir}/${jar.name}" />
 		</copy>
 
-		<!-- copy project jar to dist dir -->
+		<!-- copy documents -->
 		<copy todir="${build.dir.dist}">
-			<fileset file="${basedir}/CHANGES.txt" />
-			<fileset file="${basedir}/LICENSE.txt" />
-			<fileset file="${basedir}/README.txt" />
+			<fileset file="${basedir}/README" />
+		</copy>
+		<copy todir="${build.dir.dist}/docs">
+			<fileset file="${basedir}/doc/eclipse-formatter.xml" />
+		</copy>
+		<copy todir="${build.dir.dist}/docs/licenses">
+			<fileset dir="${basedir}/doc/licenses" />
 		</copy>
 
 		<tar longfile="gnu" compression="gzip" destfile="${build.release.file}">
@@ -174,19 +367,18 @@ SOFTWARE.
 		</tar>
 	</target>
 
+
 	<!-- ================================================================== -->
 	<!-- Generating eclipse file                                            -->
 	<!-- ================================================================== -->
 
 	<target name="eclipse"
-		depends="resolve, clean-eclipse"
-		description="--> creates Eclipse project files">
+		depends="mvn-init, clean-eclipse"
+		description="--> create the Eclipse project files">
 
-		<ivy:cachepath pathid="eclipse.path.id" conf="eclipse" />
-		<ivy:cachepath pathid="test.path.id" conf="test" />
 		<taskdef name="eclipse"
 		         classname="prantl.ant.eclipse.EclipseTask"
-		         classpathref="eclipse.path.id" />
+		         classpathref="compile.classpath" />
 		<mkdir dir="${build.dir.main-classes-eclipse}" />
 		<mkdir dir="${build.dir.test-classes-eclipse}" />
 		<mkdir dir="${build.dir.it-classes-eclipse}" />
@@ -216,21 +408,20 @@ SOFTWARE.
 				<!-- we do not yet have extra modules, but it is just a question of time :) -->
 
 				<output path="${build.dir.main-classes-eclipse}" />
-				<library pathref="test.path.id" exported="false" />
+				<library pathref="test.classpath" exported="false" />
 			</classpath>
 		</eclipse>
-		<concat destfile="${basedir.ivy.instance}/.settings/org.eclipse.jdt.core.prefs"
+		<concat destfile="${root.dir}/.settings/org.eclipse.jdt.core.prefs"
 		        append="true">
-			<filelist dir="${root.dir}/src/build/eclipse" files="formatter" />
+			<filelist dir="${root.dir}/doc/" files="eclipse-formatter.xml" />
 		</concat>
-		<replace file="${basedir.ivy.instance}/.settings/org.eclipse.jdt.core.prefs"
+		<replace file="${root.dir}/.settings/org.eclipse.jdt.core.prefs"
 		         token="org.eclipse.jdt.core.compiler.compliance=6.0"
 		         value="org.eclipse.jdt.core.compiler.compliance=1.6" />
 	</target>
 
 	<target name="clean-eclipse"
-	        depends="resolve"
-	        description="--> cleans the eclipse project files">
+	        description="--> clean the Eclipse project files">
 		<delete file=".classpath" />
 		<delete file=".eclipse" />
 		<delete file=".project" />
@@ -259,7 +450,9 @@ SOFTWARE.
 		<iterate target="clean" />
 	</target>
 
-	<target name="test-all">
+	<target name="test-all"
+			description="--> run all tests">
+	
 		<iterate target="test" />
 	</target>
 
