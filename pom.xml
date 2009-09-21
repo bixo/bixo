@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+      
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>bixo</groupId>
+	<artifactId>bixo-core</artifactId>
+	<name>Bixo core components</name>
+	<licenses>
+		<license>
+			<name>The MIT License</name>
+			<url>http://www.opensource.org/licenses/mit-license.php</url>
+		</license>
+	</licenses>
+	<url>http://bixo.101tec.com</url>
+	<description>Bixo is an open source Java web mining toolkit that runs as a series of Cascading pipes. It is designed to be used as a tool for creating customized crawlers and analyzers, thus each Cascading pipe implements a discrete operation.</description>
+	<scm>
+		<connection>scm:git:git://github.com/emi/bixo.git</connection>
+		<url>scm:git:git://github.com/emi/bixo.git</url>
+	</scm>
+	<packaging>jar</packaging>
+	<version>1.0-SNAPSHOT</version>
+	<repositories>
+		<repository>
+			<id>101tec Public</id>
+			<name>101tec Nexus repository</name>
+			<url>http://oss.101tec.com/nexus/content/groups/public/</url>
+			<releases>
+				<enabled>true</enabled>
+				<checksumPolicy>ignore</checksumPolicy>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+
+		<repository>
+			<id>bixo-local</id>
+			<name>Local repository for non-public jars used by Bixo</name>
+			<url>file://${basedir}/repo/</url>
+			<releases>
+				<enabled>true</enabled>
+				<checksumPolicy>ignore</checksumPolicy>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+				<checksumPolicy>ignore</checksumPolicy>
+			</snapshots>
+		</repository>
+	</repositories>
+	
+	<dependencies>
+
+		<!-- Compile time dependencies -->
+		
+		<dependency>
+            <groupId>org.apache</groupId>
+            <artifactId>hadoop-core</artifactId>
+            <version>0.19.0</version>
+        </dependency>
+        
+		<dependency>
+            <groupId>cascading</groupId>
+            <artifactId>cascading-core</artifactId>
+            <version>1.0.13</version>
+        </dependency>
+        
+		<dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+            <version>4.0.1</version>
+        </dependency>
+        
+		<dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.0</version>
+        </dependency>
+        
+		<dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>2.4.1</version>
+        </dependency>
+        
+		<dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>0.4</version>
+        </dependency>
+        
+		<dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parsers</artifactId>
+            <version>0.4</version>
+        </dependency>
+        
+		<dependency>
+            <groupId>com.ibm.icu</groupId>
+            <artifactId>icu4j</artifactId>
+            <version>4.0.1</version>
+        </dependency>
+        
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<version>2.5</version>
+			<scope>provided</scope>
+		</dependency>
+        
+		<dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.14</version>
+        </dependency>
+
+		<dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+            <version>2.4</version>
+        </dependency>
+
+		<dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>1.3.2</version>
+        </dependency>
+
+		<dependency>
+            <groupId>org.kohsuke</groupId>
+            <artifactId>args4j</artifactId>
+            <version>2.0.10</version>
+        </dependency>
+
+		<!-- Test dependencies -->
+
+		<dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.7</version>
+            <scope>test</scope>
+        </dependency>
+
+		<dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>1.8.0</version>
+            <scope>test</scope>
+        </dependency>
+
+		<dependency>
+            <groupId>org.apache</groupId>
+            <artifactId>hadoop-test</artifactId>
+            <version>0.19.0</version>
+            <scope>test</scope>
+        </dependency>
+
+		<dependency>
+            <groupId>jetty</groupId>
+            <artifactId>jetty</artifactId>
+            <version>5.1.10</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- These two jars could be a runtime dependency of hadoop-test,
+             but it doesn't seem to work (not picked up) if we
+             do it that way -->
+		<dependency>
+            <groupId>org.apache.tomcat</groupId>
+            <artifactId>jasper</artifactId>
+            <version>6.0.20</version>
+            <scope>test</scope>
+        </dependency>
+ 		
+		<dependency>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+            <version>3.1</version>
+            <scope>test</scope>
+        </dependency>
+ 		
+		<dependency>
+            <groupId>cascading</groupId>
+            <artifactId>cascading-test</artifactId>
+            <version>1.0.13</version>
+            <scope>test</scope>
+        </dependency>
+        
+		<dependency>
+            <groupId>it.unimi</groupId>
+            <artifactId>dsiutils</artifactId>
+            <version>1.0.7</version>
+            <scope>test</scope>
+        </dependency>
+
+		<dependency>
+            <groupId>it.unimi</groupId>
+            <artifactId>fastutil5</artifactId>
+            <version>5.1.5</version>
+            <scope>test</scope>
+        </dependency>
+
+		<dependency>
+            <groupId>it.unimi</groupId>
+            <artifactId>webgraph</artifactId>
+            <version>2.4.2</version>
+            <scope>test</scope>
+        </dependency>
+
+		<dependency>
+            <groupId>org.archive</groupId>
+            <artifactId>heritrix</artifactId>
+            <version>1.14.3</version>
+            <scope>test</scope>
+        </dependency>
+
+		<!-- Eclipse project generation dependencies -->
+	
+		<dependency>
+            <groupId>ant-eclipse</groupId>
+            <artifactId>ant-eclipse</artifactId>
+            <version>1.0-jvm1.2</version>
+            <scope>eclipse</scope>
+        </dependency>
+        
+	</dependencies>
+</project>
