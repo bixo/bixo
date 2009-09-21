@@ -1,0 +1,8 @@
+The only library you'll find here in the /lib subdirectory is the one
+that's used to bootstrap our use of Maven's dependency management
+support.
+
+All other jars are automatically downloaded from either the Maven
+central repository (http://repo1.maven.org/maven2/) or the 101tec
+repository (http://oss.101tec.com/nexus/content/groups/public/)
+

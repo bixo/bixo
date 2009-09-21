@@ -20,7 +20,9 @@
 		<url>scm:git:git://github.com/emi/bixo.git</url>
 	</scm>
 	<packaging>jar</packaging>
-	<version>1.0-SNAPSHOT</version>
+	<!-- Must be kept in sync with "version" value in build.properties -->
+	<version>0.4.1-SNAPSHOT</version>
+	
 	<repositories>
 		<repository>
 			<id>101tec Public</id>
@@ -35,19 +37,6 @@
 			</snapshots>
 		</repository>
 
-		<repository>
-			<id>bixo-local</id>
-			<name>Local repository for non-public jars used by Bixo</name>
-			<url>file://${basedir}/repo/</url>
-			<releases>
-				<enabled>true</enabled>
-				<checksumPolicy>ignore</checksumPolicy>
-			</releases>
-			<snapshots>
-				<enabled>true</enabled>
-				<checksumPolicy>ignore</checksumPolicy>
-			</snapshots>
-		</repository>
 	</repositories>
 	
 	<dependencies>
@@ -55,15 +44,15 @@
 		<!-- Compile time dependencies -->
 		
 		<dependency>
-            <groupId>org.apache</groupId>
+            <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-core</artifactId>
-            <version>0.19.0</version>
+            <version>0.19.2</version>
         </dependency>
         
 		<dependency>
             <groupId>cascading</groupId>
             <artifactId>cascading-core</artifactId>
-            <version>1.0.13</version>
+            <version>1.0.16</version>
         </dependency>
         
 		<dependency>
@@ -150,9 +139,9 @@
         </dependency>
 
 		<dependency>
-            <groupId>org.apache</groupId>
+            <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-test</artifactId>
-            <version>0.19.0</version>
+            <version>0.19.2</version>
             <scope>test</scope>
         </dependency>
 
@@ -163,9 +152,10 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- These two jars could be a runtime dependency of hadoop-test,
-             but it doesn't seem to work (not picked up) if we
-             do it that way -->
+        <!-- These two jars could be a runtime dependency of hadoop-core,
+             but it doesn't seem to work for running unit tests that use
+             Hadoop.
+          -->
 		<dependency>
             <groupId>org.apache.tomcat</groupId>
             <artifactId>jasper</artifactId>
@@ -179,11 +169,11 @@
             <version>3.1</version>
             <scope>test</scope>
         </dependency>
- 		
+ 		 
 		<dependency>
             <groupId>cascading</groupId>
             <artifactId>cascading-test</artifactId>
-            <version>1.0.13</version>
+            <version>1.0.16</version>
             <scope>test</scope>
         </dependency>
         
@@ -219,10 +209,11 @@
 	
 		<dependency>
             <groupId>ant-eclipse</groupId>
-            <artifactId>ant-eclipse</artifactId>
-            <version>1.0-jvm1.2</version>
+            <artifactId>ant-eclipse-jvm1.2</artifactId>
+            <version>1.0</version>
             <scope>eclipse</scope>
         </dependency>
         
 	</dependencies>
+	
 </project>

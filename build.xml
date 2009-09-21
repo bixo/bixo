@@ -41,33 +41,46 @@ SOFTWARE.
 	<!-- Maven                                                              -->
 	<!-- ================================================================== -->
 
-<target name="mvn-init" unless="compile.classpath" xmlns:artifact="urn:maven-artifact-ant">
-	<path id="maven.ant.tasks.classpath" path="${lib.dir}/maven-ant-tasks-2.0.10.jar" />
-	
-    <typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant"
-        classpathref="maven.ant.tasks.classpath"/>
+	<target name="mvn-init" unless="compile.classpath" xmlns:artifact="urn:maven-artifact-ant">
+		<path id="maven.ant.tasks.classpath" path="${lib.dir}/maven-ant-tasks-2.0.10.jar" />
+    	<typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant"
+        	classpathref="maven.ant.tasks.classpath"/>
         
-    <condition property="maven.repo.local" value="${maven.repo.local}" else="${user.home}/.m2/repository">
-        <isset property="maven.repo.local"/>
-    </condition>
+    	<condition property="maven.repo.local" value="${maven.repo.local}" else="${user.home}/.m2/repository">
+        	<isset property="maven.repo.local"/>
+    	</condition>
     
-    <echo>maven.repo.local=${maven.repo.local}</echo>
-    <artifact:localRepository id="local.repository" path="${maven.repo.local}"/>
-    <artifact:pom file="pom.xml" id="maven.project"/>
-    <artifact:dependencies pathId="compile.classpath" filesetId="compile.fileset" useScope="compile">
-        <pom refid="maven.project"/>
-        <localRepository refid="local.repository"/>
-    </artifact:dependencies>
-    <artifact:dependencies pathId="test.classpath" filesetId="test.fileset" useScope="test">
-        <pom refid="maven.project"/>
-        <localRepository refid="local.repository"/>
-    </artifact:dependencies>
-    <artifact:dependencies pathId="runtime.classpath" filesetId="runtime.fileset" useScope="runtime">
-        <pom refid="maven.project"/>
-        <localRepository refid="local.repository"/>
-    </artifact:dependencies>
-</target>
+    	<echo>maven.repo.local=${maven.repo.local}</echo>
+    	<artifact:localRepository id="local.repository" path="${maven.repo.local}"/>
+    	<artifact:pom file="pom.xml" id="maven.project"/>
+    	
+    	<artifact:dependencies pathId="compile.classpath" filesetId="compile.fileset" useScope="compile">
+        	<pom refid="maven.project"/>
+        	<localRepository refid="local.repository"/>
+    	</artifact:dependencies>
+    
+    	<artifact:dependencies pathId="test.classpath" filesetId="test.fileset" useScope="test">
+        	<pom refid="maven.project"/>
+        	<localRepository refid="local.repository"/>
+    	</artifact:dependencies>
+    
+    	<artifact:dependencies pathId="runtime.classpath" filesetId="runtime.fileset" useScope="runtime">
+			<pom refid="maven.project"/>
+			<localRepository refid="local.repository"/>
+		</artifact:dependencies>
+	</target>
 
+	<target name="mvn-deploy"  xmlns:artifact="urn:maven-artifact-ant" depends="mvn-init">
+		<fail unless="repoUrl">
+			You must specify the repoUrl (-DrepoUrl=xxx) when deploying!
+		</fail>
+	
+        <artifact:deploy file="${build.dir}/${jar.name}">
+    		<remoteRepository url="${repoUrl}"/>
+    		<pom refid="maven.project"/>
+  		</artifact:deploy>
+	</target>
+	
 	<!-- ================================================================== -->
 	<!-- Build sources                                                      -->
 	<!-- ================================================================== -->
@@ -301,11 +314,20 @@ SOFTWARE.
 
 
 	<!-- ================================================================== -->
+	<!-- Deploy to Maven repo                                               -->
+	<!-- ================================================================== -->
+
+	<target name="deploy"
+			depends="jar, mvn-deploy"
+			description="--> deploy SNAPSHOT jar to 101tec Nexus repository">
+	</target>
+	
+	<!-- ================================================================== -->
 	<!-- Generate a distribution                                            -->
 	<!-- ================================================================== -->
 
 	<target name="dist"
-	        depends="test, test-it, jar, doc"
+	        depends="test-all, jar, doc"
 	        description="--> create a tarball distribution">
 
 		<delete dir="${build.dir.dist}" />
@@ -318,7 +340,6 @@ SOFTWARE.
 		<mkdir dir="${build.dir.dist}/docs/javadoc" />
 		<mkdir dir="${build.dir.dist}/docs/reports" />
 		<mkdir dir="${build.dir.dist}/lib" />
-		<mkdir dir="${build.dir.dist}/repo" />
 		<mkdir dir="${build.dir.dist}/src" />
 
 		<!-- copy launch script to target -->
@@ -334,11 +355,6 @@ SOFTWARE.
 		<!-- copy any raw libs -->
 		<copy todir="${build.dir.dist}/lib" flatten="true">
 			<fileset dir="${lib.dir}" />
-		</copy>
-		
-		<!-- copy our local maven repo -->
-		<copy todir="${build.dir.dist}/repo">
-			<fileset dir="${basedir}/repo" />
 		</copy>
 		
 		<!-- copy src -->
@@ -446,14 +462,14 @@ SOFTWARE.
 	</macrodef>
 
 	<target name="clean-all">
+	
 		<antcall target="clean" />
 		<iterate target="clean" />
 	</target>
 
 	<target name="test-all"
+			depends="test, test-it"
 			description="--> run all tests">
-	
-		<iterate target="test" />
 	</target>
 
 </project>
