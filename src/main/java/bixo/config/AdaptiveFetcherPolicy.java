@@ -5,7 +5,7 @@ import bixo.fetcher.FetchRequest;
 @SuppressWarnings("serial")
 public class AdaptiveFetcherPolicy extends FetcherPolicy {
     public AdaptiveFetcherPolicy(long crawlEndTime, long crawlDelay) {
-        super(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, crawlEndTime, crawlDelay);
+        super(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, crawlEndTime, crawlDelay, DEFAULT_MAX_REDIRECTS);
         
         if (crawlEndTime == FetcherPolicy.NO_CRAWL_END_TIME) {
             throw new IllegalArgumentException("crawlEndTime must be set");
@@ -14,7 +14,7 @@ public class AdaptiveFetcherPolicy extends FetcherPolicy {
     }
     
     public AdaptiveFetcherPolicy(int minResponseRate, int maxContentSize, long crawlEndTime, long crawlDelay) {
-        super(minResponseRate, maxContentSize, crawlEndTime, crawlDelay);
+        super(minResponseRate, maxContentSize, crawlEndTime, crawlDelay, DEFAULT_MAX_REDIRECTS);
     }
     
     @Override

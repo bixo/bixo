@@ -33,7 +33,7 @@ import java.util.Map;
 
 import javax.net.ssl.SSLHandshakeException;
 
-import org.apache.commons.httpclient.NoHttpResponseException;
+import org.apache.http.NoHttpResponseException;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -45,6 +45,7 @@ import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.params.ClientParamBean;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.conn.ClientConnectionManager;
@@ -198,7 +199,6 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
         init();
@@ -405,9 +405,11 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             params = _httpClient.getParams();
             // FUTURE KKr - support authentication
             HttpClientParams.setAuthenticating(params, false);
-            // TODO KKr - get from fetch policy
-            HttpClientParams.setRedirecting(params, true);
             HttpClientParams.setCookiePolicy(params, CookiePolicy.BEST_MATCH);
+            
+            ClientParamBean clientParams = new ClientParamBean(params);
+            clientParams.setHandleRedirects(_fetcherPolicy.getMaxRedirects() != FetcherPolicy.NO_REDIRECTS);
+            clientParams.setMaxRedirects(_fetcherPolicy.getMaxRedirects());
         }
     }
 

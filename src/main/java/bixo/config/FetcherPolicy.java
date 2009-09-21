@@ -30,10 +30,12 @@ import bixo.fetcher.FetchRequest;
 public class FetcherPolicy implements Serializable {
     public static final int NO_MIN_RESPONSE_RATE = 0;
     public static final long NO_CRAWL_END_TIME = 0;
+    public static final int NO_REDIRECTS = 0;
     
     public static final int DEFAULT_MIN_RESPONSE_RATE = NO_MIN_RESPONSE_RATE;
     public static final int DEFAULT_MAX_CONTENT_SIZE = 64 * 1024;
     public static final long DEFAULT_CRAWL_END_TIME = NO_CRAWL_END_TIME;
+    public static final int DEFAULT_MAX_REDIRECTS = 20;
     
     // Interval between batched fetch requests, in seconds.
     protected static final long DEFAULT_FETCH_INTERVAL = 5 * 60 * 1000L;
@@ -44,17 +46,19 @@ public class FetcherPolicy implements Serializable {
     private int _maxContentSize;        // Max # of bytes to use.
     private long _crawlEndTime;          // When we want the crawl to end
     protected long _crawlDelay;            // Delay (in seconds) between requests
+    private int _maxRedirects;
     
     public FetcherPolicy() {
-        this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME, DEFAULT_CRAWL_DELAY);
+        this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME, DEFAULT_CRAWL_DELAY, DEFAULT_MAX_REDIRECTS);
     }
 
 
-    public FetcherPolicy(int minResponseRate, int maxContentSize, long crawlEndTime, long crawlDelay) {
+    public FetcherPolicy(int minResponseRate, int maxContentSize, long crawlEndTime, long crawlDelay, int maxRedirects) {
         _minResponseRate = minResponseRate;
         _maxContentSize = maxContentSize;
         _crawlEndTime = crawlEndTime;
         _crawlDelay = crawlDelay;
+        _maxRedirects = maxRedirects;
     }
 
     
@@ -91,41 +95,41 @@ public class FetcherPolicy implements Serializable {
         return _crawlEndTime;
     }
 
-
     public void setCrawlEndTime(long crawlEndTime) {
         _crawlEndTime = crawlEndTime;
     }
-
 
     public int getMinResponseRate() {
         return _minResponseRate;
     }
 
-
     public void setMinResponseRate(int minResponseRate) {
         _minResponseRate = minResponseRate;
     }
-
 
     public int getMaxContentSize() {
         return _maxContentSize;
     }
 
-
     public void setMaxContentSize(int maxContentSize) {
         _maxContentSize = maxContentSize;
     }
-    
     
     public long getCrawlDelay() {
         return _crawlDelay;
     }
     
-    
     public void setCrawlDelay(long crawlDelay) {
         _crawlDelay = crawlDelay;
     }
     
+    public int getMaxRedirects() {
+        return _maxRedirects;
+    }
+
+    public void setMaxRedirects(int maxRedirects) {
+    	_maxRedirects = maxRedirects;
+    }
     
     public FetchRequest getFetchRequest(int maxUrls) {
         int numUrls = Math.min(maxUrls, (int)(DEFAULT_FETCH_INTERVAL / _crawlDelay));
@@ -133,7 +137,6 @@ public class FetcherPolicy implements Serializable {
 
         return new FetchRequest(numUrls, nextFetchTime);
     }
-    
     
     public String toString() {
         StringBuilder result = new StringBuilder();
@@ -144,6 +147,8 @@ public class FetcherPolicy implements Serializable {
         result.append("Maximum content size: " + getMaxContentSize());
         result.append('\r');
         result.append("Crawl delay in msec: " + getCrawlDelay());
+        result.append('\r');
+        result.append("Maximum redirects: " + getMaxRedirects());
         
         return result.toString();
     }

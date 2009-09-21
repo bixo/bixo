@@ -57,7 +57,8 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	        return new FetcherQueue(domain, _defaultPolicy, _process, collector);
 	    } else {
 	        FetcherPolicy customPolicy = new FetcherPolicy(_defaultPolicy.getMinResponseRate(),
-	                        _defaultPolicy.getMaxContentSize(), _defaultPolicy.getCrawlEndTime(), crawlDelay);
+	                        _defaultPolicy.getMaxContentSize(), _defaultPolicy.getCrawlEndTime(),
+	                        crawlDelay, _defaultPolicy.getMaxRedirects());
 	        return new FetcherQueue(domain, customPolicy, _process, collector);
 	    }
 	}
