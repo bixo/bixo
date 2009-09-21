@@ -1,5 +1,6 @@
 package bixo.operations;
 
+import bixo.cascading.NullContext;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.parser.IParser;
@@ -12,7 +13,7 @@ import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
-public class ParseFunction extends BaseOperation<ParsedDatum> implements Function<ParsedDatum> {
+public class ParseFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
     private IParser _parser;
     private Fields _metaDataFields;
@@ -23,12 +24,13 @@ public class ParseFunction extends BaseOperation<ParsedDatum> implements Functio
         _parser = parser;
     }
 
-    public void operate(FlowProcess flowProcess, FunctionCall<ParsedDatum> functionCall) {
+    public void operate(FlowProcess flowProcess, FunctionCall<NullContext> functionCall) {
         TupleEntry arguments = functionCall.getArguments();
         FetchedDatum fetchedDatum = new FetchedDatum(arguments.getTuple(), _metaDataFields);
         ParsedDatum parseResult = _parser.parse(fetchedDatum);
         
         // TODO KKr - add status to ParsedDatum, use it here to increment parsed vs. failed doc counters.
+        // Or since this operation is part of a regular Cascading flow, we could trap exceptions.
         flowProcess.increment(ParserCounters.DOCUMENTS_PARSED, 1);
         functionCall.getOutputCollector().add(parseResult.toTuple());
     }

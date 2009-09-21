@@ -98,14 +98,14 @@ public class SimpleCrawlTool {
         return conf;
     }
 
-    private static Properties getDefaultProperties(CrawlToolOptions options, JobConf conf) throws IOException {
+    private static Properties getDefaultProperties(SimpleCrawlToolOptions options, JobConf conf) throws IOException {
         Properties properties = new Properties();
 
         // Use special Cascading hack to control logging levels
         if( options.isDebugLogging() ) {
-            properties.put("log4j.logger", "cascading=DEBUG,sharethis=DEBUG,bixo=TRACE");
+            properties.put("log4j.logger", "cascading=DEBUG,bixo=TRACE");
         } else {
-            properties.put("log4j.logger", "cascading=INFO,sharethis=INFO,bixo=INFO");
+            properties.put("log4j.logger", "cascading=INFO,bixo=INFO");
         }
 
         FlowConnector.setApplicationJarClass(properties, SimpleCrawlTool.class);
@@ -118,7 +118,7 @@ public class SimpleCrawlTool {
 
 
     public static void main(String[] args) {
-        CrawlToolOptions options = new CrawlToolOptions();
+        SimpleCrawlToolOptions options = new SimpleCrawlToolOptions();
         CmdLineParser parser = new CmdLineParser(options);
         
         try {
@@ -149,7 +149,7 @@ public class SimpleCrawlTool {
             FetcherPolicy defaultPolicy = new FetcherPolicy();
             defaultPolicy.setMaxContentSize(MAX_CONTENT_SIZE);
             int crawlDurationInMinutes = options.getCrawlDuration();
-            if (crawlDurationInMinutes != CrawlToolOptions.NO_CRAWL_DURATION) {
+            if (crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION) {
                 defaultPolicy.setCrawlEndTime(System.currentTimeMillis() + (crawlDurationInMinutes * MILLISECONDS_PER_MINUTE));
             }
             

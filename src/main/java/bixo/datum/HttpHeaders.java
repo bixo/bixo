@@ -100,6 +100,10 @@ public class HttpHeaders {
     
     @Override
     public String toString() {
+    	if (_headers.size() == 0) {
+    		return "";
+    	}
+    	
         StringBuilder result = new StringBuilder();
         
         for (String key : getNames()) {
