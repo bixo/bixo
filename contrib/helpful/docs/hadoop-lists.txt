@@ -1,0 +1,6 @@
+
+http://mail-archives.apache.org/mod_mbox/hadoop-hdfs-user/
+# http://mail-archives.apache.org/mod_mbox/hadoop-mapreduce-user/
+# http://mail-archives.apache.org/mod_mbox/hadoop-general/
+# http://mail-archives.apache.org/mod_mbox/hadoop-core-user/
+# http://mail-archives.apache.org/mod_mbox/hadoop-common-user/
