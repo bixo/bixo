@@ -32,7 +32,7 @@ public class ParserPipeTest extends CascadingTestCase {
     public void testParserPipe() throws Exception {
 
         Pipe pipe = new Pipe("parse_source");
-        ParserPipe parserPipe = new ParserPipe(pipe, new HtmlParser("windows-1252", IBixoMetaKeys.CACHING_FORBIDDEN_CONTENT));
+        ParsePipe parserPipe = new ParsePipe(pipe, new HtmlParser("windows-1252", IBixoMetaKeys.CACHING_FORBIDDEN_CONTENT));
         Lfs in = new Lfs(new SequenceFile(FetchedDatum.FIELDS), "build/test/ParserPipeTest/in", true);
         Lfs out = new Lfs(new SequenceFile(ParsedDatum.FIELDS), "build/test/ParserPipeTest/out", true);
 

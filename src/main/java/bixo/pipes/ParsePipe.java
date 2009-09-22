@@ -22,25 +22,30 @@
  */
 package bixo.pipes;
 
-import bixo.datum.ParsedDatum;
 import bixo.operations.ParseFunction;
 import bixo.parser.IParser;
+import bixo.parser.SimpleParser;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
 import cascading.tuple.Fields;
 
 @SuppressWarnings("serial")
-public class ParserPipe extends SubAssembly {
+public class ParsePipe extends SubAssembly {
+    public static final String PARSE_PIPE_NAME = "parse_pipe";
 
-    public ParserPipe(Pipe fetcherPipe, IParser parser) {
+    public ParsePipe(Pipe fetcherPipe) {
+        this(fetcherPipe, new SimpleParser(), new Fields());
+    }
+    
+    public ParsePipe(Pipe fetcherPipe, IParser parser) {
         this(fetcherPipe, parser, new Fields());
     }
 
-    public ParserPipe(Pipe fetcherPipe, IParser parser, Fields metaDataField) {
-        Pipe parsePipe = new Pipe("parse_pipe", fetcherPipe);
+    public ParsePipe(Pipe fetcherPipe, IParser parser, Fields metaDataFields) {
+        Pipe parsePipe = new Pipe(PARSE_PIPE_NAME, fetcherPipe);
 
-        parsePipe = new Each(parsePipe, new ParseFunction(ParsedDatum.FIELDS, metaDataField, parser), Fields.RESULTS);
+        parsePipe = new Each(parsePipe, new ParseFunction(parser, metaDataFields), Fields.RESULTS);
         setTails(parsePipe);
     }
 

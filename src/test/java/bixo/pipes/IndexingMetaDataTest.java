@@ -71,7 +71,7 @@ public class IndexingMetaDataTest {
 
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher, metaDataField);
 
-        ParserPipe parserPipe = new ParserPipe(fetchPipe.getTailPipe(FetchPipe.FETCHED_PIPE_NAME), new FakeParser(), metaDataField);
+        ParsePipe parserPipe = new ParsePipe(fetchPipe.getTailPipe(FetchPipe.FETCHED_PIPE_NAME), new FakeParser(), metaDataField);
 
         Fields indexedFields = new Fields("text", "metaData");
         Pipe indexPipe = new Each(parserPipe, new Fields(ParsedDatum.PARSED_TEXT_FIELD, "metaData"), new Identity(indexedFields));
