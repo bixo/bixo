@@ -318,7 +318,7 @@ SOFTWARE.
 	<!-- ================================================================== -->
 
 	<target name="deploy"
-			depends="jar, mvn-deploy"
+			depends="test-all, mvn-deploy"
 			description="--> deploy SNAPSHOT jar to 101tec Nexus repository">
 	</target>
 	
