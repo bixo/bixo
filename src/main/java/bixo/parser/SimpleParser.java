@@ -19,6 +19,7 @@ import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.fetcher.http.IHttpHeaders;
 import bixo.utils.IOUtils;
+import bixo.utils.UrlUtils;
 
 @SuppressWarnings("serial")
 public class SimpleParser implements IParser {
@@ -31,6 +32,7 @@ public class SimpleParser implements IParser {
         
         private StringBuilder _content = new StringBuilder();
         private List<Outlink> _outlinks = new ArrayList<Outlink>();
+        private boolean _inHead = false;
         private boolean _inBody = false;
         private boolean _inAnchor = false;
         
@@ -53,24 +55,38 @@ public class SimpleParser implements IParser {
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
             super.startElement(uri, localName, qName, attributes);
             
-            if (!_inBody) {
-                _inBody = localName.equalsIgnoreCase("body");
-            } else if (localName.equalsIgnoreCase("a")) {
-                try {
-                    // TODO KKr - supposedly the URL() class doesn't handle relative
-                    // URLs like ?pid=29271
-                    _curUrl = new URL(_baseUrl, attributes.getValue("href")).toExternalForm();
-                    _inAnchor = true;
-                    _curAnchor.setLength(0);
-                } catch (MalformedURLException e) {
-                    LOGGER.debug("Invalid URL found in <a> tag: ", e);
-                }
+            if (_inHead) {
+            	if (localName.equalsIgnoreCase("base")) {
+            		try {
+            			_baseUrl = new URL(attributes.getValue("href"));
+            		} catch (MalformedURLException e) {
+                        LOGGER.debug("Invalid URL found in <base> tag: ", e);
+            		}
+            	}
+            } else if (_inBody) {
+            	if (localName.equalsIgnoreCase("a")) {
+                    try {
+                        _curUrl = UrlUtils.makeUrl(_baseUrl, attributes.getValue("href")).toExternalForm();
+                        _inAnchor = true;
+                        _curAnchor.setLength(0);
+                    } catch (MalformedURLException e) {
+                        LOGGER.debug("Invalid URL found in <a> tag: ", e);
+                    }
+            	}
+            } else if (localName.equalsIgnoreCase("head")) {
+            	_inHead = true;
+            } else if (localName.equalsIgnoreCase("body")) {
+            	_inBody = true;
             }
         }
 
         @Override
         public void endElement(String uri, String localName, String name) throws SAXException {
-            if (_inAnchor && localName.equalsIgnoreCase("a")) {
+        	if (_inHead && localName.equalsIgnoreCase("head")) {
+        		_inHead = false;
+        	} else if (_inBody && localName.equalsIgnoreCase("body")) {
+        		_inBody = false;
+        	} else if (_inAnchor && localName.equalsIgnoreCase("a")) {
                 _outlinks.add(new Outlink(_curUrl, _curAnchor.toString()));
                 _inAnchor = false;
             }
@@ -82,7 +98,7 @@ public class SimpleParser implements IParser {
                 _curAnchor.append(ch, start, length);
             } else if (_inBody) {
                 _content.append(ch, start, length);
-            } 
+            }
         }
     };
 
@@ -108,7 +124,6 @@ public class SimpleParser implements IParser {
         InputStream is = new ByteArrayInputStream(fetchedDatum.getContent().getBytes());
         
         try {
-            // TODO KKr - figure out if we want to use the base or the final URL
             LinkBodyHandler handler = new LinkBodyHandler(new URL(fetchedDatum.getFetchedUrl()));
             _parser.parse(is, handler, metadata);
             
