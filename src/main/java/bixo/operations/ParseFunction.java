@@ -18,8 +18,8 @@ public class ParseFunction extends BaseOperation<NullContext> implements Functio
     private IParser _parser;
     private Fields _metaDataFields;
 
-    public ParseFunction(Fields parsedFields, Fields metaDataFields, IParser parser) {
-        super(parsedFields.append(metaDataFields));
+    public ParseFunction(IParser parser, Fields metaDataFields) {
+        super(ParsedDatum.FIELDS.append(metaDataFields));
         _metaDataFields = metaDataFields;
         _parser = parser;
     }
@@ -31,7 +31,9 @@ public class ParseFunction extends BaseOperation<NullContext> implements Functio
         
         // TODO KKr - add status to ParsedDatum, use it here to increment parsed vs. failed doc counters.
         // Or since this operation is part of a regular Cascading flow, we could trap exceptions.
-        flowProcess.increment(ParserCounters.DOCUMENTS_PARSED, 1);
-        functionCall.getOutputCollector().add(parseResult.toTuple());
+        if (parseResult != null) {
+            flowProcess.increment(ParserCounters.DOCUMENTS_PARSED, 1);
+            functionCall.getOutputCollector().add(parseResult.toTuple());
+        }
     }
 }
