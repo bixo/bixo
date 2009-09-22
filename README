@@ -2,14 +2,13 @@
 Introduction
 ===============================
 
-Bixo is an open source Java crawler that runs as a series of Cascading
-pipes. It is designed to be used as a tool for creating customized
-crawlers, thus each Cascading pipe implements a discrete operation. By
-building a customized Cascading pipe assembly, you can quickly create
-specialized crawlers that are optimized for a particular use case.
+Bixo is an open source Java web mining tooklit that runs as a series of Cascading
+pipes. It is designed to be used as a tool for creating customized web mining apps.
+By building a customized Cascading pipe assembly, you can quickly create a workflow
+using Bixo that fetches web content, parses, analyzes, and publishes the results.
 
-Bixo borrows heavily from the Apache Nutch project, as well as many other
-open source projects at Apache and elsewhere.
+Bixo borrows heavily from the Apache Nutch project, as well as many other open source
+rojects at Apache and elsewhere.
 
 Bixo is released under the MIT license.
 
