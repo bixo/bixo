@@ -4,6 +4,7 @@
 .settings/
 .local.*
 build
+!src/build
 build-eclipse
 build.sh
 *.iml

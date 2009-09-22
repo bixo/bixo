@@ -22,7 +22,7 @@ SOFTWARE.
 <project name="bixo-core" default="test">
 
 	<property name="root.dir" value="${basedir}" />
-	<property file="${root.dir}/src/build/build.properties" />
+	<property file="${root.dir}/src/build/ant/build.properties" />
 
 
 	<!-- ================================================================== -->
