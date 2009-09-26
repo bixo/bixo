@@ -1,6 +1,5 @@
 package bixo.tools;
 
-import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.http.IHttpFetcher;
@@ -9,16 +8,14 @@ import bixo.fetcher.http.SimpleHttpFetcher;
 public class RunHttpClientFetcher {
 
     /**
-     * @param args
+     * @param args - URL to fetch
      */
     public static void main(String[] args) {
-        // Set up for no minimum response rate.
-        FetcherPolicy policy = new FetcherPolicy();
-        // TODO KKr - use real user agent here.
-        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, "Bixo integration test agent");
+    	// Use standard Firefox agent name, as some sites won't work w/non-standard names.
+        IHttpFetcher fetcher = new SimpleHttpFetcher("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.0.8) Gecko/2009032608 Firefox/3.0.8");
 
         try {
-            String url = "http://telenovelas.censuratv.net/noticias/elrostrodeanaliacanal9-argentina-elrostrodeanalia-canal9/";
+            String url = args[0];
             FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
             System.out.println("Result = " + result.toString());
         } catch (Exception e) {
