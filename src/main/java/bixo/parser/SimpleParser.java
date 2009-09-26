@@ -82,6 +82,8 @@ public class SimpleParser implements IParser {
 
         @Override
         public void endElement(String uri, String localName, String name) throws SAXException {
+        	super.endElement(uri, localName, name);
+        	
         	if (_inHead && localName.equalsIgnoreCase("head")) {
         		_inHead = false;
         	} else if (_inBody && localName.equalsIgnoreCase("body")) {
@@ -94,6 +96,8 @@ public class SimpleParser implements IParser {
 
         @Override
         public void characters(char[] ch, int start, int length) throws SAXException {
+        	super.characters(ch, start, length);
+        	
             if (_inAnchor) {
                 _curAnchor.append(ch, start, length);
             } else if (_inBody) {
@@ -124,11 +128,26 @@ public class SimpleParser implements IParser {
         InputStream is = new ByteArrayInputStream(fetchedDatum.getContent().getBytes());
         
         try {
-            LinkBodyHandler handler = new LinkBodyHandler(new URL(fetchedDatum.getFetchedUrl()));
+        	URL baseUrl = new URL(fetchedDatum.getFetchedUrl());
+        	
+        	// See if we have a content location from the HTTP headers that we should use as
+        	// the base for resolving relative URLs in the document.
+        	String clUrl = fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_LOCATION);
+        	if (clUrl != null) {
+        		// FUTURE KKr - should we try to keep processing if this step fails, but
+        		// refuse to resolve relative links?
+        		baseUrl = new URL(baseUrl, clUrl);
+        	}
+        	
+            LinkBodyHandler handler = new LinkBodyHandler(baseUrl);
             _parser.parse(is, handler, metadata);
             
             return new ParsedDatum(fetchedDatum.getBaseUrl(), handler.getContent(), metadata.get(Metadata.TITLE),
                             handler.getLinks(), fetchedDatum.getMetaDataMap());
+        } catch (MalformedURLException e) {
+            // TODO KKr - throw exception once ParseFunction handles this.
+            LOGGER.warn("Exception processing document URLs for " + fetchedDatum.getBaseUrl(), e);
+            return null;
         } catch (Exception e) {
             // TODO KKr - throw exception once ParseFunction handles this.
             LOGGER.warn("Exception parsing document " + fetchedDatum.getBaseUrl(), e);
