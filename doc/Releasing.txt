@@ -1,0 +1,40 @@
+==============================================
+The following documents how a release is created.
+
+This will only be done by committers on the master
+branch of the Bixo project, and thus will be of
+little interest to users.
+==============================================
+
+1. Make sure everything is in sync with GitHub
+
+a. % git pull
+b. Make sure everything is added/committed.
+c. % git push
+
+2. Update version info in the top-level pom.xml
+
+Replace <version>xxx-SNAPSHOT</version> with
+<version>xxx</version>
+
+3. Verify build still works.
+
+% ant clean dist
+
+4. Do the tag
+
+a. % git add pom.xml
+b. % git commit -am "Releasing version xxx"
+c. % git tag -am "Tagging version xxx" xxx
+d. % git push --tags
+
+5. Set up for next version
+
+a. In pom.xml, replace <version>xxx</version with
+   <version>next version-SNAPSHOT</version>
+b. In src/build/ant/build.properties, replace version=xxx
+   with version=next version
+c. git add pom.xml
+d. git add src/build/ant/build.properties
+
+And yes, all of this could and should be scripted :)
