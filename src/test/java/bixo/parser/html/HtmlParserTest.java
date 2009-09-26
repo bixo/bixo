@@ -61,6 +61,6 @@ public class HtmlParserTest {
         ParsedDatum result = parser.parse(content);
         File parsedTextFile = new File(HtmlParserTest.class.getResource("/" + "simple-page.txt").getFile());
         Assert.assertEquals(FileUtils.readFileToString(parsedTextFile, "utf-8"), result.getParsedText());
-        Assert.assertEquals(10, result.getOulinks().length);
+        Assert.assertEquals(10, result.getOutlinks().length);
     }
 }

@@ -34,7 +34,7 @@ public class ParsedDatum extends BaseDatum {
         return _title;
     }
     
-    public Outlink[] getOulinks() {
+    public Outlink[] getOutlinks() {
         return _outLinks;
     }
     
