@@ -38,6 +38,7 @@ import org.apache.hadoop.io.BytesWritable;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -61,6 +62,7 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
+import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
@@ -231,11 +233,15 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         HttpResponse response;
         long readStartTime;
         HttpHeaders headerMap = new HttpHeaders();
+        String redirectedUrl;
         
         try {
             getter = new HttpGet(new URI(url));
+            HttpContext localContext = new BasicHttpContext();
             readStartTime = System.currentTimeMillis();
-            response = _httpClient.execute(getter);
+            response = _httpClient.execute(getter, localContext);
+            HttpHost host = (HttpHost)localContext.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
+            redirectedUrl = host.toURI();
             
             Header[] headers = response.getAllHeaders();
             for (Header header : headers) {
@@ -330,8 +336,6 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         // Note that getContentType can return null.
         String contentType = entity.getContentType() == null ? null : entity.getContentType().getValue();
 
-        // TODO KKr - handle redirects
-        String redirectedUrl = url;
         return new FetchedDatum(url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
     }
     
