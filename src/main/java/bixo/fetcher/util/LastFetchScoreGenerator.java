@@ -34,8 +34,7 @@ public class LastFetchScoreGenerator implements IScoreGenerator {
     private final long _interval;
 
     public LastFetchScoreGenerator() {
-        _now = System.currentTimeMillis();
-        _interval = DEFAULT_FETCH_INTERVAL;
+    	this(System.currentTimeMillis(), DEFAULT_FETCH_INTERVAL);
     }
     
     public LastFetchScoreGenerator(long now, long interval) {
