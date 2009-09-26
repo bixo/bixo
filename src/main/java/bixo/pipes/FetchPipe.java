@@ -14,8 +14,8 @@ import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
-import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.SimpleGroupingKeyGenerator;
+import bixo.fetcher.util.SimpleScoreGenerator;
 import bixo.operations.FetcherBuffer;
 import bixo.operations.GroupFunction;
 import bixo.operations.ScoreFunction;
@@ -40,7 +40,7 @@ public class FetchPipe extends SubAssembly {
     // Pipe that outputs StatusDatum tuples, for all URLs being processed.
     public static final String STATUS_PIPE_NAME = "status";
     
-    @SuppressWarnings({ "unchecked", "serial" })
+    @SuppressWarnings({ "unchecked" })
     private static class FilterErrorsFunction extends BaseOperation implements Function {
         private int _fieldPos;
         private int[] _fieldsToCopy;
@@ -71,7 +71,7 @@ public class FetchPipe extends SubAssembly {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "serial" })
+    @SuppressWarnings({ "unchecked" })
     private static class MakeStatusFunction extends BaseOperation implements Function {
         private int _fieldPos;
         private Fields _metaDataFields;
@@ -111,7 +111,7 @@ public class FetchPipe extends SubAssembly {
      * @param userAgent name to use during fetching
      */
     public FetchPipe(Pipe urlProvider, String userAgent) {
-        this(urlProvider, new SimpleGroupingKeyGenerator(userAgent), new LastFetchScoreGenerator(), new SimpleHttpFetcher(userAgent), new Fields());
+        this(urlProvider, new SimpleGroupingKeyGenerator(userAgent), new SimpleScoreGenerator(), new SimpleHttpFetcher(userAgent), new Fields());
     }
     
     public FetchPipe(Pipe urlProvider, IGroupingKeyGenerator keyGenerator, IScoreGenerator scoreGenerator, IHttpFetcher fetcher) {
