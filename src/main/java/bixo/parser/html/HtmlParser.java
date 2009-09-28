@@ -14,253 +14,211 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package bixo.parser.html;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.nio.charset.Charset;
-import java.io.*;
-import java.util.regex.*;
+import java.util.Set;
 
-import org.cyberneko.html.parsers.*;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CloseShieldInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.TeeContentHandler;
+import org.apache.tika.sax.TextContentHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.sax.xpath.Matcher;
+import org.apache.tika.sax.xpath.MatchingContentHandler;
+import org.apache.tika.sax.xpath.XPathParser;
+import org.cyberneko.html.parsers.SAXParser;
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.w3c.dom.*;
-import org.apache.html.dom.*;
 
-import org.apache.log4j.Logger;
+/**
+ * HTML parser. Uses CyberNeko to turn the input document to HTML SAX events,
+ * and post-processes the events to produce XHTML and metadata expected by
+ * Tika clients.
+ */
+public class HtmlParser implements Parser {
 
-import bixo.datum.FetchedDatum;
-import bixo.datum.Outlink;
-import bixo.datum.ParsedDatum;
-import bixo.parser.IParse;
-import bixo.parser.IParser;
-import bixo.parser.ParseData;
-import bixo.parser.ParseImpl;
-import bixo.parser.ParseResult;
-import bixo.parser.ParseStatus;
-import bixo.utils.EncodingDetector;
-import bixo.utils.Metadata;
+    /**
+     * Set of safe mappings from incoming HTML elements to outgoing
+     * XHTML elements. Ensures that the output is valid XHTML 1.0 Strict.
+     */
+    private static final Map<String, String> SAFE_ELEMENTS =
+        new HashMap<String, String>();
 
-@SuppressWarnings("serial")
-public class HtmlParser implements IParser {
-    public static final Logger LOGGER = Logger.getLogger(HtmlParser.class);
+    /**
+     * Set of HTML elements whose content will be discarded.
+     */
+    private static final Set<String> DISCARD_ELEMENTS = new HashSet<String>();
 
-    // I used 1000 bytes at first, but  found that some documents have 
-    // meta tag well past the first 1000 bytes. 
-    // (e.g. http://cn.promo.yahoo.com/customcare/music.html)
-    private static final int CHUNK_SIZE = 2000;
-    private static Pattern META_PATTERN =
-        Pattern.compile("<meta\\s+([^>]*http-equiv=\"?content-type\"?[^>]*)>", Pattern.CASE_INSENSITIVE);
-    private static Pattern CHARSET_PATTERN = Pattern.compile("charset=\\s*([a-z][_\\-0-9a-z]*)",
-                        Pattern.CASE_INSENSITIVE);
+    static {
+        // Based on http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd
+        SAFE_ELEMENTS.put("P", "p");
+        SAFE_ELEMENTS.put("H1", "h1");
+        SAFE_ELEMENTS.put("H2", "h2");
+        SAFE_ELEMENTS.put("H3", "h3");
+        SAFE_ELEMENTS.put("H4", "h4");
+        SAFE_ELEMENTS.put("H5", "h5");
+        SAFE_ELEMENTS.put("H6", "h6");
+        SAFE_ELEMENTS.put("UL", "ul");
+        SAFE_ELEMENTS.put("OL", "ol");
+        SAFE_ELEMENTS.put("LI", "li");
+        SAFE_ELEMENTS.put("DL", "dl");
+        SAFE_ELEMENTS.put("DT", "dt");
+        SAFE_ELEMENTS.put("DD", "dd");
+        SAFE_ELEMENTS.put("PRE", "pre");
+        SAFE_ELEMENTS.put("BLOCKQUOTE", "blockquote");
+        SAFE_ELEMENTS.put("TABLE", "table");
+        SAFE_ELEMENTS.put("THEAD", "thead");
+        SAFE_ELEMENTS.put("TBODY", "tbody");
+        SAFE_ELEMENTS.put("TR", "tr");
+        SAFE_ELEMENTS.put("TH", "th");
+        SAFE_ELEMENTS.put("TD", "td");
+        
+        // <base> is needed to define relative links properly.
+        SAFE_ELEMENTS.put("BASE", "base");
 
-    private String _defaultEncoding;
-    private String _cachingPolicy;
+        // <span> is useful when collecting attributes.
+        SAFE_ELEMENTS.put("SPAN", "span");
+        
+        // Don't include "A", even though it's safe, since that
+        // gets special handling to ensure it has an href attribute.
+        // SAFE_ELEMENTS.put("A", "a");
+        
+        DISCARD_ELEMENTS.add("STYLE");
+        DISCARD_ELEMENTS.add("SCRIPT");
 
-    public HtmlParser(String defaultEncoding, String cachingPolicy) {
-        _defaultEncoding = defaultEncoding;
-        _cachingPolicy = cachingPolicy;
+    }
+
+    public void parse(
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
+            throws IOException, SAXException, TikaException {
+        // Protect the stream from being closed by CyberNeko
+        stream = new CloseShieldInputStream(stream);
+
+        // Prepare the input source using the encoding hint if available
+        InputSource source = new InputSource(stream); 
+        String encoding = metadata.get(Metadata.CONTENT_ENCODING); 
+        if (encoding != null) { 
+            source.setEncoding(encoding);
+        }
+
+        // Prepare the HTML content handler that generates proper
+        // XHTML events to records relevant document metadata
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XPathParser xpath = new XPathParser(null, "");
+        Matcher body = xpath.parse("/HTML/BODY//node()");
+        Matcher title = xpath.parse("/HTML/HEAD/TITLE//node()");
+        Matcher meta = xpath.parse("/HTML/HEAD/META//node()");
+        handler = new TeeContentHandler(
+                new MatchingContentHandler(getBodyHandler(xhtml), body),
+                new MatchingContentHandler(getTitleHandler(metadata), title),
+                new MatchingContentHandler(getMetaHandler(metadata), meta));
+
+        // Parse the HTML document
+        SAXParser parser = new SAXParser();
+        parser.setContentHandler(new XHTMLDowngradeHandler(handler));
+        parser.parse(source);
     }
 
     /**
-     * Given a <code>byte[]</code> representing an html file of an 
-     * <em>unknown</em> encoding,  read out 'charset' parameter in the meta tag   
-     * from the first <code>CHUNK_SIZE</code> bytes.
-     * If there's no meta tag for Content-Type or no charset is specified,
-     * <code>null</code> is returned.  <br />
-     * FIXME: non-byte oriented character encodings (UTF-16, UTF-32)
-     * can't be handled with this. 
-     * We need to do something similar to what's done by mozilla
-     * (http://lxr.mozilla.org/seamonkey/source/parser/htmlparser/src/nsParser.cpp#1993).
-     * See also http://www.w3.org/TR/REC-xml/#sec-guessing
-     * <br />
-     *
-     * @param content <code>byte[]</code> representation of an html file
+     * @deprecated This method will be removed in Apache Tika 1.0.
      */
-
-    public static String sniffCharacterEncoding(byte[] content) {
-        int length = content.length < CHUNK_SIZE ? 
-                        content.length : CHUNK_SIZE;
-
-        // We don't care about non-ASCII parts so that it's sufficient
-        // to just inflate each byte to a 16-bit value by padding. 
-        // For instance, the sequence {0x41, 0x82, 0xb7} will be turned into 
-        // {U+0041, U+0082, U+00B7}. 
-        String str = "";
-        try {
-            str = new String(content, 0, length, Charset.forName("ASCII").toString());
-        } catch (UnsupportedEncodingException e) {
-            // code should never come here, but just in case... 
-            return null;
-        }
-
-        Matcher metaMatcher = META_PATTERN.matcher(str);
-        String encoding = null;
-        if (metaMatcher.find()) {
-            Matcher charsetMatcher = CHARSET_PATTERN.matcher(metaMatcher.group(1));
-            if (charsetMatcher.find()) 
-                encoding = new String(charsetMatcher.group(1));
-        }
-
-        return encoding;
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
-    public ParseResult getParse(FetchedDatum fetchedDatum) {
-        HTMLMetaTags metaTags = new HTMLMetaTags();
-
-        URL base;
-        try {
-            base = new URL(fetchedDatum.getBaseUrl());
-        } catch (MalformedURLException e) {
-            return new ParseStatus(e).getEmptyParseResult(fetchedDatum.getBaseUrl());
-        }
-
-        // TODO KKr - remove this guy, once we know that our fetcher safely limits things.
-        byte[] contentInOctets = fetchedDatum.getContent().getBytes();
-        if (contentInOctets.length > (128 * 1024L)) {
-            LOGGER.warn(String.format("Got big content (%d) for %s", contentInOctets.length, fetchedDatum.getBaseUrl()));
-        }
-        
-        String text = "";
-        String title = "";
-        Outlink[] outlinks = new Outlink[0];
-        Metadata metadata = new Metadata();
-
-        // parse the content
-        DocumentFragment root;
-        try {
-            InputSource input = new InputSource(new ByteArrayInputStream(contentInOctets));
-
-            EncodingDetector detector = new EncodingDetector();
-            // TODO KKr - get contentType from content
-            detector.autoDetectClues(fetchedDatum, "xxx", true);
-            detector.addClue(sniffCharacterEncoding(contentInOctets), "sniffed");
-            String encoding = detector.guessEncoding(fetchedDatum, _defaultEncoding);
-
-            metadata.set(Metadata.ORIGINAL_CHAR_ENCODING_KEY, encoding);
-            metadata.set(Metadata.CHAR_ENCODING_FOR_CONVERSION_KEY, encoding);
-
-            input.setEncoding(encoding);
-            if (LOGGER.isTraceEnabled()) { LOGGER.trace("Parsing..."); }
-            root = parse(input);
-        } catch (IOException e) {
-            return new ParseStatus(e).getEmptyParseResult(fetchedDatum.getBaseUrl());
-        } catch (DOMException e) {
-            return new ParseStatus(e).getEmptyParseResult(fetchedDatum.getBaseUrl());
-        } catch (SAXException e) {
-            return new ParseStatus(e).getEmptyParseResult(fetchedDatum.getBaseUrl());
-        } catch (Exception e) {
-            LOGGER.error("Exception parsing HTML", e);
-            return new ParseStatus(e).getEmptyParseResult(fetchedDatum.getBaseUrl());
-        }
-
-        // get meta directives
-        HTMLMetaProcessor.getMetaTags(metaTags, root, base);
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace("Meta tags for " + base + ": " + metaTags.toString());
-        }
-        
-        DOMContentUtils utils = new DOMContentUtils();
-
-        // check meta directives
-        if (!metaTags.getNoIndex()) {               // okay to index
-            StringBuffer sb = new StringBuffer();
-            LOGGER.trace("Getting text...");
-            utils.getText(sb, root);          // extract text
-            text = sb.toString();
-            sb.setLength(0);
-            LOGGER.trace("Getting title...");
-            utils.getTitle(sb, root);         // extract title
-            title = sb.toString().trim();
-        }
-
-        if (!metaTags.getNoFollow()) {              // okay to follow links
-            ArrayList<Outlink> l = new ArrayList<Outlink>();   // extract outlinks
-            URL baseTag = utils.getBase(root);
-            if (LOGGER.isTraceEnabled()) { LOGGER.trace("Getting links..."); }
-            utils.getOutlinks(baseTag!=null?baseTag:base, l, root);
-            outlinks = l.toArray(new Outlink[l.size()]);
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("found "+outlinks.length+" outlinks in "+fetchedDatum.getBaseUrl());
+    private ContentHandler getTitleHandler(final Metadata metadata) {
+        return new WriteOutContentHandler() {
+            @Override
+            public void endElement(String u, String l, String n) {
+                metadata.set(Metadata.TITLE, toString());
             }
-        }
-
-        ParseStatus status = new ParseStatus(ParseStatus.SUCCESS);
-        if (metaTags.getRefresh()) {
-            status.setMinorCode(ParseStatus.SUCCESS_REDIRECT);
-            status.setArgs(new String[] {metaTags.getRefreshHref().toString(),
-                            Integer.toString(metaTags.getRefreshTime())});      
-        }
-        
-        // TODO KKr - figure out content metadata vs. metadata here.
-        Metadata md = new Metadata();
-        ParseData parseData = new ParseData(status, title, outlinks, md, metadata);
-        ParseResult parseResult = ParseResult.createParseResult(fetchedDatum.getBaseUrl(), new ParseImpl(text, parseData));
-
-        // TODO KKr - how do we want to handle parse meta-data?
-        if (metaTags.getNoCache()) {             // not okay to cache
-            for (Map.Entry<org.apache.hadoop.io.Text, IParse> entry : parseResult) 
-                entry.getValue().getData().getParseMeta().set(IBixoMetaKeys.CACHING_FORBIDDEN_KEY, 
-                                _cachingPolicy);
-        }
-        return parseResult;
+        };
     }
 
-    private DocumentFragment parse(InputSource input) throws Exception {
-        return parseNeko(input);
+    private ContentHandler getMetaHandler(final Metadata metadata) {
+        return new WriteOutContentHandler() {
+            @Override
+            public void startElement(
+                    String uri, String local, String name, Attributes atts)
+                    throws SAXException {
+                    if (atts.getValue("http-equiv") != null) {
+                        metadata.set(atts.getValue("http-equiv"), atts.getValue("content"));
+                    }
+                    if (atts.getValue("name") != null) {
+                        metadata.set(atts.getValue("name"), atts.getValue("content"));
+                    }
+            }
+        };
     }
 
-    private DocumentFragment parseNeko(InputSource input) throws Exception {
-        DOMFragmentParser parser = new DOMFragmentParser();
-        
-        try {
-            parser.setFeature("http://cyberneko.org/html/features/augmentations", true);
-            parser.setProperty("http://cyberneko.org/html/properties/default-encoding", _defaultEncoding);
-            parser.setFeature("http://cyberneko.org/html/features/scanner/ignore-specified-charset", true);
-            parser.setFeature("http://cyberneko.org/html/features/balance-tags/ignore-outside-content", false);
-            parser.setFeature("http://cyberneko.org/html/features/balance-tags/document-fragment", true);
-            parser.setFeature("http://cyberneko.org/html/features/report-errors", LOGGER.isTraceEnabled());
-        } catch (SAXException e) {
-            LOGGER.debug("SAXException thrown while setting features", e);
-        }
-        
-        // convert Document to DocumentFragment
-        HTMLDocumentImpl doc = new HTMLDocumentImpl();
-        doc.setErrorChecking(false);
-        DocumentFragment res = doc.createDocumentFragment();
-        DocumentFragment frag = doc.createDocumentFragment();
-        parser.parse(input, frag);
-        res.appendChild(frag);
+    private ContentHandler getBodyHandler(final XHTMLContentHandler xhtml) {
+        return new TextContentHandler(xhtml) {
 
-        try {
-            while (true) {
-                frag = doc.createDocumentFragment();
-                parser.parse(input, frag);
-                if (!frag.hasChildNodes()) break;
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace(" - new frag, " + frag.getChildNodes().getLength() + " nodes.");
+            private int discardLevel = 0;
+
+            @Override
+            public void startElement(
+                    String uri, String local, String name, Attributes atts)
+                    throws SAXException {
+                if (discardLevel != 0) {
+                    discardLevel++;
+                } else if (DISCARD_ELEMENTS.contains(name)) {
+                    discardLevel = 1;
+                } else if (SAFE_ELEMENTS.containsKey(name)) {
+                    xhtml.startElement(SAFE_ELEMENTS.get(name));
+                } else if ("A".equals(name)) {
+                    String href = atts.getValue("href");
+                    if (href == null) {
+                        href = "";
+                    }
+                    xhtml.startElement("a", "href", href);
                 }
-                
-                res.appendChild(frag);
             }
-        } catch (Exception e) {
-            LOGGER.error("Exception parsing HTML", e);
-        }
-        
-        return res;
-    }
 
-    
-    @Override
-    public ParsedDatum parse(FetchedDatum fetchedDatum) {
-        ParseResult result = getParse(fetchedDatum);
-        IParse p = result.get(fetchedDatum.getBaseUrl());
-        
-        return new ParsedDatum(fetchedDatum.getBaseUrl(), p.getText(), p.getData().getTitle(), p.getData().getOutlinks(), fetchedDatum.getMetaDataMap());
+            @Override
+            public void endElement(
+                    String uri, String local, String name) throws SAXException {
+                if (discardLevel != 0) {
+                    discardLevel--;
+                } else if (SAFE_ELEMENTS.containsKey(name)) {
+                    xhtml.endElement(SAFE_ELEMENTS.get(name));
+                } else if ("A".equals(name)) {
+                    xhtml.endElement("a");
+                }
+            }
+
+            @Override
+            public void characters(char[] ch, int start, int length)
+                    throws SAXException {
+                if (discardLevel == 0) {
+                    super.characters(ch, start, length);
+                }
+            }
+
+            @Override
+            public void ignorableWhitespace(char[] ch, int start, int length)
+                    throws SAXException {
+                if (discardLevel == 0) {
+                    super.ignorableWhitespace(ch, start, length);
+                }
+            }
+
+        };
     }
 
 }

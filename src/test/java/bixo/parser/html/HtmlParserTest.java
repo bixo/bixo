@@ -35,7 +35,7 @@ public class HtmlParserTest {
     public void testHtlmParsing() throws IOException {
         URL path = HtmlParserTest.class.getResource("/" + "simple-page.html");
 
-        HtmlParser parser = new HtmlParser("windows-1252", IBixoMetaKeys.CACHING_FORBIDDEN_CONTENT);
+        NutchHtmlParser parser = new NutchHtmlParser("windows-1252", IBixoMetaKeys.CACHING_FORBIDDEN_CONTENT);
         FetchedDatum content = makeFetchedDat(path);
         ParseResult parse = parser.getParse(content);
 
@@ -53,7 +53,7 @@ public class HtmlParserTest {
 
     @Test
     public void testIParserInterface() throws IOException {
-        IParser parser = new HtmlParser("windows-1252", IBixoMetaKeys.CACHING_FORBIDDEN_CONTENT);
+        IParser parser = new NutchHtmlParser("windows-1252", IBixoMetaKeys.CACHING_FORBIDDEN_CONTENT);
 
         URL path = HtmlParserTest.class.getResource("/" + "simple-page.html");
         FetchedDatum content = makeFetchedDat(path);

@@ -20,7 +20,7 @@ package bixo.parser;
 
 /** The result of parsing a page's raw content.
  * 
- * @see bixo.parser.html.HtmlParser#getParse(FetchedDatum)
+ * @see bixo.parser.html.NutchHtmlParser#getParse(FetchedDatum)
  */
 public class ParseImpl implements IParse {
   private ParseText text;
