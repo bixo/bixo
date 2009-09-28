@@ -46,7 +46,7 @@ import org.xml.sax.SAXException;
  * and post-processes the events to produce XHTML and metadata expected by
  * Tika clients.
  */
-public class HtmlParser implements Parser {
+public class TikaHtmlParser implements Parser {
 
     /**
      * Set of safe mappings from incoming HTML elements to outgoing
