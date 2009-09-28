@@ -6,10 +6,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.Parser;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -58,7 +60,8 @@ public class SimpleParser implements IParser {
             if (_inHead) {
             	if (localName.equalsIgnoreCase("base")) {
             		try {
-            			_baseUrl = new URL(attributes.getValue("href"));
+            			// Handle relative URLs, even though by definition it should be absolute.
+            			_baseUrl = UrlUtils.makeUrl(_baseUrl, attributes.getValue("href"));
             		} catch (MalformedURLException e) {
                         LOGGER.debug("Invalid URL found in <base> tag: ", e);
             		}
