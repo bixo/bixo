@@ -70,6 +70,12 @@ SOFTWARE.
 		</artifact:dependencies>
 	</target>
 
+	<target name="mvn-install"  xmlns:artifact="urn:maven-artifact-ant" depends="mvn-init">
+        <artifact:install file="${build.dir}/${jar.name}">
+    		<pom refid="maven.project"/>
+  		</artifact:install>
+	</target>
+	
 	<target name="mvn-deploy"  xmlns:artifact="urn:maven-artifact-ant" depends="mvn-init">
 		<fail unless="repoUrl">
 			You must specify the repoUrl (-DrepoUrl=xxx) when deploying!
@@ -320,6 +326,15 @@ SOFTWARE.
 	<target name="deploy"
 			depends="test-all, mvn-deploy"
 			description="--> deploy SNAPSHOT jar to 101tec Nexus repository">
+	</target>
+	
+	<!-- ================================================================== -->
+	<!-- Install in local Maven repository									-->
+	<!-- ================================================================== -->
+
+	<target name="install"
+			depends="test-all, mvn-install"
+			description="--> install SNAPSHOT jar to local repository">
 	</target>
 	
 	<!-- ================================================================== -->
