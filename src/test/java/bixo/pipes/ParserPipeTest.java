@@ -16,8 +16,7 @@ import org.junit.Test;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.ParsedDatum;
-import bixo.parser.html.NutchHtmlParser;
-import bixo.parser.html.IBixoMetaKeys;
+import bixo.parser.SimpleParser;
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -28,11 +27,12 @@ import cascading.tuple.TupleEntryCollector;
 
 public class ParserPipeTest extends CascadingTestCase {
 
-    @Test
+    @SuppressWarnings("unchecked")
+	@Test
     public void testParserPipe() throws Exception {
 
         Pipe pipe = new Pipe("parse_source");
-        ParsePipe parserPipe = new ParsePipe(pipe, new NutchHtmlParser("windows-1252", IBixoMetaKeys.CACHING_FORBIDDEN_CONTENT));
+        ParsePipe parserPipe = new ParsePipe(pipe, new SimpleParser());
         Lfs in = new Lfs(new SequenceFile(FetchedDatum.FIELDS), "build/test/ParserPipeTest/in", true);
         Lfs out = new Lfs(new SequenceFile(ParsedDatum.FIELDS), "build/test/ParserPipeTest/out", true);
 
@@ -85,8 +85,8 @@ public class ParserPipeTest extends CascadingTestCase {
         FlowConnector flowConnector = new FlowConnector();
         Flow flow = flowConnector.connect(in, out, parserPipe);
         flow.complete();
+        
         validateLength(flow, validRecords);
-
     }
 
 }
