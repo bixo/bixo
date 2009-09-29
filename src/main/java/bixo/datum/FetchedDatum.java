@@ -44,6 +44,26 @@ public class FetchedDatum extends BaseDatum {
     public FetchedDatum(String baseUrl, String redirectedUrl, long fetchTime, HttpHeaders headers, BytesWritable content, String contentType, int responseRate, Map<String, Comparable> metaData) {
         super(metaData);
         
+        if (baseUrl == null) {
+        	throw new InvalidParameterException("baseUrl cannot be null");
+        }
+        
+        if (redirectedUrl == null) {
+        	throw new InvalidParameterException("redirectedUrl cannot be null");
+        }
+        
+        if (headers == null) {
+        	throw new InvalidParameterException("headers cannot be null");
+        }
+        
+        if (content == null) {
+        	throw new InvalidParameterException("content cannot be null");
+        }
+        
+        if (contentType == null) {
+        	throw new InvalidParameterException("contentType cannot be null");
+        }
+        
         _baseUrl = baseUrl;
         _fetchedUrl = redirectedUrl;
         _fetchTime = fetchTime;
@@ -59,8 +79,19 @@ public class FetchedDatum extends BaseDatum {
      * 
      * @param scoredDatum Valid datum with url/metadata needed to create FetchedDatum
      */
+    @SuppressWarnings("unchecked")
+	public FetchedDatum(String url, Map<String, Comparable> metaData) {
+        this(url, url, 0, new HttpHeaders(), new BytesWritable(), "", 0, metaData);
+    }
+    
+    
+    /**
+     * Create place-holder FetchedDatum from the data used to attempt the fetch.
+     * 
+     * @param scoredDatum Valid datum with url/metadata needed to create FetchedDatum
+     */
     public FetchedDatum(final ScoredUrlDatum scoredDatum) {
-        this(scoredDatum.getUrl(), scoredDatum.getUrl(), 0, null, null, null, 0, scoredDatum.getMetaDataMap());
+        this(scoredDatum.getUrl(), scoredDatum.getMetaDataMap());
     }
     
     public String getBaseUrl() {
