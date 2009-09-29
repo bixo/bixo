@@ -6,35 +6,42 @@ branch of the Bixo project, and thus will be of
 little interest to users.
 ==============================================
 
-1. Make sure everything is in sync with GitHub
+1. Make sure master is up to date & valid
 
-a. % git pull
-b. Make sure everything is added/committed.
-c. % git push
+% cd ~/git/github/bixo
+% git checkout master
+% git pull
+<add/commit pending changes>
+% bant dist - use "bant" since dist can require a lot of memory to package things up
+% git push
 
-2. Update version info in the top-level pom.xml
+2. Merge master into release
 
-Replace <version>xxx-SNAPSHOT</version> with
-<version>xxx</version>
+% git checkout release
+% git merge master
 
-3. Verify build still works.
+3. Edit version number
 
-% ant clean dist
+% nano pom.xml - set <version>0.x.y</version> in header
+% nano src/build/ant/build.properties - set version=0.x.y
 
-4. Do the tag
+4. Build the release
 
-a. % git add pom.xml
-b. % git commit -am "Releasing version xxx"
-c. % git tag -am "Tagging version xxx" xxx
-d. % git push --tags
+% bant dist
+% cp build/bixo-dist-0.x.y.tgz release/
+% git add release/bixo-dist-0.x.y.tgz
+% git commit -am "Committing 0.x.y distribution build"
 
-5. Set up for next version
+5. Tag the release
 
-a. In pom.xml, replace <version>xxx</version with
-   <version>next version-SNAPSHOT</version>
-b. In src/build/ant/build.properties, replace version=xxx
-   with version=next version
-c. git add pom.xml
-d. git add src/build/ant/build.properties
+% git tag -am "Tagging version 0.x.y" 0.x.y
+
+6. Updating GitHub
+
+% git push --tags
+
+7. Switch back to master
+
+% git checkout master
 
 And yes, all of this could and should be scripted :)
