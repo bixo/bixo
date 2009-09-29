@@ -6,14 +6,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import bixo.datum.FetchedDatum;
@@ -37,12 +37,21 @@ public class SimpleParser implements IParser {
         private boolean _inHead = false;
         private boolean _inBody = false;
         private boolean _inAnchor = false;
+        private boolean _inTitle = false;
         
         private String _curUrl;
         private StringBuilder _curAnchor = new StringBuilder();
         
+        public LinkBodyHandler() {
+        	_baseUrl = null;
+        }
+        
         public LinkBodyHandler(URL baseUrl) {
             _baseUrl = baseUrl;
+        }
+        
+        public void setBaseUrl(URL baseUrl) {
+        	_baseUrl = baseUrl;
         }
         
         public String getContent() {
@@ -61,15 +70,17 @@ public class SimpleParser implements IParser {
             	if (localName.equalsIgnoreCase("base")) {
             		try {
             			// Handle relative URLs, even though by definition it should be absolute.
-            			_baseUrl = UrlUtils.makeUrl(_baseUrl, attributes.getValue("href"));
+            			_baseUrl = new URL(UrlUtils.makeUrl(_baseUrl, attributes.getValue("href")));
             		} catch (MalformedURLException e) {
                         LOGGER.debug("Invalid URL found in <base> tag: ", e);
             		}
+            	} else if (localName.equalsIgnoreCase("title")) {
+            		_inTitle = true;
             	}
             } else if (_inBody) {
             	if (localName.equalsIgnoreCase("a")) {
                     try {
-                        _curUrl = UrlUtils.makeUrl(_baseUrl, attributes.getValue("href")).toExternalForm();
+                        _curUrl = UrlUtils.makeUrl(_baseUrl, attributes.getValue("href"));
                         _inAnchor = true;
                         _curAnchor.setLength(0);
                     } catch (MalformedURLException e) {
@@ -89,6 +100,8 @@ public class SimpleParser implements IParser {
         	
         	if (_inHead && localName.equalsIgnoreCase("head")) {
         		_inHead = false;
+        	} else if (_inTitle && localName.equalsIgnoreCase("title")) {
+        		_inTitle = false;
         	} else if (_inBody && localName.equalsIgnoreCase("body")) {
         		_inBody = false;
         	} else if (_inAnchor && localName.equalsIgnoreCase("a")) {
@@ -101,8 +114,12 @@ public class SimpleParser implements IParser {
         public void characters(char[] ch, int start, int length) throws SAXException {
         	super.characters(ch, start, length);
         	
-            if (_inAnchor) {
+        	if (_inAnchor) {
                 _curAnchor.append(ch, start, length);
+                _content.append(ch, start, length);
+        	} else if (_inTitle) {
+        		_content.append(ch, start, length);
+        		_content.append(' ');
             } else if (_inBody) {
                 _content.append(ch, start, length);
             }
@@ -129,7 +146,9 @@ public class SimpleParser implements IParser {
         metadata.add(Metadata.CONTENT_ENCODING, fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_ENCODING));
         
         InputStream is = new ByteArrayInputStream(fetchedDatum.getContent().getBytes());
-        
+
+        LinkBodyHandler handler = new LinkBodyHandler();
+
         try {
         	URL baseUrl = new URL(fetchedDatum.getFetchedUrl());
         	
@@ -142,7 +161,8 @@ public class SimpleParser implements IParser {
         		baseUrl = new URL(baseUrl, clUrl);
         	}
         	
-            LinkBodyHandler handler = new LinkBodyHandler(baseUrl);
+        	handler.setBaseUrl(baseUrl);
+
             _parser.parse(is, handler, metadata);
             
             return new ParsedDatum(fetchedDatum.getBaseUrl(), handler.getContent(), metadata.get(Metadata.TITLE),
@@ -151,6 +171,17 @@ public class SimpleParser implements IParser {
             // TODO KKr - throw exception once ParseFunction handles this.
             LOGGER.warn("Exception processing document URLs for " + fetchedDatum.getBaseUrl(), e);
             return null;
+        } catch (TikaException e) {
+            LOGGER.warn("Exception parsing document " + fetchedDatum.getBaseUrl(), e);
+            if (e.getCause() instanceof SAXParseException) {
+            	// TODO KKr - remove this when Tika bugs w/using XML parser on HTML, and failing
+            	// on RSS, are fixed.
+                return new ParsedDatum(fetchedDatum.getBaseUrl(), handler.getContent(), metadata.get(Metadata.TITLE),
+                        handler.getLinks(), fetchedDatum.getMetaDataMap());
+            } else {
+            	// TODO KKr - throw exception once ParseFunction handles this.
+            	return null;
+            }
         } catch (Exception e) {
             // TODO KKr - throw exception once ParseFunction handles this.
             LOGGER.warn("Exception parsing document " + fetchedDatum.getBaseUrl(), e);
