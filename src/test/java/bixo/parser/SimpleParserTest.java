@@ -1,14 +1,17 @@
 package bixo.parser;
 
-import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
 import junit.framework.Assert;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.io.BytesWritable;
 import org.junit.Test;
@@ -165,13 +168,34 @@ public class SimpleParserTest {
 		// Verify content is correct
 		Assert.assertEquals("Simple", parsedDatum.getTitle());
 		
-		// TODO KKr - Fix up test when Tika HtmlParser stops returning text that
-		// follows the </body> tag as though it were before the tag. Currently
-		// we get back \n\nContent\n\n\n\n, where the last two returns are the
-		// ones after the </body> and </html> tags.
-		Assert.assertEquals(encodeReturns("\n\nContent\n\n\n\n"), encodeReturns(parsedDatum.getParsedText()));
+		compareTermsInStrings("Simple Content", parsedDatum.getParsedText());
 	}
 	
+    @Test
+    public void testHtlmParsing() throws IOException {
+        URL path = SimpleParserTest.class.getResource("/" + "simple-page.html");
+
+        IParser parser = new SimpleParser();
+        FetchedDatum content = makeFetchedDatum(path);
+        ParsedDatum parse = parser.parse(content);
+        Assert.assertNotNull(parse.getParsedText());
+        
+        // TODO - add back in title text to simple-page, when we generate this
+        File parsedTextFile = new File(SimpleParserTest.class.getResource("/" + "simple-page.txt").getFile());
+        String expectedString = FileUtils.readFileToString(parsedTextFile, "utf-8");
+        String actualString = parse.getParsedText();
+        
+        // Trim of leading returns so split() doesn't give us an empty term
+        // TODO - use our own split that skips leading/trailing separators
+        compareTermsInStrings(expectedString, actualString.replaceFirst("^[\\n]+", ""));
+
+        // TODO reenable when Tika bug is fixed re not emitting <img> links.
+        // Outlink[] outlinks = parse.getOutlinks();
+        // Assert.assertEquals(10, outlinks.length);
+        
+        Assert.assertEquals("TransPac Software", parse.getTitle());
+    }
+
 	@SuppressWarnings("unchecked")
 	private static Map<String, Comparable> makeMetadata() {
 		return new HashMap<String, Comparable>();
@@ -182,22 +206,30 @@ public class SimpleParserTest {
 		return IOUtils.toString(is);
 	}
 	
-	private static String encodeReturns(String str) throws IOException {
-		StringBuilder result = new StringBuilder();
-		
-		int numLines = 0;
-		StringReader sr = new StringReader(str);
-		BufferedReader br = new BufferedReader(sr);
-		for (String line = br.readLine(); line != null; numLines++, line = br.readLine()) {
-			result.append(line);
-			result.append("\\n");
-		}
-		
-		// If our last line didn't actually have a return, get rid of it.
-		if (!str.endsWith("\n") && (numLines > 0)) {
-			result.setLength(result.length() - 2);
-		}
-		
-		return result.toString();
-	}
+    private FetchedDatum makeFetchedDatum(URL path) throws IOException {
+        File file = new File(path.getFile());
+        byte[] bytes = new byte[(int) file.length()];
+        DataInputStream in = new DataInputStream(new FileInputStream(file));
+        in.readFully(bytes);
+
+        String url = path.toExternalForm().toString();
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), new HttpHeaders(), new BytesWritable(bytes), "text/html", 0, null);
+        return fetchedDatum;
+    }
+    
+    private void compareTermsInStrings(String expected, String actual) {
+        String[] expectedTerms = expected.split("[ \\n\\r\\t\\n]+");
+        // Trim of leading returns so split() doesn't give us an empty term
+        // TODO - use our own split that skips leading/trailing separators
+        String[] actualTerms = actual.split("[ \\n\\r\\t\\n]+");
+        
+        int compLength = Math.min(expectedTerms.length, actualTerms.length);
+        for (int i = 0; i < compLength; i++) {
+        	Assert.assertEquals("Term at index " + i, expectedTerms[i], actualTerms[i]);
+        }
+        
+        Assert.assertEquals(expectedTerms.length, actualTerms.length);
+    }
+
+
 }
