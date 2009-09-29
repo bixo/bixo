@@ -32,8 +32,8 @@ import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.AbortedFetchReason;
 import bixo.exceptions.AbortedFetchException;
+import bixo.exceptions.AbortedFetchReason;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
@@ -188,7 +188,7 @@ public class FetcherQueue implements IFetchListProvider {
         for (ScoredUrlDatum datum : _queue) {
             synchronized (_collector) {
                 String url = datum.getUrl();
-                Tuple result = new FetchedDatum(url, url, 0, null, null, null, 0, datum.getMetaDataMap()).toTuple();
+                Tuple result = new FetchedDatum(url, datum.getMetaDataMap()).toTuple();
                 result.add(new AbortedFetchException(url, reason));
                 _collector.add(result);
             }
