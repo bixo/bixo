@@ -20,6 +20,8 @@ public class RunHttpClientFetcher {
             System.out.println("Result = " + result.toString());
         } catch (Exception e) {
             System.out.println("Exception fetching page: " + e.getMessage());
+            e.printStackTrace(System.err);
+            System.exit(-1);
         }
     }
 
