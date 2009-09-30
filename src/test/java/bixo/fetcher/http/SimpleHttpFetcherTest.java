@@ -29,11 +29,8 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         
         @Override
         public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
-        	if (pathInContext.endsWith("based")) {
-                response.setStatus(HttpStatus.SC_TEMPORARY_REDIRECT);
-                response.setContentType("text/plain");
-                response.setContentLength(0);
-                response.setField("Location", "http://localhost:8089/redirect");
+        	if (pathInContext.endsWith("base")) {
+                response.sendRedirect("http://localhost:8089/redirect");
         	} else {
                 response.setStatus(HttpStatus.SC_OK);
                 response.setContentType("text/plain");
@@ -171,9 +168,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
 
-        // TODO KKr - renable when RedirectResponseHandler works, and our HttpClient code can
-        // really get the redirected URL.
-        // Assert.assertEquals("Redirected URL", "http://localhost:8089/redirect", result.getFetchedUrl());
+        Assert.assertEquals("Redirected URL", "http://localhost:8089/redirect", result.getFetchedUrl());
 
     }
     
