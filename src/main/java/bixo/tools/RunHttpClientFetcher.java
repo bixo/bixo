@@ -1,5 +1,9 @@
 package bixo.tools;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.http.IHttpFetcher;
@@ -7,21 +11,53 @@ import bixo.fetcher.http.SimpleHttpFetcher;
 
 public class RunHttpClientFetcher {
 
+    private static String readInputLine() throws IOException {
+        InputStreamReader isr = new InputStreamReader(System.in);
+        BufferedReader br = new BufferedReader(isr);
+        
+        try {
+            return br.readLine();
+        } finally {
+            // TODO KKr - will this actually close System.in?
+            // Should I reuse this buffered reader? Check out password masking code.
+            // br.close();
+        }
+    }
+
     /**
      * @param args - URL to fetch
      */
     public static void main(String[] args) {
     	// Use standard Firefox agent name, as some sites won't work w/non-standard names.
         IHttpFetcher fetcher = new SimpleHttpFetcher("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.0.8) Gecko/2009032608 Firefox/3.0.8");
+        boolean interactive = args.length == 0;
+        int index = 0;
+        
+        while (interactive || (index < args.length)) {
+        	String url;
+        	
+        	try {
+            	if (interactive) {
+            		System.out.print("URL to fetch: ");
+            		url = readInputLine();
+            		if (url.length() == 0) {
+            			System.exit(0);
+            		}
+            	} else {
+            		url = args[index++];
+            	}
 
-        try {
-            String url = args[0];
-            FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
-            System.out.println("Result = " + result.toString());
-        } catch (Exception e) {
-            System.out.println("Exception fetching page: " + e.getMessage());
-            e.printStackTrace(System.err);
-            System.exit(-1);
+            	System.out.println("Fetching " + url);
+        		FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
+        		System.out.println("Result = " + result.toString());
+        	} catch (Exception e) {
+        		System.out.println("Exception fetching page: " + e.getMessage());
+        		e.printStackTrace(System.err);
+
+        		if (!interactive) {
+        			System.exit(-1);
+        		}
+        	}
         }
     }
 
