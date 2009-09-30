@@ -26,8 +26,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,6 +48,7 @@ import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.params.ClientParamBean;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.params.HttpClientParams;
@@ -228,21 +231,19 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     @SuppressWarnings("unchecked")
     private FetchedDatum doGet(String url, Map<String, Comparable> metaData) throws BaseFetchException {
         LOGGER.trace("Fetching " + url);
-        
+
         HttpGet getter;
         HttpResponse response;
         long readStartTime;
         HttpHeaders headerMap = new HttpHeaders();
         String redirectedUrl;
-        
+
         try {
             getter = new HttpGet(new URI(url));
             HttpContext localContext = new BasicHttpContext();
             readStartTime = System.currentTimeMillis();
             response = _httpClient.execute(getter, localContext);
-            HttpHost host = (HttpHost)localContext.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
-            redirectedUrl = host.toURI();
-            
+
             Header[] headers = response.getAllHeaders();
             for (Header header : headers) {
                 headerMap.add(header.getName(), header.getValue());
@@ -252,12 +253,23 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             if (httpStatus != HttpStatus.SC_OK) {
                 throw new HttpFetchException(url, "Error fetching " + url, httpStatus, headerMap);
             }
+
+            HttpHost host = (HttpHost)localContext.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
+            HttpUriRequest finalRequest = (HttpUriRequest)localContext.getAttribute(ExecutionContext.HTTP_REQUEST);
+
+            try {
+                URL hostUrl = new URI(host.toURI()).toURL();
+                redirectedUrl = new URL(hostUrl, finalRequest.getURI().toString()).toExternalForm();
+            } catch (MalformedURLException e) {
+                LOGGER.warn("Invalid host/uri specified in final fetch: " + host + finalRequest.getURI());
+                redirectedUrl = url;
+            }
         } catch (IOException e) {
             throw new IOFetchException(url, e);
         } catch (URISyntaxException e) {
             throw new UrlFetchException(url, e.getMessage());
         }
-        
+
         // Figure out how much data we want to try to fetch.
         int targetLength = _fetcherPolicy.getMaxContentSize();
         boolean truncated = false;
@@ -283,10 +295,10 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         long readRate = 0;
         HttpEntity entity = response.getEntity();
         boolean needAbort = true;
-        
+
         if (entity != null) {
             InputStream in = null;
-            
+
             try {
                 in = entity.getContent();
                 byte[] buffer = new byte[BUFFER_SIZE];
@@ -327,14 +339,14 @@ public class SimpleHttpFetcher implements IHttpFetcher {
                 if (needAbort) {
                     safeAbort(getter);
                 }
-                
+
                 // Make sure the connection is released immediately.
                 safeClose(in);
             }
         }
 
         // Note that getContentType can return null.
-        String contentType = entity.getContentType() == null ? null : entity.getContentType().getValue();
+        String contentType = entity.getContentType() == null ? "" : entity.getContentType().getValue();
 
         return new FetchedDatum(url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
     }
