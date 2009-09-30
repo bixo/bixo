@@ -28,6 +28,7 @@ little interest to users.
 4. Build the release
 
 % bant dist
+% git rm release/*.tgz
 % cp build/bixo-dist-0.x.y.tgz release/
 % git add release/bixo-dist-0.x.y.tgz
 % git commit -am "Committing 0.x.y distribution build"
