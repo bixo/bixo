@@ -123,11 +123,20 @@ public class FetchedDatum extends BaseDatum {
     }
 
     public String toString() {
-        StringBuilder result = new StringBuilder(_baseUrl);
+        StringBuilder result = new StringBuilder("[base URL] ");
+        result.append(_baseUrl);
+        if (!_baseUrl.equals(_fetchedUrl)) {
+        	result.append(" | [final URL] ");
+        	result.append(_fetchedUrl);
+        }
         
         if (_headers != null) {
-            result.append(" | ");
-            result.append(_headers.toString());
+            for (String headerName : _headers.getNames()) {
+                result.append(" | [header] ");
+                result.append(headerName);
+                result.append(": ");
+                result.append(_headers.getFirst(headerName));
+            }
         }
         
         return result.toString();
