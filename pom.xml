@@ -85,11 +85,13 @@
             <version>0.5-dev-2</version>
         </dependency>
         
+        <!--
 		<dependency>
             <groupId>com.ibm.icu</groupId>
             <artifactId>icu4j</artifactId>
             <version>4.0.1</version>
         </dependency>
+        -->
         
 		<dependency>
             <groupId>log4j</groupId>
