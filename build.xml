@@ -162,24 +162,31 @@ SOFTWARE.
 			<formatter type="plain" />
 			<batchtest fork="yes"
 			           todir="${build.dir.test-reports}"
-			           unless="testcase">
+			           unless="longrunning">
 				<fileset dir="${test.src.dir}">
-					<include name="**/*Test.java" unless="testcase" />
-					<exclude name="**/Abstract*.java" unless="testcase" />
-					<exclude name="**/ExtendedTestCase.java"
-					         unless="testcase" />
-					<include name="${testcase}" if="testcase" />
+					<include name="**/*Test.java" />
+					<exclude name="**/Abstract*.java" />
+					<exclude name="**/*LRTest.java" />
 				</fileset>
 			</batchtest>
 			<batchtest fork="yes"
 			           todir="${build.dir.test-reports}"
-			           if="testcase">
-				<fileset dir="${test.src.dir}" includes="**/${testcase}.java" />
+			           if="longrunning">
+				<fileset dir="${test.src.dir}">
+					<include name="**/*LRTest.java" />
+					<exclude name="**/Abstract*.java" />
+				</fileset>
 			</batchtest>
 		</junit>
 		<fail if="tests.failed">Tests failed!</fail>
 	</target>
 
+	<target name="test-lr"
+			description="--> run unit tests that take a long time">
+			<antcall target="test">
+				<param name="longrunning" value="true" />
+			</antcall>
+	</target>
 
 	<!-- ================================================================== -->
 	<!-- Integration Tests                                                  -->
@@ -477,13 +484,12 @@ SOFTWARE.
 	</macrodef>
 
 	<target name="clean-all">
-	
 		<antcall target="clean" />
 		<iterate target="clean" />
 	</target>
 
 	<target name="test-all"
-			depends="test, test-it"
+			depends="test, test-lr, test-it"
 			description="--> run all tests">
 	</target>
 
