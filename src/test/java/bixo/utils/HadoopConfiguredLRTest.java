@@ -36,9 +36,10 @@ import bixo.utils.HadoopConfigured;
 import cascading.ClusterTestCase;
 import cascading.flow.MultiMapReducePlanner;
 
-public class HadoopConfiguredTest extends ClusterTestCase {
+// Long-running test
+public class HadoopConfiguredLRTest extends ClusterTestCase {
 
-    public HadoopConfiguredTest() {
+    public HadoopConfiguredLRTest() {
         super("hadoopConfigTest", true);
     }
 

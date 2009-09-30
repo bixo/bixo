@@ -39,7 +39,8 @@ import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 import cascading.util.Util;
 
-public class FetchPipeTest extends CascadingTestCase {
+// Long-running test
+public class FetchPipeLRTest extends CascadingTestCase {
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
     private static final String USER_AGENT_FAKE_FETCHING = "user agent for fake fetching";
     

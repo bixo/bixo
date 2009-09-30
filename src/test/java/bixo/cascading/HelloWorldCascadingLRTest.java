@@ -45,9 +45,10 @@ import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 
-public class HelloWorldCascadingTest extends ClusterTestCase {
+// Long-running test
+public class HelloWorldCascadingLRTest extends ClusterTestCase {
 
-  public HelloWorldCascadingTest() {
+  public HelloWorldCascadingLRTest() {
     super("hello world", true);
   }
 
@@ -87,9 +88,9 @@ public class HelloWorldCascadingTest extends ClusterTestCase {
     TupleEntry t = null;
     while (resultSink.hasNext()) {
       TupleEntry tupleEntry = (TupleEntry) resultSink.next();
-      System.out.println(tupleEntry);
-
+      // System.out.println(tupleEntry);
     }
+
     validateLength(flow, 173, null);
   }
 
