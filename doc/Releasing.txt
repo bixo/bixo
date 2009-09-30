@@ -38,7 +38,7 @@ little interest to users.
 
 6. Updating GitHub
 
-% git push --tags
+% git push origin release --tags
 
 7. Switch back to master
 
