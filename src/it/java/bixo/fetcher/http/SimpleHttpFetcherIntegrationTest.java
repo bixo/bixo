@@ -5,9 +5,8 @@ import org.junit.Test;
 
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.IOFetchException;
-import bixo.fetcher.simulation.SimulationWebServer;
 
-public class SimpleHttpFetcherIntegrationTest extends SimulationWebServer {
+public class SimpleHttpFetcherIntegrationTest {
     private static final String USER_AGENT = "Bixo test agent";
     
     @Test
