@@ -1,16 +1,22 @@
 package bixo.fetcher.http;
 
+import java.io.IOException;
+
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mortbay.http.HttpException;
+import org.mortbay.http.HttpRequest;
+import org.mortbay.http.HttpResponse;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
+import org.mortbay.http.handler.AbstractHttpHandler;
 
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.AbortedFetchException;
 import bixo.exceptions.AbortedFetchReason;
-import bixo.exceptions.IOFetchException;
 import bixo.fetcher.RandomResponseHandler;
 import bixo.fetcher.ResourcesResponseHandler;
 import bixo.fetcher.simulation.SimulationWebServer;
@@ -18,19 +24,27 @@ import bixo.fetcher.simulation.SimulationWebServer;
 public class SimpleHttpFetcherTest extends SimulationWebServer {
     private static final String USER_AGENT = "Bixo test agent";
     
-    @Test
-    public final void testNoDomain() throws Exception {
-        IHttpFetcher fetcher = new SimpleHttpFetcher(1, USER_AGENT);
-        String url = "http://www.facebookxxxxx.com";
+    @SuppressWarnings("serial")
+    private class RedirectResponseHandler extends AbstractHttpHandler {
         
-        try {
-            fetcher.get(new ScoredUrlDatum(url));
-            Assert.fail("Exception not thrown");
-        } catch (Exception e) {
-            Assert.assertTrue(e instanceof IOFetchException);
+        @Override
+        public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+        	if (pathInContext.endsWith("based")) {
+                response.setStatus(HttpStatus.SC_TEMPORARY_REDIRECT);
+                response.setContentType("text/plain");
+                response.setContentLength(0);
+                response.setField("Location", "http://localhost:8089/redirect");
+        	} else {
+                response.setStatus(HttpStatus.SC_OK);
+                response.setContentType("text/plain");
+
+                String content = "redirected";
+                response.setContentLength(content.length());
+                response.getOutputStream().write(content.getBytes());
+        	}
         }
     }
-    
+
     @Test
     public final void testStaleConnection() throws Exception {
         HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
@@ -146,6 +160,19 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         String contentType = result.getHeaders().getFirst(IHttpHeaders.CONTENT_TYPE);
         Assert.assertNotNull(contentType);
         Assert.assertEquals("text/html", contentType);
+    }
+    
+    @Test
+    public final void testRedirectHandling() throws Exception {
+        FetcherPolicy policy = new FetcherPolicy();
+        HttpServer server = startServer(new RedirectResponseHandler(), 8089);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, USER_AGENT);
+        String url = "http://localhost:8089/base";
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
+        server.stop();
+
+        Assert.assertEquals("Redirected URL", "http://localhost:8089/redirect", result.getFetchedUrl());
+
     }
     
 }
