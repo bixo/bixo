@@ -22,18 +22,24 @@
  */
 package bixo.fetcher;
 
+import java.io.IOException;
+
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.exceptions.BaseFetchException;
+import bixo.exceptions.IOFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
 public class FetcherRunnable implements Runnable {
+    private static final Logger LOGGER = Logger.getLogger(FetcherRunnable.class);
+    
     private IHttpFetcher _httpFetcher;
     private FetchList _items;
 
@@ -51,35 +57,39 @@ public class FetcherRunnable implements Runnable {
         // TODO KKr - when fetching the last item, send a Connection: close
         // header to let the server know it doesn't need to keep the socket open.
         for (ScoredUrlDatum item : _items) {
+            FetchedDatum result = new FetchedDatum(item);
+            Comparable status = null;
+            
             try {
                 process.increment(FetcherCounters.URLS_FETCHING, 1);
                 long startTime = System.currentTimeMillis();
-                FetchedDatum result = _httpFetcher.get(item);
+                result = _httpFetcher.get(item);
                 long deltaTime = System.currentTimeMillis() - startTime;
-                process.decrement(FetcherCounters.URLS_FETCHING, 1);
 
                 process.increment(FetcherCounters.FETCHED_TIME, (int)deltaTime);
                 process.increment(FetcherCounters.URLS_FETCHED, 1);
                 process.increment(FetcherCounters.FETCHED_BYTES, result.getContent().getLength());
                 process.setStatus(Level.TRACE, "Fetched " + result);
 
+                status = UrlStatus.FETCHED.toString();
+            } catch (BaseFetchException e) {
+                process.increment(FetcherCounters.URLS_FAILED, 1);
+                
+                // We can do this because each of the concrete subclasses of BaseFetchException implements
+                // WritableComparable
+                status = (Comparable)e;
+            } catch (Exception e) {
+                LOGGER.error("Expected exception while fetching " + item.getUrl(), e);
+                
+                process.increment(FetcherCounters.URLS_FAILED, 1);
+                status = new IOFetchException(item.getUrl(), new IOException(e));
+            } finally {
+                process.decrement(FetcherCounters.URLS_FETCHING, 1);
+                
                 // Cascading _collectors aren't thread-safe.
                 synchronized (collector) {
                     Tuple tuple = result.toTuple();
-                    // We have to write out a placeholder, so Cascading doesn't complain about the field
-                    // value being missing from the tuple.
-                    tuple.add(UrlStatus.FETCHED.toString());
-                    collector.add(tuple);
-                }
-            } catch (BaseFetchException e) {
-                FetchedDatum result = new FetchedDatum(item);
-                process.decrement(FetcherCounters.URLS_FETCHING, 1);
-                process.increment(FetcherCounters.URLS_FAILED, 1);
-
-                // Write out place-holder FetchedDatum with exception.
-                synchronized (collector) {
-                    Tuple tuple = result.toTuple();
-                    tuple.add((Comparable)e);
+                    tuple.add(status);
                     collector.add(tuple);
                 }
             }
