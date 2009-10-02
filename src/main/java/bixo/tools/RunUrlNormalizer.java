@@ -1,15 +1,19 @@
-package bixo.urldb;
+package bixo.tools;
 
 import java.io.File;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
+import bixo.urldb.IUrlNormalizer;
+import bixo.urldb.UrlNormalizer;
+
 public class RunUrlNormalizer {
 
     /**
      * @param args
      */
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) {
         String curUrl = null;
         
