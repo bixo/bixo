@@ -12,7 +12,7 @@ little interest to users.
 % git checkout master
 % git pull
 <add/commit pending changes>
-% bant dist - use "bant" since dist can require a lot of memory to package things up
+% bant clean dist - use "bant" since dist can require a lot of memory to package things up
 % git push
 
 2. Merge master into release
