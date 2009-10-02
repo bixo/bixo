@@ -4,9 +4,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 
 public class RunHttpClientFetcher {
@@ -29,7 +29,14 @@ public class RunHttpClientFetcher {
      */
     public static void main(String[] args) {
     	// Use standard Firefox agent name, as some sites won't work w/non-standard names.
-        IHttpFetcher fetcher = new SimpleHttpFetcher("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.0.8) Gecko/2009032608 Firefox/3.0.8");
+        String userAgent = "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.0.8) Gecko/2009032608 Firefox/3.0.8";
+        
+        // Just to be really robust, allow a huge number of redirects and retries.
+        FetcherPolicy policy = new FetcherPolicy();
+        policy.setMaxRedirects(100);
+        SimpleHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, userAgent);
+        fetcher.setMaxRetryCount(100);
+        
         boolean interactive = args.length == 0;
         int index = 0;
         
@@ -38,6 +45,7 @@ public class RunHttpClientFetcher {
         	
         	try {
             	if (interactive) {
+            	    System.out.flush();
             		System.out.print("URL to fetch: ");
             		url = readInputLine();
             		if (url.length() == 0) {
