@@ -29,14 +29,8 @@ public class AbortedFetchException extends BaseFetchException implements Writabl
     @Override
     public UrlStatus mapToUrlStatus() {
         switch (_abortReason) {
-        case USER_REQUESTED:
-            return UrlStatus.ABORTED_USER_REQUEST;
-
         case SLOW_RESPONSE_RATE:
             return UrlStatus.ABORTED_SLOW_RESPONSE;
-
-        case TIME_LIMIT:
-            return UrlStatus.ABORTED_TIME_LIMIT;
 
         default:
             throw new RuntimeException("Unknown abort reason: " + _abortReason);
