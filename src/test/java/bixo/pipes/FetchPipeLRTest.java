@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -13,15 +14,24 @@ import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.HttpHeaders;
+import bixo.datum.ScoredUrlDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
+import bixo.exceptions.AbortedFetchException;
+import bixo.exceptions.AbortedFetchReason;
+import bixo.exceptions.BaseFetchException;
+import bixo.exceptions.HttpFetchException;
+import bixo.exceptions.IOFetchException;
+import bixo.exceptions.UrlFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.NullHttpFetcher;
+import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.SimpleGroupingKeyGenerator;
+import bixo.utils.GroupingKey;
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -57,7 +67,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
     @SuppressWarnings("unchecked")
     private Lfs makeInputData(int numDomains, int numPages, Map<String, Comparable> metaData) throws IOException {
         Fields sfFields = UrlDatum.FIELDS.append(BaseDatum.makeMetaDataFields(metaData));
-        Lfs in = new Lfs(new SequenceFile(sfFields), "build/test/FetchPipeTest/in", true);
+        Lfs in = new Lfs(new SequenceFile(sfFields), "build/test/FetchPipeLRTest/in", true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
         for (int i = 0; i < numDomains; i++) {
             for (int j = 0; j < numPages; j++) {
@@ -251,6 +261,160 @@ public class FetchPipeLRTest extends CascadingTestCase {
             TupleEntry entry = tupleEntryIterator.next();
             StatusDatum status = new StatusDatum(entry, metaDataFields);
             Assert.assertEquals(UrlStatus.SKIPPED_TIME_LIMIT, status.getStatus());
+        }
+        
+        Assert.assertEquals(10, numEntries);
+    }
+    
+    /***********************************************************************
+     * Lots of ugly custom classes to support serializable "mocking" for a
+     * particular test case (which follows). Mockito mocks aren't serializable,
+     * or at least I couldn't see an easy way to make this work.
+     */
+
+    @SuppressWarnings("serial")
+    private static class CustomGrouper implements IGroupingKeyGenerator {
+
+        @Override
+        public String getGroupingKey(UrlDatum urlDatum) {
+            String url = urlDatum.getUrl();
+            if (url.contains("page-0")) {
+                return GroupingKey.BLOCKED_GROUPING_KEY;
+            } else if (url.contains("page-1")) {
+                return GroupingKey.UNKNOWN_HOST_GROUPING_KEY;
+            } else if (url.contains("page-2")) {
+                return GroupingKey.INVALID_URL_GROUPING_KEY;
+            } else if (url.contains("page-3")) {
+                return GroupingKey.DEFERRED_GROUPING_KEY;
+            } else if (url.contains("page-4")) {
+                return GroupingKey.SKIPPED_GROUPING_KEY;
+            } else {
+                return GroupingKey.makeGroupingKey("domain-0.com", 30000);
+            }
+        }
+    };
+    
+    @SuppressWarnings("serial")
+    private static class CustomScorer implements IScoreGenerator {
+
+        @Override
+        public double generateScore(GroupedUrlDatum urlDatum) throws IOException {
+            String url = urlDatum.getUrl();
+            if (url.contains("page-5")) {
+                return 0.0;
+            } else {
+                return 10.0;
+            }
+        }
+    };
+    
+    @SuppressWarnings("serial")
+    private static class MaxUrlFetcherPolicy extends FetcherPolicy {
+        private int _maxUrls;
+        
+        public MaxUrlFetcherPolicy(int maxUrls) {
+            super();
+
+            _maxUrls = maxUrls;
+        }
+        
+        @Override
+        public int getMaxUrls() {
+            return _maxUrls;
+        }
+    }
+    
+    @SuppressWarnings("serial")
+    private static class CustomFetcher implements IHttpFetcher {
+
+        @Override
+        public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
+            String url = scoredUrl.getUrl();
+            if (url.contains("page-6")) {
+                throw new AbortedFetchException(url, AbortedFetchReason.SLOW_RESPONSE_RATE);
+            } else if (url.contains("page-7")) {
+                throw new HttpFetchException(url, "msg", HttpStatus.SC_GONE, new HttpHeaders());
+            }  else if (url.contains("page-8")) {
+                throw new IOFetchException(url, new IOException());
+            } else if (url.contains("page-9")) {
+                throw new UrlFetchException(url, "msg");
+            } else {
+                throw new RuntimeException("Unexpected page");
+            }
+        }
+
+        @Override
+        public byte[] get(String url) throws BaseFetchException {
+            return null;
+        }
+
+        @Override
+        public FetcherPolicy getFetcherPolicy() {
+            return new MaxUrlFetcherPolicy(4);
+        }
+
+        @Override
+        public int getMaxThreads() {
+            return 1;
+        }
+        
+    };
+
+
+    @Test
+    public void testPassingAllStatus() throws Exception {
+        // Pretend like we have 10 URLs from one domain, to match the
+        // 10 cases we need to test.
+        Lfs in = makeInputData(1, 10);
+
+        // Create the fetch pipe we'll use to process these fake URLs
+        Pipe pipe = new Pipe("urlSource");
+        
+        // We need to skip things for all the SKIPPED/ABORTED/ERROR reasons in
+        // UrlStatus, plus one of the HTTP reasons. Note that we don't do
+        // SKIPPED_TIME_LIMIT, since that's hard to test in the middle of testing
+        // everything else.
+//        SKIPPED_BLOCKED,            // Blocked by robots.txt
+//        SKIPPED_UNKNOWN_HOST,       // Hostname couldn't be resolved to IP address
+//        SKIPPED_INVALID_URL,        // URL invalid
+//        SKIPPED_DEFERRED,           // Deferred because robots.txt couldn't be processed.
+//        SKIPPED_BY_SCORER,          // Skipped explicitly by scorer
+//        SKIPPED_BY_SCORE,           // Skipped because score wasn't high enough
+//        ABORTED_SLOW_RESPONSE,
+//        HTTP_NOT_FOUND,
+//        ERROR_INVALID_URL,
+//        ERROR_IOEXCEPTION,
+
+        FetchPipe fetchPipe = new FetchPipe(pipe, new CustomGrouper(), new CustomScorer(), new CustomFetcher());
+
+        // Create the output
+        String outputPath = "build/test/FetchPipeTest/out";
+        Tap statusSink = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
+        Tap contentSink = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+
+        FlowConnector flowConnector = new FlowConnector();
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(statusSink, contentSink), fetchPipe);
+        flow.complete();
+        
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        Assert.assertFalse(tupleEntryIterator.hasNext());
+        
+        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
+        tupleEntryIterator = validate.openForRead(new JobConf());
+        
+        int numStatus = UrlStatus.values().length;
+        boolean returnedStatus[] = new boolean[numStatus];
+        
+        Fields metaDataFields = new Fields();
+        int numEntries = 0;
+        while (tupleEntryIterator.hasNext()) {
+            numEntries += 1;
+            TupleEntry entry = tupleEntryIterator.next();
+            StatusDatum status = new StatusDatum(entry, metaDataFields);
+            int ordinal = status.getStatus().ordinal();
+            Assert.assertFalse(returnedStatus[ordinal]);
+            returnedStatus[ordinal] = true;
         }
         
         Assert.assertEquals(10, numEntries);
