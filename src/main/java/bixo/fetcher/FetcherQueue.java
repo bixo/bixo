@@ -32,8 +32,7 @@ import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.AbortedFetchException;
-import bixo.exceptions.AbortedFetchReason;
+import bixo.datum.UrlStatus;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
@@ -48,6 +47,8 @@ public class FetcherQueue implements IFetchListProvider {
     private int _numActiveFetchers;
     private long _nextFetchTime;
     private boolean _sorted;
+    private int _numQueued;
+    private int _numSkipped;
 
     public FetcherQueue(String domain, FetcherPolicy policy, BixoFlowProcess process, TupleEntryCollector collector) {
         _domain = domain;
@@ -60,6 +61,9 @@ public class FetcherQueue implements IFetchListProvider {
         _sorted = true;
         _queue = new ArrayList<ScoredUrlDatum>();
 
+        _numQueued = 0;
+        _numSkipped = 0;
+        
         if (LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format("Setting up queue for %s with next fetch time of %d", _domain, _nextFetchTime));
         }
@@ -69,17 +73,25 @@ public class FetcherQueue implements IFetchListProvider {
     /**
      * Using queue terminology, offer up <fetchItem> as something to be queued.
      * 
-     * @param ScoredUrlDatum - item that we'd like to have fetched. Must be valid format.
-     * @return - true if we queued the URL
+     * @param scoredUrlDatum - item that we'd like to have fetched. Must be valid format.
      */
-    public synchronized boolean offer(ScoredUrlDatum ScoredUrlDatum) {
+    public synchronized void offer(ScoredUrlDatum scoredUrlDatum) {
         // TODO KKr - add lock that prevents anyone from adding new items after we've
         // started polling.
-        
-        if (_queue.size() < _policy.getMaxUrls()) {
-            _queue.add(ScoredUrlDatum);
+
+        int maxSize = _policy.getMaxUrls();
+        if (maxSize == 0) {
+            _numSkipped += 1;
+            skip(scoredUrlDatum, UrlStatus.SKIPPED_TIME_LIMIT);
+            return;
+        }
+
+        // See if we can just add without worrying about sorting.
+        if (_queue.size() < maxSize) {
+            _numQueued += 1;
+            _queue.add(scoredUrlDatum);
             _sorted = false;
-            return true;
+            return;
         }
 
         // Since we have to insert, make sure the list is ordered first.
@@ -87,21 +99,25 @@ public class FetcherQueue implements IFetchListProvider {
 
         // TODO KKr - should we trim the queue? Given current time, we might have
         // more than getMaxUrls in the queue already.
-        if (ScoredUrlDatum.getScore() <= _queue.get(_queue.size() - 1).getScore()) {
-            return false;
-        } else {
-            // Get rid of last (lowest score) item in queue, then insert
-            // new item at the right location.
-            _queue.remove(_queue.size() - 1);
-            
-            int index = Collections.binarySearch(_queue, ScoredUrlDatum);
-            if (index < 0) {
-                index = -(index + 1);
-            }
-            
-            _queue.add(index, ScoredUrlDatum);
-            return true;
+        if (scoredUrlDatum.getScore() <= _queue.get(_queue.size() - 1).getScore()) {
+            _numSkipped += 1;
+            skip(scoredUrlDatum, UrlStatus.SKIPPED_BY_SCORE);
+            return;
         }
+
+        // Get rid of last (lowest score) item in queue, then insert
+        // new item at the right location. Don't do any adjustment of
+        // queued count, as a previously queued entry has been replaced.
+        _numSkipped += 1;
+        ScoredUrlDatum lastEntry = _queue.remove(_queue.size() - 1);
+        skip(lastEntry, UrlStatus.SKIPPED_BY_SCORE);
+
+        int index = Collections.binarySearch(_queue, scoredUrlDatum);
+        if (index < 0) {
+            index = -(index + 1);
+        }
+
+        _queue.add(index, scoredUrlDatum);
     }
 
     /**
@@ -125,7 +141,7 @@ public class FetcherQueue implements IFetchListProvider {
             // Nothing to return
         } else if ((_policy.getCrawlEndTime() != FetcherPolicy.NO_CRAWL_END_TIME) && (System.currentTimeMillis() >= _policy.getCrawlEndTime())) {
             // We're past the end of the target fetch window, so bail.
-            abortAll(AbortedFetchReason.TIME_LIMIT);
+            skipAll(UrlStatus.SKIPPED_TIME_LIMIT);
         } else if ((_numActiveFetchers == 0) && (System.currentTimeMillis() >= _nextFetchTime)) {
             _numActiveFetchers += 1;
             
@@ -157,6 +173,13 @@ public class FetcherQueue implements IFetchListProvider {
         return _queue.size();
     }
     
+    public int getNumSkipped() {
+        return _numSkipped;
+    }
+    
+    public int getNumQueued() {
+        return _numQueued;
+    }
     
     /**
      * We're done trying to fetch <items>
@@ -182,19 +205,22 @@ public class FetcherQueue implements IFetchListProvider {
 
 
     /**
-     * Write all entries out as being aborted.
+     * Write all entries out as being skipped.
      */
-    public synchronized void abortAll(AbortedFetchReason reason) {
+    public synchronized void skipAll(UrlStatus status) {
         for (ScoredUrlDatum datum : _queue) {
-            synchronized (_collector) {
-                String url = datum.getUrl();
-                Tuple result = new FetchedDatum(url, datum.getMetaDataMap()).toTuple();
-                result.add(new AbortedFetchException(url, reason));
-                _collector.add(result);
-            }
+            skip(datum, status);
         }
-        
         _queue.clear();
+    }
+    
+    private void skip(ScoredUrlDatum datum, UrlStatus status) {
+        String url = datum.getUrl();
+        Tuple result = new FetchedDatum(url, datum.getMetaDataMap()).toTuple();
+        result.add(status.toString());
+        synchronized (_collector) {
+            _collector.add(result);
+        }
     }
     
 }
