@@ -28,17 +28,6 @@ import java.io.Serializable;
 import bixo.datum.UrlDatum;
 
 public interface IGroupingKeyGenerator extends Serializable {
-    // Special results from getGroupingKey.
-    
-    // URL was blocked by robots.txt
-    public static final String BLOCKED_GROUPING_KEY = IGroupingKeyGenerator.class.getSimpleName() + "-blocked";
-    
-    // Host couldn't be resolved to an IP address.
-    public static final String UNKNOWN_HOST_GROUPING_KEY = IGroupingKeyGenerator.class.getSimpleName() + "-unknown";
-    
-    // Couldn't process robots.txt, so defer fetch of URL
-    public static final String DEFERRED_GROUPING_KEY = IGroupingKeyGenerator.class.getSimpleName() + "-deferred";
-    
     /**
      * Return key used to group URL into one queue
      * 
@@ -46,6 +35,6 @@ public interface IGroupingKeyGenerator extends Serializable {
      * @return key for grouping, or special value for cases where URL shouldn't be fetched.
      * @throws IOException
      */
-    public String getGroupingKey(UrlDatum urlDatum) throws IOException;
+    public String getGroupingKey(UrlDatum urlDatum);
     
 }

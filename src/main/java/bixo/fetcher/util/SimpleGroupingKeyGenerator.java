@@ -69,7 +69,7 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
     
     // TODO KKr - have RobotRules as abstract class, and IRobotRulesParser as something that
     // can return RobotRules when given user agent/content or http response code. Then take
-    // IRobotRulesParser as parameter here. Also want IHttpFetcher as input here, for testing.
+    // IRobotRulesParser as parameter here.
     public SimpleGroupingKeyGenerator(String userAgent, IHttpFetcher robotsFetcher, boolean usePaidLevelDomain) {
         _userAgent = userAgent;
         _badHosts = new HashSet<String>();
@@ -84,7 +84,7 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
     }
     
     @Override
-    public String getGroupingKey(UrlDatum urlDatum) throws IOException {
+    public String getGroupingKey(UrlDatum urlDatum) {
         String urlStr = urlDatum.getUrl();
         
         URL url;
@@ -96,16 +96,16 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
             host = url.getHost().toLowerCase();
             if (!_usePLD) {
                 if (_badHosts.contains(host)) {
-                    return UNKNOWN_HOST_GROUPING_KEY;
+                    return GroupingKey.UNKNOWN_HOST_GROUPING_KEY;
                 }
 
                 ia = InetAddress.getByName(host);
             }
         } catch (MalformedURLException e) {
-            throw new RuntimeException("Unable to parse url: " + urlStr, e);
+            return GroupingKey.INVALID_URL_GROUPING_KEY;
         } catch (UnknownHostException e) {
             _badHosts.add(host);
-            return UNKNOWN_HOST_GROUPING_KEY;
+            return GroupingKey.UNKNOWN_HOST_GROUPING_KEY;
         }
         
         // Get the robots.txt for this domain
@@ -125,7 +125,7 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
                 // treat it like a server internal error case.
                 robotRules = new SimpleRobotRules(HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } catch (Exception e) {
-                throw new RuntimeException("Exception handling robots.txt: " + robotsUrl, e);
+                throw new RuntimeException("Unexpected exception handling robots.txt: " + robotsUrl, e);
             }
 
             // TODO KKr - have max size for this, so we don't chew up too much memory?
@@ -133,11 +133,11 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
         }
         
         if (robotRules.getDeferVisits()) {
-            return DEFERRED_GROUPING_KEY;
-        } else if (robotRules.isAllowed(urlStr)) {
+            return GroupingKey.DEFERRED_GROUPING_KEY;
+        } else if (robotRules.isAllowed(url)) {
             return GroupingKey.makeGroupingKey(_usePLD ? DomainNames.getPLD(host) : ia.getHostAddress(), robotRules.getCrawlDelay());
         } else {
-            return BLOCKED_GROUPING_KEY;
+            return GroupingKey.BLOCKED_GROUPING_KEY;
         }
     }
 

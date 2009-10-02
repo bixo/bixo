@@ -1,13 +1,11 @@
 package bixo.fetcher.http;
 
-import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-
-import bixo.fetcher.http.SimpleRobotRules.RobotRule;
 
 public class GoogleRobotRules extends SimpleRobotRules {
     private static final Logger LOGGER = Logger.getLogger(GoogleRobotRules.class);
@@ -99,7 +97,7 @@ public class GoogleRobotRules extends SimpleRobotRules {
     }
     
     @Override
-    public boolean isAllowed(String url) throws MalformedURLException {
+    public boolean isAllowed(URL url) {
         String path = getPath(url);
         
         // Always allow robots.txt

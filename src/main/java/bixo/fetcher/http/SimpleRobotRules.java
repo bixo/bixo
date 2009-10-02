@@ -191,11 +191,8 @@ public class SimpleRobotRules implements IRobotRules {
         _deferVisits = deferVisits;
     }
     
-    protected String getPath(String url) throws MalformedURLException {
-        String path;
-
-        URL realUrl = new URL(url);
-        path = realUrl.getPath();
+    protected String getPath(URL url) {
+        String path = url.getPath();
         if ((path == null) || (path.equals(""))) {
             path= "/";
         }
@@ -211,7 +208,7 @@ public class SimpleRobotRules implements IRobotRules {
     }
     
     @Override
-    public boolean isAllowed(String url) throws MalformedURLException {
+    public boolean isAllowed(URL url) {
         String path = getPath(url);
         
         // Always allow robots.txt
@@ -229,6 +226,11 @@ public class SimpleRobotRules implements IRobotRules {
         // is insane, but it's more likely that somebody will accidentally put in rules that don't
         // match their target paths because of case differences.
         return _robotRules.isAllowed(path.toLowerCase());
+    }
+    
+    @Override
+    public boolean isAllowed(String url) throws MalformedURLException {
+        return isAllowed(new URL(url));
     }
     
     // TODO KKr - catch & report/log issues with the file

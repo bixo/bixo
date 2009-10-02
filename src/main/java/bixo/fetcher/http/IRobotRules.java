@@ -1,6 +1,7 @@
 package bixo.fetcher.http;
 
 import java.net.MalformedURLException;
+import java.net.URL;
 
 
 public interface IRobotRules {
@@ -18,6 +19,8 @@ public interface IRobotRules {
      */
     public boolean isAllowed(String url) throws MalformedURLException;
 
+    public boolean isAllowed(URL url);
+    
     /**
      * If true, caller should bail on visiting any of the pages until the server
      * error status w.r.t. robots.txt is resolved.

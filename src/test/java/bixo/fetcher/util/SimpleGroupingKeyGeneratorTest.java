@@ -1,7 +1,5 @@
 package bixo.fetcher.util;
 
-import java.io.IOException;
-
 import junit.framework.Assert;
 
 import org.apache.http.HttpStatus;
@@ -12,20 +10,10 @@ import bixo.datum.UrlDatum;
 import bixo.fetcher.FixedStatusResponseHandler;
 import bixo.fetcher.ResourcesResponseHandler;
 import bixo.fetcher.simulation.SimulationWebServer;
-
+import bixo.utils.GroupingKey;
 
 public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
 
-    @Test
-    public void testBogusHostname() throws IOException {
-        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("user agent");
-        
-        String url = "http://totalbogusdomainxxx.com";
-        UrlDatum urlDatum = new UrlDatum(url);
-        String key = keyGen.getGroupingKey(urlDatum);
-        Assert.assertEquals(IGroupingKeyGenerator.UNKNOWN_HOST_GROUPING_KEY, key);
-    }
-    
     @Test
     public void testNoRobots() throws Exception {
         HttpServer server = startServer(new FixedStatusResponseHandler(HttpStatus.SC_NOT_FOUND), 8089);
@@ -47,7 +35,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
         String key = keyGen.getGroupingKey(urlDatum);
         server.stop();
 
-        Assert.assertEquals(IGroupingKeyGenerator.DEFERRED_GROUPING_KEY, key);
+        Assert.assertEquals(GroupingKey.DEFERRED_GROUPING_KEY, key);
     }
     
     @Test
@@ -63,7 +51,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
         url = "http://localhost:8089/disallowed/page.html";
         urlDatum = new UrlDatum(url);
         key = keyGen.getGroupingKey(urlDatum);
-        Assert.assertEquals(IGroupingKeyGenerator.BLOCKED_GROUPING_KEY, key);
+        Assert.assertEquals(GroupingKey.BLOCKED_GROUPING_KEY, key);
 
         server.stop();
     }
