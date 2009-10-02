@@ -52,7 +52,10 @@ public class StatusDatum extends BaseDatum {
         this(url, e.mapToUrlStatus(), null, e, metaData);
     }
     
-    @SuppressWarnings("unchecked")
+    public StatusDatum(String url, UrlStatus status, Map<String, Comparable> metaData) {
+        this(url, status, null, null, metaData);
+    }
+    
     public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BaseFetchException e, Map<String, Comparable> metaData) {
         super(metaData);
         
@@ -112,7 +115,6 @@ public class StatusDatum extends BaseDatum {
         return FIELDS;
     }
     
-    @SuppressWarnings("unchecked")
     @Override
     protected Comparable[] getStandardValues() {
         return new Comparable[] { _url, _status.name(), _headers == null ? null : _headers.toString(), (Comparable)_exception };
