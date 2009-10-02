@@ -9,6 +9,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.StatusDatum;
+import bixo.datum.UrlStatus;
 import bixo.exceptions.BaseFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
@@ -64,8 +65,9 @@ public class FetchPipe extends SubAssembly {
         public void operate(FlowProcess process, FunctionCall funcCall) {
             Tuple t = funcCall.getArguments().getTuple();
             
-            // If we get a "no error" string instead of an exception, it's a good fetch.
-            if (t.get(_fieldPos) instanceof String) {
+            // Get the status to decide if it's a good fetch
+            Comparable status = t.get(_fieldPos);
+            if ((status instanceof String) && (UrlStatus.valueOf((String)status) == UrlStatus.FETCHED)) {
                 funcCall.getOutputCollector().add(t.get(_fieldsToCopy));
             }
         }
@@ -78,11 +80,11 @@ public class FetchPipe extends SubAssembly {
         
         // Output an appropriate StatusDatum based on whether we were able to fetch
         // the URL or not.
-        public MakeStatusFunction(Fields inputFields, Fields metaDataFields) {
+        public MakeStatusFunction(Fields metaDataFields) {
             super(StatusDatum.FIELDS.append(metaDataFields));
             
             // Location of extra field added during fetch, that contains fetch error
-            _fieldPos = inputFields.size();
+            _fieldPos = FetchedDatum.FIELDS.size() + metaDataFields.size();
             
             _metaDataFields = metaDataFields;
         }
@@ -95,9 +97,16 @@ public class FetchPipe extends SubAssembly {
             StatusDatum status;
             
             if (result instanceof String) {
-                status = new StatusDatum(fd.getBaseUrl(), fd.getHeaders(), fd.getMetaDataMap());
-            } else {
+                UrlStatus urlStatus = UrlStatus.valueOf((String)result);
+                if (urlStatus == UrlStatus.FETCHED) {
+                    status = new StatusDatum(fd.getBaseUrl(), fd.getHeaders(), fd.getMetaDataMap());
+                } else {
+                    status = new StatusDatum(fd.getBaseUrl(), urlStatus, fd.getMetaDataMap());
+                }
+            } else if (result instanceof BaseFetchException) {
                 status = new StatusDatum(fd.getBaseUrl(), (BaseFetchException)result, fd.getMetaDataMap());
+            } else {
+                throw new RuntimeException("Unknown type for fetch status field: " + result.getClass());
             }
             
             funcCall.getOutputCollector().add(status.toTuple());
@@ -132,7 +141,7 @@ public class FetchPipe extends SubAssembly {
 
         Fields fetchedFields = FetchedDatum.FIELDS.append(metaDataFields);
         Pipe fetched = new Pipe(FETCHED_PIPE_NAME, new Each(fetch, new FilterErrorsFunction(fetchedFields)));
-        Pipe status = new Pipe(STATUS_PIPE_NAME, new Each(fetch, new MakeStatusFunction(fetchedFields, metaDataFields)));
+        Pipe status = new Pipe(STATUS_PIPE_NAME, new Each(fetch, new MakeStatusFunction(metaDataFields)));
         
         setTails(fetched, status);
     }
