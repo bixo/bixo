@@ -27,10 +27,7 @@ import java.util.Random;
 
 import org.junit.Assert;
 import org.junit.Test;
-
-import cascading.tuple.Fields;
-import cascading.tuple.Tuple;
-import cascading.tuple.TupleEntryCollector;
+import org.mockito.Mockito;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.AdaptiveFetcherPolicy;
@@ -38,9 +35,10 @@ import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.exceptions.AbortedFetchException;
-import bixo.exceptions.AbortedFetchReason;
 import bixo.utils.DomainNames;
+import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntryCollector;
 
 public class FetcherQueueTest {
     private class MyCollector extends TupleEntryCollector {
@@ -53,8 +51,10 @@ public class FetcherQueueTest {
             // Verify we can convert tuple to FetchedDatum
             new FetchedDatum(tuple, new Fields());
             
-            AbortedFetchException e = (AbortedFetchException)tuple.get(FetchedDatum.FIELDS.size());
-            Assert.assertEquals(AbortedFetchReason.TIME_LIMIT, e.getAbortReason());
+            // Verify the UrlStatus is correct.
+            
+            UrlStatus status = UrlStatus.valueOf((String)tuple.get(FetchedDatum.FIELDS.size()));
+            Assert.assertEquals(UrlStatus.SKIPPED_TIME_LIMIT, status);
         }
 
         public Object getNumCollected() {
@@ -95,22 +95,26 @@ public class FetcherQueueTest {
     
     @Test
     public void testCrawlDurationLimit() throws MalformedURLException {
-        FetcherPolicy policy = new FetcherPolicy();
-        policy.setCrawlEndTime(System.currentTimeMillis() + 1000);
+        FetcherPolicy spy = Mockito.spy(new FetcherPolicy());
         MyCollector collector = new MyCollector();
-        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), collector);
+        FetcherQueue queue = new FetcherQueue("domain.com", spy, new BixoFlowProcess(), collector);
 
         ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 0.0d);
         ScoredUrlDatum fetchItem2 = makeSUD("http://domain.com/page2", 1.0d);
         ScoredUrlDatum fetchItem3 = makeSUD("http://domain.com/page3", 0.5d);
 
-        Assert.assertTrue(queue.offer(fetchItem1));
-        Assert.assertTrue(queue.offer(fetchItem2));
-        Assert.assertFalse(queue.offer(fetchItem3));
+        queue.offer(fetchItem1);
+        queue.offer(fetchItem2);
+        Assert.assertEquals(2, queue.getNumQueued());
+        
+        Mockito.doReturn(0L).when(spy).getCrawlEndTime();
+        queue.offer(fetchItem3);
+        Assert.assertEquals(1, queue.getNumSkipped());
 
+        Mockito.doReturn(FetcherPolicy.NO_CRAWL_END_TIME).when(spy).getCrawlEndTime();
         FetchList items = queue.poll();
         Assert.assertNotNull(items);
-        Assert.assertEquals(1, items.size());
+        Assert.assertEquals(2, items.size());
         Assert.assertTrue(items.get(0).getUrl().equals("http://domain.com/page2"));
 
         Assert.assertNull(queue.poll());
@@ -177,9 +181,10 @@ public class FetcherQueueTest {
         ScoredUrlDatum fetchItem2 = makeSUD("http://domain.com/page2", 0.5d);
         ScoredUrlDatum fetchItem3 = makeSUD("http://domain.com/page3", 0.2d);
 
-        Assert.assertTrue(queue.offer(fetchItem1));
-        Assert.assertTrue(queue.offer(fetchItem2));
-        Assert.assertTrue(queue.offer(fetchItem3));
+        queue.offer(fetchItem1);
+        queue.offer(fetchItem2);
+        queue.offer(fetchItem3);
+        Assert.assertEquals(3, queue.getNumQueued());
 
         FetchList items = queue.poll();
         Assert.assertNotNull(items);
@@ -203,8 +208,10 @@ public class FetcherQueueTest {
         // First, we should be able to queue everything, since there's no minimum crawl delay
         for (int i = 0; i < 100; i++) {
             ScoredUrlDatum fetchQueueEntry = makeSUD("http://domain.com/page-" + i + ".html", 1.0);
-            Assert.assertTrue(queue.offer(fetchQueueEntry));
+            queue.offer(fetchQueueEntry);
         }
+        
+        Assert.assertEquals(100, queue.getNumQueued());
 
         // Now we should get back everything we queued in one request.
         FetchList items = queue.poll();
@@ -216,7 +223,7 @@ public class FetcherQueueTest {
     public void testAdaptiveFetchPolicyMinDelay() throws InterruptedException {
         AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(System.currentTimeMillis() + 2000L, 1 * 1000L);
         
-        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), Mockito.mock(TupleEntryCollector.class));
 
         // We should be able to queue one item, maybe two or three, but definitely not four.
         ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 1.0d);
@@ -224,10 +231,12 @@ public class FetcherQueueTest {
         ScoredUrlDatum fetchItem3 = makeSUD("http://domain.com/page3", 0.2d);
         ScoredUrlDatum fetchItem4 = makeSUD("http://domain.com/page4", 0.2d);
 
-        Assert.assertTrue(queue.offer(fetchItem1));
+        queue.offer(fetchItem1);
+        Assert.assertEquals(1, queue.getNumQueued());
         queue.offer(fetchItem2);
         queue.offer(fetchItem3);
-        Assert.assertFalse(queue.offer(fetchItem4));
+        queue.offer(fetchItem4);
+        Assert.assertEquals(2, queue.getNumSkipped());
     }
     
     @Test
@@ -240,13 +249,15 @@ public class FetcherQueueTest {
 
         ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 1.0d);
         ScoredUrlDatum fetchItem2 = makeSUD("http://domain.com/page2", 0.5d);
-
-        Assert.assertTrue(queue.offer(fetchItem1));
+        
+        queue.offer(fetchItem1);
+        Assert.assertEquals(1, queue.getNumQueued());
         Thread.sleep(100);
-        Assert.assertFalse(queue.offer(fetchItem2));
+        queue.offer(fetchItem2);
+        Assert.assertEquals(1, queue.getNumSkipped());
         
         Assert.assertNull(queue.poll());
-        Assert.assertEquals(1, collector.getNumCollected());
+        Assert.assertEquals(2, collector.getNumCollected());
     }
     
     // TODO KKr - add test for multiple threads hitting the queue at the same

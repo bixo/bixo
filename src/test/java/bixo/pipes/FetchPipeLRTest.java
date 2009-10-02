@@ -3,7 +3,6 @@ package bixo.pipes;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.junit.Assert;
@@ -23,7 +22,6 @@ import bixo.fetcher.simulation.NullHttpFetcher;
 import bixo.fetcher.util.IScoreGenerator;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.SimpleGroupingKeyGenerator;
-import bixo.operations.FetcherBuffer;
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -37,7 +35,6 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
-import cascading.util.Util;
 
 // Long-running test
 public class FetchPipeLRTest extends CascadingTestCase {
@@ -222,29 +219,41 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
         // Create the fetch pipe we'll use to process these fake URLs
         Pipe pipe = new Pipe("urlSource");
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
+        
+        // This will force all URLs to get skipped because of the crawl end time limit.
+        FetcherPolicy defaultPolicy = new FetcherPolicy();
+        defaultPolicy.setCrawlEndTime(0);
+        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
         SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), true);
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
 
         // Create the output
         String outputPath = "build/test/FetchPipeTest/out";
-        Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+        Tap statusSink = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
+        Tap contentSink = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
 
-        // Finally we can run it. Set up our prefs with a FetcherPolicy that has an end time of now,
-        // which means we shouldn't fetch any URLs, but they should all be aborted.
-        Properties properties = new Properties();
-        FetcherPolicy defaultPolicy = new FetcherPolicy();
-        defaultPolicy.setCrawlEndTime(System.currentTimeMillis());
-        properties.put(FetcherBuffer.DEFAULT_FETCHER_POLICY_KEY, Util.serializeBase64(defaultPolicy));
-
-        FlowConnector flowConnector = new FlowConnector(properties);
-        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(null, content), fetchPipe);
+        FlowConnector flowConnector = new FlowConnector();
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(statusSink, contentSink), fetchPipe);
         flow.complete();
         
         Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
         TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
         Assert.assertFalse(tupleEntryIterator.hasNext());
+        
+        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
+        tupleEntryIterator = validate.openForRead(new JobConf());
+        
+        Fields metaDataFields = new Fields();
+        int numEntries = 0;
+        while (tupleEntryIterator.hasNext()) {
+            numEntries += 1;
+            TupleEntry entry = tupleEntryIterator.next();
+            StatusDatum status = new StatusDatum(entry, metaDataFields);
+            Assert.assertEquals(UrlStatus.SKIPPED_TIME_LIMIT, status.getStatus());
+        }
+        
+        Assert.assertEquals(10, numEntries);
     }
     
 
