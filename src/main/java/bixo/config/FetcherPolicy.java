@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997-2009 101tec Inc.
+ * Copyright (c) 2009 101tec Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy 
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,8 +28,8 @@ import bixo.fetcher.FetchRequest;
 
 @SuppressWarnings("serial")
 public class FetcherPolicy implements Serializable {
-    public static final int NO_MIN_RESPONSE_RATE = 0;
-    public static final long NO_CRAWL_END_TIME = 0;
+    public static final int NO_MIN_RESPONSE_RATE = Integer.MIN_VALUE;
+    public static final long NO_CRAWL_END_TIME = Long.MIN_VALUE;
     public static final int NO_REDIRECTS = 0;
     
     public static final int DEFAULT_MIN_RESPONSE_RATE = NO_MIN_RESPONSE_RATE;
@@ -52,7 +52,6 @@ public class FetcherPolicy implements Serializable {
         this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME, DEFAULT_CRAWL_DELAY, DEFAULT_MAX_REDIRECTS);
     }
 
-
     public FetcherPolicy(int minResponseRate, int maxContentSize, long crawlEndTime, long crawlDelay, int maxRedirects) {
         _minResponseRate = minResponseRate;
         _maxContentSize = maxContentSize;
@@ -61,35 +60,36 @@ public class FetcherPolicy implements Serializable {
         _maxRedirects = maxRedirects;
     }
 
-    
     /**
      * Calculate the maximum number of URLs that could be processed in the remaining time.
      * 
      * @return Number of URLs
      */
     public int getMaxUrls() {
-        if (_crawlEndTime == NO_CRAWL_END_TIME) {
+        if (getCrawlEndTime() == NO_CRAWL_END_TIME) {
             return Integer.MAX_VALUE;
         } else {
             return calcMaxUrls();
         }
     }
-
     
     public long getDefaultCrawlDelay() {
         return DEFAULT_CRAWL_DELAY;
     }
     
-    
     protected int calcMaxUrls() {
         if (_crawlDelay == 0) {
             return Integer.MAX_VALUE;
         } else {
-            long crawlDuration = _crawlEndTime - System.currentTimeMillis();
-            return 1 + (int)Math.max(0, crawlDuration / _crawlDelay);
+            long crawlDuration = getCrawlEndTime() - System.currentTimeMillis();
+            
+            if (crawlDuration <= 0) {
+                return 0;
+            } else {
+                return 1 + (int)Math.max(0, crawlDuration / _crawlDelay);
+            }
         }
     }
-    
     
     public long getCrawlEndTime() {
         return _crawlEndTime;
