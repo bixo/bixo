@@ -1,22 +1,20 @@
 package bixo.operations;
 
-import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.cascading.LoggingFlowReporter;
-import bixo.config.FetcherPolicy;
 import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
+import bixo.datum.UrlStatus;
 import bixo.fetcher.FetcherCounters;
 import bixo.fetcher.FetcherManager;
 import bixo.fetcher.FetcherQueue;
 import bixo.fetcher.FetcherQueueMgr;
 import bixo.fetcher.http.IHttpFetcher;
-import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.utils.GroupingKey;
 import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.HadoopFlowProcess;
@@ -26,15 +24,13 @@ import cascading.operation.OperationCall;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
-import cascading.util.Util;
+import cascading.tuple.TupleEntryCollector;
 
 @SuppressWarnings( { "serial", "unchecked" })
 public class FetcherBuffer extends BaseOperation implements cascading.operation.Buffer {
     private static Logger LOGGER = Logger.getLogger(FetcherBuffer.class);
 
-    public static final String DEFAULT_FETCHER_POLICY_KEY = "bixo.fetcher.default-policy";
-    
-    private static final Fields FETCH_EXCEPTION_FIELD = new Fields(BaseDatum.fieldName(FetcherBuffer.class, "fetch-exception"));
+    private static final Fields FETCH_RESULT_FIELD = new Fields(BaseDatum.fieldName(FetcherBuffer.class, "fetch-exception"));
     
     private FetcherManager _fetcherMgr;
     private FetcherQueueMgr _queueMgr;
@@ -46,8 +42,8 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
 
     public FetcherBuffer(Fields metaDataFields, IHttpFetcher fetcher) {
         // We're going to output a tuple that contains a FetchedDatum, plus meta-data,
-        // plus a BaseFetchException object.
-        super(FetchedDatum.FIELDS.append(metaDataFields).append(FETCH_EXCEPTION_FIELD));
+        // plus a result that could be a string, a status, or an exception
+        super(FetchedDatum.FIELDS.append(metaDataFields).append(FETCH_RESULT_FIELD));
 
         _metaDataFields = metaDataFields;
         _fetcher = fetcher;
@@ -59,28 +55,12 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
 
         // FUTURE KKr - use Cascading process vs creating our own, once it
         // supports logging in local mode, and a setStatus() call.
-        // TODO KKr - check for a serialized external reporter in the process,
+        // FUTURE KKr - check for a serialized external reporter in the process,
         // add it if it exists.
         _flowProcess = new BixoFlowProcess((HadoopFlowProcess) flowProcess);
         _flowProcess.addReporter(new LoggingFlowReporter());
         
-        // TODO KKr - remove this support (and fix up searchcrawl's use of it) since you pass
-        // in the default fetch policy via <fetcher>.getFetchPolicy() in the constructor. Doh.
-        FetcherPolicy defaultPolicy;
-        String policyObj = (String)flowProcess.getProperty(DEFAULT_FETCHER_POLICY_KEY);
-        if (policyObj != null) {
-            try {
-                defaultPolicy = (FetcherPolicy)Util.deserializeBase64(policyObj);
-                LOGGER.trace("Using serialized fetcher policy: " + defaultPolicy);
-            } catch (IOException e) {
-                LOGGER.error("Unexpected exception while deserializing the default fetcher policy", e);
-                throw new RuntimeException("IOException while deserializing default fetcher policy", e);
-            }
-        } else {
-            defaultPolicy = _fetcher.getFetcherPolicy();
-        }
-        
-        _queueMgr = new FetcherQueueMgr(_flowProcess, defaultPolicy);
+        _queueMgr = new FetcherQueueMgr(_flowProcess, _fetcher.getFetcherPolicy());
         _fetcherMgr = new FetcherManager(_queueMgr, _fetcher, _flowProcess);
 
         _fetcherThread = new Thread(_fetcherMgr);
@@ -96,44 +76,26 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
         try {
             // <key> is the output of the IGroupingKeyGenerator used. This should
             // be either one of the special values (for URLs that shouldn't be fetched),
-            // as defined via static values in IGroupingKeyGenerator, or it will be
+            // as defined via static values in GroupingKey, or it will be
             // <key>-<crawl delay in ms>
             String key = group.getString(0);
 
-            // TODO KKr - output zombie FetchedUrlDatum w/new BaseFetchException communicating this
-            // to the FetchPipe, to split off these entries for URL DB updating.
-            if (key.equals(IGroupingKeyGenerator.BLOCKED_GROUPING_KEY)) {
-                LOGGER.debug(String.format("Blocked %d URLs", emptyBuffer(values)));
-
-                // URL was blocked by robots.txt
-            } else if (key.equals(IGroupingKeyGenerator.UNKNOWN_HOST_GROUPING_KEY)) {
-                LOGGER.debug(String.format("Host not found for %d URLs", emptyBuffer(values)));
-
-                // Couldn't resolve hostname to IP address.
-            } else if (key.equals(IGroupingKeyGenerator.DEFERRED_GROUPING_KEY)) {
-                LOGGER.debug(String.format("Robots.txt problems deferred processing of %d URLs", emptyBuffer(values)));
-
-                // Problem getting/processing robots.txt
+            if (GroupingKey.isSpecialKey(key)) {
+                emptyBuffer(key, values, buffCall.getOutputCollector());
             } else {
                 String domain = GroupingKey.getDomainFromKey(key);
                 long crawlDelay = GroupingKey.getCrawlDelayFromKey(key);
-                FetcherQueue queue = _queueMgr.createQueue(domain, buffCall.getOutputCollector(), crawlDelay);
+                TupleEntryCollector collector = buffCall.getOutputCollector();
+                FetcherQueue queue = _queueMgr.createQueue(domain, collector, crawlDelay);
 
-                int skipped = 0;
-                int queued = 0;
                 while (values.hasNext()) {
                     Tuple curTuple = values.next().getTuple();
                     ScoredUrlDatum scoreUrl = new ScoredUrlDatum(curTuple, _metaDataFields);
-
-                    if (queue.offer(scoreUrl)) {
-                        queued += 1;
-                    } else {
-                        skipped += 1;
-                    }
+                    queue.offer(scoreUrl);
                 }
 
-                _flowProcess.increment(FetcherCounters.URLS_QUEUED, queued);
-                _flowProcess.increment(FetcherCounters.URLS_SKIPPED, skipped);
+                _flowProcess.increment(FetcherCounters.URLS_QUEUED, queue.getNumQueued());
+                _flowProcess.increment(FetcherCounters.URLS_SKIPPED, queue.getNumSkipped());
 
                 // We're going to spin here until the queue manager decides that we
                 // have available space for this next queue.
@@ -142,8 +104,8 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                     process.keepAlive();
                 }
 
-                LOGGER.info(String.format("Queued %d URLs from %s", queued, domain));
-                LOGGER.debug(String.format("Skipped %d URLs from %s", skipped, domain));
+                LOGGER.info(String.format("Queued %d URLs from %s", queue.getNumQueued(), domain));
+                LOGGER.info(String.format("Skipped %d URLs from %s", queue.getNumSkipped(), domain));
 
                 _flowProcess.increment(FetcherCounters.DOMAINS_QUEUED, 1);
             }
@@ -191,13 +153,48 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
         }
     }
 
-    private int emptyBuffer(Iterator<TupleEntry> values) {
-        int result = 0;
+    private Tuple makeFetchedTuple(ScoredUrlDatum scoredUrl, UrlStatus status) {
+        FetchedDatum result = new FetchedDatum(scoredUrl);
+        Tuple tuple = result.toTuple();
+        tuple.add(status.toString());
+        return tuple;
+    }
+
+    private void emptyBuffer(String key, Iterator<TupleEntry> values, TupleEntryCollector collector) {
+        String traceMsg = null;
+        UrlStatus status;
+        
+        if (key.equals(GroupingKey.BLOCKED_GROUPING_KEY)) {
+            traceMsg = "Blocked %d URLs";
+            status = UrlStatus.SKIPPED_BLOCKED;
+        } else if (key.equals(GroupingKey.UNKNOWN_HOST_GROUPING_KEY)) {
+            traceMsg = "Host not found for %d URLs";
+            status = UrlStatus.SKIPPED_UNKNOWN_HOST;
+        } else if (key.equals(GroupingKey.INVALID_URL_GROUPING_KEY)) {
+            traceMsg = "Invalid format for %d URLs";
+            status = UrlStatus.SKIPPED_INVALID_URL;
+        } else if (key.equals(GroupingKey.DEFERRED_GROUPING_KEY)) {
+            traceMsg = "Robots.txt problems deferred processing of %d URLs";
+            status = UrlStatus.SKIPPED_DEFERRED;
+        } else if (key.equals(GroupingKey.SKIPPED_GROUPING_KEY)) {
+            traceMsg = "Scoring explicitly skipping %d URLs";
+            status = UrlStatus.SKIPPED_BY_SCORER;
+        } else {
+            throw new RuntimeException("Unknown value for special grouping key: " + key);
+        }
+
+        int numUrls = 0;
         while (values.hasNext()) {
-            values.next();
-            result += 1;
+            ScoredUrlDatum scoredDatum = new ScoredUrlDatum(values.next().getTuple(), _metaDataFields);
+            Tuple tuple = makeFetchedTuple(scoredDatum, status);
+            collector.add(tuple);
+
+            numUrls += 1;
         }
         
-        return result;
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format(traceMsg, numUrls));
+        }
+        
     }
 }
