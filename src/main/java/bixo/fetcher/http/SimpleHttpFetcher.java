@@ -97,22 +97,32 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     private static final long CONNECTION_POOL_TIMEOUT = 20 * 1000L;
     
     private static final int BUFFER_SIZE = 8 * 1024;
-    private static final int MAX_RETRY_COUNT = 3;
+    private static final int DEFAULT_MAX_RETRY_COUNT = 20;
     
     private int _maxThreads;
     private HttpVersion _httpVersion;
     private int _socketTimeout;
     private int _connectionTimeout;
+    private int _maxRetryCount;
     private FetcherPolicy _fetcherPolicy;
     private String _userAgent;
     
     transient private DefaultHttpClient _httpClient;
     
     private static class MyRequestRetryHandler implements HttpRequestRetryHandler {
-
+        private int _maxRetryCount;
+        
+        public MyRequestRetryHandler(int maxRetryCount) {
+            _maxRetryCount = maxRetryCount;
+        }
+        
         @Override
         public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
-            if (executionCount >= MAX_RETRY_COUNT) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Decide about retry #" + executionCount + " for exception " + exception.getMessage());
+            }
+            
+            if (executionCount >= _maxRetryCount) {
                 // Do not retry if over max retry count
                 return false;
             } else if (exception instanceof NoHttpResponseException) {
@@ -148,6 +158,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         _httpVersion = HttpVersion.HTTP_1_1;
         _socketTimeout = DEFAULT_SOCKET_TIMEOUT;
         _connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
+        _maxRetryCount = DEFAULT_MAX_RETRY_COUNT;
         
         // Just to be explicit, we rely on lazy initialization of this so that
         // we don't have to worry about serializing it.
@@ -204,6 +215,14 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         }
     }
 
+    public int getMaxRetryCount() {
+        return _maxRetryCount;
+    }
+    
+    public void setMaxRetryCount(int maxRetryCount) {
+        _maxRetryCount = maxRetryCount;
+    }
+    
     @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
         init();
@@ -416,7 +435,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             // Use ThreadSafeClientConnManager since more than one thread will be using the HttpClient.
             ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
             _httpClient = new DefaultHttpClient(cm, params);
-            _httpClient.setHttpRequestRetryHandler(new MyRequestRetryHandler());
+            _httpClient.setHttpRequestRetryHandler(new MyRequestRetryHandler(_maxRetryCount));
             
             params = _httpClient.getParams();
             // FUTURE KKr - support authentication
