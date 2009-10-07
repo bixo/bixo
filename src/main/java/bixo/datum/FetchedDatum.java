@@ -77,7 +77,8 @@ public class FetchedDatum extends BaseDatum {
     /**
      * Create place-holder FetchedDatum from the data used to attempt the fetch.
      * 
-     * @param scoredDatum Valid datum with url/metadata needed to create FetchedDatum
+     * @param url - Base & redirected url
+     * @param metaData - metadata
      */
     @SuppressWarnings("unchecked")
 	public FetchedDatum(String url, Map<String, Comparable> metaData) {
