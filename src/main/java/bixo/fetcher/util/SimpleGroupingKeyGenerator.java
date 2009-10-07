@@ -22,7 +22,6 @@
  */
 package bixo.fetcher.util;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -31,6 +30,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import org.apache.http.HttpStatus;
+import org.apache.log4j.Logger;
 
 import bixo.datum.UrlDatum;
 import bixo.exceptions.HttpFetchException;
@@ -56,7 +56,8 @@ import bixo.utils.GroupingKey;
  */
 @SuppressWarnings("serial")
 public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
-
+    private static final Logger LOGGER = Logger.getLogger(SimpleGroupingKeyGenerator.class);
+    
     private HashSet<String> _badHosts;
     private HashMap<String, SimpleRobotRules> _rules;
     private IHttpFetcher _robotsFetcher;
@@ -125,7 +126,8 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
                 // treat it like a server internal error case.
                 robotRules = new SimpleRobotRules(HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } catch (Exception e) {
-                throw new RuntimeException("Unexpected exception handling robots.txt: " + robotsUrl, e);
+                LOGGER.warn("Unexpected exception handling robots.txt: " + robotsUrl, e);
+                robotRules = new SimpleRobotRules(HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
 
             // TODO KKr - have max size for this, so we don't chew up too much memory?
