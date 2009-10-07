@@ -49,4 +49,17 @@ public class ParsePipe extends SubAssembly {
         setTails(parsePipe);
     }
 
+    public Pipe getTailPipe() {
+        String[] pipeNames = getTailNames();
+        if (pipeNames.length != 1) {
+            throw new RuntimeException("Unexpected number of tail pipes!");
+        }
+        
+        if (!pipeNames[0].equals(PARSE_PIPE_NAME)) {
+            throw new RuntimeException("Unexpected name for tail pipe");
+        }
+        
+        return getTails()[0];
+    }
+
 }
