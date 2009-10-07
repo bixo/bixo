@@ -36,6 +36,7 @@ public class StatusDatum extends BaseDatum {
     private UrlStatus _status;
     private HttpHeaders _headers;
     private BaseFetchException _exception;
+    private long _statusTime;
     
     /**
      * Constructor for creating StatusDatum for a URL that was fetched successfully.
@@ -45,24 +46,25 @@ public class StatusDatum extends BaseDatum {
      * @param metaData User-provided meta-data.
      */
     public StatusDatum(String url, HttpHeaders headers, Map<String, Comparable> metaData) {
-        this(url, UrlStatus.FETCHED, headers, null, metaData);
+        this(url, UrlStatus.FETCHED, headers, null, System.currentTimeMillis(), metaData);
     }
     
     public StatusDatum(String url, BaseFetchException e, Map<String, Comparable> metaData) {
-        this(url, e.mapToUrlStatus(), null, e, metaData);
+        this(url, e.mapToUrlStatus(), null, e, System.currentTimeMillis(), metaData);
     }
     
     public StatusDatum(String url, UrlStatus status, Map<String, Comparable> metaData) {
-        this(url, status, null, null, metaData);
+        this(url, status, null, null, System.currentTimeMillis(), metaData);
     }
     
-    public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BaseFetchException e, Map<String, Comparable> metaData) {
+    public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BaseFetchException e, long statusTime, Map<String, Comparable> metaData) {
         super(metaData);
         
         _url = url;
         _status = status;
         _headers = headers;
         _exception = e;
+        _statusTime = statusTime;
     }
 
     public String getUrl() {
@@ -81,6 +83,10 @@ public class StatusDatum extends BaseDatum {
         return _exception;
     }
 
+    public long getStatusTime() {
+        return _statusTime;
+    }
+    
     // ======================================================================================
     // Below here is all Cascading-specific implementation
     // ======================================================================================
@@ -90,8 +96,9 @@ public class StatusDatum extends BaseDatum {
     public static final String STATUS_FIELD = fieldName(StatusDatum.class, "status");
     public static final String HEADERS_FIELD = fieldName(StatusDatum.class, "headers");
     public static final String EXCEPTION_FIELD = fieldName(StatusDatum.class, "exception");
+    public static final String STATUS_TIME_FIELD = fieldName(StatusDatum.class, "statusTime");
         
-    public static final Fields FIELDS = new Fields(URL_FIELD, STATUS_FIELD, HEADERS_FIELD, EXCEPTION_FIELD);
+    public static final Fields FIELDS = new Fields(URL_FIELD, STATUS_FIELD, HEADERS_FIELD, EXCEPTION_FIELD, STATUS_TIME_FIELD);
     
     public StatusDatum(Tuple tuple, Fields metaDataFields) {
         super(tuple, metaDataFields);
@@ -108,6 +115,7 @@ public class StatusDatum extends BaseDatum {
         _status = UrlStatus.valueOf(entry.getString(STATUS_FIELD));
         _headers = new HttpHeaders(entry.getString(HEADERS_FIELD));
         _exception = (BaseFetchException)entry.get(EXCEPTION_FIELD);
+        _statusTime = entry.getLong(STATUS_TIME_FIELD);
     }
     
     @Override
@@ -117,7 +125,7 @@ public class StatusDatum extends BaseDatum {
     
     @Override
     protected Comparable[] getStandardValues() {
-        return new Comparable[] { _url, _status.name(), _headers == null ? null : _headers.toString(), (Comparable)_exception };
+        return new Comparable[] { _url, _status.name(), _headers == null ? null : _headers.toString(), (Comparable)_exception, _statusTime };
     }
 
 
