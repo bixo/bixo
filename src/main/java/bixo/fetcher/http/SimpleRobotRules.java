@@ -49,7 +49,7 @@ public class SimpleRobotRules implements IRobotRules {
      */
     protected class RobotRules {
         ArrayList<RobotRule> _rules = new ArrayList<RobotRule>();
-        private long _crawlDelay = DEFAULT_CRAWL_DELAY;
+        private long _crawlDelay = UNSET_CRAWL_DELAY;
 
         private void clearRules() {
             _rules.clear();

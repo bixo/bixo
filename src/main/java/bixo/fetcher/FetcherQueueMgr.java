@@ -28,6 +28,7 @@ import cascading.tuple.TupleEntryCollector;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
+import bixo.fetcher.http.IRobotRules;
 
 /**
  * Manage a set of FetcherQueue objects, one per URL grouping (either domain or IP address)
@@ -53,7 +54,9 @@ public class FetcherQueueMgr implements IFetchListProvider {
     }
     
 	public FetcherQueue createQueue(String domain, TupleEntryCollector collector, long crawlDelay) {
-	    if (crawlDelay == _defaultPolicy.getCrawlDelay()) {
+	    // If the URLs we're going to be queueing don't have a specific crawl delay, or are the same
+	    // as our default policy, then we can just re-use the default policy.
+	    if ((crawlDelay == IRobotRules.UNSET_CRAWL_DELAY) || (crawlDelay == _defaultPolicy.getCrawlDelay())) {
 	        return new FetcherQueue(domain, _defaultPolicy, _process, collector);
 	    } else {
 	        FetcherPolicy customPolicy = new FetcherPolicy(_defaultPolicy.getMinResponseRate(),

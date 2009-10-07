@@ -6,9 +6,10 @@ import java.net.URL;
 
 public interface IRobotRules {
     public static final long DEFAULT_CRAWL_DELAY = 30 * 1000L;
+    public static final long UNSET_CRAWL_DELAY = Long.MIN_VALUE;
     
     /**
-     * Get Crawl-Delay, in milliseconds. This returns DEFAULT_CRAWL_DELAY if not set.
+     * Get Crawl-Delay, in milliseconds. This returns UNSET_CRAWL_DELAY if not set.
      */
     public long getCrawlDelay();
 

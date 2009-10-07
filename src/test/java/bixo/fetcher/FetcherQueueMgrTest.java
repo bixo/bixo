@@ -9,6 +9,7 @@ import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
+import bixo.fetcher.http.IRobotRules;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
@@ -31,6 +32,27 @@ public class FetcherQueueMgrTest {
         public Object getNumCollected() {
             return _numCollected;
         }
+    }
+    
+    @Test
+    public void testUnsetCrawlDelay() {
+        FetcherPolicy defaultPolicy = new FetcherPolicy();
+        defaultPolicy.setCrawlDelay(1L);
+        BixoFlowProcess process = new BixoFlowProcess();
+        FetcherQueueMgr queueMgr = new FetcherQueueMgr(process, defaultPolicy);
+        
+        TupleEntryCollector collector = Mockito.mock(TupleEntryCollector.class);
+        FetcherQueue queue = queueMgr.createQueue("domain", collector, IRobotRules.UNSET_CRAWL_DELAY);
+        
+        ScoredUrlDatum datum = Mockito.mock(ScoredUrlDatum.class);
+        for (int i = 0; i < 30; i++) {
+            queue.offer(datum);
+        }
+        
+        Assert.assertEquals(30, queue.getNumQueued());
+        FetchList fl = queue.poll();
+        Assert.assertNotNull(fl);
+        Assert.assertEquals(30, fl.size());
     }
     
     @Test

@@ -396,7 +396,7 @@ public class SimpleRobotRulesTest {
         rules = new SimpleRobotRules("Mozilla denybot 99.9", heritrixRobotsTxt.getBytes());
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/path"));
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/"));
-        Assert.assertEquals(30000, rules.getCrawlDelay());
+        Assert.assertEquals(IRobotRules.UNSET_CRAWL_DELAY, rules.getCrawlDelay());
         
         rules = new SimpleRobotRules("Mozilla anonbot 99.9", heritrixRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/path"));
@@ -539,7 +539,7 @@ public class SimpleRobotRulesTest {
         
         rules = new SimpleRobotRules("bixo", delayRules2RobotsTxt.getBytes());
         crawlDelay = rules.getCrawlDelay();
-        Assert.assertEquals("testing crawl delay for agent bixo - rule 2", SimpleRobotRules.DEFAULT_CRAWL_DELAY, crawlDelay);
+        Assert.assertEquals("testing crawl delay for agent bixo - rule 2", SimpleRobotRules.UNSET_CRAWL_DELAY, crawlDelay);
       }
 
     @Test
