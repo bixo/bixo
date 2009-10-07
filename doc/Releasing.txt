@@ -12,7 +12,7 @@ little interest to users.
 % git checkout master
 % git pull
 <add/commit pending changes>
-% bant clean dist - use "bant" since dist can require a lot of memory to package things up
+% bant dist - use "bant" since dist can require a lot of memory to package things up
 % git push
 
 2. Merge master into release
@@ -29,17 +29,20 @@ little interest to users.
 
 % bant dist
 % git rm release/*.tgz
+% mkdir release
 % cp build/bixo-dist-0.x.y.tgz release/
 % git add release/bixo-dist-0.x.y.tgz
-% git commit -am "Committing 0.x.y distribution build"
+% git commit -am "Committing 0.x.y release build"
 
 5. Tag the release
 
 % git tag -am "Tagging version 0.x.y" 0.x.y
 
-6. Updating GitHub
+6. Updating GitHub (this will take a while)
 
 % git push origin release --tags
+<Verify new release tag shows up in GitHub list of tags>
+<Verify TeamCity is building new release>
 
 7. Switch back to master
 
