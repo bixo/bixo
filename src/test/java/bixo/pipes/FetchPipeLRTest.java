@@ -31,6 +31,7 @@ import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.SimpleGroupingKeyGenerator;
+import bixo.fetcher.util.SimpleScoreGenerator;
 import bixo.utils.GroupingKey;
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
@@ -55,7 +56,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
     private static class SkippedScoreGenerator implements IScoreGenerator {
 
         @Override
-        public double generateScore(GroupedUrlDatum urlTuple) throws IOException {
+        public double generateScore(GroupedUrlDatum urlTuple) {
             return IScoreGenerator.SKIP_URL_SCORE;
         }
     }
@@ -298,7 +299,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
     private static class CustomScorer implements IScoreGenerator {
 
         @Override
-        public double generateScore(GroupedUrlDatum urlDatum) throws IOException {
+        public double generateScore(GroupedUrlDatum urlDatum) {
             String url = urlDatum.getUrl();
             if (url.contains("page-5")) {
                 return 0.0;

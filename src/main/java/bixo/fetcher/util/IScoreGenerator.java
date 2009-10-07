@@ -22,7 +22,6 @@
  */
 package bixo.fetcher.util;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 import bixo.datum.GroupedUrlDatum;
@@ -30,6 +29,6 @@ import bixo.datum.GroupedUrlDatum;
 public interface IScoreGenerator extends Serializable {
     public static final double SKIP_URL_SCORE = Double.NEGATIVE_INFINITY;
     
-    double generateScore(GroupedUrlDatum urlDatum) throws IOException;
+    double generateScore(GroupedUrlDatum urlDatum);
 
 }

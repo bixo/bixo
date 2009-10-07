@@ -1,7 +1,5 @@
 package bixo.fetcher.util;
 
-import java.io.IOException;
-
 import bixo.datum.GroupedUrlDatum;
 
 @SuppressWarnings("serial")
@@ -19,7 +17,7 @@ public class SimpleScoreGenerator implements IScoreGenerator {
 	}
 	
 	@Override
-	public double generateScore(GroupedUrlDatum urlTuple) throws IOException {
+	public double generateScore(GroupedUrlDatum urlTuple) {
 		return _score;
 	}
 }
