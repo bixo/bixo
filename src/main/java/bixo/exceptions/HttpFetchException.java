@@ -37,6 +37,16 @@ public class HttpFetchException extends BaseFetchException implements WritableCo
     }
 
     @Override
+    public String getMessage() {
+        StringBuilder result = new StringBuilder(super.getMessage());
+        result.append(" (");
+        result.append(_httpStatus);
+        result.append(") Headers: ");
+        result.append(_httpHeaders.toString());
+        return result.toString();
+    }
+    
+    @Override
     public UrlStatus mapToUrlStatus() {
         switch (_httpStatus) {
         case HttpStatus.SC_FORBIDDEN:
