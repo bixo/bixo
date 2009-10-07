@@ -37,9 +37,10 @@ public class FetcherPolicy implements Serializable {
     public static final long DEFAULT_CRAWL_END_TIME = NO_CRAWL_END_TIME;
     public static final int DEFAULT_MAX_REDIRECTS = 20;
     
-    // Interval between batched fetch requests, in seconds.
+    // Interval between batched fetch requests, in milliseconds.
     protected static final long DEFAULT_FETCH_INTERVAL = 5 * 60 * 1000L;
     
+    // Interval between requests, in milliseconds.
     protected static final long DEFAULT_CRAWL_DELAY = 30 * 1000L;
 
     private int _minResponseRate;        // lower bounds on bytes-per-second
