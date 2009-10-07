@@ -33,6 +33,7 @@ import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
+import bixo.fetcher.util.IScoreGenerator;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
@@ -86,6 +87,15 @@ public class FetcherQueue implements IFetchListProvider {
             return;
         }
 
+        // TODO KKr - remove this when we no longer pass skipped URLs through to the
+        // FetchBuffer.
+        double score = scoredUrlDatum.getScore();
+        if (score == IScoreGenerator.SKIP_URL_SCORE) {
+            _numSkipped += 1;
+            skip(scoredUrlDatum, UrlStatus.SKIPPED_BY_SCORE);
+            return;
+        }
+        
         // See if we can just add without worrying about sorting.
         if (_queue.size() < maxSize) {
             _numQueued += 1;
@@ -99,7 +109,7 @@ public class FetcherQueue implements IFetchListProvider {
 
         // TODO KKr - should we trim the queue? Given current time, we might have
         // more than getMaxUrls in the queue already.
-        if (scoredUrlDatum.getScore() <= _queue.get(_queue.size() - 1).getScore()) {
+        if (score <= _queue.get(_queue.size() - 1).getScore()) {
             _numSkipped += 1;
             skip(scoredUrlDatum, UrlStatus.SKIPPED_BY_SCORE);
             return;
