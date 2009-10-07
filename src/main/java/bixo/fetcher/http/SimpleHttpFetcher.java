@@ -30,12 +30,14 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.TrustManager;
 
-import org.apache.http.NoHttpResponseException;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -45,6 +47,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
+import org.apache.http.NoHttpResponseException;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -58,6 +61,7 @@ import org.apache.http.conn.params.ConnPerRouteBean;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.cookie.params.CookieSpecParamBean;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
@@ -74,8 +78,8 @@ import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.AbortedFetchReason;
 import bixo.exceptions.AbortedFetchException;
+import bixo.exceptions.AbortedFetchReason;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
@@ -98,6 +102,12 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     
     private static final int BUFFER_SIZE = 8 * 1024;
     private static final int DEFAULT_MAX_RETRY_COUNT = 20;
+    
+    private static final String SSL_CONTEXT_NAMES[] = {
+        "TLS",
+        "Default",
+        "SSL",
+    };
     
     private int _maxThreads;
     private HttpVersion _httpVersion;
@@ -251,11 +261,12 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     private FetchedDatum doGet(String url, Map<String, Comparable> metaData) throws BaseFetchException {
         LOGGER.trace("Fetching " + url);
 
-        HttpGet getter;
+        HttpGet getter = null;
         HttpResponse response;
         long readStartTime;
         HttpHeaders headerMap = new HttpHeaders();
         String redirectedUrl;
+        boolean needAbort = false;
 
         try {
             getter = new HttpGet(new URI(url));
@@ -287,6 +298,20 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             throw new IOFetchException(url, e);
         } catch (URISyntaxException e) {
             throw new UrlFetchException(url, e.getMessage());
+        } catch (IllegalStateException e) {
+            throw new UrlFetchException(url, e.getMessage());
+        } catch (HttpFetchException e) {
+            // There may be residual content, so abort the request so that the
+            // connection gets returned.
+            needAbort = true;
+            throw e;
+        } catch (Exception e) {
+            // We can get things like IllegalStateException, so map all of those to
+            // a generic IOFetchException
+            // TODO KKr - create generic fetch exception
+            throw new IOFetchException(url, new IOException(e));
+        } finally {
+            safeAbort(needAbort, getter);
         }
 
         // Figure out how much data we want to try to fetch.
@@ -313,7 +338,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         byte[] content = null;
         long readRate = 0;
         HttpEntity entity = response.getEntity();
-        boolean needAbort = true;
+        needAbort = true;
 
         if (entity != null) {
             InputStream in = null;
@@ -355,11 +380,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
                 // We don't need to abort if there's an IOException
                 throw new IOFetchException(url, e);
             } finally {
-                if (needAbort) {
-                    safeAbort(getter);
-                }
-
-                // Make sure the connection is released immediately.
+                safeAbort(needAbort, getter);
                 safeClose(in);
             }
         }
@@ -371,18 +392,22 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     }
     
     private static void safeClose(Closeable o) {
-        try {
-            o.close();
-        } catch (Exception e) {
-            // Ignore any errors
+        if (o != null) {
+            try {
+                o.close();
+            } catch (Exception e) {
+                // Ignore any errors
+            }
         }
     }
     
-    private static void safeAbort(HttpRequestBase request) {
-        try {
-            request.abort();
-        } catch (Throwable t) {
-            // Ignore any errors
+    private static void safeAbort(boolean needAbort, HttpRequestBase request) {
+        if (needAbort && (request != null)) {
+            try {
+                request.abort();
+            } catch (Throwable t) {
+                // Ignore any errors
+            }
         }
     }
 
@@ -430,7 +455,27 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             // Create and initialize scheme registry
             SchemeRegistry schemeRegistry = new SchemeRegistry();
             schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
-            // FUTURE KKr - support https on port 443
+            SSLSocketFactory sf = null;
+
+            for (String contextName : SSL_CONTEXT_NAMES) {
+                try {
+                    SSLContext sslContext = SSLContext.getInstance(contextName);
+                    sslContext.init(null, new TrustManager[] { new DummyX509TrustManager(null) }, null);
+                    sf = new SSLSocketFactory(sslContext);
+                    break;
+                } catch (NoSuchAlgorithmException e) {
+                    LOGGER.debug("SSLContext algorithm not available: " + contextName);
+                } catch (Exception e) {
+                    LOGGER.debug("SSLContext can't be initialized: " + contextName, e);
+                }
+            }
+            
+            if (sf != null) {
+                sf.setHostnameVerifier(SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
+                schemeRegistry.register(new Scheme("https", sf, 443));
+            } else {
+                LOGGER.warn("No valid SSLContext found for https");
+            }
 
             // Use ThreadSafeClientConnManager since more than one thread will be using the HttpClient.
             ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
