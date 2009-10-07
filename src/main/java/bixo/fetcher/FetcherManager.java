@@ -41,14 +41,11 @@ import bixo.fetcher.http.IHttpFetcher;
 public class FetcherManager implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(FetcherManager.class);
     
-    private static final long STATUS_UPDATE_INTERVAL = 2000;
-    private static final long NO_CAPACITY_SLEEP_INTERVAL = 200;
+    private static final long STATUS_UPDATE_INTERVAL = 10000L;
+    private static final long NO_CAPACITY_SLEEP_INTERVAL = 200L;
 
-    // TODO KKr - figure out how best to get these values, without having
-    // to pass around a _conf everywhere.
     private static final int FETCH_THREAD_COUNT_CORE = 10;
     private static final int FETCH_IDLE_TIMEOUT = 1;
-
 
     private IFetchListProvider _provider;
     private IHttpFetcher _fetcher;
@@ -77,16 +74,21 @@ public class FetcherManager implements Runnable {
 	    try {
 	        long nextStatusTime = 0;
 	        FetcherRunnable nextRunnable = null;
+	        int urlsFetching = -1;
+	        int domainsFetching = -1;
 	        
 	        while (true) {
 	            // See if we should update our status
+	            int curUrlsFetching = _process.getCounter(FetcherCounters.URLS_FETCHING);
+	            int curDomainsFetching = _process.getCounter(FetcherCounters.DOMAINS_FETCHING);
 	            long curTime = System.currentTimeMillis();
-	            if (curTime >= nextStatusTime) {
+	            
+	            if ((curUrlsFetching != urlsFetching) || (curDomainsFetching != domainsFetching) || (curTime >= nextStatusTime)) {
+	                urlsFetching = curUrlsFetching;
+	                domainsFetching = curDomainsFetching;
 	                nextStatusTime = curTime + STATUS_UPDATE_INTERVAL;
 	                
-	                _process.setStatus(String.format("Fetching %d URLs from %d domains",
-	                                _process.getCounter(FetcherCounters.URLS_FETCHING),
-	                                _process.getCounter(FetcherCounters.DOMAINS_FETCHING)));
+	                _process.setStatus(String.format("Fetching %d URLs from %d domains", urlsFetching, domainsFetching));
 	            }
 	            
 	            // See if we should set up the next thing to fetch
