@@ -45,7 +45,6 @@ public class RunHttpClientFetcher {
         	
         	try {
             	if (interactive) {
-            	    System.out.flush();
             		System.out.print("URL to fetch: ");
             		url = readInputLine();
             		if (url.length() == 0) {
@@ -59,10 +58,12 @@ public class RunHttpClientFetcher {
         		FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         		System.out.println("Result = " + result.toString());
         	} catch (Exception e) {
-        		System.out.println("Exception fetching page: " + e.getMessage());
-        		e.printStackTrace(System.err);
-
-        		if (!interactive) {
+        		e.printStackTrace(System.out);
+                
+        		if (interactive) {
+        		    System.out.println();
+        		    System.out.flush();
+        		} else {
         			System.exit(-1);
         		}
         	}
