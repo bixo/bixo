@@ -70,7 +70,7 @@ public class SimpleParser implements IParser {
             	if (localName.equalsIgnoreCase("base")) {
             		try {
             			// Handle relative URLs, even though by definition it should be absolute.
-            			_baseUrl = new URL(UrlUtils.makeUrl(_baseUrl, attributes.getValue("href")));
+            			_baseUrl = new URL(UrlUtils.makeUrl(_baseUrl, attributes.getValue("href").trim()));
             		} catch (MalformedURLException e) {
                         LOGGER.debug("Invalid URL found in <base> tag: ", e);
             		}
@@ -80,7 +80,7 @@ public class SimpleParser implements IParser {
             } else if (_inBody) {
             	if (localName.equalsIgnoreCase("a")) {
                     try {
-                        _curUrl = UrlUtils.makeUrl(_baseUrl, attributes.getValue("href"));
+                        _curUrl = UrlUtils.makeUrl(_baseUrl, attributes.getValue("href").trim());
                         _inAnchor = true;
                         _curAnchor.setLength(0);
                     } catch (MalformedURLException e) {
