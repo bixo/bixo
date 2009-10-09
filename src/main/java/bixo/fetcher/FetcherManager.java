@@ -88,7 +88,10 @@ public class FetcherManager implements Runnable {
 	                domainsFetching = curDomainsFetching;
 	                nextStatusTime = curTime + STATUS_UPDATE_INTERVAL;
 	                
-	                _process.setStatus(String.format("Fetching %d URLs from %d domains", urlsFetching, domainsFetching));
+	                // Figure out number of URLs remaining = queued - (fetched + fetching + failed)
+	                int urlsDone = _process.getCounter(FetcherCounters.URLS_FETCHED) + _process.getCounter(FetcherCounters.URLS_FAILED);
+	                int urlsRemaining = _process.getCounter(FetcherCounters.URLS_QUEUED) - (urlsDone + urlsFetching);
+	                _process.setStatus(String.format("Fetching %d URLs from %d domains (%d URLs remaining)", urlsFetching, domainsFetching, urlsRemaining));
 	            }
 	            
 	            // See if we should set up the next thing to fetch
