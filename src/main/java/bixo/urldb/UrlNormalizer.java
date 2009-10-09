@@ -118,6 +118,10 @@ public class UrlNormalizer implements IUrlNormalizer {
             result = "www." + paidLevelDomain;
         }
         
+        if (result.endsWith(".")) {
+        	result = result.substring(0, result.length() - 1);
+        }
+        
         return result;
     }
     

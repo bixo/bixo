@@ -304,6 +304,13 @@ public class UrlNormalizerTest {
     }
     
     @Test
+    public void testDotAtEndOfDomainName() {
+        normalizeTest("http://www.domain.com.", "http://www.domain.com/", "Remove trailing dot");
+        normalizeTest("http://www.domain.com.:8080", "http://www.domain.com:8080/", "Remove trailing dot (with port)");
+        normalizeTest("http://www.domain.com./path/page.html", "http://www.domain.com/path/page.html", "Remove trailing dot (with path)");
+    }
+    
+    @Test
     public void testMultipleValuesInQuery() {
         normalizeTest("http://delivery.vipeers.com/file_sharing?m=7Q==&locale=en", "http://delivery.vipeers.com/file_sharing?m=7Q==&locale=en", "Preserve empty values");
         normalizeTest("http://delivery.vipeers.com/file_sharing?m=7Q=full=&locale=en", "http://delivery.vipeers.com/file_sharing?m=7Q=full=&locale=en", "Preserve empty values");
