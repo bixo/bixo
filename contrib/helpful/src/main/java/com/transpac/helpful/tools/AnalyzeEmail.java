@@ -92,10 +92,10 @@ public class AnalyzeEmail {
 	private static class SplitEmails extends SubAssembly {
 
 		public SplitEmails(FetchPipe fetchPipe) {
-            Pipe splitPipe = new Pipe(SPLITTER_PIPE_NAME, fetchPipe.getTailPipe(FetchPipe.FETCHED_PIPE_NAME));
+            Pipe splitPipe = new Pipe(SPLITTER_PIPE_NAME, fetchPipe.getContentTailPipe());
             splitPipe = new Each(splitPipe, new MboxSplitterFunction());
             // TODO KKr - code currently relies on splitPipe being first tail pipe.
-            setTails(splitPipe, fetchPipe.getTailPipe(FetchPipe.STATUS_PIPE_NAME));
+            setTails(splitPipe, fetchPipe.getStatusTailPipe());
     	}
     }
     
@@ -172,18 +172,17 @@ public class AnalyzeEmail {
             SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(userAgent);
             
             IScoreGenerator scorer = new IScoreGenerator() {
-				public double generateScore(GroupedUrlDatum arg0) throws IOException { return 1.0; }
+				public double generateScore(GroupedUrlDatum arg0) { return 1.0; }
             };
             
             IHttpFetcher fetcher = new SimpleHttpFetcher(MAX_THREADS, userAgent);
             FetchPipe fetchPagePipe = new FetchPipe(importPipe, grouping, scorer, fetcher);
             
             // Here's the pipe that will output UrlDatum tuples, by extracting URLs from the mod_mbox-generated page.
-    		Pipe mboxPagePipe = new Each(fetchPagePipe.getTailPipe(FetchPipe.FETCHED_PIPE_NAME),
-    				new ParseModMboxPageFunction(new Fields()), Fields.RESULTS);
+    		Pipe mboxPagePipe = new Each(fetchPagePipe.getContentTailPipe(), new ParseModMboxPageFunction(new Fields()), Fields.RESULTS);
 
     		// Create a named pipe for the status of the mod_mbox-generated pages.
-            Pipe mboxPageStatusPipe = new Pipe(MBOX_PAGE_STATUS_PIPE_NAME, fetchPagePipe.getTailPipe(FetchPipe.STATUS_PIPE_NAME));
+            Pipe mboxPageStatusPipe = new Pipe(MBOX_PAGE_STATUS_PIPE_NAME, fetchPagePipe.getStatusTailPipe());
 
             // Set up appropriate FetcherPolicy, where we increase the max content size (since mailbox files
             // can be big, e.g. 4MB).

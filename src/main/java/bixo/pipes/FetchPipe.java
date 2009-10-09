@@ -36,10 +36,10 @@ import cascading.tuple.Tuple;
 @SuppressWarnings("serial")
 public class FetchPipe extends SubAssembly {
     // Pipe that outputs FetchedDatum tuples, for URLs that were fetched.
-    public static final String FETCHED_PIPE_NAME = "fetched";
+    public static final String CONTENT_PIPE_NAME = "FetchPipe-content";
     
     // Pipe that outputs StatusDatum tuples, for all URLs being processed.
-    public static final String STATUS_PIPE_NAME = "status";
+    public static final String STATUS_PIPE_NAME = "FetchPipe-status";
     
     @SuppressWarnings({ "unchecked" })
     private static class FilterErrorsFunction extends BaseOperation implements Function {
@@ -83,7 +83,7 @@ public class FetchPipe extends SubAssembly {
         public MakeStatusFunction(Fields metaDataFields) {
             super(StatusDatum.FIELDS.append(metaDataFields));
             
-            // Location of extra field added during fetch, that contains fetch error
+            // Location of extra field added during fetch, that contains fetch status
             _fieldPos = FetchedDatum.FIELDS.size() + metaDataFields.size();
             
             _metaDataFields = metaDataFields;
@@ -93,6 +93,9 @@ public class FetchPipe extends SubAssembly {
         public void operate(FlowProcess process, FunctionCall funcCall) {
             Tuple t = funcCall.getArguments().getTuple();
             FetchedDatum fd = new FetchedDatum(t, _metaDataFields);
+            
+            // Get the fetch status that we hang on the end of the tuple,
+            // after all of the FetchedDatum fields.
             Comparable result = t.get(_fieldPos);
             StatusDatum status;
             
@@ -140,13 +143,21 @@ public class FetchPipe extends SubAssembly {
         fetch = new Every(fetch, new FetcherBuffer(metaDataFields, fetcher), Fields.RESULTS);
 
         Fields fetchedFields = FetchedDatum.FIELDS.append(metaDataFields);
-        Pipe fetched = new Pipe(FETCHED_PIPE_NAME, new Each(fetch, new FilterErrorsFunction(fetchedFields)));
+        Pipe fetched = new Pipe(CONTENT_PIPE_NAME, new Each(fetch, new FilterErrorsFunction(fetchedFields)));
         Pipe status = new Pipe(STATUS_PIPE_NAME, new Each(fetch, new MakeStatusFunction(metaDataFields)));
         
         setTails(fetched, status);
     }
     
-    public Pipe getTailPipe(String pipeName) {
+    public Pipe getContentTailPipe() {
+    	return getTailPipe(CONTENT_PIPE_NAME);
+    }
+    
+    public Pipe getStatusTailPipe() {
+    	return getTailPipe(STATUS_PIPE_NAME);
+    }
+    
+    private Pipe getTailPipe(String pipeName) {
         String[] pipeNames = getTailNames();
         for (int i = 0; i < pipeNames.length; i++) {
             if (pipeName.equals(pipeNames[i])) {
@@ -169,7 +180,7 @@ public class FetchPipe extends SubAssembly {
         }
         
         result.put(STATUS_PIPE_NAME, statusSink);
-        result.put(FETCHED_PIPE_NAME, fetchedSink);
+        result.put(CONTENT_PIPE_NAME, fetchedSink);
         
         return result;
     }
