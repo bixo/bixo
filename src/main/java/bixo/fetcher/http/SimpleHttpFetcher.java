@@ -237,7 +237,15 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
         init();
 
-        return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
+        try {
+        	return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
+        } catch (BaseFetchException e) {
+        	if (LOGGER.isTraceEnabled()) {
+        		LOGGER.trace(String.format("Exception fetching %s", scoredUrl.getUrl()), e);
+        	}
+        	
+        	throw e;
+        }
     }
 
     @SuppressWarnings("unchecked")
