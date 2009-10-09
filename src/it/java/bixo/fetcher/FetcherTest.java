@@ -36,6 +36,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
+import bixo.exceptions.BaseFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.LastFetchScoreGenerator;
@@ -97,7 +98,14 @@ public class FetcherTest {
         while (tupleEntryIterator.hasNext()) {
             TupleEntry entry = tupleEntryIterator.next();
             StatusDatum sd = new StatusDatum(entry, metaDataFields);
-            Assert.assertEquals(UrlStatus.FETCHED, sd.getStatus());
+            if (sd.getStatus() != UrlStatus.FETCHED) {
+            	System.out.println("Fetch failed for " + sd.getUrl());
+            	BaseFetchException e = sd.getException();
+            	if (e != null) {
+            		System.out.println("Exception in status: " + e.getMessage());
+            	}
+            	Assert.fail("Status not equal to FETCHED");
+            }
         }
     }
 
