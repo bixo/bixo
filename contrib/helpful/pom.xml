@@ -26,7 +26,7 @@
 		<dependency>
 			<groupId>bixo</groupId>
 			<artifactId>bixo-core</artifactId>
-			<version>0.4.1-SNAPSHOT</version>
+			<version>1.0-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
@@ -39,18 +39,6 @@
             <groupId>cascading</groupId>
             <artifactId>cascading-core</artifactId>
             <version>1.0.16</version>
-        </dependency>
-        
-		<dependency>
-            <groupId>org.apache.tika</groupId>
-            <artifactId>tika-core</artifactId>
-            <version>0.4</version>
-        </dependency>
-        
-		<dependency>
-            <groupId>org.apache.tika</groupId>
-            <artifactId>tika-parsers</artifactId>
-            <version>0.4</version>
         </dependency>
         
 		<dependency>
