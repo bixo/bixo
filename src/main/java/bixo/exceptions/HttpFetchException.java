@@ -43,6 +43,7 @@ public class HttpFetchException extends BaseFetchException implements WritableCo
         result.append(_httpStatus);
         result.append(") Headers: ");
         result.append(_httpHeaders.toString());
+        
         return result.toString();
     }
     
