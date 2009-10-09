@@ -48,9 +48,9 @@ public class HttpHeaders {
             return;
         }
         
-        String[] headerLines = encodedAsString.split("\f");
+        String[] headerLines = split(encodedAsString, '\f');
         for (String headerLine : headerLines) {
-            String[] linePieces = headerLine.split("\t");
+            String[] linePieces = split(headerLine, '\t');
             if (linePieces.length != 2) {
                 LOGGER.error("Invalid encoded header: " + encodedAsString);
             } else {
@@ -140,6 +140,20 @@ public class HttpHeaders {
         } else {
             return headerString;
         }
+    }
+
+    private static String[] split(String s, char sep) {
+        List<String> pieces = new ArrayList<String>();
+        
+        int offset;
+        int curOffset = 0;
+        while ((offset = s.indexOf(sep, curOffset)) != -1) {
+            pieces.add(s.substring(curOffset, offset));
+            curOffset = offset + 1;
+        }
+        
+        pieces.add(s.substring(curOffset));
+        return pieces.toArray(new String[pieces.size()]);
     }
 
     private static String decodeHeaderString(String headerString) {
