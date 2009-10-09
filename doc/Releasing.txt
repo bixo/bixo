@@ -18,16 +18,19 @@ little interest to users.
 2. Merge master into release
 
 % git checkout release
+% git diff master
+<write up release note from diff>
 % git merge master
 
 3. Edit version number
 
 % nano pom.xml - set <version>0.x.y</version> in header
 % nano src/build/ant/build.properties - set version=0.x.y
+% git add pom.xml src/build/ant/build.properties
 
 4. Build the release
 
-% bant dist
+% bant clean dist
 % git rm release/*.tgz
 % mkdir release
 % cp build/bixo-dist-0.x.y.tgz release/
@@ -41,7 +44,7 @@ little interest to users.
 6. Updating GitHub (this will take a while)
 
 % git push origin release --tags
-<Verify new release tag shows up in GitHub list of tags>
+<Verify new release tag shows up in GitHub list of tags - http://github.com/emi/bixo>
 <Verify TeamCity is building new release>
 
 7. Switch back to master
