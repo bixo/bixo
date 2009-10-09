@@ -11,7 +11,7 @@ public class UrlUtils {
 	public static String makeUrl(URL baseUrl, String relativeUrl) throws MalformedURLException {
 		// Peel off cases of URLs that aren't actually URLs, or at least don't have protocols
 		// that the Java URL class knows about.
-		if (relativeUrl.startsWith("javascript:") || relativeUrl.startsWith("mailto:")) {
+		if (relativeUrl.startsWith("javascript:") || relativeUrl.startsWith("mailto:") || relativeUrl.startsWith("about:")) {
 			return relativeUrl;
 		}
 		
@@ -30,7 +30,7 @@ public class UrlUtils {
 			}
 		} catch (MalformedURLException e) {
 			// we can get things like "mail:xxx" (versus mailto:) in href attributes.
-			LOGGER.warn("Invalid relativeUrl parameter: " + relativeUrl, e);
+			LOGGER.warn("Invalid relativeUrl parameter: " + relativeUrl);
 			return relativeUrl;
 		}
 	}
