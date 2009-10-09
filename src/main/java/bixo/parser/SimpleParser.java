@@ -136,6 +136,10 @@ public class SimpleParser implements IParser {
     public ParsedDatum parse(FetchedDatum fetchedDatum) {
         init();
 
+        if (LOGGER.isTraceEnabled()) {
+        	LOGGER.trace(String.format("Parsing %s", fetchedDatum.getBaseUrl()));
+        }
+        
         // Provide clues to the parser about the format of the content.
         Metadata metadata = new Metadata();
         metadata.add(Metadata.RESOURCE_NAME_KEY, fetchedDatum.getBaseUrl());
