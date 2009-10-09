@@ -24,6 +24,8 @@ package bixo.fetcher;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.apache.log4j.Logger;
+
 import cascading.tuple.TupleEntryCollector;
 
 import bixo.cascading.BixoFlowProcess;
@@ -35,6 +37,8 @@ import bixo.fetcher.http.IRobotRules;
  *
  */
 public class FetcherQueueMgr implements IFetchListProvider {
+    private static final Logger LOGGER = Logger.getLogger(FetcherQueueMgr.class);
+    
     // TODO KKr - look at using a DelayQueue here (from Concurrent package) so that
     // queues are ordered by time until they can be used again. Empty queues would
     // sort at the end, and we could check for this when getting a poll call, and
@@ -125,6 +129,10 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	                result = queue.poll();
 	                _queues.add(queue);
 	                if (result != null) {
+	                    if (LOGGER.isTraceEnabled()) {
+	                        LOGGER.trace(String.format("Generating fetch list for %s with %d URLs", result.getDomain(), result.size()));
+	                    }
+	                    
 	                    break;
 	                }
 	            }
