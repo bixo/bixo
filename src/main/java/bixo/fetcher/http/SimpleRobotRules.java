@@ -403,11 +403,11 @@ public class SimpleRobotRules implements IRobotRules {
                     }
                 }
             } else if (line.contains(":")) {
-                // TODO KKr - info re unknown directive in file.
+            	LOGGER.warn("Unknown directive in robots.txt file: " + line);
                 finishedAgentFields = true;
             } else if (line.length() > 0) {
             	LOGGER.warn("Unknown line in robots.txt file: " + line);
-                // TODO KKr - log the invalid line in file.
+                finishedAgentFields = true;
             }
         }
 
