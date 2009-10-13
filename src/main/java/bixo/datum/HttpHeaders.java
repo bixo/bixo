@@ -10,6 +10,8 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
+import bixo.utils.StringUtils;
+
 public class HttpHeaders {
     private static final Logger LOGGER = Logger.getLogger(HttpHeaders.class);
     
@@ -48,9 +50,9 @@ public class HttpHeaders {
             return;
         }
         
-        String[] headerLines = split(encodedAsString, '\f');
+        String[] headerLines = StringUtils.splitOnChar(encodedAsString, '\f');
         for (String headerLine : headerLines) {
-            String[] linePieces = split(headerLine, '\t');
+            String[] linePieces = StringUtils.splitOnChar(headerLine, '\t');
             if (linePieces.length != 2) {
                 LOGGER.error("Invalid encoded header: " + encodedAsString);
             } else {
@@ -140,20 +142,6 @@ public class HttpHeaders {
         } else {
             return headerString;
         }
-    }
-
-    private static String[] split(String s, char sep) {
-        List<String> pieces = new ArrayList<String>();
-        
-        int offset;
-        int curOffset = 0;
-        while ((offset = s.indexOf(sep, curOffset)) != -1) {
-            pieces.add(s.substring(curOffset, offset));
-            curOffset = offset + 1;
-        }
-        
-        pieces.add(s.substring(curOffset));
-        return pieces.toArray(new String[pieces.size()]);
     }
 
     private static String decodeHeaderString(String headerString) {
