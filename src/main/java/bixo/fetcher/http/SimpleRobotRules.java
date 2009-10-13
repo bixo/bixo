@@ -135,6 +135,11 @@ public class SimpleRobotRules implements IRobotRules {
 
             ScoredUrlDatum scoredUrl = new ScoredUrlDatum(urlToFetch);
             FetchedDatum result = fetcher.get(scoredUrl);
+            
+            // HACK! DANGER! Some sites will redirect the request to the top-level domain
+            // page, without returning a 404. So if we have a redirect, and the normalized
+            // redirect URL is the same as the domain, then treat it like a 404...otherwise
+            // our robots.txt parser will barf, and we treat that as a "deferred" case.
             parseRules(robotName, urlToFetch, result.getContent().getBytes());
         } catch (MalformedURLException e) {
             LOGGER.error("Invalid URL: " + url);
@@ -400,8 +405,9 @@ public class SimpleRobotRules implements IRobotRules {
             } else if (line.contains(":")) {
                 // TODO KKr - info re unknown directive in file.
                 finishedAgentFields = true;
-            } else {
-                // TODO KKr - warning re invalid line in file.
+            } else if (line.length() > 0) {
+            	LOGGER.warn("Unknown line in robots.txt file: " + line);
+                // TODO KKr - log the invalid line in file.
             }
         }
 
