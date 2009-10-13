@@ -11,10 +11,11 @@ import java.util.regex.Pattern;
 import org.apache.log4j.Logger;
 
 import bixo.utils.DomainNames;
+import bixo.utils.StringUtils;
 
 @SuppressWarnings("serial")
-public class UrlNormalizer implements IUrlNormalizer {
-    private static final Logger LOGGER = Logger.getLogger(UrlNormalizer.class);
+public class SimpleUrlNormalizer implements IUrlNormalizer {
+    private static final Logger LOGGER = Logger.getLogger(SimpleUrlNormalizer.class);
     
     // http://en.wikipedia.org/wiki/Percent-encoding - full set of reserved chars is:
     // !    *   '   (   )   ;   :   @   &   =   +   $   ,   /   ?   %   #   [   ]
@@ -39,6 +40,16 @@ public class UrlNormalizer implements IUrlNormalizer {
     
     // Remove things that look like session ids from the query portion of a URL.
     private static final Pattern SESSION_ID_PATTERN = Pattern.compile("([;_]?((?i)l|j|bv_)?((?i)sid|phpsessid|sessionid)=.*?)(\\?|&|#|$)");
+    
+    private boolean _treatRefAsQuery;
+    
+    public SimpleUrlNormalizer() {
+    	this(false);
+    }
+    
+    public SimpleUrlNormalizer(boolean treatRefAsQuery) {
+    	_treatRefAsQuery = treatRefAsQuery;
+    }
     
     private String encodeCodePoint(int codepoint) {
         try {
@@ -201,7 +212,7 @@ public class UrlNormalizer implements IUrlNormalizer {
                 continue;
             }
             
-            String[] keyValues = splitOnChar(queryPart, '=');
+            String[] keyValues = StringUtils.splitOnChar(queryPart, '=');
             if (keyValues.length == 1) {
                 newQuery.append(encodeUrlComponent(decodeUrl(keyValues[0]), RESERVED_QUERY_CHARS));
                 if (queryPart.endsWith("=")) {
@@ -225,29 +236,6 @@ public class UrlNormalizer implements IUrlNormalizer {
         }
         
         return newQuery.toString();
-    }
-
-    // Do our own version of String.split(), which returns every section even if
-    // it's empty. This then satisfies what we need, namely:
-    //
-    // "a=b" => "a" "b"
-    // "" => ""
-    // "=" => "" ""
-    // "a=" => "a" ""
-    // "a==" => "a" "" ""
-    private String[] splitOnChar(String str, char c) {
-        ArrayList<String> result = new ArrayList<String>();
-        
-        int lastOffset = 0;
-        int curOffset;
-        while ((curOffset = str.indexOf(c, lastOffset)) != -1) {
-            result.add(str.substring(lastOffset, curOffset));
-            lastOffset = curOffset + 1;
-        }
-        
-        result.add(str.substring(lastOffset));
-        
-        return result.toArray(new String[result.size()]);
     }
 
     public String normalize(String url) {
@@ -298,12 +286,16 @@ public class UrlNormalizer implements IUrlNormalizer {
         // Danger, hack! Some sites (like StumbleUpon) use anchor text as query text, so they
         // have a URL that looks like http://www.stumbleupon.com/toolbar/#url=...
         // Assume that if the first '#' is preceded by a '/', and that '#' is our anchor text,
-        // then we want to include it versus stripping it out.
+        // then we want to include it versus stripping it out. But only do this if the caller
+        // explicitly wants that behavior, as most sites use .../#<whatever> for dynamic navigation.
+        
+        // FUTURE KKr - better would be to not require special param, and instead always see if the
+        // ref looks like a query, in that there's one or more <key>=<value> pairs separated by '&'.
         String query = testUrl.getQuery();
         String anchor = testUrl.getRef();
         
         int pos = url.indexOf("#" + anchor);
-        if ((anchor != null) && (query == null) && (pos != -1) && (url.charAt(pos - 1) == '/')) {
+        if (_treatRefAsQuery && (anchor != null) && (query == null) && (pos != -1) && (url.charAt(pos - 1) == '/')) {
             anchor = "#" + normalizeQuery(anchor);
             query = "";
         } else {

@@ -5,7 +5,7 @@ import org.junit.Test;
 
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.urldb.ValidUrlFilter;
+import bixo.urldb.SimpleUrlFilter;
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -14,6 +14,7 @@ import cascading.scheme.SequenceFile;
 import cascading.tap.Lfs;
 import cascading.tap.MultiTap;
 import cascading.tap.Tap;
+import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
@@ -33,7 +34,7 @@ public class UrlDbPipeTest extends CascadingTestCase {
 
         // existing URLs
         for (int i = 0; i < 100; i++) {
-            String url = "http://" + i;
+            String url = "http://domain.com/page-" + i;
             long lastUpdated = System.currentTimeMillis();
             long lastFetched = System.currentTimeMillis();
             UrlDatum datum = new UrlDatum(url, lastFetched, lastUpdated, UrlStatus.UNFETCHED, null);
@@ -44,7 +45,7 @@ public class UrlDbPipeTest extends CascadingTestCase {
         TupleEntryCollector write2 = in2.openForWrite(new JobConf());
 
         for (int i = 0; i < 100; i++) {
-            String url = "http://" + i;
+            String url = "http://domain.com/page-" + i;
             long lastUpdated = System.currentTimeMillis();
             long lastFetched = System.currentTimeMillis();
             UrlDatum datum = new UrlDatum(url, lastFetched, lastUpdated, UrlStatus.UNFETCHED, null);
@@ -53,7 +54,7 @@ public class UrlDbPipeTest extends CascadingTestCase {
         TupleEntryCollector write3 = in3.openForWrite(new JobConf());
         // some fresh URLs
         for (int i = 100; i < 200; i++) {
-            String url = "http://" + i;
+            String url = "http://domain.com/page-" + i;
             long lastUpdated = System.currentTimeMillis();
             long lastFetched = System.currentTimeMillis();
             UrlDatum datum = new UrlDatum(url, lastFetched, lastUpdated, UrlStatus.UNFETCHED, null);
@@ -66,7 +67,7 @@ public class UrlDbPipeTest extends CascadingTestCase {
 
         Pipe pipe = new Pipe("urlDb_source");
 
-        UrlDbPipe urlDbPipe = new UrlDbPipe(pipe, new ValidUrlFilter(), null);
+        UrlDbPipe urlDbPipe = new UrlDbPipe(pipe, new SimpleUrlFilter(), new Fields());
         FlowConnector flowConnector = new FlowConnector();
         Tap input = new MultiTap(in1, in2, in3);
 

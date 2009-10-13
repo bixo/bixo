@@ -24,17 +24,18 @@ package bixo.urldb;
 
 import java.io.Serializable;
 
+import bixo.datum.UrlDatum;
+
 /**
- * Filter or normalize urls
+ * Filter urls
  * 
  */
 
-// TODO sg: we should give access to the metat data in the url filter as well.
 public interface IUrlFilter extends Serializable {
 
     /**
-     * Return a normalized string or null if the url does not pass the filter
+     * Return true if we should filter out (remove) the datum
      */
-    String filter(String line);
+    public boolean isRemove(UrlDatum datum);
 
 }

@@ -2,7 +2,7 @@ package bixo.pipes;
 
 import bixo.datum.UrlDatum;
 import bixo.operations.LastUpdated;
-import bixo.operations.UrlFilterFunction;
+import bixo.operations.UrlFilter;
 import bixo.urldb.IUrlFilter;
 import cascading.operation.Aggregator;
 import cascading.pipe.Each;
@@ -20,8 +20,7 @@ public class UrlDbPipe extends SubAssembly {
     public UrlDbPipe(Pipe pipe, IUrlFilter urlFilter, Fields metaDataFields) {
         Pipe urlDbPipe = new Pipe("urlDb_pipe", pipe);
 
-        Fields urlDatumFields = UrlDatum.FIELDS.append(metaDataFields);
-        urlDbPipe = new Each(urlDbPipe, new UrlFilterFunction(urlDatumFields, UrlDatum.URL_FIELD, urlFilter));
+        urlDbPipe = new Each(urlDbPipe, new UrlFilter(urlFilter, metaDataFields));
 
         // we want the url with the latest update.
         urlDbPipe = new GroupBy(urlDbPipe, new Fields(UrlDatum.URL_FIELD));

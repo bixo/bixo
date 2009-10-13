@@ -4,19 +4,23 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import bixo.urldb.UrlNormalizer;
+import bixo.urldb.SimpleUrlNormalizer;
 
 
-public class UrlNormalizerTest {
-    private UrlNormalizer _normalizer;
+public class SimpleUrlNormalizerTest {
+    private SimpleUrlNormalizer _normalizer;
     
     private void normalizeTest(String weird, String normal, String testName) {
-        Assert.assertEquals(testName + ": " + weird, normal, _normalizer.normalize(weird));
+    	normalizeTest(_normalizer, weird, normal, testName);
+    }
+
+    private void normalizeTest(IUrlNormalizer normalizer, String weird, String normal, String testName) {
+        Assert.assertEquals(testName + ": " + weird, normal, normalizer.normalize(weird));
     }
 
     @Before
     public void setupNormalizer() {
-        _normalizer = new UrlNormalizer();
+        _normalizer = new SimpleUrlNormalizer();
     }
     
     @Test
@@ -38,7 +42,8 @@ public class UrlNormalizerTest {
 
         // References
         normalizeTest("http://www.foo.com/foo.html#ref", "http://www.foo.com/foo.html", "remove reference");
-        normalizeTest("http://www.foo.com/foo?q=query#ref", "http://www.foo.com/foo?q=query", "remove reference from query");
+        normalizeTest("http://www.foo.com/#ref", "http://www.foo.com/", "remove reference (on path)");
+        normalizeTest("http://www.foo.com/foo?q=query#ref", "http://www.foo.com/foo?q=query", "remove reference (from query)");
 
         // Domain name
         normalizeTest("http://WWW.Foo.Com/page.html", "http://www.foo.com/page.html", "lower-case domain");
@@ -276,11 +281,13 @@ public class UrlNormalizerTest {
     
     @Test
     public void testStumbleUponURLs() {
-        normalizeTest("http://www.stumbleupon.com/toolbar/#url=http%3A//links.flashdance.cx/misc-pix/fjortisfangelse.jpg",
+    	SimpleUrlNormalizer normalizer = new SimpleUrlNormalizer(true);
+
+        normalizeTest(normalizer, "http://www.stumbleupon.com/toolbar/#url=http%3A//links.flashdance.cx/misc-pix/fjortisfangelse.jpg",
                         "http://www.stumbleupon.com/toolbar/#url=http%3a//links.flashdance.cx/misc-pix/fjortisfangelse.jpg",
         "Preserve pseudo-anchor used as qeury");
 
-        normalizeTest("http://www.stumbleupon.com/toolbar/#topic=Poetry&url=http%3A//www.notellmotel.org/poem_single.php%3Fid%3D78_0_1_0",
+        normalizeTest(normalizer, "http://www.stumbleupon.com/toolbar/#topic=Poetry&url=http%3A//www.notellmotel.org/poem_single.php%3Fid%3D78_0_1_0",
                         "http://www.stumbleupon.com/toolbar/#topic=Poetry&url=http%3a//www.notellmotel.org/poem_single.php%3fid%3d78_0_1_0",
         "Preserve pseudo-anchor and required encoded chars");
     }

@@ -112,7 +112,7 @@ public class UrlImporter extends HadoopConfigured {
 
         Pipe assembly = new Pipe("url-import");
 
-        TextUrlParser function = new TextUrlParser(new ValidUrlFilter());
+        TextUrlParser function = new TextUrlParser(new SimpleUrlFilter());
         assembly = new Each(assembly, new Fields("line"), function);
 
         assembly = new GroupBy(assembly, new Fields(UrlDatum.URL_FIELD));

@@ -23,7 +23,6 @@
 package bixo.operations;
 
 import bixo.datum.UrlDatum;
-import bixo.datum.UrlStatus;
 import bixo.urldb.IUrlFilter;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
@@ -45,6 +44,7 @@ public class TextUrlParser extends BaseOperation<String> implements Function<Str
 
     public TextUrlParser(IUrlFilter... urlFilters) {
         super(UrlDatum.FIELDS);
+        
         if (urlFilters != null) {
             _urlFilters = urlFilters;
         }
@@ -52,18 +52,15 @@ public class TextUrlParser extends BaseOperation<String> implements Function<Str
 
     @Override
     public void operate(FlowProcess process, FunctionCall<String> call) {
-        TupleEntry arguments = call.getArguments();
-        String url = (String) arguments.get(LINE);
+        TupleEntry entry = call.getArguments();
+        UrlDatum datum = new UrlDatum(entry.getString(LINE));
 
         for (IUrlFilter filter : _urlFilters) {
-            url = filter.filter(url);
-            if (url == null) {
-                // ignore this url
-                return;
+            if (filter.isRemove(datum)) {
+            	return;
             }
         }
         
-        // emit link with default values
-        call.getOutputCollector().add(new UrlDatum(url, System.currentTimeMillis(), 0l, UrlStatus.UNFETCHED, null).toTuple());
+        call.getOutputCollector().add(datum.toTuple());
     }
 }
