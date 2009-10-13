@@ -1,0 +1,31 @@
+The "helpful" contrib is an example of using Bixo to mine the
+Hadoop mailing list archives to find the "most helpful Hadooper".
+
+This was created as part of a presentation at the Bay Area
+Hadoop User Group meetup in Sept 2009. The URL for this is:
+
+http://developer.yahoo.net/blogs/hadoop/2009/10/slides_of_september_23rd_bay_a.html
+
+It should also be available at slideshare.net:
+
+http://www.slideshare.net/sh1mmer/the-bixo-web-mining-toolkit
+
+In a nutshell, this web mining app is a Cascading workflow that
+uses a Bixo FetchPipe to fetch pages and mailbox archive files,
+then parses the mailbox archives using a custom Tika mbox parser.
+The analysis phase gives points to a Hadoop mailing list user
+when they post to the list, and somebody replies with some
+expression of thanks/gratitude.
+
+To build this code:
+
+% cd <path to Bixo>/contrib/helpful
+% ant clean compile
+
+and to create an Eclipse project:
+
+% cd <path to Bixo>/contrib/helpful
+% ant eclipse
+
+after which you would import the project into your Eclipse workspace.
+
