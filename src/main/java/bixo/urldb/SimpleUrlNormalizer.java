@@ -122,12 +122,12 @@ public class SimpleUrlNormalizer implements IUrlNormalizer {
 
     
     public String normalizeHostname(String hostname) {
-        // Convert domain.com => www.domain.com
         String result = hostname.toLowerCase();
-        String paidLevelDomain = DomainNames.getPLD(result);
-        if (result.equals(paidLevelDomain) && !isIPAddress(paidLevelDomain)) {
-            result = "www." + paidLevelDomain;
-        }
+        // Convert domain.com => www.domain.com
+//        String paidLevelDomain = DomainNames.getPLD(result);
+//        if (result.equals(paidLevelDomain) && !isIPAddress(paidLevelDomain)) {
+//            result = "www." + paidLevelDomain;
+//        }
         
         if (result.endsWith(".")) {
         	result = result.substring(0, result.length() - 1);

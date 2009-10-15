@@ -47,11 +47,12 @@ public class SimpleUrlNormalizerTest {
 
         // Domain name
         normalizeTest("http://WWW.Foo.Com/page.html", "http://www.foo.com/page.html", "lower-case domain");
-        normalizeTest("http://foo.com/", "http://www.foo.com/", "add 'www.' to hostname with only paid-level domain");
-        normalizeTest("http://foo.co.jp/", "http://www.foo.co.jp/", "add 'www.' to hostname with only paid-level domain");
-        normalizeTest("https://foo.com/", "https://www.foo.com/", "add 'www.' to hostname with only paid-level domain");
-        normalizeTest("http://aws.foo.com/", "http://aws.foo.com/", "don't add 'www.' to hostnames with sub-domains before PLD domain");
-        normalizeTest("ftp://foo.com", "ftp://foo.com", "Don't add 'www.' to non-http protocol domains");
+        normalizeTest("http://www.foo.com./page.html", "http://www.foo.com/page.html", "remove trailing '.' from domain");
+        // normalizeTest("http://foo.com/", "http://www.foo.com/", "add 'www.' to hostname with only paid-level domain");
+//        normalizeTest("http://foo.co.jp/", "http://www.foo.co.jp/", "add 'www.' to hostname with only paid-level domain");
+//        normalizeTest("https://foo.com/", "https://www.foo.com/", "add 'www.' to hostname with only paid-level domain");
+//        normalizeTest("http://aws.foo.com/", "http://aws.foo.com/", "don't add 'www.' to hostnames with sub-domains before PLD domain");
+//        normalizeTest("ftp://foo.com", "ftp://foo.com", "Don't add 'www.' to non-http protocol domains");
 
         // Protocol
         normalizeTest("www.foo.com/", "http://www.foo.com/", "Add 'http://' protocol to raw URL");
