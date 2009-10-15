@@ -13,18 +13,18 @@ import cascading.tuple.Fields;
 public class NormalizeUrlFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
     private final IUrlNormalizer _normalizer;
-    private final Fields _metaDataFieldNames;
+    private final Fields _metaDataFields;
 
-    public NormalizeUrlFunction(IUrlNormalizer normalizer, Fields metaDataFieldNames) {
-        super(UrlDatum.FIELDS);
+    public NormalizeUrlFunction(IUrlNormalizer normalizer, Fields metaDataFields) {
+        super(UrlDatum.FIELDS.append(metaDataFields));
         
         _normalizer = normalizer;
-        _metaDataFieldNames = metaDataFieldNames;
+        _metaDataFields = metaDataFields;
     }
 
     @Override
     public void operate(FlowProcess process, FunctionCall<NullContext> funCall) {
-        UrlDatum datum = new UrlDatum(funCall.getArguments().getTuple(), _metaDataFieldNames);
+        UrlDatum datum = new UrlDatum(funCall.getArguments().getTuple(), _metaDataFields);
         datum.setUrl(_normalizer.normalize(datum.getUrl()));
         funCall.getOutputCollector().add(datum.toTuple());
     }
