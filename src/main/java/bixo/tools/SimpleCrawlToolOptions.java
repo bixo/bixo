@@ -10,26 +10,24 @@ public class SimpleCrawlToolOptions {
     private static final int DEFAULT_NUM_LOOPS = 1;
 
     private boolean _debugLogging = false;
-    private boolean _dryRun = false;
 
-    private String _urlInputFile;
     private String _outputDir;
     private String _agentName;
-    
+    private String _domain;
+
     private int _crawlDuration = NO_CRAWL_DURATION;
     private int _maxThreads = DEFAULT_MAX_THREADS;
-    private int _maxUrls = Integer.MAX_VALUE;
     private int _numLoops = DEFAULT_NUM_LOOPS;
 
+
+    @Option(name = "-domain", usage = "domain to crawl (e.g. cnn.com)", required = true)
+    public void setDomain(String domain) {
+        _domain = domain;
+    }
 
     @Option(name = "-d", usage = "debug logging", required = false)
     public void setDebugLogging(boolean debugLogging) {
         this._debugLogging = debugLogging;
-    }
-
-    @Option(name = "-inputfile", usage = "input file with URLs", required = true)
-    public void setUrlInputFile(String urlInputFile) {
-        _urlInputFile = urlInputFile;
     }
 
     @Option(name = "-outputdir", usage = "output directory", required = true)
@@ -52,27 +50,17 @@ public class SimpleCrawlToolOptions {
         _numLoops = numLoops;
     }
 
-    @Option(name = "-dryrun", usage = "fake fetching", required = false)
-    public void setDryRun(boolean dryRun) {
-        this._dryRun = dryRun;
-    }
-
     @Option(name = "-duration", usage = "target crawl duration in minutes", required = false)
     public void setCrawlDuration(int crawlDuration) {
         _crawlDuration = crawlDuration;
     }
 
-    @Option(name = "-maxurls", usage = "maximum URLs to process", required = false)
-    public void setMaxUrls(int maxUrls) {
-        _maxUrls = maxUrls;
-    }
-
-    public String getUrlInputFile() {
-        return _urlInputFile;
-    }
-
     public String getOutputDir() {
         return _outputDir;
+    }
+
+    public String getDomain() {
+        return _domain;
     }
 
     public String getAgentName() {
@@ -91,19 +79,10 @@ public class SimpleCrawlToolOptions {
         return _crawlDuration;
     }
 
-    public int getMaxUrls() {
-        return _maxUrls;
-    }
-
     public boolean isDebugLogging() {
         return _debugLogging;
     }
     
-    public boolean isDryRun() {
-        return _dryRun;
-    }
-
-
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);

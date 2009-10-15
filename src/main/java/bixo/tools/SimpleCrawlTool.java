@@ -1,73 +1,88 @@
 package bixo.tools;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Properties;
+import java.util.regex.Pattern;
 
-import org.apache.hadoop.mapred.ClusterStatus;
-import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
-import bixo.cascading.NullContext;
 import bixo.config.FetcherPolicy;
-import bixo.datum.FetchedDatum;
-import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.http.IHttpFetcher;
-import bixo.fetcher.http.LoggingFetcher;
-import bixo.fetcher.http.SimpleHttpFetcher;
-import bixo.fetcher.util.LastFetchScoreGenerator;
-import bixo.fetcher.util.SimpleGroupingKeyGenerator;
-import bixo.pipes.FetchPipe;
-import cascading.flow.Flow;
-import cascading.flow.FlowConnector;
-import cascading.flow.FlowProcess;
-import cascading.flow.MultiMapReducePlanner;
-import cascading.operation.BaseOperation;
-import cascading.operation.Function;
-import cascading.operation.FunctionCall;
-import cascading.pipe.Each;
-import cascading.pipe.Pipe;
-import cascading.scheme.TextLine;
-import cascading.tap.Hfs;
-import cascading.tap.Tap;
-import cascading.tuple.Fields;
+import bixo.fetcher.FetchRequest;
+import bixo.tools.sitecrawler.SiteCrawler;
+import bixo.tools.sitecrawler.UrlImporter;
+import bixo.urldb.IUrlFilter;
+import bixo.utils.FSUtils;
+import cascading.flow.PlannerException;
 
 public class SimpleCrawlTool {
     private static final Logger LOGGER = Logger.getLogger(SimpleCrawlTool.class);
 
+    private static final String USER_AGENT_TEMPLATE = "Mozilla/5.0 (compatible; %s; +http://bixo.101tec.com; bixo-dev@yahoogroups.com)";
+
     private static final long MILLISECONDS_PER_MINUTE = 60 * 1000L;
-    private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
-    
-    // max size of HTML that we will process (truncated if longer)
+
     private static final int MAX_CONTENT_SIZE = 128 * 1024;
 
-    private static final String USER_AGENT_TEMPLATE = "Mozilla/5.0 (compatible; %s; +http://bixo.101tec.com; bixo-dev@yahoogroups.com";
+    private static final long DEFAULT_CRAWL_DELAY = 5 * 1000L;
     
+    // Limit the maximum number of requests made per connection to 50.
     @SuppressWarnings("serial")
-    private static class CreateUrlFunction extends BaseOperation<NullContext> implements Function<NullContext> {
-
-        public CreateUrlFunction() {
-            super(UrlDatum.FIELDS);
+    private static class MyFetchPolicy extends FetcherPolicy {
+        public MyFetchPolicy() {
+            super();
         }
 
         @Override
-        public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
-            String urlAsString = funcCall.getArguments().getString("line");
-            if (urlAsString.length() > 0) {
-                try {
-                    // Validate the URL
-                    new URL(urlAsString);
-                    
-                    UrlDatum urlDatum = new UrlDatum(urlAsString);
-                    funcCall.getOutputCollector().add(urlDatum.toTuple());
-                } catch (MalformedURLException e) {
-                    LOGGER.error("Invalid URL in input data file: " + urlAsString);
-                }
+        public FetchRequest getFetchRequest(int maxUrls) {
+            FetchRequest result = super.getFetchRequest(maxUrls);
+            int numUrls = Math.min(50, result.getNumUrls());
+            long nextTime = System.currentTimeMillis() + (numUrls * _crawlDelay);
+            return new FetchRequest(numUrls, nextTime);
+        }
+    }
+
+    // Filter URLs that fall outside of the target domain
+    @SuppressWarnings("serial")
+    private static class DomainUrlFilter implements IUrlFilter {
+
+        private String _domain;
+        private Pattern _suffixExclusionPattern;
+        private Pattern _protocolInclusionPattern;
+
+        public DomainUrlFilter(String domain) {
+            _domain = domain;
+            _suffixExclusionPattern = Pattern.compile("(?i)\\.(pdf|zip|gzip|gz|sit|bz|bz2|tar|tgz|exe)$");
+            _protocolInclusionPattern = Pattern.compile("(?i)^(http|https)://");
+        }
+
+        @Override
+        public boolean isRemove(UrlDatum datum) {
+            String urlAsString = datum.getUrl();
+            
+            // Skip URLs with protocols we don't want to try to process
+            if (!_protocolInclusionPattern.matcher(urlAsString).find()) {
+                return true;
+                
+            }
+
+            if (_suffixExclusionPattern.matcher(urlAsString).find()) {
+                return true;
+            }
+            
+            try {
+                URL url = new URL(urlAsString);
+                String host = url.getHost();
+                return (!host.endsWith(_domain));
+            } catch (MalformedURLException e) {
+                LOGGER.warn("Invalid URL: " + urlAsString);
+                return true;
             }
         }
     }
@@ -77,100 +92,130 @@ public class SimpleCrawlTool {
         System.exit(-1);
     }
 
-    private static JobConf getDefaultJobConf() throws IOException {
-        JobClient jobClient = new JobClient(new JobConf());
-        ClusterStatus status = jobClient.getClusterStatus();
-        int trackers = status.getTaskTrackers();
+    // Create log output file in loop directory.
+    private static void setLoopLoggerFile(String outputDirName, int loopNumber) {
+        Logger rootLogger = Logger.getRootLogger();
 
-        JobConf conf = new JobConf();
-        conf.setNumMapTasks(trackers * 10);
-        
-        conf.setNumReduceTasks((trackers * conf.getInt("mapred.tasktracker.reduce.tasks.maximum", 2)));
-        
-        conf.setMapSpeculativeExecution( false );
-        conf.setReduceSpeculativeExecution( false );
-        conf.set("mapred.child.java.opts", "-server -Xmx512m -Xss128k");
+        String filename = String.format("%s/%d-SiteCrawlTool.log", outputDirName, loopNumber);
+        FileAppender appender = (FileAppender) rootLogger.getAppender("loop-logger");
+        if (appender == null) {
+            appender = new FileAppender();
+            appender.setName("loop-logger");
+            appender.setLayout(rootLogger.getAppender("console").getLayout());
 
-        // Should match the value used for Xss above. Note no 'k' suffix for the ulimit command.
-        // New support that one day will be in Hadoop.
-        conf.set("mapred.child.ulimit.stack", "128");
-
-        return conf;
-    }
-
-    private static Properties getDefaultProperties(SimpleCrawlToolOptions options, JobConf conf) throws IOException {
-        Properties properties = new Properties();
-
-        // Use special Cascading hack to control logging levels
-        if( options.isDebugLogging() ) {
-            properties.put("log4j.logger", "cascading=DEBUG,bixo=TRACE");
+            // We have to do this before calling addAppender, as otherwise Log4J
+            // warns us.
+            appender.setFile(filename);
+            appender.activateOptions();
+            rootLogger.addAppender(appender);
         } else {
-            properties.put("log4j.logger", "cascading=INFO,bixo=INFO");
+            appender.setFile(filename);
+            appender.activateOptions();
         }
-
-        FlowConnector.setApplicationJarClass(properties, SimpleCrawlTool.class);
-
-        // Propagate properties into the Hadoop JobConf
-        MultiMapReducePlanner.setJobConf(properties, conf);
-
-        return properties;
     }
-
 
     public static void main(String[] args) {
         SimpleCrawlToolOptions options = new SimpleCrawlToolOptions();
         CmdLineParser parser = new CmdLineParser(options);
-        
+
         try {
             parser.parseArgument(args);
-        } catch(CmdLineException e) {
+        } catch (CmdLineException e) {
             System.err.println(e.getMessage());
             printUsageAndExit(parser);
         }
 
-        String inputFileName = options.getUrlInputFile();
+        // Before we get too far along, see if the domain looks valid.
+        String domain = options.getDomain();
+        if (domain.startsWith("http")) {
+            System.err.println("The target domain should be specified as just the host, without the http protocol: " + domain);
+            printUsageAndExit(parser);
+        }
+        
+        if (domain.split("\\.").length < 2) {
+            System.err.println("The target domain should be a valid paid-level domain or subdomain of the same: " + domain);
+            printUsageAndExit(parser);
+        }
+        
         String outputDirName = options.getOutputDir();
-
+        if (options.isDebugLogging()) {
+            System.setProperty("bixo.root.level", "DEBUG");
+        } else {
+            System.setProperty("bixo.root.level", "INFO");
+        }
+        
         try {
-            // Create the input (source tap), which is just a text file reader
-            Tap in = new Hfs(new TextLine(), inputFileName);
-            
-            // Create the sink taps
-            Tap status = new Hfs(new TextLine(StatusDatum.FIELDS.size()), outputDirName + "/status", true);
-            Tap content = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD)), outputDirName + "/content", true);
+            JobConf conf = new JobConf();
+            Path outputPath = new Path(outputDirName);
+            FileSystem fs = outputPath.getFileSystem(conf);
 
-            // Create the sub-assembly that runs the fetch job
+            // See if the user is starting from scratch
+            if (!fs.exists(outputPath)) {
+                fs.mkdirs(outputPath);
+
+                // Create a "0-<timestamp>" sub-directory with just a /urls subdir
+                // In the /urls dir the input file will have a single URL for the target domain.
+
+                Path curLoopDir = FSUtils.makeLoopDir(fs, outputPath, 0);
+                String curLoopDirName = curLoopDir.toUri().toString();
+                setLoopLoggerFile(curLoopDirName, 0);
+
+                UrlImporter importer = new UrlImporter(curLoopDir);
+                importer.importOneDomain(domain, options.isDebugLogging());
+            }
+            
+            Path inputPath = FSUtils.findLatestLoopDir(fs, outputPath);
+
+            if (inputPath == null) {
+                System.err.println("No previous cycle output dirs exist in " + outputDirName);
+                printUsageAndExit(parser);
+            }
+
+            int startLoop = FSUtils.extractLoopNumber(inputPath);
+            int endLoop = startLoop + options.getNumLoops();
+
             String userAgent = String.format(USER_AGENT_TEMPLATE, options.getAgentName());
-            Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFunction());
-            SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(userAgent);
-            LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
-            
-            // Set up appropriate default FetcherPolicy.
-            FetcherPolicy defaultPolicy = new FetcherPolicy();
+
+            FetcherPolicy defaultPolicy = new MyFetchPolicy();
+            defaultPolicy.setCrawlDelay(DEFAULT_CRAWL_DELAY);
             defaultPolicy.setMaxContentSize(MAX_CONTENT_SIZE);
+            
             int crawlDurationInMinutes = options.getCrawlDuration();
-            if (crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION) {
-                defaultPolicy.setCrawlEndTime(System.currentTimeMillis() + (crawlDurationInMinutes * MILLISECONDS_PER_MINUTE));
-            }
-            
-            IHttpFetcher fetcher;
-            if (options.isDryRun()) {
-                fetcher = new LoggingFetcher(options.getMaxThreads());
-            } else {
-                fetcher = new SimpleHttpFetcher(options.getMaxThreads(), defaultPolicy, userAgent);
-            }
-            
-            FetchPipe fetchPipe = new FetchPipe(importPipe, grouping, scoring, fetcher);
+            long targetEndTime = System.currentTimeMillis()
+                            + (crawlDurationInMinutes * MILLISECONDS_PER_MINUTE);
 
-            LOGGER.info("Running fetch job with " + options);
+            IUrlFilter urlFilter = new DomainUrlFilter(domain);
 
-            // Finally we can run it.
-            JobConf conf = getDefaultJobConf();
-            FlowConnector flowConnector = new FlowConnector(getDefaultProperties(options, conf));
-            Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
-            flow.complete();
+            // OK, now we're ready to start looping, since we've got our current
+            // settings.
+            for (int curLoop = startLoop + 1; curLoop <= endLoop; curLoop++) {
+
+                // Adjust target end time, if appropriate.
+                if (crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION) {
+                    int remainingLoops = (endLoop - curLoop) + 1;
+                    long now = System.currentTimeMillis();
+                    long perLoopTime = (targetEndTime - now) / remainingLoops;
+                    defaultPolicy.setCrawlEndTime(now + perLoopTime);
+                }
+
+                Path curLoopDir = FSUtils.makeLoopDir(fs, outputPath, curLoop);
+                String curLoopDirName = curLoopDir.toUri().toString();
+                setLoopLoggerFile(curLoopDirName, curLoop);
+
+                SiteCrawler crawler = new SiteCrawler(inputPath, curLoopDir, userAgent,
+                                defaultPolicy, options.getMaxThreads(), urlFilter);
+                crawler.crawl(options.isDebugLogging());
+
+                // Input for the next round is our current output
+                inputPath = curLoopDir;
+            }
+        } catch (PlannerException e) {
+            e.writeDOT("build/failed-flow.dot");
+            System.err.println("PlannerException: " + e.getMessage());
+            e.printStackTrace(System.err);
+            System.exit(-1);
         } catch (Throwable t) {
-            System.err.println("Exception running SimpleCrawlTool: " + t.getMessage());
+            System.err.println("Exception running tool: " + t.getMessage());
             t.printStackTrace(System.err);
             System.exit(-1);
         }
