@@ -92,7 +92,7 @@ public class FetcherQueue implements IFetchListProvider {
         double score = scoredUrlDatum.getScore();
         if (score == IScoreGenerator.SKIP_URL_SCORE) {
             _numSkipped += 1;
-            skip(scoredUrlDatum, UrlStatus.SKIPPED_BY_SCORE);
+            skip(scoredUrlDatum, UrlStatus.SKIPPED_BY_SCORER);
             return;
         }
         
