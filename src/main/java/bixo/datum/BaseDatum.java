@@ -95,6 +95,14 @@ public abstract class BaseDatum {
         _metaDataMap.put(key, value);
     }
 
+    public void addMetaDataValue(String key, Comparable value) {
+        if (_metaDataMap == null) {
+            _metaDataMap = new HashMap<String, Comparable>();
+        }
+        
+        _metaDataMap.put(key, value);
+    }
+    
     public Map<String, Comparable> getMetaDataMap() {
         return _metaDataMap;
     }
