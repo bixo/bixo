@@ -23,6 +23,7 @@ public class SimpleRobotRules implements IRobotRules {
     private static final String DISALLOW_FIELD = "disallow:";
     private static final String ALLOW_FIELD = "allow:";
     private static final String CRAWL_DELAY_FIELD = "crawl-delay:";
+    private static final String SITEMAP_FIELD = "sitemap:";
     
     // If true, then there was a problem getting/parsing robots.txt, and the crawler
     // should defer visits until some later time.
@@ -402,6 +403,9 @@ public class SimpleRobotRules implements IRobotRules {
                         LOGGER.info("Error parsing robots rules - can't decode crawl delay", e);
                     }
                 }
+            } else if (line.startsWith(SITEMAP_FIELD)) {
+                String path = line.substring(DISALLOW_FIELD.length()).trim();
+               LOGGER.trace("Ignoring sitemap directive in robots.txt: " + path);
             } else if (line.contains(":")) {
             	LOGGER.warn("Unknown directive in robots.txt file: " + line);
                 finishedAgentFields = true;
