@@ -38,15 +38,15 @@ public class SimpleStatusTool {
             printUsageAndExit(parser);
         }
 
-        String outputDirName = options.getOutputDir();
+        String crawlDirName = options.getCrawlDir();
 
         try {
         	JobConf conf = new JobConf();
-        	Path outputDirPath = new Path(outputDirName);
-        	FileSystem fs = outputDirPath.getFileSystem(conf);
+        	Path crawlDirPath = new Path(crawlDirName);
+        	FileSystem fs = crawlDirPath.getFileSystem(conf);
 
-        	if (!fs.exists(outputDirPath)) {
-    			System.err.println("Prior crawl output directory does not exist: " + outputDirName);
+        	if (!fs.exists(crawlDirPath)) {
+    			System.err.println("Prior crawl output directory does not exist: " + crawlDirName);
     			System.exit(-1);
         	}
         	
@@ -55,7 +55,7 @@ public class SimpleStatusTool {
         	
         	int prevLoop = -1;
         	Path curDirPath = null;
-        	while ((curDirPath = FSUtils.findNextLoopDir(fs, outputDirPath, prevLoop)) != null) {
+        	while ((curDirPath = FSUtils.findNextLoopDir(fs, crawlDirPath, prevLoop)) != null) {
         		String curDirName = curDirPath.toUri().toString();
         		LOGGER.info("");
         		LOGGER.info("================================================================");
