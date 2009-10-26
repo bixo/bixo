@@ -197,6 +197,7 @@ SOFTWARE.
 		<mkdir dir="${build.dir.it-classes}" />
 		<path id="test.path">
 			<pathelement location="${build.dir.main-classes}" />
+			<pathelement location="${build.dir.test-classes}" />
 			<pathelement location="${build.dir.it-classes}" />
 		</path>
 
@@ -231,6 +232,7 @@ SOFTWARE.
 		       failureProperty="tests.failed">
 			<classpath>
 				<pathelement location="${build.dir.main-classes}" />
+				<pathelement location="${build.dir.test-classes}" />
 				<pathelement location="${build.dir.it-classes}" />
 				<pathelement location="${main.res.dir}" />
 				<pathelement location="${it.res.dir}" />
