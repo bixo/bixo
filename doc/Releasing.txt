@@ -10,8 +10,9 @@ little interest to users.
 
 % cd ~/git/github/bixo
 % git checkout master
-% git pull
 <add/commit pending changes>
+% git pull
+<resolve any merge issues>
 % bant dist - use "bant" since dist can require a lot of memory to package things up
 % git push
 
