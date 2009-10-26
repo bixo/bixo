@@ -7,6 +7,7 @@ import java.net.URL;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.MultiSinkTap;
+import bixo.cascading.NullContext;
 import bixo.datum.FetchedDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
@@ -32,18 +33,16 @@ import cascading.tuple.Fields;
 public class RunFakeFetchPipe {
     private static final Logger LOGGER = Logger.getLogger(RunFakeFetchPipe.class);
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
-    private static final String USER_AGENT_FAKE_FETCHING = "user agent for fake fetching";
 
-    // TODO KKr - discuss use of context w/Chris.
     @SuppressWarnings("serial")
-    private static class CreateUrlFunction extends BaseOperation<String> implements Function<String> {
+    private static class CreateUrlFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
         public CreateUrlFunction() {
             super(UrlDatum.FIELDS);
         }
 
         @Override
-        public void operate(FlowProcess process, FunctionCall<String> funcCall) {
+        public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
             String urlAsString = funcCall.getArguments().getString("line");
             try {
                 URL url = new URL(urlAsString);
@@ -74,7 +73,7 @@ public class RunFakeFetchPipe {
 
             Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFunction());
 
-            SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), false);
+            SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), false);
             LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
             IHttpFetcher fetcher = new FakeHttpFetcher(true, 10);
             FetchPipe fetchPipe = new FetchPipe(importPipe, grouping, scoring, fetcher);

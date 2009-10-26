@@ -25,6 +25,7 @@ package bixo.fetcher.http;
 import java.io.Serializable;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.BaseFetchException;
@@ -32,7 +33,8 @@ import bixo.exceptions.BaseFetchException;
 public interface IHttpFetcher extends Serializable {
     public FetcherPolicy getFetcherPolicy();
     public int getMaxThreads();
-
+    public UserAgent getUserAgent();
+    
     // TODO KKr - rename this to be fetch()
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException;
     

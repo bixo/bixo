@@ -129,7 +129,7 @@ public class SimpleRobotRules implements IRobotRules {
     // TODO KKr - get rid of this version, and add a generic one (robot name, URL) that uses
     // Java URL code to fetch it, as well as a version that takes an output stream (e.g. from
     // HttpClient) and a version that takes a String with the content.
-    public SimpleRobotRules(String robotName, SimpleHttpFetcher fetcher, String url) {
+    public SimpleRobotRules(IHttpFetcher fetcher, String url) {
         try {
             URL realUrl = new URL(url);
             String urlToFetch = new URL(realUrl, "/robots.txt").toExternalForm();
@@ -141,7 +141,7 @@ public class SimpleRobotRules implements IRobotRules {
             // page, without returning a 404. So if we have a redirect, and the normalized
             // redirect URL is the same as the domain, then treat it like a 404...otherwise
             // our robots.txt parser will barf, and we treat that as a "deferred" case.
-            parseRules(robotName, urlToFetch, result.getContent().getBytes());
+            parseRules(fetcher.getUserAgent().getAgentName(), urlToFetch, result.getContent().getBytes());
         } catch (MalformedURLException e) {
             LOGGER.error("Invalid URL: " + url);
             createAllOrNone(false);

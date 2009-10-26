@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 
 import bixo.cascading.NullContext;
 import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ParsedDatum;
@@ -120,15 +121,15 @@ public class SiteCrawler {
 
 	private Path _inputDir;
 	private Path _outputDir;
-	private String _agentName;
+	private UserAgent _userAgent;
 	private FetcherPolicy _fetcherPolicy;
 	private int _maxThreads;
 	private IUrlFilter _urlFilter;
 	
-	public SiteCrawler(Path inputDir, Path outputDir, String agentName, FetcherPolicy fetcherPolicy, int maxThreads, IUrlFilter urlFilter) {
+	public SiteCrawler(Path inputDir, Path outputDir, UserAgent userAgent, FetcherPolicy fetcherPolicy, int maxThreads, IUrlFilter urlFilter) {
 		_inputDir = inputDir;
 		_outputDir = outputDir;
-		_agentName = agentName;
+		_userAgent = userAgent;
 		_fetcherPolicy = fetcherPolicy;
 		_maxThreads = maxThreads;
 		_urlFilter = urlFilter;
@@ -159,9 +160,9 @@ public class SiteCrawler {
 			Tap urlSink = new Hfs(new SequenceFile(UrlDatum.FIELDS.append(MetaData.FIELDS)), curCrawlDirName + "/urls");
 
 			// Create the sub-assembly that runs the fetch job
-			SimpleGroupingKeyGenerator grouper = new SimpleGroupingKeyGenerator(_agentName);
+			SimpleGroupingKeyGenerator grouper = new SimpleGroupingKeyGenerator(_userAgent);
 			IScoreGenerator scorer = new SkipFetchedScoreGenerator();
-			IHttpFetcher fetcher = new SimpleHttpFetcher(_maxThreads, _fetcherPolicy, _agentName);
+			IHttpFetcher fetcher = new SimpleHttpFetcher(_maxThreads, _fetcherPolicy, _userAgent);
 			FetchPipe fetchPipe = new FetchPipe(importPipe, grouper, scorer, fetcher, MetaData.FIELDS);
 
 			// Take content and split it into content output plus parse to extract URLs.

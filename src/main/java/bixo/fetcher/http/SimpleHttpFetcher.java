@@ -75,6 +75,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
@@ -115,7 +116,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     private int _connectionTimeout;
     private int _maxRetryCount;
     private FetcherPolicy _fetcherPolicy;
-    private String _userAgent;
+    private UserAgent _userAgent;
     
     transient private DefaultHttpClient _httpClient;
     
@@ -150,17 +151,17 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         }
     }
     
-    public SimpleHttpFetcher(String userAgent) {
+    public SimpleHttpFetcher(UserAgent userAgent) {
         this(DEFAULT_MAX_THREADS, userAgent);
     }
     
     // TODO KKr - create UserAgent bean that's passed in here, which has
     // separate fields for email, web site, name.
-    public SimpleHttpFetcher(int maxThreads, String userAgent) {
+    public SimpleHttpFetcher(int maxThreads, UserAgent userAgent) {
         this(maxThreads, new FetcherPolicy(), userAgent);
     }
 
-    public SimpleHttpFetcher(int maxThreads, FetcherPolicy fetcherPolicy, String userAgent) {
+    public SimpleHttpFetcher(int maxThreads, FetcherPolicy fetcherPolicy, UserAgent userAgent) {
         _maxThreads = maxThreads;
         _fetcherPolicy = fetcherPolicy;
         _userAgent = userAgent;
@@ -185,7 +186,8 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         return _fetcherPolicy;
     }
 
-    public String getUserAgent() {
+    @Override
+    public UserAgent getUserAgent() {
         return _userAgent;
     }
 
@@ -451,7 +453,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             ConnManagerParams.setMaxConnectionsPerRoute(params, connPerRoute);
 
             HttpProtocolParams.setVersion(params, _httpVersion);
-            HttpProtocolParams.setUserAgent(params, _userAgent);
+            HttpProtocolParams.setUserAgent(params, _userAgent.getUserAgentString());
             HttpProtocolParams.setContentCharset(params, "UTF-8");
             HttpProtocolParams.setHttpElementCharset(params, "UTF-8");
             HttpProtocolParams.setUseExpectContinue(params, true);

@@ -10,6 +10,7 @@ import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
@@ -32,10 +33,12 @@ public class LoggingFetcher implements IHttpFetcher {
     
     private int _maxThreads;
     private FetcherPolicy _policy;
-
+    private UserAgent _userAgent;
+    
     public LoggingFetcher(int maxThreads) {
         _maxThreads = maxThreads;
         _policy = new FetcherPolicy();
+        _userAgent = new UserAgent("agentName", "agentName@domain.com", "http://agentName.domain.com");
     }
 
 
@@ -108,5 +111,11 @@ public class LoggingFetcher implements IHttpFetcher {
     public int getMaxThreads() {
         return _maxThreads;
     }
+
+
+	@Override
+	public UserAgent getUserAgent() {
+		return _userAgent;
+	}
 
 }

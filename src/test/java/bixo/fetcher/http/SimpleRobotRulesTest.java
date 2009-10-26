@@ -5,8 +5,15 @@ import java.net.MalformedURLException;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.hadoop.io.BytesWritable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
+
+import bixo.config.UserAgent;
+import bixo.datum.FetchedDatum;
+import bixo.datum.ScoredUrlDatum;
+import bixo.exceptions.BaseFetchException;
 
 
 public class SimpleRobotRulesTest {
@@ -17,6 +24,24 @@ public class SimpleRobotRulesTest {
     @Test
     public void testEmptyRules() throws MalformedURLException {
         SimpleRobotRules rules = new SimpleRobotRules("Any-darn-crawler", "".getBytes());
+        Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
+    }
+    
+    @Test
+    public void testMatchAgainstEmail() throws MalformedURLException, BaseFetchException {
+    	// The "crawler@domain.com" email address shouldn't trigger a match against the
+    	// "crawler" user agent name in the robots.txt file.
+        final String simpleRobotsTxt = "User-agent: crawler" + CRLF
+        + "Disallow: /";
+
+        IHttpFetcher fetcher = Mockito.mock(IHttpFetcher.class);
+        FetchedDatum datum = Mockito.mock(FetchedDatum.class);
+        Mockito.when(datum.getContent()).thenReturn(new BytesWritable(simpleRobotsTxt.getBytes()));
+        Mockito.when(fetcher.get(Mockito.any(ScoredUrlDatum.class))).thenReturn(datum);
+        UserAgent userAgent = new UserAgent("testAgent", "crawler@domain.com", "http://www.domain.com");
+        Mockito.when(fetcher.getUserAgent()).thenReturn(userAgent);
+        
+        SimpleRobotRules rules = new SimpleRobotRules(fetcher, "http://www.domain.com/anypage.html");
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     

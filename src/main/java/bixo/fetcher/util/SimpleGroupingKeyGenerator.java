@@ -32,6 +32,7 @@ import java.util.HashSet;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
+import bixo.config.UserAgent;
 import bixo.datum.UrlDatum;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
@@ -58,30 +59,23 @@ import bixo.utils.GroupingKey;
 public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
     private static final Logger LOGGER = Logger.getLogger(SimpleGroupingKeyGenerator.class);
     
-    private HashSet<String> _badHosts;
-    private HashMap<String, SimpleRobotRules> _rules;
+    private HashSet<String> _badHosts = new HashSet<String>();
+    private HashMap<String, SimpleRobotRules> _rules = new HashMap<String, SimpleRobotRules>();
+    
     private IHttpFetcher _robotsFetcher;
-    private String _userAgent;
     private boolean _usePLD;
     
-    public SimpleGroupingKeyGenerator(String userAgent) {
-        this(userAgent, null, false);
+    public SimpleGroupingKeyGenerator(UserAgent userAgent) {
+    	_robotsFetcher = new SimpleHttpFetcher(1, userAgent);
+    	_usePLD = false;
     }
     
     // TODO KKr - have RobotRules as abstract class, and IRobotRulesParser as something that
     // can return RobotRules when given user agent/content or http response code. Then take
     // IRobotRulesParser as parameter here.
-    public SimpleGroupingKeyGenerator(String userAgent, IHttpFetcher robotsFetcher, boolean usePaidLevelDomain) {
-        _userAgent = userAgent;
-        _badHosts = new HashSet<String>();
-        _rules = new HashMap<String, SimpleRobotRules>();
+    public SimpleGroupingKeyGenerator(IHttpFetcher robotsFetcher, boolean usePaidLevelDomain) {
+        _robotsFetcher = robotsFetcher;
         _usePLD = usePaidLevelDomain;
-
-        if (robotsFetcher == null) {
-            _robotsFetcher = new SimpleHttpFetcher(1, userAgent);
-        } else {
-            _robotsFetcher = robotsFetcher;
-        }
     }
     
     @Override
@@ -118,7 +112,7 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
                 // TODO KKr - do I need to worry about the https protocol here?
                 robotsUrl = new URL(url.getProtocol(), host, url.getPort(), "/robots.txt").toExternalForm();
                 byte[] robotsContent = _robotsFetcher.get(robotsUrl);
-                robotRules = new SimpleRobotRules(_userAgent, robotsContent);
+                robotRules = new SimpleRobotRules(_robotsFetcher.getUserAgent().getAgentName(), robotsContent);
             } catch (HttpFetchException e) {
                 robotRules = new SimpleRobotRules(e.getHttpStatus());
             } catch (IOFetchException e) {

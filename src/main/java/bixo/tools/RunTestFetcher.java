@@ -35,6 +35,7 @@ import org.apache.hadoop.mapred.JobConf;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.FetcherManager;
@@ -102,8 +103,8 @@ public class RunTestFetcher {
                 queueMgr.offer(queue);
             }
 
-            // TODO KKr - use real user agent name here.
-            FetcherManager threadMgr = new FetcherManager(queueMgr, new SimpleHttpFetcher(10, "Bixo integration test"), new BixoFlowProcess());
+            UserAgent userAgent = new UserAgent("bixo", "bixo-dev@groups.yahoo.com", "http://bixo.101tec.com");
+            FetcherManager threadMgr = new FetcherManager(queueMgr, new SimpleHttpFetcher(10, userAgent), new BixoFlowProcess());
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");
             t.start();

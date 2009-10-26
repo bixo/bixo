@@ -10,6 +10,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
 import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
@@ -31,7 +32,7 @@ import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
 import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.SimpleGroupingKeyGenerator;
-import bixo.fetcher.util.SimpleScoreGenerator;
+import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
@@ -50,7 +51,6 @@ import cascading.tuple.TupleEntryIterator;
 // Long-running test
 public class FetchPipeLRTest extends CascadingTestCase {
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
-    private static final String USER_AGENT_FAKE_FETCHING = "user agent for fake fetching";
     
     @SuppressWarnings("serial")
     private static class SkippedScoreGenerator implements IScoreGenerator {
@@ -88,7 +88,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), true);
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
         
@@ -115,7 +115,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Lfs in = makeInputData(100, 1);
 
         Pipe pipe = new Pipe("urlSource");
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), true);
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
@@ -170,7 +170,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), true);
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher, new Fields("key"));
         
@@ -206,7 +206,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), true);
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
         IScoreGenerator scoring = new SkippedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
         
@@ -235,7 +235,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         FetcherPolicy defaultPolicy = new FetcherPolicy();
         defaultPolicy.setCrawlEndTime(0);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), true);
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
 
@@ -358,6 +358,11 @@ public class FetchPipeLRTest extends CascadingTestCase {
         public int getMaxThreads() {
             return 1;
         }
+
+		@Override
+		public UserAgent getUserAgent() {
+			return ConfigUtils.BIXO_FAKE_AGENT;
+		}
         
     };
 

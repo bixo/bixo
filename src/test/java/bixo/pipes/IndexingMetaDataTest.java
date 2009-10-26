@@ -44,7 +44,6 @@ import cascading.tuple.TupleEntryCollector;
 public class IndexingMetaDataTest {
     private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
     private static final int DATA_COUNT = 100;
-    private static final String USER_AGENT_FAKE_FETCHING = "user agent for fake fetching";
 
     @SuppressWarnings("unchecked")
     @Test
@@ -63,7 +62,7 @@ public class IndexingMetaDataTest {
         write.close();
 
         Pipe pipe = new Pipe("urlSource");
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT_FAKE_FETCHING, new NullHttpFetcher(), false);
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), false);
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, DATA_COUNT);
 

@@ -33,6 +33,7 @@ import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
@@ -40,6 +41,7 @@ import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.UrlFetchException;
 import bixo.fetcher.http.IHttpFetcher;
+import bixo.utils.ConfigUtils;
 
 @SuppressWarnings("serial")
 public class FakeHttpFetcher implements IHttpFetcher {
@@ -75,7 +77,6 @@ public class FakeHttpFetcher implements IHttpFetcher {
         return _fetcherPolicy;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
         return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
@@ -151,4 +152,9 @@ public class FakeHttpFetcher implements IHttpFetcher {
         headers.add("x-responserate", "" + bytesPerSecond);
         return new FetchedDatum(url, url, System.currentTimeMillis(), headers, new BytesWritable(new byte[contentSize]), "text/html", bytesPerSecond, metaData);
     }
+
+	@Override
+	public UserAgent getUserAgent() {
+		return ConfigUtils.BIXO_FAKE_AGENT;
+	}
 }

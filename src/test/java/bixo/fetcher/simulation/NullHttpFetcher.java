@@ -25,11 +25,13 @@ package bixo.fetcher.simulation;
 import org.apache.http.HttpStatus;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.fetcher.http.IHttpFetcher;
+import bixo.utils.ConfigUtils;
 
 @SuppressWarnings("serial")
 public class NullHttpFetcher implements IHttpFetcher {
@@ -53,4 +55,9 @@ public class NullHttpFetcher implements IHttpFetcher {
     public byte[] get(String url) throws BaseFetchException {
         return new byte[0];
     }
+
+	@Override
+	public UserAgent getUserAgent() {
+		return ConfigUtils.BIXO_FAKE_AGENT;
+	}
 }

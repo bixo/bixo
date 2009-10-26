@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import bixo.cascading.NullSinkTap;
+import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
@@ -122,7 +123,7 @@ public class FetchPipe extends SubAssembly {
      * @param urlProvider Source for URLs - must output UrlDatum tuples
      * @param userAgent name to use during fetching
      */
-    public FetchPipe(Pipe urlProvider, String userAgent) {
+    public FetchPipe(Pipe urlProvider, UserAgent userAgent) {
         this(urlProvider, new SimpleGroupingKeyGenerator(userAgent), new SimpleScoreGenerator(), new SimpleHttpFetcher(userAgent), new Fields());
     }
     

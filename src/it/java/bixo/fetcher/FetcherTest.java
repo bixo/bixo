@@ -32,6 +32,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 
 import bixo.config.FakeUserFetcherPolicy;
+import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
@@ -55,8 +56,18 @@ import cascading.tuple.TupleEntryIterator;
 public class FetcherTest {
     private static final long TEN_DAYS = 1000 * 60 * 60 * 24 * 10;
 
-    private static final String USER_AGENT = "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.2) Gecko/2008092313 Ubuntu/8.04 (hardy) Firefox/3.1.6";
-    
+	private static class FirefoxUserAgent extends UserAgent {
+		public FirefoxUserAgent() {
+			super("Firefox", "", "");
+		}
+		
+		@Override
+		public String getUserAgentString() {
+	    	// Use standard Firefox agent name, as some sites won't work w/non-standard names.
+			return "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.0.8) Gecko/2009032608 Firefox/3.0.8";
+		}
+	}
+	    
     private String makeUrlDB(String workingFolder, String inputPath) throws IOException {
 
         // We don't want to regenerate this DB all the time.
@@ -80,8 +91,9 @@ public class FetcherTest {
         
         Pipe pipe = new Pipe("urlSource");
 
-        IHttpFetcher fetcher = new SimpleHttpFetcher(10, new FakeUserFetcherPolicy(5), USER_AGENT);
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT, fetcher, true);
+        UserAgent userAgent = new FirefoxUserAgent();
+        IHttpFetcher fetcher = new SimpleHttpFetcher(10, new FakeUserFetcherPolicy(5), userAgent);
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(fetcher, true);
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
@@ -119,8 +131,9 @@ public class FetcherTest {
 
         Pipe pipe = new Pipe("urlSource");
 
-        IHttpFetcher fetcher = new SimpleHttpFetcher(10, USER_AGENT);
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(USER_AGENT, fetcher, true);
+        UserAgent userAgent = new FirefoxUserAgent();
+        IHttpFetcher fetcher = new SimpleHttpFetcher(10, userAgent);
+        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(fetcher, true);
         LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
 

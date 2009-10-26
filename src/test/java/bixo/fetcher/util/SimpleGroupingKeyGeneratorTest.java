@@ -7,11 +7,15 @@ import org.junit.After;
 import org.junit.Test;
 import org.mortbay.http.HttpServer;
 
+import bixo.config.UserAgent;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.FixedStatusResponseHandler;
 import bixo.fetcher.RedirectResponseHandler;
 import bixo.fetcher.ResourcesResponseHandler;
+import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.simulation.SimulationWebServer;
+import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
 
 public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
@@ -28,7 +32,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
     @Test
     public void testNoRobots() throws Exception {
         _server = startServer(new FixedStatusResponseHandler(HttpStatus.SC_NOT_FOUND), 8089);
-        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("user agent");
+        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(ConfigUtils.BIXO_FAKE_AGENT);
         String url = "http://localhost:8089/page.html";
         UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
@@ -39,7 +43,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
     @Test
     public void testDeferredVisit() throws Exception {
         _server = startServer(new FixedStatusResponseHandler(HttpStatus.SC_INTERNAL_SERVER_ERROR), 8089);
-        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("user agent");
+        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(ConfigUtils.BIXO_FAKE_AGENT);
         String url = "http://localhost:8089/page.html";
         UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
@@ -50,7 +54,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
     @Test
     public void testRobotsHttpsFetchError() throws Exception {
         _server = startServer(new RedirectResponseHandler("/robots.txt", "https://localhost:8089/robots.txt"), 8089);
-        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("user agent");
+        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(ConfigUtils.BIXO_FAKE_AGENT);
         String url = "http://localhost:8089/page.txt";
         UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
@@ -61,7 +65,8 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
     @Test
     public void testAllowedDisallowedURL() throws Exception {
         _server = startServer(new ResourcesResponseHandler("/groupingkeytests"), 8089);
-        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("testAgent");
+        UserAgent userAgent = new UserAgent("testAgent", "testAgent@domain.com", "http://testAgent.domain.com");
+        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(userAgent);
         
         String url = "http://localhost:8089/allowed/page.html";
         UrlDatum urlDatum = new UrlDatum(url);
@@ -77,7 +82,9 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
     @Test
     public void testUsingPLD() throws Exception {
         _server = startServer(new FixedStatusResponseHandler(HttpStatus.SC_NOT_FOUND), 8089);
-        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("user agent", null, true);
+        UserAgent userAgent = new UserAgent("testAgent", "testAgent@domain.com", "http://testAgent.domain.com");
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, userAgent);
+        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(fetcher, true);
         String url = "http://localhost:8089/page.html";
         UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
@@ -88,7 +95,9 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
     @Test
     public void testTwitterWithPLD() throws Exception {
         _server = startServer(new ResourcesResponseHandler("/twitter"), 8089);
-        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("testAgent", null, true);
+        UserAgent userAgent = new UserAgent("testAgent", "testAgent@domain.com", "http://testAgent.domain.com");
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, userAgent);
+        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(fetcher, true);
         
         String url = "http://localhost:8089/";
         UrlDatum urlDatum = new UrlDatum(url);

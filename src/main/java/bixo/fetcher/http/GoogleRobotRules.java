@@ -88,8 +88,8 @@ public class GoogleRobotRules extends SimpleRobotRules {
     // TODO KKr - get rid of this version, and add a generic one (robot name, URL) that uses
     // Java URL code to fetch it, as well as a version that takes an output stream (e.g. from
     // HttpClient) and a version that takes a String with the content.
-    public GoogleRobotRules(String robotName, SimpleHttpFetcher fetcher, String url) {
-        super(robotName, fetcher, url);
+    public GoogleRobotRules(SimpleHttpFetcher fetcher, String url) {
+        super(fetcher, url);
     }
     
     public GoogleRobotRules(String robotName, byte[] robotsContent) {

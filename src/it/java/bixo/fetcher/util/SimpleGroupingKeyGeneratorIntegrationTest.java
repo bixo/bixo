@@ -7,13 +7,14 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import bixo.datum.UrlDatum;
+import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
 
 public class SimpleGroupingKeyGeneratorIntegrationTest {
     
     @Test
     public void testBogusHostname() throws IOException {
-        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator("user agent");
+        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(ConfigUtils.BIXO_FAKE_AGENT);
         
         String url = "http://totalbogusdomainxxx.com";
         UrlDatum urlDatum = new UrlDatum(url);

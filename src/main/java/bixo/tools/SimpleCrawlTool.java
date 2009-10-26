@@ -13,6 +13,7 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.FetchRequest;
 import bixo.tools.sitecrawler.SiteCrawler;
@@ -24,13 +25,15 @@ import cascading.flow.PlannerException;
 public class SimpleCrawlTool {
     private static final Logger LOGGER = Logger.getLogger(SimpleCrawlTool.class);
 
-    private static final String USER_AGENT_TEMPLATE = "Mozilla/5.0 (compatible; %s; +http://bixo.101tec.com; bixo-dev@yahoogroups.com)";
-
     private static final long MILLISECONDS_PER_MINUTE = 60 * 1000L;
 
     private static final int MAX_CONTENT_SIZE = 128 * 1024;
 
     private static final long DEFAULT_CRAWL_DELAY = 5 * 1000L;
+
+	private static final String WEB_ADDRESS = "http://bixo.101tec.com";
+
+	private static final String EMAIL_ADDRESS = "bixo-dev@yahoogroups.com";
     
     // Limit the maximum number of requests made per connection to 50.
     @SuppressWarnings("serial")
@@ -132,7 +135,7 @@ public class SimpleCrawlTool {
             printUsageAndExit(parser);
         }
         
-        if (domain.split("\\.").length < 2) {
+        if (!domain.equals("localhost") && (domain.split("\\.").length < 2)) {
             System.err.println("The target domain should be a valid paid-level domain or subdomain of the same: " + domain);
             printUsageAndExit(parser);
         }
@@ -174,7 +177,7 @@ public class SimpleCrawlTool {
             int startLoop = FSUtils.extractLoopNumber(inputPath);
             int endLoop = startLoop + options.getNumLoops();
 
-            String userAgent = String.format(USER_AGENT_TEMPLATE, options.getAgentName());
+            UserAgent userAgent = new UserAgent(options.getAgentName(), EMAIL_ADDRESS, WEB_ADDRESS);
 
             FetcherPolicy defaultPolicy = new MyFetchPolicy();
             defaultPolicy.setCrawlDelay(DEFAULT_CRAWL_DELAY);

@@ -5,12 +5,25 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.http.SimpleHttpFetcher;
 
 public class RunHttpClientFetcher {
 
+	private static class FirefoxUserAgent extends UserAgent {
+		public FirefoxUserAgent() {
+			super("Firefox", "", "");
+		}
+		
+		@Override
+		public String getUserAgentString() {
+	    	// Use standard Firefox agent name, as some sites won't work w/non-standard names.
+			return "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.0.8) Gecko/2009032608 Firefox/3.0.8";
+		}
+	}
+	
     private static String readInputLine() throws IOException {
         InputStreamReader isr = new InputStreamReader(System.in);
         BufferedReader br = new BufferedReader(isr);
@@ -28,13 +41,10 @@ public class RunHttpClientFetcher {
      * @param args - URL to fetch
      */
     public static void main(String[] args) {
-    	// Use standard Firefox agent name, as some sites won't work w/non-standard names.
-        String userAgent = "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.0.8) Gecko/2009032608 Firefox/3.0.8";
-        
         // Just to be really robust, allow a huge number of redirects and retries.
         FetcherPolicy policy = new FetcherPolicy();
         policy.setMaxRedirects(100);
-        SimpleHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, userAgent);
+        SimpleHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, new FirefoxUserAgent());
         fetcher.setMaxRetryCount(100);
         
         boolean interactive = args.length == 0;
