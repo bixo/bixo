@@ -18,6 +18,7 @@ import org.mortbay.http.HttpResponse;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.urldb.IUrlFilter;
@@ -29,7 +30,7 @@ import cascading.tuple.TupleEntryIterator;
 
 
 @SuppressWarnings("serial")
-public class SiteCrawlerTest implements Serializable {
+public class SiteCrawlerLRTest implements Serializable {
 
     public static class FakeWebSiteHandler extends AbstractHttpHandler {
 
@@ -95,9 +96,11 @@ public class SiteCrawlerTest implements Serializable {
         SiteCrawlerServer server = new SiteCrawlerServer(new FakeWebSiteHandler(), 8089);
 
         try {
-            SiteCrawler crawler = new SiteCrawler(inputPath, outputPath, "test", defaultPolicy, 1, urlFilter);
+        	UserAgent userAgent = new UserAgent("test", "test@domain.com", "http://test.domain.com");
+            SiteCrawler crawler = new SiteCrawler(inputPath, outputPath, userAgent, defaultPolicy, 1, urlFilter);
             crawler.crawl(false);
         } catch (Throwable t) {
+        	t.printStackTrace();
             Assert.fail(t.getMessage());
         } finally {
             server.stop();
@@ -135,7 +138,8 @@ public class SiteCrawlerTest implements Serializable {
         server = new SiteCrawlerServer(new FakeWebSiteHandler(), 8089);
 
         try {
-            SiteCrawler crawler = new SiteCrawler(inputPath, outputPath, "test", defaultPolicy, 1, urlFilter);
+        	UserAgent userAgent = new UserAgent("test", "test@domain.com", "http://test.domain.com");
+            SiteCrawler crawler = new SiteCrawler(inputPath, outputPath, userAgent, defaultPolicy, 1, urlFilter);
             crawler.crawl(false);
         } catch (Throwable t) {
             Assert.fail(t.getMessage());
