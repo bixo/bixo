@@ -40,7 +40,7 @@ little interest to users.
 
 5. Tag the release
 
-% git tag -am "Tagging version 0.x.y" 0.x.y
+% git tag -am "Tagging 0.x.y release" 0.x.y
 
 6. Updating GitHub (this will take a while)
 
