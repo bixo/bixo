@@ -377,6 +377,8 @@ SOFTWARE.
 		<!-- copy any raw libs -->
 		<copy todir="${build.dir.dist}/lib" flatten="true">
 			<fileset dir="${lib.dir}" />
+			<path refId="compile.classpath" />
+			<path refId="runtime.classpath" />
 		</copy>
 		
 		<!-- copy src -->
