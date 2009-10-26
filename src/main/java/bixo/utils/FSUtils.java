@@ -11,7 +11,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-public class FSUtils {
+public class FsUtils {
 	private static final Pattern LOOP_DIRNAME_PATTERN = Pattern.compile("(\\d+)-([^/]+)");
 	
     public static Path makeLoopDir(FileSystem fs, Path outputDir, int loopNumber) throws IOException {

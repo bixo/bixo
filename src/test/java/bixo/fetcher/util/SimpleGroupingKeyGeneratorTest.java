@@ -32,7 +32,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
     @Test
     public void testNoRobots() throws Exception {
         _server = startServer(new FixedStatusResponseHandler(HttpStatus.SC_NOT_FOUND), 8089);
-        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(ConfigUtils.BIXO_FAKE_AGENT);
+        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/page.html";
         UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
@@ -43,7 +43,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
     @Test
     public void testDeferredVisit() throws Exception {
         _server = startServer(new FixedStatusResponseHandler(HttpStatus.SC_INTERNAL_SERVER_ERROR), 8089);
-        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(ConfigUtils.BIXO_FAKE_AGENT);
+        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/page.html";
         UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
@@ -54,7 +54,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
     @Test
     public void testRobotsHttpsFetchError() throws Exception {
         _server = startServer(new RedirectResponseHandler("/robots.txt", "https://localhost:8089/robots.txt"), 8089);
-        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(ConfigUtils.BIXO_FAKE_AGENT);
+        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/page.txt";
         UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);

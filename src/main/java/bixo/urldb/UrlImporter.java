@@ -31,7 +31,7 @@ import bixo.datum.UrlDatum;
 import bixo.operations.LastUpdated;
 import bixo.operations.TextUrlParser;
 import bixo.utils.HadoopConfigured;
-import bixo.utils.TimeStampUtil;
+import bixo.utils.TimeStampUtils;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.operation.Aggregator;
@@ -59,7 +59,7 @@ public class UrlImporter extends HadoopConfigured {
         boolean dbexists = fs.exists(currentDb);
         // if db exists we want to merge dbs
 
-        Path newDb = new Path(workingFolder, URL_DB_NAME + "-new-" + TimeStampUtil.nowWithUnderLine());
+        Path newDb = new Path(workingFolder, URL_DB_NAME + "-new-" + TimeStampUtils.nowWithUnderLine());
         Tap importSink = new Hfs(new SequenceFile(UrlDatum.FIELDS), newDb.toUri().toASCIIString(), true);
         // create tmp db
         importUrls(inputPath, importSink);
@@ -73,7 +73,7 @@ public class UrlImporter extends HadoopConfigured {
 
             MultiTap source = new MultiTap(oldDbTap, newDbTap);
 
-            Path mergeDb = new Path(workingFolder, URL_DB_NAME + "-merged-" + TimeStampUtil.nowWithUnderLine());
+            Path mergeDb = new Path(workingFolder, URL_DB_NAME + "-merged-" + TimeStampUtils.nowWithUnderLine());
             Tap mergeSink = new Hfs(new SequenceFile(UrlDatum.FIELDS), mergeDb.toUri().toASCIIString(), true);
 
             Pipe pipe = new Pipe("urldb-merge");
@@ -86,7 +86,7 @@ public class UrlImporter extends HadoopConfigured {
             Flow flow = flowConnector.connect(source, mergeSink, pipe);
             flow.complete();
 
-            Path oldDb = new Path(workingFolder, URL_DB_NAME + "-old-" + TimeStampUtil.nowWithUnderLine());
+            Path oldDb = new Path(workingFolder, URL_DB_NAME + "-old-" + TimeStampUtils.nowWithUnderLine());
 
             fs.rename(currentDb, oldDb);
             fs.rename(mergeDb, currentDb);

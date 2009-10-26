@@ -28,7 +28,7 @@ import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.SimpleGroupingKeyGenerator;
 import bixo.indexing.IndexScheme;
 import bixo.parser.FakeParser;
-import bixo.utils.FieldUtil;
+import bixo.utils.FieldUtils;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.PlannerException;
@@ -50,7 +50,7 @@ public class IndexingMetaDataTest {
     public void testMetaData() throws Exception {
         // we want to pass meta data all the way through to the index.
 
-        Lfs in = new Lfs(new SequenceFile(FieldUtil.combine(UrlDatum.FIELDS, new Fields("metaData"))), "build/test/TestMetaData/testMetaData/in", true);
+        Lfs in = new Lfs(new SequenceFile(FieldUtils.combine(UrlDatum.FIELDS, new Fields("metaData"))), "build/test/TestMetaData/testMetaData/in", true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
 
         for (int i = 0; i < DATA_COUNT; i++) {

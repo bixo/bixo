@@ -361,7 +361,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
 		@Override
 		public UserAgent getUserAgent() {
-			return ConfigUtils.BIXO_FAKE_AGENT;
+			return ConfigUtils.BIXO_TEST_AGENT;
 		}
         
     };

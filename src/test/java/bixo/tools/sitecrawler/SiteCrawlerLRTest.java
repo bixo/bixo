@@ -22,7 +22,7 @@ import bixo.config.UserAgent;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.urldb.IUrlFilter;
-import bixo.utils.FSUtils;
+import bixo.utils.FsUtils;
 import bixo.utils.HadoopUtils;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Hfs;
@@ -75,12 +75,12 @@ public class SiteCrawlerLRTest implements Serializable {
         FileSystem fs = baseDirPath.getFileSystem(conf);
 
         HadoopUtils.safeRemove(fs, baseDirPath);
-        Path outputPath = FSUtils.makeLoopDir(fs, baseDirPath, 0);
+        Path outputPath = FsUtils.makeLoopDir(fs, baseDirPath, 0);
         UrlImporter importer = new UrlImporter(outputPath);
 
         importer.importOneDomain("localhost:8089", false);
         Path inputPath = outputPath;
-        outputPath = FSUtils.makeLoopDir(fs, baseDirPath, 1);
+        outputPath = FsUtils.makeLoopDir(fs, baseDirPath, 1);
 
         FetcherPolicy defaultPolicy = new FetcherPolicy();
         defaultPolicy.setCrawlDelay(1);
@@ -133,7 +133,7 @@ public class SiteCrawlerLRTest implements Serializable {
         
         // Do it one more time, to verify status gets propagated forward.
         inputPath = outputPath;
-        outputPath = FSUtils.makeLoopDir(fs, baseDirPath, 2);
+        outputPath = FsUtils.makeLoopDir(fs, baseDirPath, 2);
 
         server = new SiteCrawlerServer(new FakeWebSiteHandler(), 8089);
 

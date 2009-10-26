@@ -63,7 +63,7 @@ public class FetcherManagerTest extends SimulationWebServer {
             
             // TODO KKr - use real user agent name here.
             FetcherManager threadMgr = new FetcherManager(queueMgr,
-            		new SimpleHttpFetcher(NUM_THREADS, ConfigUtils.BIXO_TEST_AGENT), flowProcess);
+            		new SimpleHttpFetcher(NUM_THREADS, ConfigUtils.BIXO_IT_AGENT), flowProcess);
 
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");

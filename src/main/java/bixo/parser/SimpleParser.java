@@ -20,7 +20,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.fetcher.http.IHttpHeaders;
-import bixo.utils.IOUtils;
+import bixo.utils.IoUtils;
 import bixo.utils.UrlUtils;
 
 @SuppressWarnings("serial")
@@ -191,7 +191,7 @@ public class SimpleParser implements IParser {
             LOGGER.warn("Exception parsing document " + fetchedDatum.getBaseUrl(), e);
             return null;
         } finally {
-            IOUtils.safeClose(is);
+            IoUtils.safeClose(is);
         }
     }
 

@@ -14,7 +14,7 @@ public class SimpleGroupingKeyGeneratorIntegrationTest {
     
     @Test
     public void testBogusHostname() throws IOException {
-        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(ConfigUtils.BIXO_FAKE_AGENT);
+        SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(ConfigUtils.BIXO_TEST_AGENT);
         
         String url = "http://totalbogusdomainxxx.com";
         UrlDatum urlDatum = new UrlDatum(url);
