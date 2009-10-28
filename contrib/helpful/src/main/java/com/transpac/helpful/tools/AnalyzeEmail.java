@@ -15,6 +15,7 @@ import org.kohsuke.args4j.CmdLineParser;
 
 import bixo.cascading.NullContext;
 import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.StatusDatum;
@@ -54,8 +55,10 @@ import com.transpac.helpful.operations.SumScoresBuffer;
 public class AnalyzeEmail {
 	private static final Logger LOGGER = Logger.getLogger(AnalyzeEmail.class);
 	
-    private static final String USER_AGENT_TEMPLATE = "Mozilla/5.0 (compatible; %s; +http://bixo.101tec.com; bixo-dev@yahoogroups.com";
+	private static final String WEB_ADDRESS = "http://bixo.101tec.com";
 
+	private static final String EMAIL_ADDRESS = "bixo-dev@yahoogroups.com";
+    
 	private static final int MAX_CONTENT_SIZE = 8 * 1024 * 1024;
 
 	private static final int MAX_THREADS = 1;
@@ -167,7 +170,7 @@ public class AnalyzeEmail {
             Tap sourceTap = new Hfs(new TextLine(), inputFileName);
             
             // Create the sub-assembly that runs the fetch job
-            String userAgent = String.format(USER_AGENT_TEMPLATE, options.getAgentName());
+            UserAgent userAgent = new UserAgent(options.getAgentName(), EMAIL_ADDRESS, WEB_ADDRESS);
             Pipe importPipe = new Each("url importer", new Fields("line"), new LoadUrlFunction());
             SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(userAgent);
             
