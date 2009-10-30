@@ -46,8 +46,8 @@ import cascading.tuple.TupleEntryCollector;
 
 @SuppressWarnings("serial")
 public class MultiSinkTap extends SinkTap {
-    /** Field LOG */
-    private static final Logger LOG = Logger.getLogger(MultiSinkTap.class);
+    /** Field LOGGER */
+    private static final Logger LOGGER = Logger.getLogger(MultiSinkTap.class);
 
     private Tap[] _sinkTaps;
     transient private Path _path;
@@ -198,7 +198,7 @@ public class MultiSinkTap extends SinkTap {
             _taps = taps;
             _collectors = new OutputCollector[taps.length];
             for (int j = 0; j < taps.length; j++) {
-                LOG.info("opening for write: " + taps[j].toString());
+            	LOGGER.info("opening for write: " + taps[j].toString());
                 _collectors[j] = ((OutputCollector) taps[j].openForWrite(conf));
             }
         }

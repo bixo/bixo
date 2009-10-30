@@ -36,7 +36,7 @@ import org.apache.log4j.Logger;
  */
 public class HadoopConfigured {
 
-    private static Logger LOG = Logger.getLogger(HadoopConfigured.class);
+    private static Logger LOGGER = Logger.getLogger(HadoopConfigured.class);
 
     private Configuration _conf;
 
@@ -68,7 +68,7 @@ public class HadoopConfigured {
             URI uri = new URI(path);
             return FileSystem.get(uri, getConf());
         } catch (URISyntaxException e) {
-            LOG.warn("The path: " + path + " is not a valid uri. Therefore we use the configured file system.", e);
+            LOGGER.warn("The path: " + path + " is not a valid uri. Therefore we use the configured file system.", e);
         }
         return getFileSystem();
     }
