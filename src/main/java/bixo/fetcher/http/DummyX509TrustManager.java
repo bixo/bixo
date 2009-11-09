@@ -6,8 +6,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
-import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 public class DummyX509TrustManager implements X509TrustManager {
@@ -31,14 +31,14 @@ public class DummyX509TrustManager implements X509TrustManager {
     /**
      * @see javax.net.ssl.X509TrustManager#checkClientTrusted(X509Certificate[], String)
      */
-    public boolean isClientTrusted(X509Certificate[] certificates) {
+    public boolean isClientTrusted(@SuppressWarnings("unused") X509Certificate[] certificates) {
         return true;
     }
 
     /**
      * @see javax.net.ssl.X509TrustManager#checkServerTrusted(X509Certificate[], String)
      */
-    public boolean isServerTrusted(X509Certificate[] certificates) {
+    public boolean isServerTrusted(@SuppressWarnings("unused") X509Certificate[] certificates) {
         return true;
     }
 

@@ -3,7 +3,6 @@ package bixo.cascading;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -26,14 +25,14 @@ public class DummyTap extends Tap {
 
     private List<Tuple> _inputData;
     private ArrayList<Tuple> _outPut = new ArrayList<Tuple>();
-    private String _id;
+//    private String _id;
 
     public DummyTap() {
     }
 
-    public DummyTap(List<Tuple> inputData, Fields fields) {
+    public DummyTap(List<Tuple> inputData, @SuppressWarnings("unused") Fields fields) {
         super(new MyScheme());
-        _id = UUID.randomUUID().toString();
+//        _id = UUID.randomUUID().toString();
         _inputData = inputData;
     }
 
@@ -109,7 +108,8 @@ public class DummyTap extends Tap {
         return _outPut;
     }
 
-    public boolean equals(Object object) {
+    @Override
+	public boolean equals(Object object) {
         if (object instanceof DummyTap) {
             DummyTap other = (DummyTap) object;
             return this.toString().equals(other.toString());

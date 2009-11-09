@@ -139,7 +139,8 @@ public class FetcherPolicy implements Serializable {
         return new FetchRequest(numUrls, nextFetchTime);
     }
     
-    public String toString() {
+    @Override
+	public String toString() {
         StringBuilder result = new StringBuilder();
         result.append("Crawl end time: " + getCrawlEndTime());
         result.append('\r');

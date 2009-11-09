@@ -5,11 +5,7 @@ import java.util.ArrayList;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
-
 public class GoogleRobotRules extends SimpleRobotRules {
-    private static final Logger LOGGER = Logger.getLogger(GoogleRobotRules.class);
-
     /**
      * Single rule that maps from a path prefix to an allow flag.
      */
@@ -30,7 +26,8 @@ public class GoogleRobotRules extends SimpleRobotRules {
      * Result from parsing a single robots.txt file - which means we
      * get a set of rules, and a crawl-delay.
      */
-    private class RobotRules {
+    @SuppressWarnings("unused")
+	private class RobotRules {
         ArrayList<GoogleRobotRule> _googleRules = new ArrayList<GoogleRobotRule>();
         boolean _resync = true;
         

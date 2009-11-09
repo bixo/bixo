@@ -56,7 +56,7 @@ public class RandomResponseHandler extends AbstractHttpHandler {
                 // how much to delay to make it so.
                 long curTime = System.currentTimeMillis();
                 long elapsedTime = curTime - startTime;
-                long targetTime = (i * _duration) / (long)_length;
+                long targetTime = (i * _duration) / _length;
                 if (elapsedTime < targetTime) {
                     Thread.sleep(targetTime - elapsedTime);
                 }

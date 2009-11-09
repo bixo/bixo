@@ -27,7 +27,7 @@ public class BixoFlowProcessTest {
     @Test
     public void testHadoopCounter() {
         
-        Enum counter = FetcherCounters.URLS_FETCHING;
+        Enum<FetcherCounters> counter = FetcherCounters.URLS_FETCHING;
         String groupName = counter.getDeclaringClass().getName();
         String counterName = counter.toString();
         System.out.println(groupName + " / " + counterName);

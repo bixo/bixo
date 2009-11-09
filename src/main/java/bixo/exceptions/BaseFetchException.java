@@ -62,50 +62,62 @@ public abstract class BaseFetchException extends Exception {
 
     public abstract UrlStatus mapToUrlStatus();
 
-    public boolean equals(Object obj) {
+    @Override
+	public boolean equals(Object obj) {
 		return _exception.equals(obj);
 	}
 
+	@Override
 	public Throwable getCause() {
 		return _exception.getCause();
 	}
 
+	@Override
 	public String getLocalizedMessage() {
 		return _exception.getLocalizedMessage();
 	}
 
+	@Override
 	public String getMessage() {
 		return _exception.getMessage();
 	}
 
+	@Override
 	public StackTraceElement[] getStackTrace() {
 		return _exception.getStackTrace();
 	}
 
+	@Override
 	public int hashCode() {
 		return _exception.hashCode();
 	}
 
+	@Override
 	public Throwable initCause(Throwable cause) {
 		return _exception.initCause(cause);
 	}
 
+	@Override
 	public void printStackTrace() {
 		_exception.printStackTrace();
 	}
 
+	@Override
 	public void printStackTrace(PrintStream s) {
 		_exception.printStackTrace(s);
 	}
 
+	@Override
 	public void printStackTrace(PrintWriter s) {
 		_exception.printStackTrace(s);
 	}
 
+	@Override
 	public void setStackTrace(StackTraceElement[] stackTrace) {
 		_exception.setStackTrace(stackTrace);
 	}
 
+	@Override
 	public String toString() {
 		return _url + ": " + _exception.toString();
 	}

@@ -73,11 +73,11 @@ public class HelloWorldCascadingLRTest extends ClusterTestCase {
     Pipe assembly = new Pipe("wordcount");
 
     String regex = "(?<!\\pL)(?=\\pL)[^ ]*(?<=\\pL)(?!\\pL)";
-    Function function = new RegexGenerator(new Fields("word"), regex);
+    Function<?> function = new RegexGenerator(new Fields("word"), regex);
     assembly = new Each(assembly, new Fields("line"), function);
 
     assembly = new GroupBy(assembly, new Fields("word"));
-    Aggregator count = new Count(new Fields("count"));
+    Aggregator<?> count = new Count(new Fields("count"));
     assembly = new Every(assembly, count);
 
     FlowConnector flowConnector = new FlowConnector();
@@ -85,9 +85,8 @@ public class HelloWorldCascadingLRTest extends ClusterTestCase {
     flow.complete();
 
     TupleEntryIterator resultSink = flow.openSink();
-    TupleEntry t = null;
     while (resultSink.hasNext()) {
-      TupleEntry tupleEntry = (TupleEntry) resultSink.next();
+      TupleEntry tupleEntry = resultSink.next();
       // System.out.println(tupleEntry);
     }
 

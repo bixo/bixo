@@ -4,13 +4,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
-import bixo.utils.DomainNames;
 import bixo.utils.StringUtils;
 
 @SuppressWarnings("serial")
@@ -137,7 +135,8 @@ public class SimpleUrlNormalizer implements IUrlNormalizer {
     }
     
     
-    private boolean isIPAddress(String paidLevelDomain) {
+    @SuppressWarnings("unused")
+	private boolean isIPAddress(String paidLevelDomain) {
         // FUTURE - Handle ipV6 addresses.
         String[] pieces = paidLevelDomain.split("\\.");
         if (pieces.length != 4) {

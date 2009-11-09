@@ -1,7 +1,5 @@
 package bixo.fetcher.util;
 
-import java.io.IOException;
-
 import junit.framework.Assert;
 
 import org.junit.Test;
@@ -13,7 +11,7 @@ import bixo.utils.GroupingKey;
 public class SimpleGroupingKeyGeneratorIntegrationTest {
     
     @Test
-    public void testBogusHostname() throws IOException {
+    public void testBogusHostname() {
         SimpleGroupingKeyGenerator keyGen = new SimpleGroupingKeyGenerator(ConfigUtils.BIXO_TEST_AGENT);
         
         String url = "http://totalbogusdomainxxx.com";

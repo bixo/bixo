@@ -77,7 +77,7 @@ public class FetcherManagerTest extends SimulationWebServer {
                     String file = "/page-" + j + ".html";
 
                     String url = "http://localhost:8089" + file;
-                    ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0, 0, UrlStatus.UNFETCHED, null, 1.0f - (float) j, null);
+                    ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0, 0, UrlStatus.UNFETCHED, null, 1.0f - j, null);
                     queue.offer(urlScore);
                 }
 
@@ -101,7 +101,9 @@ public class FetcherManagerTest extends SimulationWebServer {
             Assert.fail(t.getMessage());
         } finally {
             try {
-                server.stop();
+            	if (server != null) {
+            		server.stop();
+            	}
             } catch (Throwable t) {
                 // Ignore
             }

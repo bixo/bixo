@@ -11,6 +11,7 @@ public class UrlUtils {
 
     private static final Pattern IGNORED_PROTOCOL_PATTERN = Pattern.compile("(?i)^(javascript|mailto|about):");
     
+    // TODO VMa : MalformedURLException is being caught but not re-thrown here (SimpleParser is depending on it being thrown)
     public static String makeUrl(URL baseUrl, String relativeUrl) throws MalformedURLException {
         // Peel off cases of URLs that aren't actually URLs, or at least don't have protocols
         // that the Java URL class knows about.

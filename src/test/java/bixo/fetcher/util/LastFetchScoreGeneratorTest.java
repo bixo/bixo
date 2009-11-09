@@ -28,13 +28,11 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import bixo.datum.GroupedUrlDatum;
-import bixo.datum.UrlDatum;
-import bixo.fetcher.util.LastFetchScoreGenerator;
 
 public class LastFetchScoreGeneratorTest {
 
     @Test
-    public void testScore() throws Exception {
+    public void testScore() {
         long now = System.currentTimeMillis();
         LastFetchScoreGenerator generator = new LastFetchScoreGenerator(now, 10);
         GroupedUrlDatum mock = Mockito.mock(GroupedUrlDatum.class);

@@ -24,7 +24,6 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 
 import bixo.datum.BaseDatum;
-
 import cascading.scheme.Scheme;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
@@ -144,7 +143,8 @@ public class IndexScheme extends Scheme {
                 public void close(final Reporter reporter) throws IOException {
                     // Hadoop need to know we still working on it.
                     Thread reporterThread = new Thread() {
-                        public void run() {
+                        @Override
+						public void run() {
                             while (!isInterrupted()) {
                                 reporter.progress();
                                 try {

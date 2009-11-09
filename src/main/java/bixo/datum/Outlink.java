@@ -41,7 +41,8 @@ public class Outlink {
         return anchor;
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return "toUrl: " + toUrl + " anchor: " + anchor; // removed "\n".
         // toString, not
         // printLine... WD.

@@ -56,7 +56,7 @@ public class FetcherQueueMgrTest {
     }
     
     @Test
-    public void testPollWhenCrawlIsDone() throws InterruptedException {
+    public void testPollWhenCrawlIsDone() {
         FetcherPolicy spy = Mockito.spy(new FetcherPolicy());
         BixoFlowProcess process = new BixoFlowProcess();
         FetcherQueueMgr queueMgr = new FetcherQueueMgr(process, spy);

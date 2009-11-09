@@ -177,7 +177,7 @@ public class SiteCrawler {
 			urlFromFetchPipe = new Each(urlFromFetchPipe, new CreateUrlFromStatusFunction());
 
 			// Now we need to join the URLs we get from parsing content with the URLs we got
-			// from the status ouput, so we have a unified stream of all known URLs.
+			// from the status output, so we have a unified stream of all known URLs.
 			Pipe urlPipe = new GroupBy("url pipe", Pipe.pipes(urlFromFetchPipe, urlFromOutlinksPipe), new Fields(UrlDatum.URL_FIELD));
 			urlPipe = new Every(urlPipe, new LatestUrlBuffer(), Fields.RESULTS);
 
@@ -192,6 +192,8 @@ public class SiteCrawler {
 			FlowConnector flowConnector = new FlowConnector(HadoopUtils.getDefaultProperties(SiteCrawler.class, debug, conf));
 			Flow flow = flowConnector.connect(inputSource, sinkMap, fetchPipe, urlPipe);
 			flow.complete();
+			
+			// flow.writeDOT("build/valid-flow.dot");
 		} catch (Throwable t) {
 			HadoopUtils.safeRemove(fs, _outputDir);
 			throw t;

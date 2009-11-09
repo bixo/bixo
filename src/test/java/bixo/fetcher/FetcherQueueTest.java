@@ -22,7 +22,6 @@
  */
 package bixo.fetcher;
 
-import java.net.MalformedURLException;
 import java.util.Random;
 
 import org.junit.Assert;
@@ -94,7 +93,7 @@ public class FetcherQueueTest {
     }
     
     @Test
-    public void testCrawlDurationLimit() throws MalformedURLException {
+    public void testCrawlDurationLimit() {
         FetcherPolicy spy = Mockito.spy(new FetcherPolicy());
         MyCollector collector = new MyCollector();
         FetcherQueue queue = new FetcherQueue("domain.com", spy, new BixoFlowProcess(), collector);
@@ -121,7 +120,7 @@ public class FetcherQueueTest {
     }
 
     @Test
-    public void testSortedUrls() throws MalformedURLException {
+    public void testSortedUrls() {
         FetcherPolicy policy = new ControlledFetcherPolicy(1000, 1, 0);
         
         FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
@@ -153,7 +152,7 @@ public class FetcherQueueTest {
     
 
     @Test
-    public void testCrawlDelay() throws MalformedURLException, InterruptedException {
+    public void testCrawlDelay() throws InterruptedException {
         FetcherPolicy policy = new ControlledFetcherPolicy(1000, 1, 1 * 1000L);
         FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
 
@@ -200,7 +199,7 @@ public class FetcherQueueTest {
     }
     
     @Test
-    public void testAdaptiveFetchPolicyNoDelay() throws InterruptedException {
+    public void testAdaptiveFetchPolicyNoDelay() {
         AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(System.currentTimeMillis() + 1000L, 0);
         
         FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
@@ -220,7 +219,7 @@ public class FetcherQueueTest {
     }
     
     @Test
-    public void testAdaptiveFetchPolicyMinDelay() throws InterruptedException {
+    public void testAdaptiveFetchPolicyMinDelay() {
         AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(System.currentTimeMillis() + 2000L, 1 * 1000L);
         
         FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), Mockito.mock(TupleEntryCollector.class));

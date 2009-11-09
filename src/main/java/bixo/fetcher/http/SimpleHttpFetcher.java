@@ -396,7 +396,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         }
 
         // Note that getContentType can return null.
-        String contentType = entity.getContentType() == null ? "" : entity.getContentType().getValue();
+        String contentType = (entity == null || entity.getContentType() == null) ? "" : entity.getContentType().getValue();
 
         return new FetchedDatum(url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
     }

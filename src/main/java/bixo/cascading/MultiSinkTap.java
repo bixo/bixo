@@ -203,7 +203,8 @@ public class MultiSinkTap extends SinkTap {
             }
         }
 
-        protected void collect(Tuple tuple) {
+        @Override
+		protected void collect(Tuple tuple) {
             throw new UnsupportedOperationException("collect should never be called on TemplateCollector");
         }
 

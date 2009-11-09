@@ -68,7 +68,7 @@ public class UrlImporter {
         _outputDir = outputDir;
     }
     
-    public void importOneDomain(String targetDomain, boolean debug) throws Exception {
+    public void importOneDomain(String targetDomain, @SuppressWarnings("unused") boolean debug) throws Exception {
         JobConf conf = HadoopUtils.getDefaultJobConf();
         FileSystem fs = _outputDir.getFileSystem(conf);
 

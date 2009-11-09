@@ -56,6 +56,7 @@ import cascading.tuple.TupleEntryIterator;
 public class FetcherTest {
     private static final long TEN_DAYS = 1000 * 60 * 60 * 24 * 10;
 
+	@SuppressWarnings("serial")
 	private static class FirefoxUserAgent extends UserAgent {
 		public FirefoxUserAgent() {
 			super("Firefox", "", "");

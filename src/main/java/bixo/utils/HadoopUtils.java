@@ -51,7 +51,7 @@ public class HadoopUtils {
     }
 
     @SuppressWarnings("unchecked")
-	public static Properties getDefaultProperties(Class appJarClass, boolean debugging, JobConf conf) throws IOException {
+	public static Properties getDefaultProperties(Class appJarClass, boolean debugging, JobConf conf) {
         Properties properties = new Properties();
 
         // Use special Cascading hack to control logging levels for code running as Hadoop jobs

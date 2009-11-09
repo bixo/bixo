@@ -44,7 +44,7 @@ public class ParserPipeTest extends CascadingTestCase {
         int count = 0;
         int validRecords = 0;
         while (count++ < max && iterator.hasNext()) {
-            ArchiveRecord archiveRecord = (ArchiveRecord) iterator.next();
+            ArchiveRecord archiveRecord = iterator.next();
             ArchiveRecordHeader header = archiveRecord.getHeader();
             String url = header.getUrl();
 

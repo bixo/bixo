@@ -123,7 +123,8 @@ public class FetchedDatum extends BaseDatum {
         return _headers;
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         StringBuilder result = new StringBuilder("[base URL] ");
         result.append(_baseUrl);
         if (!_baseUrl.equals(_fetchedUrl)) {

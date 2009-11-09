@@ -84,7 +84,7 @@ public class IndexSchemaTest {
         Lfs lfs = new Lfs(new SequenceFile(ParsedDatum.FIELDS), in, SinkMode.REPLACE);
         TupleEntryCollector write = lfs.openForWrite(new JobConf());
         for (int i = 0; i < 10; i++) {
-            float boost = 0.5f + (float)i/5.0f;
+            float boost = 0.5f + i/5.0f;
             ParsedDatum resultTuple = new ParsedDatum("http://" + i, "test " + i + " " + boost, "title-" + i, new Outlink[0], null);
             write.add(resultTuple.toTuple());
         }

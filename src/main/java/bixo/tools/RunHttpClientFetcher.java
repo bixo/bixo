@@ -12,6 +12,7 @@ import bixo.fetcher.http.SimpleHttpFetcher;
 
 public class RunHttpClientFetcher {
 
+	@SuppressWarnings("serial")
 	private static class FirefoxUserAgent extends UserAgent {
 		public FirefoxUserAgent() {
 			super("Firefox", "", "");
