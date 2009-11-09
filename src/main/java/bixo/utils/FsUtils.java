@@ -3,6 +3,7 @@ package bixo.utils;
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -86,5 +87,35 @@ public class FsUtils {
 			throw new InvalidParameterException(String.format(
 					"%s is not a valid loop directory name", dirName));
 		}
+	}
+	
+	// Return an array of paths to all of the subdirs in crawl dirs found
+	// inside of <crawlPath>, where the subdir name == <subdirName>.
+	public static Path[] findAllSubdirs(FileSystem fs, Path outputPath,
+			String subdirName) throws IOException {
+		ArrayList<Path> result = new ArrayList<Path>();
+
+		FileStatus[] crawldirs = fs.listStatus(outputPath);
+		for (FileStatus status : crawldirs) {
+			if (!status.isDir()) {
+				continue;
+			}
+
+			try {
+				// Verify crawl dir name is valid.
+				extractLoopNumber(status.getPath());
+
+				Path subdirPath = new Path(status.getPath(), subdirName);
+				FileStatus[] subdirStatus = fs.listStatus(subdirPath);
+				if ((subdirStatus.length == 1) && (subdirStatus[0].isDir())) {
+					result.add(subdirPath);
+				}
+			} catch (InvalidParameterException e) {
+				// ignore, though we shouldn't have random sub-dirs in the
+				// output directory.
+			}
+		}
+
+		return result.toArray(new Path[result.size()]);
 	}
 }
