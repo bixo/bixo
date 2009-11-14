@@ -12,7 +12,9 @@ import cascading.tuple.Tuple;
 
 @SuppressWarnings("unchecked")
 public abstract class BaseDatum {
-
+	public static final Map<String, Comparable> EMPTY_METADATA_MAP = Collections.emptyMap();
+	public static final Fields EMPTY_METADATA_FIELDS = new Fields();
+	
     private HashMap<String, Comparable> _metaDataMap;
 
     public BaseDatum(Map<String, Comparable> metaData) {
