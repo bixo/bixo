@@ -109,7 +109,6 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
             String robotsUrl = null;
 
             try {
-                // TODO KKr - do I need to worry about the https protocol here?
                 robotsUrl = new URL(url.getProtocol(), host, url.getPort(), "/robots.txt").toExternalForm();
                 byte[] robotsContent = _robotsFetcher.get(robotsUrl);
                 robotRules = new SimpleRobotRules(_robotsFetcher.getUserAgent().getAgentName(), robotsContent);
