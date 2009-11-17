@@ -8,7 +8,7 @@ public enum UrlStatus {
     SKIPPED_UNKNOWN_HOST,       // Hostname couldn't be resolved to IP address
     SKIPPED_INVALID_URL,        // URL invalid
     SKIPPED_DEFERRED,           // Deferred because robots.txt couldn't be processed.
-    SKIPPED_BY_SCORER,          // Skipped explicitly by scorer
+    SKIPPED_BY_SCORER,          // Skipped explicitly by scorer or grouper
     SKIPPED_BY_SCORE,           // Skipped because score wasn't high enough
     SKIPPED_TIME_LIMIT,         // Ran out of time
     SKIPPED_FILTERED,           // Filtered out during processing
