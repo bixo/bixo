@@ -51,7 +51,7 @@ public class CreateUrlFromOutlinksFunction extends BaseOperation<NullContext> im
     	    String url = outlink.getToUrl();
     	    url = url.replaceAll("[\n\r]", "");
     	    
-            UrlDatum urlDatum = new UrlDatum(url, 0, 0, UrlStatus.UNFETCHED, metaData);
+            UrlDatum urlDatum = new UrlDatum(url, 0, System.currentTimeMillis(), UrlStatus.UNFETCHED, metaData);
             collector.add(urlDatum.toTuple());
     	}
     }

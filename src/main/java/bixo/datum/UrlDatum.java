@@ -22,6 +22,7 @@
  */
 package bixo.datum;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import cascading.tuple.Fields;
@@ -39,8 +40,9 @@ public class UrlDatum extends BaseDatum {
      * 
      * @param url - URL to fetch.
      */
-    public UrlDatum(String url) {
-        this(url, 0, 0, UrlStatus.UNFETCHED, null);
+    @SuppressWarnings("unchecked")
+	public UrlDatum(String url) {
+        this(url, 0, System.currentTimeMillis(), UrlStatus.UNFETCHED, new HashMap<String, Comparable>());
     }
     
     @SuppressWarnings("unchecked")

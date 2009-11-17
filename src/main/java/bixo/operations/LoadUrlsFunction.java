@@ -6,9 +6,7 @@ import java.net.URL;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.NullContext;
-import bixo.datum.BaseDatum;
 import bixo.datum.UrlDatum;
-import bixo.datum.UrlStatus;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
@@ -33,7 +31,7 @@ public class LoadUrlsFunction extends BaseOperation<NullContext> implements Func
     	try {
         	// Validate the URL
             new URL(url);
-            UrlDatum urlDatum = new UrlDatum(url, 0, 0, UrlStatus.UNFETCHED, BaseDatum.EMPTY_METADATA_MAP);
+            UrlDatum urlDatum = new UrlDatum(url);
             funcCall.getOutputCollector().add(urlDatum.toTuple());
         } catch (MalformedURLException e) {
             LOGGER.error("Invalid URL in input data file: " + url);
