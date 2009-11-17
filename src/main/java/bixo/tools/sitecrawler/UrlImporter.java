@@ -68,10 +68,10 @@ public class UrlImporter {
         _outputDir = outputDir;
     }
     
-    public void importOneDomain(String targetDomain, @SuppressWarnings("unused") boolean debug) throws Exception {
+	public void importOneDomain(String targetDomain, boolean debug) throws Exception {
         JobConf conf = HadoopUtils.getDefaultJobConf();
         FileSystem fs = _outputDir.getFileSystem(conf);
-
+        
         try {
             String loopDirName = _outputDir.toUri().toString();
             Tap urlSink = new Hfs(new SequenceFile(UrlDatum.FIELDS.append(MetaData.FIELDS)), loopDirName + "/urls", true);
@@ -79,6 +79,7 @@ public class UrlImporter {
 
             UrlDatum datum = new UrlDatum("http://" + targetDomain);
             datum.addMetaDataValue("crawl-depth", "0");
+
             writer.add(datum.toTuple());
             writer.close();
         } catch (Exception e) {
