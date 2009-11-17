@@ -15,10 +15,10 @@ public abstract class BaseDatum {
 	public static final Map<String, Comparable> EMPTY_METADATA_MAP = Collections.emptyMap();
 	public static final Fields EMPTY_METADATA_FIELDS = new Fields();
 	
-    private HashMap<String, Comparable> _metaDataMap;
+    private Map<String, Comparable> _metaDataMap;
 
     public BaseDatum(Map<String, Comparable> metaData) {
-        _metaDataMap = (HashMap<String, Comparable>) metaData;
+        _metaDataMap = (Map<String, Comparable>) metaData;
     }
 
     public BaseDatum(Tuple tuple, Fields metaDataFields) {
