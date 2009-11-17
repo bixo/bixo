@@ -132,20 +132,29 @@ public class FetchPipe extends SubAssembly {
     }
 
     public FetchPipe(Pipe urlProvider, IGroupingKeyGenerator keyGenerator, IScoreGenerator scoreGenerator, IHttpFetcher fetcher, Fields metaDataFields) {
-        Pipe fetch = new Pipe("fetch_pipe", urlProvider);
+        Pipe fetchPipe = new Pipe("fetch_pipe", urlProvider);
 
         Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
-        fetch = new Each(fetch, new GroupFunction(metaDataFields, keyGenerator), groupedFields);
+        fetchPipe = new Each(fetchPipe, new GroupFunction(metaDataFields, keyGenerator), groupedFields);
 
         Fields scoredFields = ScoredUrlDatum.FIELDS.append(metaDataFields);
-        fetch = new Each(fetch, new ScoreFunction(scoreGenerator, metaDataFields), scoredFields);
+        fetchPipe = new Each(fetchPipe, new ScoreFunction(scoreGenerator, metaDataFields), scoredFields);
 
-        fetch = new GroupBy(fetch, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
-        fetch = new Every(fetch, new FetcherBuffer(metaDataFields, fetcher), Fields.RESULTS);
+        createFetchBuffer(fetchPipe, fetcher, metaDataFields);
+    }
+    
+    public FetchPipe(Pipe scoredUrlProvider, IHttpFetcher fetcher, Fields metaDataFields) {
+        Pipe fetchPipe = new Pipe("fetch_pipe", scoredUrlProvider);
+        createFetchBuffer(fetchPipe, fetcher, metaDataFields);
+    }
+
+    private void createFetchBuffer(Pipe fetchPipe, IHttpFetcher fetcher, Fields metaDataFields) {
+    	fetchPipe = new GroupBy(fetchPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
+    	fetchPipe = new Every(fetchPipe, new FetcherBuffer(metaDataFields, fetcher), Fields.RESULTS);
 
         Fields fetchedFields = FetchedDatum.FIELDS.append(metaDataFields);
-        Pipe fetched = new Pipe(CONTENT_PIPE_NAME, new Each(fetch, new FilterErrorsFunction(fetchedFields)));
-        Pipe status = new Pipe(STATUS_PIPE_NAME, new Each(fetch, new MakeStatusFunction(metaDataFields)));
+        Pipe fetched = new Pipe(CONTENT_PIPE_NAME, new Each(fetchPipe, new FilterErrorsFunction(fetchedFields)));
+        Pipe status = new Pipe(STATUS_PIPE_NAME, new Each(fetchPipe, new MakeStatusFunction(metaDataFields)));
         
         setTails(fetched, status);
     }
