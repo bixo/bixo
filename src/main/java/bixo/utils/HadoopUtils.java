@@ -8,6 +8,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.ClusterStatus;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.log4j.Level;
 
 import cascading.flow.FlowConnector;
 import cascading.flow.MultiMapReducePlanner;
@@ -50,6 +51,10 @@ public class HadoopUtils {
         return conf;
     }
 
+    public static void setLoggingProperties(Properties props, Level cascadingLevel, Level bixoLevel) {
+    	props.put("log4j.logger", String.format("cascading=%s,bixo=%s", cascadingLevel, bixoLevel));
+    }
+    
     @SuppressWarnings("unchecked")
 	public static Properties getDefaultProperties(Class appJarClass, boolean debugging, JobConf conf) {
         Properties properties = new Properties();

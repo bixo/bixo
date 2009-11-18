@@ -1,7 +1,9 @@
 package bixo.utils;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 
 import org.apache.log4j.Logger;
 
@@ -19,4 +21,18 @@ public class IoUtils {
             LOGGER.warn("IOException closing input stream", e);
         }
     }
+    
+	/**
+	 * Read one line of input from the console.
+	 * 
+	 * @return Text that the user entered
+	 * @throws IOException
+	 */
+	public static String readInputLine() throws IOException {
+		InputStreamReader isr = new InputStreamReader(System.in);
+		BufferedReader br = new BufferedReader(isr);
+		return br.readLine();
+	}
+
+
 }
