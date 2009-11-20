@@ -37,6 +37,11 @@
 			</snapshots>
 		</repository>
 
+		<repository>
+			<id>Apache Snapshots</id>
+			<name>Apache snapshot repository</name>
+			<url>https://repository.apache.org/content/groups/snapshots-group/</url>
+		</repository>
 	</repositories>
 	
 	<dependencies>
@@ -74,17 +79,17 @@
         </dependency>
         
 		<dependency>
-            <groupId>bixo</groupId>
-            <artifactId>tika-core</artifactId>
-            <version>0.5-dev-2</version>
-        </dependency>
-        
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-parsers</artifactId>
+			<version>0.5-SNAPSHOT</version>
+		</dependency>
+	
 		<dependency>
-            <groupId>bixo</groupId>
-            <artifactId>tika-parsers</artifactId>
-            <version>0.5-dev-2</version>
-        </dependency>
-        
+			<groupId>net.sourceforge.nekohtml</groupId>
+			<artifactId>nekohtml</artifactId>
+			<version>1.9.9</version>
+		</dependency>
+
 		<dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>

@@ -196,6 +196,92 @@ public class SimpleParserTest {
         Assert.assertEquals("TransPac Software", parse.getTitle());
     }
 
+    @Test
+    public void testLanguageDetectionHttpHeader() throws IOException {
+		// Read in test data from test/resources
+		String html = readFromFile("parser-files/simple-content.html");
+		
+		// Create FetchedDatum using data
+		String url = "http://domain.com/simple-content.html";
+		String contentType = "text/html; charset=utf-8";
+		HttpHeaders headers = new HttpHeaders();
+		headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
+		headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+		headers.add(IHttpHeaders.CONTENT_LANGUAGE, "en");
+
+		BytesWritable content = new BytesWritable(html.getBytes("utf-8"));
+		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+		
+		// Call parser.parse
+		SimpleParser parser = new SimpleParser();
+		ParsedDatum parsedDatum = parser.parse(fetchedDatum);
+		
+		// Verify content is correct
+		Assert.assertEquals("Simple", parsedDatum.getTitle());
+		
+		compareTermsInStrings("Simple Content", parsedDatum.getParsedText());
+		Assert.assertEquals("en", parsedDatum.getLanguage());
+
+    }
+    
+    @Test
+    public void testLanguageDetectionDublinCore() throws IOException {
+		// Read in test data from test/resources
+		String html = readFromFile("parser-files/lang-dc.html");
+		
+		// Create FetchedDatum using data
+		String url = "http://domain.com/lang-dc.html";
+		String contentType = "text/html; charset=utf-8";
+		HttpHeaders headers = new HttpHeaders();
+		headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
+		headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+		headers.add(IHttpHeaders.CONTENT_LANGUAGE, "en");
+
+		BytesWritable content = new BytesWritable(html.getBytes("utf-8"));
+		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+		
+		// Call parser.parse
+		SimpleParser parser = new SimpleParser();
+		ParsedDatum parsedDatum = parser.parse(fetchedDatum);
+		
+		// Verify content is correct
+		Assert.assertEquals("DublinCore Language Example", parsedDatum.getTitle());
+		
+		compareTermsInStrings("DublinCore Language Example Content", parsedDatum.getParsedText());
+		
+		Assert.assertEquals("ja", parsedDatum.getLanguage());
+
+    }
+
+    @Test
+    public void testLanguageDetectionHttpEquiv() throws IOException {
+		// Read in test data from test/resources
+		String html = readFromFile("parser-files/lang-http-equiv.html");
+		
+		// Create FetchedDatum using data
+		String url = "http://domain.com/lang-dc.html";
+		String contentType = "text/html; charset=utf-8";
+		HttpHeaders headers = new HttpHeaders();
+		headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
+		headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+		headers.add(IHttpHeaders.CONTENT_LANGUAGE, "en");
+
+		BytesWritable content = new BytesWritable(html.getBytes("utf-8"));
+		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+		
+		// Call parser.parse
+		SimpleParser parser = new SimpleParser();
+		ParsedDatum parsedDatum = parser.parse(fetchedDatum);
+		
+		// Verify content is correct
+		Assert.assertEquals("SimpleHttpEquiv", parsedDatum.getTitle());
+		
+		compareTermsInStrings("SimpleHttpEquiv Content", parsedDatum.getParsedText());
+		
+		Assert.assertEquals("ja", parsedDatum.getLanguage());
+
+    }
+
 	@SuppressWarnings("unchecked")
 	private static Map<String, Comparable> makeMetadata() {
 		return new HashMap<String, Comparable>();

@@ -18,7 +18,6 @@ package bixo.parser.html;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -27,6 +26,7 @@ import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.TextContentHandler;
@@ -99,9 +99,10 @@ public class TikaHtmlParser implements Parser {
 
     }
 
+	@Override
     public void parse(
             InputStream stream, ContentHandler handler,
-            Metadata metadata, Map<String, Object> context)
+            Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         // Protect the stream from being closed by CyberNeko
         stream = new CloseShieldInputStream(stream);
@@ -137,8 +138,9 @@ public class TikaHtmlParser implements Parser {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        Map<String, Object> context = Collections.emptyMap();
-        parse(stream, handler, metadata, context);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(Parser.class, this);
+        parse(stream, handler, metadata, parseContext);
     }
 
     private ContentHandler getTitleHandler(final Metadata metadata) {
