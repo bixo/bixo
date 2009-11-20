@@ -129,7 +129,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
         
-        // Werify 100 fetched and 100 status entries were saved.
+        // Verify 100 fetched and 100 status entries were saved.
         Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
         TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
         
@@ -140,7 +140,9 @@ public class FetchPipeLRTest extends CascadingTestCase {
             totalEntries += 1;
 
             // Verify we can convert properly
-            new FetchedDatum(entry, metaDataFields);
+            FetchedDatum datum = new FetchedDatum(entry, metaDataFields);
+            Assert.assertNotNull(datum.getBaseUrl());
+            Assert.assertNotNull(datum.getFetchedUrl());
         }
         
         Assert.assertEquals(100, totalEntries);
