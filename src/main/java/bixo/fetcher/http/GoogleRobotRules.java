@@ -72,8 +72,8 @@ public class GoogleRobotRules extends SimpleRobotRules {
         // Hide default constructor
     }
     
-    public GoogleRobotRules(int httpStatus) {
-        super(httpStatus);
+    public GoogleRobotRules(String url, int httpStatus) {
+        super(url, httpStatus);
 
         if ((httpStatus == HttpServletResponse.SC_FORBIDDEN) || (httpStatus == HttpServletResponse.SC_UNAUTHORIZED)) {
             // Google treats these types of errors when fetching robots.txt as a sign that
@@ -89,8 +89,8 @@ public class GoogleRobotRules extends SimpleRobotRules {
         super(fetcher, url);
     }
     
-    public GoogleRobotRules(String robotName, byte[] robotsContent) {
-        super(robotName, robotsContent);
+    public GoogleRobotRules(String robotName, String url, byte[] robotsContent) {
+        super(robotName, url, robotsContent);
     }
     
     @Override

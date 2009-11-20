@@ -106,21 +106,21 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
         // Get the robots.txt for this domain
         SimpleRobotRules robotRules = _rules.get(host);
         if (robotRules == null) {
-            String robotsUrl = null;
+            String robotsUrl = "";
 
             try {
                 robotsUrl = new URL(url.getProtocol(), host, url.getPort(), "/robots.txt").toExternalForm();
                 byte[] robotsContent = _robotsFetcher.get(robotsUrl);
-                robotRules = new SimpleRobotRules(_robotsFetcher.getUserAgent().getAgentName(), robotsContent);
+                robotRules = new SimpleRobotRules(_robotsFetcher.getUserAgent().getAgentName(), robotsUrl, robotsContent);
             } catch (HttpFetchException e) {
-                robotRules = new SimpleRobotRules(e.getHttpStatus());
+                robotRules = new SimpleRobotRules(robotsUrl, e.getHttpStatus());
             } catch (IOFetchException e) {
                 // Couldn't load robots.txt for some reason (e.g. ConnectTimeoutException), so
                 // treat it like a server internal error case.
-                robotRules = new SimpleRobotRules(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                robotRules = new SimpleRobotRules(robotsUrl, HttpStatus.SC_INTERNAL_SERVER_ERROR);
             } catch (Exception e) {
                 LOGGER.warn("Unexpected exception handling robots.txt: " + robotsUrl, e);
-                robotRules = new SimpleRobotRules(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+                robotRules = new SimpleRobotRules(robotsUrl, HttpStatus.SC_INTERNAL_SERVER_ERROR);
             }
 
             // TODO KKr - have max size for this, so we don't chew up too much memory?

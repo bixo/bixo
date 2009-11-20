@@ -13,10 +13,15 @@ public class GoogleRobotRulesTest {
     private static final String LF = "\n";
     private static final String CR = "\r";
     private static final String CRLF = "\r\n";
+	private static final String FAKE_ROBOTS_URL = "http://domain.com";
+    
+    private static SimpleRobotRules createRobotRules(String crawlerName, byte[] content) {
+    	return new SimpleRobotRules(crawlerName, FAKE_ROBOTS_URL, content);
+    }
     
     @Test
     public void testEmptyRules() throws MalformedURLException {
-        SimpleRobotRules rules = new SimpleRobotRules("Any-darn-crawler", "".getBytes());
+        SimpleRobotRules rules = createRobotRules("Any-darn-crawler", "".getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
@@ -38,7 +43,7 @@ public class GoogleRobotRulesTest {
         + "#disallow: /test"+ LF
         + LF;
 
-        SimpleRobotRules rules = new SimpleRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
+        SimpleRobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
@@ -47,7 +52,7 @@ public class GoogleRobotRulesTest {
         final String simpleRobotsTxt = "User-agent: *" + CRLF
         + "Disallow: /";
 
-        SimpleRobotRules rules = new SimpleRobotRules("any-darn-crawler", simpleRobotsTxt.getBytes());
+        SimpleRobotRules rules = createRobotRules("any-darn-crawler", simpleRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/robots.txt"));
     }
     
@@ -61,7 +66,7 @@ public class GoogleRobotRulesTest {
         + "User-agent: crawler2" + CRLF
         + "Disallow: /";
 
-        SimpleRobotRules rules = new SimpleRobotRules("crawler3", simpleRobotsTxt.getBytes());
+        SimpleRobotRules rules = createRobotRules("crawler3", simpleRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
     }
@@ -71,7 +76,7 @@ public class GoogleRobotRulesTest {
         final String simpleRobotsTxt = "User-agent: *" + " # \u00A2 \u20B5" + CRLF
         + "Disallow:";
 
-        SimpleRobotRules rules = new SimpleRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes("UTF-8"));
+        SimpleRobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes("UTF-8"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
@@ -80,7 +85,7 @@ public class GoogleRobotRulesTest {
         final String simpleRobotsTxt = "User-agent: *" + CRLF
         + "Disallow:";
         
-        SimpleRobotRules rules = new SimpleRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
+        SimpleRobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
@@ -105,11 +110,11 @@ public class GoogleRobotRulesTest {
 
         SimpleRobotRules rules;
 
-        rules = new SimpleRobotRules("WebCrawler/3.0", mixedEndingsRobotsTxt.getBytes());
+        rules = createRobotRules("WebCrawler/3.0", mixedEndingsRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/"));
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/index.html"));
 
-        rules = new SimpleRobotRules("Unknown/1.0", mixedEndingsRobotsTxt.getBytes());
+        rules = createRobotRules("Unknown/1.0", mixedEndingsRobotsTxt.getBytes());
         Assert.assertFalse(rules.isAllowed("http://www.fict.org/"));
         Assert.assertFalse(rules.isAllowed("http://www.fict.org/index.html"));
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
@@ -147,7 +152,7 @@ public class GoogleRobotRulesTest {
         
         SimpleRobotRules rules;
         
-        rules = new SimpleRobotRules("UnhipBot/0.1", rfpExampleRobotsTxt.getBytes());
+        rules = createRobotRules("UnhipBot/0.1", rfpExampleRobotsTxt.getBytes());
         Assert.assertFalse(rules.isAllowed("http://www.fict.org/"));
         Assert.assertFalse(rules.isAllowed("http://www.fict.org/index.html"));
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
@@ -160,7 +165,7 @@ public class GoogleRobotRulesTest {
         Assert.assertFalse(rules.isAllowed("http://www.fict.org/%7Ejim/jim.html"));
         Assert.assertFalse(rules.isAllowed("http://www.fict.org/%7Emak/mak.html"));
 
-        rules = new SimpleRobotRules("WebCrawler/3.0", rfpExampleRobotsTxt.getBytes());
+        rules = createRobotRules("WebCrawler/3.0", rfpExampleRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/"));
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/index.html"));
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
@@ -173,7 +178,7 @@ public class GoogleRobotRulesTest {
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/%7Ejim/jim.html"));
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/%7Emak/mak.html"));
 
-        rules = new SimpleRobotRules("Excite/1.0", rfpExampleRobotsTxt.getBytes());
+        rules = createRobotRules("Excite/1.0", rfpExampleRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/"));
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/index.html"));
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
@@ -186,7 +191,7 @@ public class GoogleRobotRulesTest {
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/%7Ejim/jim.html"));
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/%7Emak/mak.html"));
 
-        rules = new SimpleRobotRules("Unknown/1.0", rfpExampleRobotsTxt.getBytes());
+        rules = createRobotRules("Unknown/1.0", rfpExampleRobotsTxt.getBytes());
         Assert.assertFalse(rules.isAllowed("http://www.fict.org/"));
         Assert.assertFalse(rules.isAllowed("http://www.fict.org/index.html"));
         Assert.assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
@@ -220,7 +225,7 @@ public class GoogleRobotRulesTest {
 
         SimpleRobotRules rules;
         
-        rules = new SimpleRobotRules("Agent1", nutchRobotsTxt.getBytes());
+        rules = createRobotRules("Agent1", nutchRobotsTxt.getBytes());
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/a"));
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/a/"));
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
@@ -242,7 +247,7 @@ public class GoogleRobotRulesTest {
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/"));
 
-        rules = new SimpleRobotRules("Agent2", nutchRobotsTxt.getBytes());
+        rules = createRobotRules("Agent2", nutchRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/a"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
@@ -264,7 +269,7 @@ public class GoogleRobotRulesTest {
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/"));
 
-        rules = new SimpleRobotRules("Agent3", nutchRobotsTxt.getBytes());
+        rules = createRobotRules("Agent3", nutchRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/a"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
@@ -286,7 +291,7 @@ public class GoogleRobotRulesTest {
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/"));
 
-        rules = new SimpleRobotRules("Agent4", nutchRobotsTxt.getBytes());
+        rules = createRobotRules("Agent4", nutchRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/a"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
@@ -308,7 +313,7 @@ public class GoogleRobotRulesTest {
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/"));
 
-        rules = new SimpleRobotRules("Agent5", nutchRobotsTxt.getBytes());
+        rules = createRobotRules("Agent5", nutchRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/a"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
@@ -352,11 +357,11 @@ public class GoogleRobotRulesTest {
 
         SimpleRobotRules rules;
         
-        rules = new SimpleRobotRules("anybot", htmlRobotsTxt.getBytes());
+        rules = createRobotRules("anybot", htmlRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
         Assert.assertEquals(10000, rules.getCrawlDelay());
 
-        rules = new SimpleRobotRules("bogusbot", htmlRobotsTxt.getBytes());
+        rules = createRobotRules("bogusbot", htmlRobotsTxt.getBytes());
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
         Assert.assertEquals(30000, rules.getCrawlDelay());
     }
@@ -384,25 +389,25 @@ public class GoogleRobotRulesTest {
                 "Allow: /images/\n";
         
         SimpleRobotRules rules;
-        rules = new SimpleRobotRules("Mozilla allowbot1 99.9", heritrixRobotsTxt.getBytes());
+        rules = createRobotRules("Mozilla allowbot1 99.9", heritrixRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/path"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/"));
 
-        rules = new SimpleRobotRules("Mozilla allowbot2 99.9", heritrixRobotsTxt.getBytes());
+        rules = createRobotRules("Mozilla allowbot2 99.9", heritrixRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/path"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/"));
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/foo"));
 
-        rules = new SimpleRobotRules("Mozilla denybot 99.9", heritrixRobotsTxt.getBytes());
+        rules = createRobotRules("Mozilla denybot 99.9", heritrixRobotsTxt.getBytes());
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/path"));
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/"));
         Assert.assertEquals(IRobotRules.UNSET_CRAWL_DELAY, rules.getCrawlDelay());
         
-        rules = new SimpleRobotRules("Mozilla anonbot 99.9", heritrixRobotsTxt.getBytes());
+        rules = createRobotRules("Mozilla anonbot 99.9", heritrixRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/path"));
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/cgi-bin/foo.pl"));
 
-        rules = new SimpleRobotRules("Mozilla delaybot 99.9", heritrixRobotsTxt.getBytes());
+        rules = createRobotRules("Mozilla delaybot 99.9", heritrixRobotsTxt.getBytes());
         Assert.assertEquals(20000, rules.getCrawlDelay());
     }
 
@@ -414,7 +419,7 @@ public class GoogleRobotRulesTest {
         + "Allow: /somepage.html" + CRLF
         + "Disallow: /";
 
-        SimpleRobotRules rules = new SimpleRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
+        SimpleRobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/SomePage.html"));
     }
@@ -425,7 +430,7 @@ public class GoogleRobotRulesTest {
         final String simpleRobotsTxt = "User-agent: *" + CRLF
         + "Disallow:";
 
-        SimpleRobotRules rules = new SimpleRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
+        SimpleRobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
@@ -435,7 +440,7 @@ public class GoogleRobotRulesTest {
         final String simpleRobotsTxt = "User-agent: *" + CRLF
         + "Allow:";
 
-        SimpleRobotRules rules = new SimpleRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
+        SimpleRobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
@@ -450,7 +455,7 @@ public class GoogleRobotRulesTest {
         + "User-agent: *" + CRLF
         + "Disallow: /";
 
-        SimpleRobotRules rules = new SimpleRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
+        SimpleRobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
@@ -466,7 +471,7 @@ public class GoogleRobotRulesTest {
         + "User-agent: crawler" + CRLF
         + "Disallow: /";
 
-        SimpleRobotRules rules = new SimpleRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
+        SimpleRobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
@@ -478,7 +483,7 @@ public class GoogleRobotRulesTest {
         + "Disallow: /index.html" + CRLF
         + "Allow: /";
 
-        SimpleRobotRules rules = new SimpleRobotRules("crawler2", simpleRobotsTxt.getBytes());
+        SimpleRobotRules rules = createRobotRules("crawler2", simpleRobotsTxt.getBytes());
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
@@ -494,7 +499,7 @@ public class GoogleRobotRulesTest {
         + "User-agent: crawler2" + CRLF
         + "Disallow: /";
 
-        SimpleRobotRules rules = new SimpleRobotRules("crawler2", simpleRobotsTxt.getBytes());
+        SimpleRobotRules rules = createRobotRules("crawler2", simpleRobotsTxt.getBytes());
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
@@ -502,19 +507,19 @@ public class GoogleRobotRulesTest {
     public void testStatusCodeCreation() throws MalformedURLException {
         SimpleRobotRules rules;
         
-        rules = new SimpleRobotRules(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+        rules = new SimpleRobotRules(FAKE_ROBOTS_URL, HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         Assert.assertTrue(rules.getDeferVisits());
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
         
-        rules = new SimpleRobotRules(HttpServletResponse.SC_MOVED_PERMANENTLY);
+        rules = new SimpleRobotRules(FAKE_ROBOTS_URL, HttpServletResponse.SC_MOVED_PERMANENTLY);
         Assert.assertTrue(rules.getDeferVisits());
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
         
-        rules = new SimpleRobotRules(HttpServletResponse.SC_NOT_FOUND);
+        rules = new SimpleRobotRules(FAKE_ROBOTS_URL, HttpServletResponse.SC_NOT_FOUND);
         Assert.assertFalse(rules.getDeferVisits());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
         
-        rules = new SimpleRobotRules(HttpServletResponse.SC_FORBIDDEN);
+        rules = new SimpleRobotRules(FAKE_ROBOTS_URL, HttpServletResponse.SC_FORBIDDEN);
         Assert.assertFalse(rules.getDeferVisits());
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
     }
@@ -528,7 +533,7 @@ public class GoogleRobotRulesTest {
                             "User-agent: *" + CR + 
                             "Disallow:/baz" + CR;
         
-        SimpleRobotRules rules = new SimpleRobotRules("bixo", delayRules1RobotsTxt.getBytes());
+        SimpleRobotRules rules = createRobotRules("bixo", delayRules1RobotsTxt.getBytes());
         long crawlDelay = rules.getCrawlDelay();
         Assert.assertEquals("testing crawl delay for agent bixo - rule 1", 10000, crawlDelay);
         
@@ -537,7 +542,7 @@ public class GoogleRobotRulesTest {
                             "User-agent: *" + CR + 
                             "Disallow:/baz" + CR;
         
-        rules = new SimpleRobotRules("bixo", delayRules2RobotsTxt.getBytes());
+        rules = createRobotRules("bixo", delayRules2RobotsTxt.getBytes());
         crawlDelay = rules.getCrawlDelay();
         Assert.assertEquals("testing crawl delay for agent bixo - rule 2", SimpleRobotRules.UNSET_CRAWL_DELAY, crawlDelay);
       }

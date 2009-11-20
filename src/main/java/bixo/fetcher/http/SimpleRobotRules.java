@@ -24,12 +24,17 @@ public class SimpleRobotRules implements IRobotRules {
     private static final String ALLOW_FIELD = "allow:";
     private static final String CRAWL_DELAY_FIELD = "crawl-delay:";
     private static final String SITEMAP_FIELD = "sitemap:";
+
+	private static final int MAX_WARNINGS = 5;
     
     // If true, then there was a problem getting/parsing robots.txt, and the crawler
     // should defer visits until some later time.
     private boolean _deferVisits = false;
     
     protected RobotRules _robotRules;
+    
+	private String _url;
+	private int _numWarnings;
     
     /**
      * Single rule that maps from a path prefix to an allow flag.
@@ -122,7 +127,14 @@ public class SimpleRobotRules implements IRobotRules {
         // Hide default constructor
     }
     
-    public SimpleRobotRules(int httpStatus) {
+    private void init(String url) {
+    	_url = url;
+    	_numWarnings = 0;
+    }
+    
+    public SimpleRobotRules(String url, int httpStatus) {
+    	init(url);
+    	
         createAllOrNone(httpStatus);
     }
     
@@ -130,6 +142,8 @@ public class SimpleRobotRules implements IRobotRules {
     // Java URL code to fetch it, as well as a version that takes an output stream (e.g. from
     // HttpClient) and a version that takes a String with the content.
     public SimpleRobotRules(IHttpFetcher fetcher, String url) {
+    	init(url);
+    	
         try {
             URL realUrl = new URL(url);
             String urlToFetch = new URL(realUrl, "/robots.txt").toExternalForm();
@@ -141,7 +155,10 @@ public class SimpleRobotRules implements IRobotRules {
             // page, without returning a 404. So if we have a redirect, and the normalized
             // redirect URL is the same as the domain, then treat it like a 404...otherwise
             // our robots.txt parser will barf, and we treat that as a "deferred" case.
-            parseRules(fetcher.getUserAgent().getAgentName(), urlToFetch, result.getContent().getBytes());
+            // TODO KKr - make it so.
+            
+            init(urlToFetch);
+            parseRules(fetcher.getUserAgent().getAgentName(), result.getContent().getBytes());
         } catch (MalformedURLException e) {
             LOGGER.error("Invalid URL: " + url);
             createAllOrNone(false);
@@ -155,8 +172,10 @@ public class SimpleRobotRules implements IRobotRules {
         }
     }
     
-    public SimpleRobotRules(String robotName, byte[] robotsContent) {
-        parseRules(robotName, "url", robotsContent);
+    public SimpleRobotRules(String robotName, String url, byte[] robotsContent) {
+    	init(url);
+    	
+        parseRules(robotName, robotsContent);
     }
     
     protected void createAllOrNone(boolean allowAll) {
@@ -239,6 +258,18 @@ public class SimpleRobotRules implements IRobotRules {
         return isAllowed(new URL(url));
     }
     
+    private void reportWarning(String msg) {
+    	_numWarnings += 1;
+    	
+    	if (_numWarnings == 1) {
+    		LOGGER.warn("Problem processing robots.txt for " + _url);
+    	}
+    	
+    	if (_numWarnings < MAX_WARNINGS) {
+    		LOGGER.warn("\t" + msg);
+    	}
+    }
+    
     // TODO KKr - catch & report/log issues with the file
     // contains HTML
     // has unknown directives
@@ -270,10 +301,11 @@ public class SimpleRobotRules implements IRobotRules {
      * @param url - source of robots.txt, for error reporting
      * @param robotContent - raw bytes from robots.txt
      */
-    protected void parseRules(String robotName, String url, byte[] robotContent) {
+    protected void parseRules(String robotName, byte[] robotContent) {
+    	
         // If there's nothing there, treat it like we have no restrictions.
         if ((robotContent == null) || (robotContent.length == 0)) {
-            LOGGER.trace("Missing/empty robots.txt at " + url);
+            LOGGER.trace("Missing/empty robots.txt at " + _url);
             createAllOrNone(true);
             return;
         }
@@ -297,7 +329,7 @@ public class SimpleRobotRules implements IRobotRules {
         boolean matchedWildcard = false;
         boolean addingRules = false;
         boolean finishedAgentFields = false;
-        
+                
         String targetName = robotName.toLowerCase();
         
         while (lineParser.hasMoreTokens()) {
@@ -313,7 +345,7 @@ public class SimpleRobotRules implements IRobotRules {
             if (hashPos >= 0) {
                 line = line.substring(0, hashPos);
             }
-            line= line.trim().toLowerCase();
+            line = line.trim().toLowerCase();
 
             if (line.startsWith(USER_AGENT_FIELD)) {
                 if (matchedRealName) {
@@ -357,7 +389,8 @@ public class SimpleRobotRules implements IRobotRules {
                 try {
                     path = URLDecoder.decode(path, "UTF-8");
                 } catch (Exception e) {
-                    LOGGER.warn("Error parsing robots rules - can't decode path: " + path);
+                	
+                    reportWarning("Error parsing robots rules - can't decode path: " + path);
                 }
 
                 if (path.length() == 0) {
@@ -378,7 +411,7 @@ public class SimpleRobotRules implements IRobotRules {
                 try {
                     path = URLDecoder.decode(path, "UTF-8");
                 } catch (Exception e) {
-                    LOGGER.warn("Error parsing robots rules - can't decode path: " + path);
+                    reportWarning("Error parsing robots rules - can't decode path: " + path);
                 }
 
                 if (path.length() == 0) {
@@ -396,21 +429,28 @@ public class SimpleRobotRules implements IRobotRules {
                  
                 String delayString = line.substring(CRAWL_DELAY_FIELD.length()).trim();
                 if (delayString.length() > 0) {
-                    try {
-                        long delayValue = Integer.parseInt(delayString) * 1000L; // sec to millisec
-                        curRules.setCrawlDelay(delayValue);
-                    } catch (Exception e) {
-                        LOGGER.info("Error parsing robots rules - can't decode crawl delay", e);
-                    }
+                	try {
+                		// Some sites use values like 0.5 for the delay.
+                		if (delayString.indexOf('.') != -1) {
+                			double delayValue = Double.parseDouble(delayString) * 1000.0;
+                			curRules.setCrawlDelay((long)delayValue);
+                			reportWarning("Flaoting point crawl delay value: " + delayString);
+                		} else {
+                			long delayValue = Integer.parseInt(delayString) * 1000L; // sec to millisec
+                			curRules.setCrawlDelay(delayValue);
+                		}
+                	} catch (Exception e) {
+            			reportWarning("Error parsing robots rules - can't decode crawl delay: " + delayString);
+                	}
                 }
             } else if (line.startsWith(SITEMAP_FIELD)) {
                 String path = line.substring(DISALLOW_FIELD.length()).trim();
                LOGGER.trace("Ignoring sitemap directive in robots.txt: " + path);
             } else if (line.contains(":")) {
-            	LOGGER.warn("Unknown directive in robots.txt file: " + line);
+            	reportWarning("Unknown directive in robots.txt file: " + line);
                 finishedAgentFields = true;
             } else if (line.length() > 0) {
-            	LOGGER.warn("Unknown line in robots.txt file: " + line);
+            	reportWarning("Unknown line in robots.txt file: " + line);
                 finishedAgentFields = true;
             }
         }
