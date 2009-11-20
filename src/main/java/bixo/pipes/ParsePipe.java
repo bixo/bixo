@@ -22,17 +22,50 @@
  */
 package bixo.pipes;
 
-import bixo.operations.ParseFunction;
+import bixo.cascading.NullContext;
+import bixo.datum.FetchedDatum;
+import bixo.datum.ParsedDatum;
 import bixo.parser.IParser;
+import bixo.parser.ParserCounters;
 import bixo.parser.SimpleParser;
+import cascading.flow.FlowProcess;
+import cascading.operation.BaseOperation;
+import cascading.operation.Function;
+import cascading.operation.FunctionCall;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
 import cascading.tuple.Fields;
+import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
 public class ParsePipe extends SubAssembly {
     public static final String PARSE_PIPE_NAME = "parse_pipe";
+
+    private static class ParseFunction extends BaseOperation<NullContext> implements Function<NullContext> {
+
+        private IParser _parser;
+        private Fields _metaDataFields;
+
+        public ParseFunction(IParser parser, Fields inMetaDataFields, Fields outMetaDataFields) {
+            super(ParsedDatum.FIELDS.append(outMetaDataFields));
+            _metaDataFields = inMetaDataFields;
+            _parser = parser;
+        }
+
+        public void operate(FlowProcess flowProcess, FunctionCall<NullContext> functionCall) {
+            TupleEntry arguments = functionCall.getArguments();
+            FetchedDatum fetchedDatum = new FetchedDatum(arguments.getTuple(), _metaDataFields);
+            ParsedDatum parseResult = _parser.parse(fetchedDatum);
+            
+            // TODO KKr - add status to ParsedDatum, use it here to increment parsed vs. failed doc counters.
+            // Or since this operation is part of a regular Cascading flow, we could trap exceptions.
+            if (parseResult != null) {
+                flowProcess.increment(ParserCounters.DOCUMENTS_PARSED, 1);
+                functionCall.getOutputCollector().add(parseResult.toTuple());
+            }
+        }
+    }
 
     public ParsePipe(Pipe fetcherPipe) {
         this(fetcherPipe, new SimpleParser(), new Fields());
@@ -43,9 +76,13 @@ public class ParsePipe extends SubAssembly {
     }
 
     public ParsePipe(Pipe fetcherPipe, IParser parser, Fields metaDataFields) {
+    	this(fetcherPipe, parser, metaDataFields, metaDataFields);
+    }
+    
+    public ParsePipe(Pipe fetcherPipe, IParser parser, Fields inMetaDataFields, Fields outMetaDataFields) {
         Pipe parsePipe = new Pipe(PARSE_PIPE_NAME, fetcherPipe);
 
-        parsePipe = new Each(parsePipe, new ParseFunction(parser, metaDataFields), Fields.RESULTS);
+        parsePipe = new Each(parsePipe, new ParseFunction(parser, inMetaDataFields, outMetaDataFields), Fields.RESULTS);
         setTails(parsePipe);
     }
 
