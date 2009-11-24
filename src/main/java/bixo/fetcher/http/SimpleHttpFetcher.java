@@ -48,6 +48,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
 import org.apache.http.NoHttpResponseException;
+import org.apache.http.ProtocolException;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -64,6 +65,7 @@ import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.cookie.params.CookieSpecParamBean;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.DefaultRedirectHandler;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
@@ -104,6 +106,8 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     private static final int BUFFER_SIZE = 8 * 1024;
     private static final int DEFAULT_MAX_RETRY_COUNT = 20;
     
+	private static final String PERM_REDIRECT_CONTEXT_KEY = "perm-redirect";
+
     private static final String SSL_CONTEXT_NAMES[] = {
         "TLS",
         "Default",
@@ -149,6 +153,30 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             // Retry if the request is considered idempotent 
             return idempotent;
         }
+    }
+    
+    /**
+     * Handler to record last permanent redirect (if any) in context.
+     *
+     */
+    private static class MyRedirectHandler extends DefaultRedirectHandler {
+    	
+
+		public MyRedirectHandler() {
+    		super();
+    	}
+    	
+    	@Override
+    	public URI getLocationURI(HttpResponse response, HttpContext context) throws ProtocolException {
+    		URI result = super.getLocationURI(response, context);
+    		
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == HttpStatus.SC_MOVED_PERMANENTLY) {
+            	context.setAttribute(PERM_REDIRECT_CONTEXT_KEY, result);
+            }
+
+    		return result;
+    	}
     }
     
     public SimpleHttpFetcher(UserAgent userAgent) {
@@ -275,7 +303,8 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         HttpResponse response;
         long readStartTime;
         HttpHeaders headerMap = new HttpHeaders();
-        String redirectedUrl;
+        String redirectedUrl = null;
+        String newBaseUrl = null;
         boolean needAbort = false;
 
         try {
@@ -303,6 +332,11 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             } catch (MalformedURLException e) {
                 LOGGER.warn("Invalid host/uri specified in final fetch: " + host + finalRequest.getURI());
                 redirectedUrl = url;
+            }
+            
+            URI permRedirectUri = (URI)localContext.getAttribute(PERM_REDIRECT_CONTEXT_KEY);
+            if (permRedirectUri != null) {
+            	newBaseUrl = permRedirectUri.toURL().toExternalForm();
             }
         } catch (IOException e) {
             throw new IOFetchException(url, e);
@@ -397,8 +431,9 @@ public class SimpleHttpFetcher implements IHttpFetcher {
 
         // Note that getContentType can return null.
         String contentType = (entity == null || entity.getContentType() == null) ? "" : entity.getContentType().getValue();
-
-        return new FetchedDatum(url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
+        FetchedDatum result = new FetchedDatum(url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
+        result.setNewBaseUrl(newBaseUrl);
+        return result;
     }
     
     private static void safeClose(Closeable o) {
@@ -491,6 +526,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
             _httpClient = new DefaultHttpClient(cm, params);
             _httpClient.setHttpRequestRetryHandler(new MyRequestRetryHandler(_maxRetryCount));
+            _httpClient.setRedirectHandler(new MyRedirectHandler());
             
             params = _httpClient.getParams();
             // FUTURE KKr - support authentication

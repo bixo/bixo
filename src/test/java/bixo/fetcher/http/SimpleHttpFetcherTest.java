@@ -27,10 +27,28 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
     @SuppressWarnings("serial")
     private class RedirectResponseHandler extends AbstractHttpHandler {
         
+    	private boolean _permanent;
+    	
+    	public RedirectResponseHandler() {
+    		this(false);
+    	}
+    	
+    	public RedirectResponseHandler(boolean permanent) {
+    		super();
+    		_permanent = permanent;
+    	}
+    	
         @Override
         public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
         	if (pathInContext.endsWith("base")) {
-                response.sendRedirect("http://localhost:8089/redirect");
+                if (_permanent) {
+                	// Can't use sendRedirect, as that forces it to be a temp redirect.
+                	response.setStatus(HttpStatus.SC_MOVED_PERMANENTLY);
+                	response.addField("Location", "http://localhost:8089/redirect");
+                	request.setHandled(true);
+                } else {
+                	response.sendRedirect("http://localhost:8089/redirect");
+                }
         	} else {
                 response.setStatus(HttpStatus.SC_OK);
                 response.setContentType("text/plain");
@@ -160,7 +178,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
     }
     
     @Test
-    public final void testRedirectHandling() throws Exception {
+    public final void testTempRedirectHandling() throws Exception {
         FetcherPolicy policy = new FetcherPolicy();
         HttpServer server = startServer(new RedirectResponseHandler(), 8089);
         IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
@@ -169,7 +187,20 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         server.stop();
 
         Assert.assertEquals("Redirected URL", "http://localhost:8089/redirect", result.getFetchedUrl());
+        Assert.assertNull(result.getNewBaseUrl());
+    }
+    
+    @Test
+    public final void testPermRedirectHandling() throws Exception {
+        FetcherPolicy policy = new FetcherPolicy();
+        HttpServer server = startServer(new RedirectResponseHandler(true), 8089);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        String url = "http://localhost:8089/base";
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
+        server.stop();
 
+        Assert.assertEquals("Redirected URL", "http://localhost:8089/redirect", result.getFetchedUrl());
+        Assert.assertEquals("New base URL", "http://localhost:8089/redirect", result.getNewBaseUrl());
     }
     
 }
