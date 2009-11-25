@@ -32,6 +32,7 @@ import java.util.HashSet;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
+import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.UrlDatum;
 import bixo.exceptions.HttpFetchException;
@@ -58,6 +59,12 @@ import bixo.utils.GroupingKey;
 @SuppressWarnings("serial")
 public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
     private static final Logger LOGGER = Logger.getLogger(SimpleGroupingKeyGenerator.class);
+
+    // Some robots.txt files are > 64K
+	private static final int MAX_ROBOTS_SIZE = 128 * 1024;
+
+	// Since getGroupingKey will be called sequentially, we only need one thread.
+	private static final int DEFAULT_ROBOTS_FETCHER_THREADS = 1;
     
     private HashSet<String> _badHosts = new HashSet<String>();
     private HashMap<String, SimpleRobotRules> _rules = new HashMap<String, SimpleRobotRules>();
@@ -66,7 +73,9 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
     private boolean _usePLD;
     
     public SimpleGroupingKeyGenerator(UserAgent userAgent) {
-    	_robotsFetcher = new SimpleHttpFetcher(1, userAgent);
+    	FetcherPolicy policy = new FetcherPolicy();
+    	policy.setMaxContentSize(MAX_ROBOTS_SIZE);
+    	_robotsFetcher = new SimpleHttpFetcher(DEFAULT_ROBOTS_FETCHER_THREADS, policy, userAgent);
     	_usePLD = false;
     }
     
