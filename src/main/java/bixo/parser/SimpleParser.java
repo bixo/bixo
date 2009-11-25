@@ -26,7 +26,6 @@ import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.fetcher.http.IHttpHeaders;
 import bixo.utils.IoUtils;
-import bixo.utils.UrlUtils;
 
 @SuppressWarnings("serial")
 public class SimpleParser implements IParser {
@@ -35,12 +34,11 @@ public class SimpleParser implements IParser {
     // Simplistic language code pattern used when there are more than one languages specified
     // FUTURE KKr - improve this to handle en-US, and "eng" for those using old-style language codes.
     private static final Pattern LANGUAGE_CODE_PATTERN= Pattern.compile("([a-z]{2})([,;-]).*");
-    
+    private static final Pattern HTTP_EQUIV_CHARSET_PATTERN = Pattern.compile("<meta\\s+http-equiv\\s*=\\s*['\"]\\s*Content-Type['\"]\\s+content\\s*=\\s*['\"][^;]+;\\s*charset\\s*=\\s*([^'\"]+)\"");
+
     private transient AutoDetectParser _parser;
     
     private static class LinkBodyHandler extends DefaultHandler {
-        private URL _baseUrl;
-        
         private StringBuilder _content = new StringBuilder();
         private List<Outlink> _outlinks = new ArrayList<Outlink>();
         private boolean _inHead = false;
@@ -50,18 +48,6 @@ public class SimpleParser implements IParser {
         
         private String _curUrl;
         private StringBuilder _curAnchor = new StringBuilder();
-        
-        public LinkBodyHandler() {
-        	_baseUrl = null;
-        }
-        
-        public LinkBodyHandler(URL baseUrl) {
-            _baseUrl = baseUrl;
-        }
-        
-        public void setBaseUrl(URL baseUrl) {
-        	_baseUrl = baseUrl;
-        }
         
         public String getContent() {
             return _content.toString();
@@ -76,30 +62,17 @@ public class SimpleParser implements IParser {
             super.startElement(uri, localName, qName, attributes);
             
             if (_inHead) {
-            	if (localName.equalsIgnoreCase("base")) {
-            		try {
-            			// Handle relative URLs, even though by definition it should be absolute.
-            			_baseUrl = new URL(UrlUtils.makeUrl(_baseUrl, attributes.getValue("href").trim()));
-            		} catch (MalformedURLException e) {
-                        LOGGER.debug("Invalid URL found in <base> tag: ", e);
-            		}
-            	} else if (localName.equalsIgnoreCase("title")) {
+            	if (localName.equalsIgnoreCase("title")) {
             		_inTitle = true;
             	}
             } else if (_inBody) {
             	if (localName.equalsIgnoreCase("a")) {
-                    try {
-                    	// If attributes.getValue doesn't have href then this will cause a NPE 
-                    	String hrefAttr = attributes.getValue("href");
-                    	if (hrefAttr == null) {
-                    		throw new MalformedURLException("No href present for <a> tag " + uri);
-                    	}
-                        _curUrl = UrlUtils.makeUrl(_baseUrl, hrefAttr.trim());
-                        _inAnchor = true;
-                        _curAnchor.setLength(0);
-                    } catch (MalformedURLException e) {
-                        LOGGER.debug("Invalid URL found in <a> tag: ", e);
-                    }
+            		String hrefAttr = attributes.getValue("href");
+            		if (hrefAttr != null) {
+            			_curUrl = hrefAttr;
+            			_inAnchor = true;
+            			_curAnchor.setLength(0);
+            		}
             	}
             } else if (localName.equalsIgnoreCase("head")) {
             	_inHead = true;
@@ -158,14 +131,13 @@ public class SimpleParser implements IParser {
         Metadata metadata = new Metadata();
         metadata.add(Metadata.RESOURCE_NAME_KEY, fetchedDatum.getBaseUrl());
         metadata.add(Metadata.CONTENT_TYPE, fetchedDatum.getContentType());
-
-        // TODO KKr - enable this when we have it as part of the FetchedDatum
-        // metadata.add(Metadata.CONTENT_ENCODING, fetchedDatum.getContentEncoding());
         metadata.add(Metadata.CONTENT_ENCODING, fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_ENCODING));
-  
-        // Provide language hint using the language sent back by the Http response
         metadata.add(Metadata.CONTENT_LANGUAGE, fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_LANGUAGE));
-
+        
+        // Hack to detect content encoding - this is required due to a bug in Tika since it
+        // isn't using the http-equiv charset value.
+        detectContentEncoding(new String(fetchedDatum.getContent().getBytes()), metadata);
+        
         InputStream is = new ByteArrayInputStream(fetchedDatum.getContent().getBytes());
 
         LinkBodyHandler handler = new LinkBodyHandler();
@@ -174,11 +146,10 @@ public class SimpleParser implements IParser {
         try {
         	URL baseUrl = getContentLocation(fetchedDatum);
         	metadata.add(Metadata.CONTENT_LOCATION, baseUrl.toExternalForm());
-        	
-        	handler.setBaseUrl(baseUrl);
 
         	 // Automatic language detection	 
         	ProfilingHandler profilingHandler = new ProfilingHandler();	 
+        	
         	
             TeeContentHandler teeContentHandler = new TeeContentHandler(handler, profilingHandler);
             _parser.parse(is, teeContentHandler, metadata);
@@ -209,6 +180,23 @@ public class SimpleParser implements IParser {
             IoUtils.safeClose(is);
         }
     }
+
+	private void detectContentEncoding(String content, Metadata metadata) {
+		
+		// We are interested in finding if there is an http-equiv defined charset.
+		// So this only is needed when dealing with HTML
+		String contentType = metadata.get(Metadata.CONTENT_TYPE);
+		if (contentType.equalsIgnoreCase("text/html")
+			|| contentType.equalsIgnoreCase("application/xhtml+xml")
+			|| contentType.equalsIgnoreCase("application/x-asp")) {
+			Matcher m = HTTP_EQUIV_CHARSET_PATTERN.matcher(content);
+			if (m.find()) {
+				// Overwrite the content encoding that was set up using the Http headers.
+				metadata.set(Metadata.CONTENT_ENCODING, m.group(1));
+				LOGGER.debug("Using encoding specified by http-equiv: " + m.group(1) );
+			}
+		}
+	}
 
 	private URL getContentLocation(FetchedDatum fetchedDatum) throws MalformedURLException {
 		URL baseUrl = new URL(fetchedDatum.getFetchedUrl());
@@ -259,7 +247,7 @@ public class SimpleParser implements IParser {
 		return lang;
 	}
 
-	public String getFirstLanguage(String lang) {
+	private String getFirstLanguage(String lang) {
 		if (lang != null && lang.length() > 0) {
 			// TODO VMa -- DublinCore languages could be specified in a multiple of ways
 			// see : http://dublincore.org/documents/2000/07/16/usageguide/qualified-html.shtml#language
