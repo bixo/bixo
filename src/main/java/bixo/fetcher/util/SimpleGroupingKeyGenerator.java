@@ -89,6 +89,12 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
         try {
             url = new URL(urlStr);
             host = url.getHost().toLowerCase();
+            
+            if (host.length() == 0) {
+            	// Can happen with URLs like mailto:xxx
+            	throw new MalformedURLException("No host name for url: " + urlStr);
+            }
+            
             if (!_usePLD) {
                 if (_badHosts.contains(host)) {
                     return GroupingKey.UNKNOWN_HOST_GROUPING_KEY;
