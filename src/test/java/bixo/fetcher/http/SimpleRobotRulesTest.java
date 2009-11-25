@@ -368,7 +368,7 @@ public class SimpleRobotRulesTest {
         final String htmlRobotsTxt = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\"><HTML>\n"
             +"<HEAD>\n"
             +"<TITLE>/robots.txt</TITLE>\n"
-            +"<HEAD>\n"
+            +"</HEAD>\n"
             +"<BODY>\n"
             +"User-agent: anybot<BR>\n"
             +"Disallow: <BR>\n"
@@ -542,6 +542,10 @@ public class SimpleRobotRulesTest {
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
         
         rules = new SimpleRobotRules(FAKE_ROBOTS_URL, HttpServletResponse.SC_NOT_FOUND);
+        Assert.assertFalse(rules.getDeferVisits());
+        Assert.assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
+        
+        rules = new SimpleRobotRules(FAKE_ROBOTS_URL, HttpServletResponse.SC_GONE);
         Assert.assertFalse(rules.getDeferVisits());
         Assert.assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
         

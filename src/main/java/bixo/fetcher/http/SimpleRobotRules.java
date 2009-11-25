@@ -6,6 +6,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
@@ -25,6 +26,10 @@ public class SimpleRobotRules implements IRobotRules {
     private static final String CRAWL_DELAY_FIELD = "crawl-delay:";
     private static final String SITEMAP_FIELD = "sitemap:";
 
+    private static final Pattern SIMPLE_HTML_PATTERN = Pattern.compile("(?is)<html.*<body");
+    private static final Pattern USER_AGENT_PATTERN = Pattern.compile("(?i)user-agent:");
+    
+    // Max # of warnings during parse of any one robots.txt file.
 	private static final int MAX_WARNINGS = 5;
     
     // If true, then there was a problem getting/parsing robots.txt, and the crawler
@@ -191,7 +196,8 @@ public class SimpleRobotRules implements IRobotRules {
             // treat it as a temporary failure.
             _deferVisits = true;
             createAllOrNone(false);
-        } else if (httpStatus == HttpStatus.SC_NOT_FOUND) {
+        } else if ((httpStatus == HttpStatus.SC_NOT_FOUND) || (httpStatus == HttpStatus.SC_GONE)) {
+        	// Some sites return 410 (gone) instead of 404 (not found), so treat as the same.
             createAllOrNone(true);
         } else if ((httpStatus == HttpStatus.SC_FORBIDDEN) || (httpStatus == HttpStatus.SC_UNAUTHORIZED)) {
             createAllOrNone(false);
@@ -319,6 +325,22 @@ public class SimpleRobotRules implements IRobotRules {
             content = new String(robotContent);
         }
 
+        // If it looks like it contains HTML, but doesn't have a user agent field, then
+        // assume somebody messed up and returned back to us a random HTML page instead
+        // of a robots.txt file.
+        boolean hasHTML = false;
+        if (SIMPLE_HTML_PATTERN.matcher(content).find()) {
+        	if (!USER_AGENT_PATTERN.matcher(content).find()) {
+                LOGGER.warn("Found non-robots.txt HTML file: " + _url);
+                createAllOrNone(true);
+                return;
+        	} else {
+        		// We'll try to strip out HTML tags below.
+                LOGGER.warn("Found HTML in robots.txt file: " + _url);
+                hasHTML = true;
+        	}
+        }
+        
         // Break on anything that might be used as a line ending. Since tokenizer doesn't
         // return empty tokens, a \r\n sequence still works since it looks like an empty
         // string between the \r and \n.
@@ -338,7 +360,9 @@ public class SimpleRobotRules implements IRobotRules {
             // Get rid of HTML markup, in case some brain-dead webmaster has created an HTML
             // page for robots.txt. We could do more sophisticated processing here to better
             // handle bad HTML, but that's a very tiny percentage of all robots.txt files.
-            line = line.replaceAll("<[^>]+>","");
+            if (hasHTML) {
+            	line = line.replaceAll("<[^>]+>","");
+            }
             
             // trim out comments and whitespace
             int hashPos = line.indexOf("#");
