@@ -23,6 +23,7 @@
 package bixo.config;
 
 import java.io.Serializable;
+import java.security.InvalidParameterException;
 
 import bixo.fetcher.FetchRequest;
 
@@ -54,6 +55,15 @@ public class FetcherPolicy implements Serializable {
     }
 
     public FetcherPolicy(int minResponseRate, int maxContentSize, long crawlEndTime, long crawlDelay, int maxRedirects) {
+        if (crawlDelay < 0) {
+            throw new InvalidParameterException("crawlDelay must be >= 0: " + crawlDelay);
+        }
+        
+        // Catch common error of specifying crawl delay in seconds versus milliseconds
+        if ((crawlDelay < 100) && (crawlDelay != 0))  {
+            throw new InvalidParameterException("crawlDelay must be milliseconds, not seconds: " + crawlDelay);
+        }
+        
         _minResponseRate = minResponseRate;
         _maxContentSize = maxContentSize;
         _crawlEndTime = crawlEndTime;
@@ -133,9 +143,15 @@ public class FetcherPolicy implements Serializable {
     }
     
     public FetchRequest getFetchRequest(int maxUrls) {
-        int numUrls = Math.min(maxUrls, (int)(DEFAULT_FETCH_INTERVAL / _crawlDelay));
+        int numUrls;
+        
+        if (_crawlDelay > 0) {
+            numUrls = Math.min(maxUrls, (int)(DEFAULT_FETCH_INTERVAL / _crawlDelay));
+        } else {
+            numUrls = maxUrls;
+        }
+        
         long nextFetchTime = System.currentTimeMillis() + (numUrls * _crawlDelay);
-
         return new FetchRequest(numUrls, nextFetchTime);
     }
     
