@@ -5,6 +5,7 @@
 .local.*
 build
 !src/build
+target
 build-eclipse
 build.sh
 *.iml
