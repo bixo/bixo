@@ -44,14 +44,15 @@ SSH_OPTS=`echo -i "$PRIVATE_KEY_PATH" -o StrictHostKeyChecking=no -o ServerAlive
 
 # The version of Hadoop to use.
 # HADOOP_VERSION=cloudera-hadoop-fedora-20090623
-HADOOP_VERSION=0.19.0
+HADOOP_VERSION=0.19.2
 
 # The Amazon S3 bucket where the Hadoop AMI is stored.
 # The default value is for public images, so can be left if you are using running a public image.
 # Change this value only if you are creating your own (private) AMI
 # so you can store it in a bucket you own.
 # S3_BUCKET=cloudera-ec2-hadoop-images
-S3_BUCKET=hadoop-images
+# S3_BUCKET=hadoop-images
+S3_BUCKET=bixolabs-ami
 
 # Enable public access to JobTracker and TaskTracker web interfaces
 ENABLE_WEB_PORTS=true
@@ -85,7 +86,7 @@ JAVA_VERSION=1.6.0_10
 # The download URL for the Sun JDK. Visit http://java.sun.com/javase/downloads/index.jsp and get the URL for the "Linux self-extracting file".
 if [ "$INSTANCE_TYPE" == "m1.small" -o "$INSTANCE_TYPE" == "c1.medium" ]; then
   ARCH='i386'
-  BASE_AMI_IMAGE="ami-5647a33f"  # ec2-public-images/fedora-8-i386-base-v1.08.manifest.xml
+  BASE_AMI_IMAGE="ami-d424c6bd"  # ec2-public-images/fedora-8-i386-base-v1.08.manifest.xml
   JAVA_BINARY_URL=''
 else
   ARCH='x86_64'
