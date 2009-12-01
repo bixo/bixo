@@ -34,7 +34,7 @@ public class SimpleParser implements IParser {
     // Simplistic language code pattern used when there are more than one languages specified
     // FUTURE KKr - improve this to handle en-US, and "eng" for those using old-style language codes.
     private static final Pattern LANGUAGE_CODE_PATTERN= Pattern.compile("([a-z]{2})([,;-]).*");
-    private static final Pattern HTTP_EQUIV_CHARSET_PATTERN = Pattern.compile("<meta\\s+http-equiv\\s*=\\s*['\"]\\s*Content-Type['\"]\\s+content\\s*=\\s*['\"][^;]+;\\s*charset\\s*=\\s*([^'\"]+)\"");
+    private static final Pattern HTTP_EQUIV_CHARSET_PATTERN = Pattern.compile("(?is)<meta\\s+http-equiv\\s*=\\s*['\"]\\s*Content-Type['\"]\\s+content\\s*=\\s*['\"][^;]+;\\s*charset\\s*=\\s*([^'\"]+)\"");
 
     private transient AutoDetectParser _parser;
     
@@ -132,17 +132,24 @@ public class SimpleParser implements IParser {
         metadata.add(Metadata.RESOURCE_NAME_KEY, fetchedDatum.getBaseUrl());
         metadata.add(Metadata.CONTENT_TYPE, fetchedDatum.getContentType());
         metadata.add(Metadata.CONTENT_ENCODING, fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_ENCODING));
-        metadata.add(Metadata.CONTENT_LANGUAGE, fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_LANGUAGE));
+        String lang = fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_LANGUAGE);
+        // TODO KKr - reenable this when TIKA-339 is fixed. We don't want to have anything in metadata
+        // before we call the HtmlParser, so that we can detect when the CharsetDetector has incorrectly
+        // set both Dublic Core and Http-Equiv languages using charset results.
+        // metadata.add(Metadata.CONTENT_LANGUAGE, lang);
         
         // Hack to detect content encoding - this is required due to a bug in Tika since it
         // isn't using the http-equiv charset value.
-        detectContentEncoding(new String(fetchedDatum.getContent().getBytes()), metadata);
+        String encoding = detectContentEncoding(new String(fetchedDatum.getContent().getBytes()), metadata);
+        if (encoding != null) {
+            // Overwrite the content encoding that was set up using the Http headers.
+            metadata.set(Metadata.CONTENT_ENCODING, encoding);
+        }
         
         InputStream is = new ByteArrayInputStream(fetchedDatum.getContent().getBytes());
 
         LinkBodyHandler handler = new LinkBodyHandler();
 
-        String lang = "";
         try {
         	URL baseUrl = getContentLocation(fetchedDatum);
         	metadata.add(Metadata.CONTENT_LOCATION, baseUrl.toExternalForm());
@@ -154,7 +161,7 @@ public class SimpleParser implements IParser {
             TeeContentHandler teeContentHandler = new TeeContentHandler(handler, profilingHandler);
             _parser.parse(is, teeContentHandler, metadata);
             
-            lang = detectLanguage(metadata, profilingHandler);
+            lang = detectLanguage(lang, metadata, profilingHandler);
             return new ParsedDatum(fetchedDatum.getBaseUrl(), handler.getContent(), lang, metadata.get(Metadata.TITLE),
                             handler.getLinks(), fetchedDatum.getMetaDataMap());
         } catch (MalformedURLException e) {
@@ -181,21 +188,29 @@ public class SimpleParser implements IParser {
         }
     }
 
-	private void detectContentEncoding(String content, Metadata metadata) {
+	private String detectContentEncoding(String content, Metadata metadata) {
+		String result = null;
 		
-		// We are interested in finding if there is an http-equiv defined charset.
-		// So this only is needed when dealing with HTML
-		String contentType = metadata.get(Metadata.CONTENT_TYPE);
-		if (contentType.equalsIgnoreCase("text/html")
+        // We are interested in finding if there is an http-equiv defined charset.
+        // So this only is needed when dealing with HTML
+        String contentType = metadata.get(Metadata.CONTENT_TYPE);
+        if (contentType == null) {
+            contentType = "";
+        } else if (contentType.indexOf(';') != -1) {
+            contentType = contentType.substring(0, contentType.indexOf(';')).trim();
+        }
+
+        if (contentType.equalsIgnoreCase("text/html")
 			|| contentType.equalsIgnoreCase("application/xhtml+xml")
 			|| contentType.equalsIgnoreCase("application/x-asp")) {
 			Matcher m = HTTP_EQUIV_CHARSET_PATTERN.matcher(content);
 			if (m.find()) {
-				// Overwrite the content encoding that was set up using the Http headers.
-				metadata.set(Metadata.CONTENT_ENCODING, m.group(1));
-				LOGGER.debug("Using encoding specified by http-equiv: " + m.group(1) );
+			    result = m.group(1);
+				LOGGER.debug("Using encoding specified by http-equiv: " + result);
 			}
 		}
+        
+        return result;
 	}
 
 	private URL getContentLocation(FetchedDatum fetchedDatum) throws MalformedURLException {
@@ -213,38 +228,57 @@ public class SimpleParser implements IParser {
 	}
 
 	/**
-	 * First checks if there is a DublinCore language specification; next checks if there an http-equiv language
-	 * specification or a language specified in the http response header.
+	 * If a language was specified in the HTTP response header, use that.
+	 * Otherwise see if a language was set by the CharsetDetector.
 	 * As a last resort falls back to the result from the ProfilingHandler.
+	 * TODO KKr - remove passing in response lang once TIKA-339 is fixed.
 	 *  
+	 * @param httpRespLang Language in HTTP response header, or null if no provided
 	 * @param metadata
 	 * @param profilingHandler
 	 * @return The first language found (two char lang code) or empty string if no language was detected.
 	 */
-	private String detectLanguage(Metadata metadata, ProfilingHandler profilingHandler) {
-		// First check for DublinCore , then the http-equiv and finally http response header
-		String lang = metadata.get(Metadata.LANGUAGE);
-		if (lang != null) {
-			LOGGER.debug("Using language specified by DublinCore meta tag: " + lang );
-		} else if ((lang = metadata.get(Metadata.CONTENT_LANGUAGE)) != null) {
-			LOGGER.debug("Using language specified by http-equiv or response header: " + lang );
-		} 
+	private String detectLanguage(String httpRespLang, Metadata metadata, ProfilingHandler profilingHandler) {
+	    String result = null;
+	    
+	    String dubCoreLang = metadata.get(Metadata.LANGUAGE);
+	    String httpEquivLang = metadata.get(Metadata.CONTENT_LANGUAGE);
+	    
+	    if (dubCoreLang != null) {
+	        // Assume this indicates the bug w/using CharsetDetector even when HTTP response lang exists,
+	        // or we find language info in the meta-data.
+	        if (httpEquivLang == dubCoreLang) {
+	            if (httpRespLang != null) {
+	                result = httpRespLang;
+	            } else {
+	                result = dubCoreLang;
+	            }
+	        } else {
+	            result = dubCoreLang;
+	        }
+	    } else if (httpEquivLang != null) {
+	        result = httpEquivLang;
+	    } else {
+	        result = httpRespLang;
+	    }
+	    
 		
-		lang = getFirstLanguage(lang);
+	    result = getFirstLanguage(result);
 		
-		if (lang == null) {
+		if (result == null) {
 			// Language is still unspecified, so use ProfileHandler's result
 			LanguageIdentifier langIdentifier = profilingHandler.getLanguage();
 			// FUTURE KKr - provide config for specifying required certainty level.
 			if (langIdentifier.isReasonablyCertain()) {
-				lang = langIdentifier.getLanguage();
-				LOGGER.trace("Using language specified by profiling handler: " + lang);
+			    result = langIdentifier.getLanguage();
+				LOGGER.trace("Using language specified by profiling handler: " + result);
 			} else {
-				lang = "";
+			    result = "";
 			}
 
 		}
-		return lang;
+		
+		return result;
 	}
 
 	private String getFirstLanguage(String lang) {

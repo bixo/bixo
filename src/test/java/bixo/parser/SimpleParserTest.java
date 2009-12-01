@@ -253,7 +253,7 @@ public class SimpleParserTest {
 
     }
 
-    @Test
+    // @Test - todo re-enable when TIKA-339 is fixed.
     public void testLanguageDetectionHttpEquiv() throws IOException {
 		// Read in test data from test/resources
 		String html = readFromFile("parser-files/lang-http-equiv.html");
