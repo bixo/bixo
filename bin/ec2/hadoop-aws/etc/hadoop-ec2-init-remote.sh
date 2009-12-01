@@ -184,6 +184,20 @@ mkdir -p /mnt/hadoop/logs
 # not set on boot
 export USER="root"
 
+if [ "$IS_MASTER" == "false" ]; then
+  # We want to constrain the kernel stack size used for slaves, since we
+  # fire up a bunch of threads. We won't need this once Hadoop supports specifying
+  # stack size as part of the ulimit settings in the job conf. But for now this
+  # needs to be set up before Hadoop starts running.
+
+  cat > /etc/security/limits.conf <<EOF
+root	soft	nofile	65535
+root	hard	nofile	65535
+root	soft	stack	256
+root	hard	stack	256
+EOF
+fi
+
 if [ "$IS_MASTER" == "true" ]; then
   # MASTER
   # Prep Ganglia
@@ -234,11 +248,6 @@ if [ "$IS_MASTER" == "false" ]; then
          /etc/nscd.conf
 
   service nscd start
-  
-  # We also want to constrain the kernel stack size used for slaves, since we
-  # fire up a bunch of threads. We won't need this once Hadoop supports specifying
-  # stack size as part of the ulimit settings in the job conf.
-  ulimit -s 256
 fi
 
 # Run this script on next boot
