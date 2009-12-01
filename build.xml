@@ -313,13 +313,13 @@ SOFTWARE.
 	        depends="compile"
 	        description="--> create a Hadoop ready jar with all dependencies">
 
-		<copy todir="${build.dir}/runtime-libs" flatten="true">
+		<copy todir="${build.dir}/lib" flatten="true">
 			<path refid="runtime.classpath" />
 		</copy>
 
 		<jar destfile="${build.dir}/${job.name}" compress="true">
 			<fileset dir="${build.dir.main-classes}" />
-			<fileset dir="${build.dir}" includes="runtime-libs/" />
+			<fileset dir="${build.dir}" includes="lib/" />
 
 			<manifest>
 				<attribute name="Main-Class" value="${job.main.class}" />
