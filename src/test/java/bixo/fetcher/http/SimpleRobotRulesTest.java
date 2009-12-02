@@ -578,6 +578,16 @@ public class SimpleRobotRulesTest {
       }
 
     @Test
+    public void testBigCrawlDelay() throws MalformedURLException {
+        final String robotsTxt = "User-agent: *" + CR +
+        "Crawl-delay: 3600" + CR +
+        "Disallow:" + CR;
+
+        SimpleRobotRules rules = createRobotRules("bixo", robotsTxt.getBytes());
+        Assert.assertFalse("disallow all if huge crawl delay", rules.isAllowed("http://www.domain.com/"));
+    }
+    
+    @Test
     public void testBrokenKrugleRobotsTxtFile() throws MalformedURLException {
         final String krugleRobotsTxt = "User-agent: *" + CR
             + "Disallow: /maintenance.html" + CR

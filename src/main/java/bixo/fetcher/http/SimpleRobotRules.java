@@ -32,6 +32,10 @@ public class SimpleRobotRules implements IRobotRules {
     // Max # of warnings during parse of any one robots.txt file.
 	private static final int MAX_WARNINGS = 5;
     
+	// Max value for crawl delay we'll use from robots.txt file. If the value is greater
+	// than this, we'll skip all pages.
+	private static final long MAX_CRAWL_DELAY = 200000;
+	
     // If true, then there was a problem getting/parsing robots.txt, and the crawler
     // should defer visits until some later time.
     private boolean _deferVisits = false;
@@ -458,7 +462,7 @@ public class SimpleRobotRules implements IRobotRules {
                 		if (delayString.indexOf('.') != -1) {
                 			double delayValue = Double.parseDouble(delayString) * 1000.0;
                 			curRules.setCrawlDelay((long)delayValue);
-                			reportWarning("Flaoting point crawl delay value: " + delayString);
+                			reportWarning("Floating point crawl delay value: " + delayString);
                 		} else {
                 			long delayValue = Integer.parseInt(delayString) * 1000L; // sec to millisec
                 			curRules.setCrawlDelay(delayValue);
@@ -479,6 +483,13 @@ public class SimpleRobotRules implements IRobotRules {
             }
         }
 
-        _robotRules = curRules;
+        if (curRules.getCrawlDelay() > MAX_CRAWL_DELAY) {
+            // Some evil sites use a value like 3600 (seconds) for the crawl delay, which would
+            // cause lots of problems for us.
+            reportWarning("Crawl delay exceeds max value - so disallowing all URLs");
+            createAllOrNone(false);
+        } else {
+            _robotRules = curRules;
+        }
     }
 }
