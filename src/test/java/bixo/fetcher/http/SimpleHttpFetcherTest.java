@@ -188,6 +188,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
 
         Assert.assertEquals("Redirected URL", "http://localhost:8089/redirect", result.getFetchedUrl());
         Assert.assertNull(result.getNewBaseUrl());
+        Assert.assertEquals(1, result.getNumRedirects());
     }
     
     @Test
@@ -201,6 +202,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
 
         Assert.assertEquals("Redirected URL", "http://localhost:8089/redirect", result.getFetchedUrl());
         Assert.assertEquals("New base URL", "http://localhost:8089/redirect", result.getNewBaseUrl());
+        Assert.assertEquals(1, result.getNumRedirects());
     }
     
 }

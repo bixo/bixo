@@ -39,32 +39,35 @@ public class FetchedDatum extends BaseDatum {
     private BytesWritable _content;
     private String _contentType;
     private int _responseRate;
+    private int _numRedirects;
     private HttpHeaders _headers;
-    
+
     @SuppressWarnings("unchecked")
-    public FetchedDatum(String baseUrl, String redirectedUrl, long fetchTime, HttpHeaders headers, BytesWritable content, String contentType, int responseRate, Map<String, Comparable> metaData) {
+    public FetchedDatum(String baseUrl, String redirectedUrl, long fetchTime, HttpHeaders headers,
+                    BytesWritable content, String contentType, int responseRate,
+                    Map<String, Comparable> metaData) {
         super(metaData);
-        
+
         if (baseUrl == null) {
-        	throw new InvalidParameterException("baseUrl cannot be null");
+            throw new InvalidParameterException("baseUrl cannot be null");
         }
-        
+
         if (redirectedUrl == null) {
-        	throw new InvalidParameterException("redirectedUrl cannot be null");
+            throw new InvalidParameterException("redirectedUrl cannot be null");
         }
-        
+
         if (headers == null) {
-        	throw new InvalidParameterException("headers cannot be null");
+            throw new InvalidParameterException("headers cannot be null");
         }
-        
+
         if (content == null) {
-        	throw new InvalidParameterException("content cannot be null");
+            throw new InvalidParameterException("content cannot be null");
         }
-        
+
         if (contentType == null) {
-        	throw new InvalidParameterException("contentType cannot be null");
+            throw new InvalidParameterException("contentType cannot be null");
         }
-        
+
         _baseUrl = baseUrl;
         _newBaseUrl = null;
         _fetchedUrl = redirectedUrl;
@@ -72,39 +75,41 @@ public class FetchedDatum extends BaseDatum {
         _content = content;
         _contentType = contentType;
         _responseRate = responseRate;
+        _numRedirects = 0;
         _headers = headers;
     }
 
-    
     /**
      * Create place-holder FetchedDatum from the data used to attempt the fetch.
      * 
-     * @param url - Base & redirected url
-     * @param metaData - metadata
+     * @param url
+     *            - Base & redirected url
+     * @param metaData
+     *            - metadata
      */
     @SuppressWarnings("unchecked")
-	public FetchedDatum(String url, Map<String, Comparable> metaData) {
+    public FetchedDatum(String url, Map<String, Comparable> metaData) {
         this(url, url, 0, new HttpHeaders(), new BytesWritable(), "", 0, metaData);
     }
-    
-    
+
     /**
      * Create place-holder FetchedDatum from the data used to attempt the fetch.
      * 
-     * @param scoredDatum Valid datum with url/metadata needed to create FetchedDatum
+     * @param scoredDatum
+     *            Valid datum with url/metadata needed to create FetchedDatum
      */
     public FetchedDatum(final ScoredUrlDatum scoredDatum) {
         this(scoredDatum.getUrl(), scoredDatum.getMetaDataMap());
     }
-    
+
     public String getBaseUrl() {
         return _baseUrl;
     }
 
     public String getNewBaseUrl() {
-    	return _newBaseUrl;
+        return _newBaseUrl;
     }
-    
+
     public String getFetchedUrl() {
         return _fetchedUrl;
     }
@@ -125,28 +130,36 @@ public class FetchedDatum extends BaseDatum {
         return _responseRate;
     }
 
+    public int getNumRedirects() {
+        return _numRedirects;
+    }
+
     public HttpHeaders getHeaders() {
         return _headers;
     }
 
     public void setNewBaseUrl(String newBaseUrl) {
-    	_newBaseUrl = newBaseUrl;
+        _newBaseUrl = newBaseUrl;
     }
-    
+
+    public void setNumRedirects(int numRedirects) {
+        _numRedirects = numRedirects;
+    }
+
     @Override
-	public String toString() {
+    public String toString() {
         StringBuilder result = new StringBuilder("[base URL] ");
         result.append(_baseUrl);
         if (_newBaseUrl != null) {
-        	result.append(" | [perm redir URL] ");
-        	result.append(_newBaseUrl);
+            result.append(" | [perm redir URL] ");
+            result.append(_newBaseUrl);
         }
-        
+
         if (!_baseUrl.equals(_fetchedUrl)) {
-        	result.append(" | [final URL] ");
-        	result.append(_fetchedUrl);
+            result.append(" | [final URL] ");
+            result.append(_fetchedUrl);
         }
-        
+
         if (_headers != null) {
             for (String headerName : _headers.getNames()) {
                 result.append(" | [header] ");
@@ -155,14 +168,14 @@ public class FetchedDatum extends BaseDatum {
                 result.append(_headers.getFirst(headerName));
             }
         }
-        
+
         return result.toString();
     }
-    
+
     // ======================================================================================
     // Below here is all Cascading-specific implementation
     // ======================================================================================
-    
+
     // Cascading field names that correspond to the datum fields.
     public static final String BASE_URL_FIELD = fieldName(FetchedDatum.class, "baseUrl");
     public static final String NEW_BASE_URL_FIELD = fieldName(FetchedDatum.class, "newBaseUrl");
@@ -171,15 +184,18 @@ public class FetchedDatum extends BaseDatum {
     public static final String CONTENT_FIELD = fieldName(FetchedDatum.class, "content");
     public static final String CONTENT_TYPE_FIELD = fieldName(FetchedDatum.class, "contentType");
     public static final String RESPONSE_RATE_FIELD = fieldName(FetchedDatum.class, "responseRate");
+    public static final String NUM_REDIRECTS_FIELD = fieldName(FetchedDatum.class, "numRedirects");
     public static final String HTTP_HEADERS_FIELD = fieldName(FetchedDatum.class, "httpHeaders");
 
-    public static final Fields FIELDS = new Fields(BASE_URL_FIELD, NEW_BASE_URL_FIELD, FETCHED_URL_FIELD, FETCH_TIME_FIELD, CONTENT_FIELD, CONTENT_TYPE_FIELD, RESPONSE_RATE_FIELD, HTTP_HEADERS_FIELD);
+    public static final Fields FIELDS = new Fields(BASE_URL_FIELD, NEW_BASE_URL_FIELD,
+                    FETCHED_URL_FIELD, FETCH_TIME_FIELD, CONTENT_FIELD, CONTENT_TYPE_FIELD,
+                    RESPONSE_RATE_FIELD, NUM_REDIRECTS_FIELD, HTTP_HEADERS_FIELD);
 
     public FetchedDatum(Tuple tuple, Fields metaDataFields) {
         super(tuple, metaDataFields);
         initFromTupleEntry(new TupleEntry(getStandardFields(), tuple));
     }
-    
+
     public FetchedDatum(TupleEntry entry, Fields metaDataFields) {
         super(entry.getTuple(), metaDataFields);
         initFromTupleEntry(entry);
@@ -190,12 +206,13 @@ public class FetchedDatum extends BaseDatum {
         _newBaseUrl = entry.getString(NEW_BASE_URL_FIELD);
         _fetchedUrl = entry.getString(FETCHED_URL_FIELD);
         _fetchTime = entry.getLong(FETCH_TIME_FIELD);
-        _content = (BytesWritable)entry.get(CONTENT_FIELD);
+        _content = (BytesWritable) entry.get(CONTENT_FIELD);
         _contentType = entry.getString(CONTENT_TYPE_FIELD);
         _responseRate = entry.getInteger(RESPONSE_RATE_FIELD);
+        _numRedirects = entry.getInteger(NUM_REDIRECTS_FIELD);
         _headers = new HttpHeaders(entry.getString(HTTP_HEADERS_FIELD));
     }
-    
+
     @Override
     public Fields getStandardFields() {
         return FIELDS;
@@ -204,7 +221,8 @@ public class FetchedDatum extends BaseDatum {
     @SuppressWarnings("unchecked")
     @Override
     protected Comparable[] getStandardValues() {
-        return new Comparable[] { _baseUrl, _newBaseUrl, _fetchedUrl, _fetchTime, _content, _contentType, _responseRate, flattenHeaders() };
+        return new Comparable[] { _baseUrl, _newBaseUrl, _fetchedUrl, _fetchTime, _content,
+                        _contentType, _responseRate, _numRedirects, flattenHeaders() };
     }
 
     private String flattenHeaders() {
@@ -214,5 +232,5 @@ public class FetchedDatum extends BaseDatum {
             return _headers.toString();
         }
     }
-    
+
 }

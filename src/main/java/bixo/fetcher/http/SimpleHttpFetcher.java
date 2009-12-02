@@ -106,7 +106,9 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     private static final int BUFFER_SIZE = 8 * 1024;
     private static final int DEFAULT_MAX_RETRY_COUNT = 20;
     
+    // Keys used to access data in the Http execution context.
 	private static final String PERM_REDIRECT_CONTEXT_KEY = "perm-redirect";
+	private static final String REDIRECT_COUNT_CONTEXT_KEY = "redirect-count";
 
     private static final String SSL_CONTEXT_NAMES[] = {
         "TLS",
@@ -161,21 +163,29 @@ public class SimpleHttpFetcher implements IHttpFetcher {
      */
     private static class MyRedirectHandler extends DefaultRedirectHandler {
     	
-
 		public MyRedirectHandler() {
     		super();
     	}
     	
     	@Override
     	public URI getLocationURI(HttpResponse response, HttpContext context) throws ProtocolException {
-    		URI result = super.getLocationURI(response, context);
-    		
-            int statusCode = response.getStatusLine().getStatusCode();
-            if (statusCode == HttpStatus.SC_MOVED_PERMANENTLY) {
-            	context.setAttribute(PERM_REDIRECT_CONTEXT_KEY, result);
-            }
+    	    URI result = super.getLocationURI(response, context);
 
-    		return result;
+    	    int statusCode = response.getStatusLine().getStatusCode();
+    	    if (statusCode == HttpStatus.SC_MOVED_PERMANENTLY) {
+    	        context.setAttribute(PERM_REDIRECT_CONTEXT_KEY, result);
+    	    }
+
+    	    // Keep track of the number of redirects.
+    	    Integer count = (Integer)context.getAttribute(REDIRECT_COUNT_CONTEXT_KEY);
+    	    if (count == null) {
+    	        count = new Integer(0);
+    	    }
+
+    	    count += 1;
+    	    context.setAttribute(REDIRECT_COUNT_CONTEXT_KEY, count);
+
+    	    return result;
     	}
     }
     
@@ -305,8 +315,9 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         HttpHeaders headerMap = new HttpHeaders();
         String redirectedUrl = null;
         String newBaseUrl = null;
+        int numRedirects = 0;
         boolean needAbort = false;
-
+        
         try {
             getter = new HttpGet(new URI(url));
             HttpContext localContext = new BasicHttpContext();
@@ -337,6 +348,11 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             URI permRedirectUri = (URI)localContext.getAttribute(PERM_REDIRECT_CONTEXT_KEY);
             if (permRedirectUri != null) {
             	newBaseUrl = permRedirectUri.toURL().toExternalForm();
+            }
+            
+            Integer redirects = (Integer)localContext.getAttribute(REDIRECT_COUNT_CONTEXT_KEY);
+            if (redirects != null) {
+                numRedirects = redirects.intValue();
             }
         } catch (IOException e) {
             throw new IOFetchException(url, e);
@@ -433,6 +449,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         String contentType = (entity == null || entity.getContentType() == null) ? "" : entity.getContentType().getValue();
         FetchedDatum result = new FetchedDatum(url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
         result.setNewBaseUrl(newBaseUrl);
+        result.setNumRedirects(numRedirects);
         return result;
     }
     
