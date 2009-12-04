@@ -42,6 +42,7 @@
 			<name>Apache snapshot repository</name>
 			<url>https://repository.apache.org/content/groups/snapshots-group/</url>
 		</repository>
+		
 	</repositories>
 	
 	<dependencies>
@@ -211,4 +212,5 @@
         
 	</dependencies>
 	
+		
 </project>
