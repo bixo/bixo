@@ -52,6 +52,24 @@ public class IndexScheme extends Scheme {
     private Index[] _indexSettings;
     private boolean _hasBoost;
     
+    /**
+     * Class to provide access to protected getTaskOutputPath on 0.18.3
+     *
+     */
+    @SuppressWarnings("unchecked")
+    private static class MyFileOutputFormat extends FileOutputFormat {
+
+        @Override
+        public RecordWriter getRecordWriter(FileSystem arg0, JobConf arg1, String arg2,
+                        Progressable arg3) throws IOException {
+            throw new RuntimeException("MyFileOutputFormat should only be used for getTaskOutputPath");
+        }
+        
+        public static Path getTaskOutputPath(JobConf conf, String name) throws IOException {
+            return FileOutputFormat.getTaskOutputPath(conf, name);
+        }
+    }
+    
     public IndexScheme(Fields fieldsToIndex, Store[] storeSettings, Index[] indexSettings, Class<? extends Analyzer> analyzer, int maxFieldLength) {
         this(fieldsToIndex, storeSettings, indexSettings, false, analyzer, maxFieldLength);
     }
@@ -162,7 +180,7 @@ public class IndexScheme extends Scheme {
                     indexWriter.close();
                     // now we copy the local folder to the remote one and delete
                     // the older
-                    Path dist = FileOutputFormat.getTaskOutputPath(conf, name);
+                    Path dist = MyFileOutputFormat.getTaskOutputPath(conf, name);
                     FileSystem dstFS = dist.getFileSystem(conf);
                     LOGGER.info("Copying index from local to " + dist);
                     dstFS.copyFromLocalFile(true, new Path(localIndexFolder.getAbsolutePath()), dist);
