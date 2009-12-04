@@ -10,6 +10,7 @@ public class SimpleCrawlToolOptions {
     private static final int DEFAULT_NUM_LOOPS = 1;
 
     private boolean _debugLogging = false;
+    private String _loggingAppender = null;
 
     private String _outputDir;
     private String _agentName;
@@ -19,7 +20,7 @@ public class SimpleCrawlToolOptions {
     private int _maxThreads = DEFAULT_MAX_THREADS;
     private int _numLoops = DEFAULT_NUM_LOOPS;
 
-
+    
     @Option(name = "-domain", usage = "domain to crawl (e.g. cnn.com)", required = true)
     public void setDomain(String domain) {
         _domain = domain;
@@ -27,9 +28,14 @@ public class SimpleCrawlToolOptions {
 
     @Option(name = "-d", usage = "debug logging", required = false)
     public void setDebugLogging(boolean debugLogging) {
-        this._debugLogging = debugLogging;
+        _debugLogging = debugLogging;
     }
 
+    @Option(name = "-logger", usage = "set logging appender (console, DRFA)", required = false)
+    public void setLoggingAppender(String loggingAppender) {
+        _loggingAppender = loggingAppender;
+    }
+    
     @Option(name = "-outputdir", usage = "output directory", required = true)
     public void setOutputDir(String outputDir) {
         _outputDir = outputDir;
@@ -83,6 +89,10 @@ public class SimpleCrawlToolOptions {
         return _debugLogging;
     }
     
+    public String getLoggingAppender() {
+        return _loggingAppender;
+    }
+
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);

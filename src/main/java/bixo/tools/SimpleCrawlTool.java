@@ -9,6 +9,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
@@ -100,14 +101,13 @@ public class SimpleCrawlTool {
         Logger rootLogger = Logger.getRootLogger();
 
         String filename = String.format("%s/%d-SiteCrawlTool.log", outputDirName, loopNumber);
-        FileAppender appender = (FileAppender) rootLogger.getAppender("loop-logger");
+        FileAppender appender = (FileAppender)rootLogger.getAppender("loop-logger");
         if (appender == null) {
             appender = new FileAppender();
             appender.setName("loop-logger");
-            appender.setLayout(rootLogger.getAppender("console").getLayout());
-
-            // We have to do this before calling addAppender, as otherwise Log4J
-            // warns us.
+            appender.setLayout(new PatternLayout("%d{yy/MM/dd HH:mm:ss} %p %c{2}:%L - %m%n"));
+            
+            // We have to do this before calling addAppender, as otherwise Log4J warns us.
             appender.setFile(filename);
             appender.activateOptions();
             rootLogger.addAppender(appender);
@@ -145,6 +145,11 @@ public class SimpleCrawlTool {
             System.setProperty("bixo.root.level", "DEBUG");
         } else {
             System.setProperty("bixo.root.level", "INFO");
+        }
+        
+        if (options.getLoggingAppender() != null) {
+            // Set console vs. DRFA vs. something else
+            System.setProperty("bixo.appender", options.getLoggingAppender());
         }
         
         try {
