@@ -87,7 +87,7 @@ public class FakeHttpFetcher implements IHttpFetcher {
     public byte[] get(String url) throws BaseFetchException {
         try {
             FetchedDatum result = doGet(url, new HashMap<String, Comparable>());
-            return result.getContent().getBytes();
+            return result.getContentBytes();
         } catch (HttpFetchException e) {
             if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
                 return new byte[0];

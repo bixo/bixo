@@ -167,7 +167,7 @@ public class SimpleRobotRules implements IRobotRules {
             // TODO KKr - make it so.
             
             init(urlToFetch);
-            parseRules(fetcher.getUserAgent().getAgentName(), result.getContent().getBytes());
+            parseRules(fetcher.getUserAgent().getAgentName(), result.getContentBytes());
         } catch (MalformedURLException e) {
             LOGGER.error("Invalid URL: " + url);
             createAllOrNone(false);

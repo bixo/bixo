@@ -92,7 +92,7 @@ public class LoggingFetcher implements IHttpFetcher {
     public byte[] get(String url) throws BaseFetchException {
         try {
             FetchedDatum result = get(new ScoredUrlDatum(url));
-            return result.getContent().getBytes();
+            return result.getContentBytes();
         } catch (HttpFetchException e) {
             if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
                 return new byte[0];

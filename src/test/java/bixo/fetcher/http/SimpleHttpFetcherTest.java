@@ -128,7 +128,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
 
-        Assert.assertTrue("Content size should be truncated", result.getContent().getLength() <= policy.getMaxContentSize());
+        Assert.assertTrue("Content size should be truncated", result.getContentLength() <= policy.getMaxContentSize());
     }
     
     @Test
@@ -159,7 +159,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
 
-        Assert.assertTrue("Content size should be truncated", result.getContent().getLength() <= policy.getMaxContentSize());
+        Assert.assertTrue("Content size should be truncated", result.getContentLength() <= policy.getMaxContentSize());
 
     }
     

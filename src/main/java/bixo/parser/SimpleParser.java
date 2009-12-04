@@ -140,13 +140,13 @@ public class SimpleParser implements IParser {
         
         // Hack to detect content encoding - this is required due to a bug in Tika since it
         // isn't using the http-equiv charset value.
-        String encoding = detectContentEncoding(new String(fetchedDatum.getContent().getBytes()), metadata);
+        String encoding = detectContentEncoding(new String(fetchedDatum.getContentBytes()), metadata);
         if (encoding != null) {
             // Overwrite the content encoding that was set up using the Http headers.
             metadata.set(Metadata.CONTENT_ENCODING, encoding);
         }
         
-        InputStream is = new ByteArrayInputStream(fetchedDatum.getContent().getBytes());
+        InputStream is = new ByteArrayInputStream(fetchedDatum.getContentBytes());
 
         LinkBodyHandler handler = new LinkBodyHandler();
 

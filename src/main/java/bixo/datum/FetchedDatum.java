@@ -122,6 +122,17 @@ public class FetchedDatum extends BaseDatum {
         return _content;
     }
 
+    // Helper methods to mask Hadoop 0.18.3 and 0.19+ delta
+    @SuppressWarnings("deprecation")
+    public byte[] getContentBytes() {
+        return _content.get();
+    }
+    
+    @SuppressWarnings("deprecation")
+    public int getContentLength() {
+        return _content.getSize();
+    }
+    
     public String getContentType() {
         return _contentType;
     }

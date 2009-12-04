@@ -68,7 +68,7 @@ public class FetcherRunnable implements Runnable {
 
                 process.increment(FetcherCounters.FETCHED_TIME, (int)deltaTime);
                 process.increment(FetcherCounters.URLS_FETCHED, 1);
-                process.increment(FetcherCounters.FETCHED_BYTES, result.getContent().getLength());
+                process.increment(FetcherCounters.FETCHED_BYTES, result.getContentLength());
                 process.setStatus(Level.TRACE, "Fetched " + result);
 
                 status = UrlStatus.FETCHED.toString();
