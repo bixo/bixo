@@ -557,6 +557,8 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             // Set up default headers
             HashSet<Header> defaultHeaders = new HashSet<Header>();
             defaultHeaders.add(new BasicHeader(IHttpHeaders.ACCEPT_LANGUAGE, _fetcherPolicy.getAcceptLanguage()));
+            defaultHeaders.add(new BasicHeader(IHttpHeaders.ACCEPT_CHARSET, "utf-8,ISO-8859-1;q=0.7,*;q=0.7"));
+
             clientParams.setDefaultHeaders(defaultHeaders);
         }
     }
