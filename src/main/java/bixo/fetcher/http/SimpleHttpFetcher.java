@@ -108,7 +108,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     private static final long CONNECTION_POOL_TIMEOUT = 20 * 1000L;
     
     private static final int BUFFER_SIZE = 8 * 1024;
-    private static final int DEFAULT_MAX_RETRY_COUNT = 20;
+    private static final int DEFAULT_MAX_RETRY_COUNT = 10;
     
     // Keys used to access data in the Http execution context.
 	private static final String PERM_REDIRECT_CONTEXT_KEY = "perm-redirect";
@@ -247,9 +247,9 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         return _socketTimeout;
     }
 
-    public void setSocketTimeout(int socketTimeout) {
+    public void setSocketTimeout(int socketTimeoutInMs) {
         if (_httpClient == null) {
-            _socketTimeout = socketTimeout;
+            _socketTimeout = socketTimeoutInMs;
         } else {
             throw new IllegalStateException("Can't change socket timeout after HttpClient has been initialized");
         }
@@ -259,9 +259,9 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         return _connectionTimeout;
     }
 
-    public void setConnectionTimeout(int connectionTimeout) {
+    public void setConnectionTimeout(int connectionTimeoutInMs) {
         if (_httpClient == null) {
-            _connectionTimeout = connectionTimeout;
+            _connectionTimeout = connectionTimeoutInMs;
         } else {
             throw new IllegalStateException("Can't change connection timeout after HttpClient has been initialized");
         }
