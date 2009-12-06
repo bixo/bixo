@@ -27,36 +27,65 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
     @SuppressWarnings("serial")
     private class RedirectResponseHandler extends AbstractHttpHandler {
         
-    	private boolean _permanent;
-    	
-    	public RedirectResponseHandler() {
-    		this(false);
-    	}
-    	
-    	public RedirectResponseHandler(boolean permanent) {
-    		super();
-    		_permanent = permanent;
-    	}
-    	
+        private boolean _permanent;
+        
+        public RedirectResponseHandler() {
+            this(false);
+        }
+        
+        public RedirectResponseHandler(boolean permanent) {
+            super();
+            _permanent = permanent;
+        }
+        
         @Override
         public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
-        	if (pathInContext.endsWith("base")) {
+            if (pathInContext.endsWith("base")) {
                 if (_permanent) {
-                	// Can't use sendRedirect, as that forces it to be a temp redirect.
-                	response.setStatus(HttpStatus.SC_MOVED_PERMANENTLY);
-                	response.addField("Location", "http://localhost:8089/redirect");
-                	request.setHandled(true);
+                    // Can't use sendRedirect, as that forces it to be a temp redirect.
+                    response.setStatus(HttpStatus.SC_MOVED_PERMANENTLY);
+                    response.addField("Location", "http://localhost:8089/redirect");
+                    request.setHandled(true);
                 } else {
-                	response.sendRedirect("http://localhost:8089/redirect");
+                    response.sendRedirect("http://localhost:8089/redirect");
                 }
-        	} else {
+            } else {
                 response.setStatus(HttpStatus.SC_OK);
                 response.setContentType("text/plain");
 
                 String content = "redirected";
                 response.setContentLength(content.length());
                 response.getOutputStream().write(content.getBytes());
-        	}
+            }
+        }
+    }
+
+    @SuppressWarnings("serial")
+    private class LanguageResponseHandler extends AbstractHttpHandler {
+        
+        private String _englishContent;
+        private String _foreignContent;
+        
+        public LanguageResponseHandler(String englishContent, String foreignContent) {
+            _englishContent = englishContent;
+            _foreignContent = foreignContent;
+        }
+
+        @Override
+        public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+            String language = request.getField(IHttpHeaders.ACCEPT_LANGUAGE);
+            String content;
+            if ((language != null) && (language.contains("en"))) {
+                content = _englishContent;
+            } else {
+                content = _foreignContent;
+            }
+
+            response.setStatus(HttpStatus.SC_OK);
+            response.setContentType("text/plain");
+
+            response.setContentLength(content.length());
+            response.getOutputStream().write(content.getBytes());
         }
     }
 
@@ -205,4 +234,18 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         Assert.assertEquals(1, result.getNumRedirects());
     }
     
+    @Test
+    public final void testAcceptLanguage() throws Exception {
+        final String englishContent = "English";
+        final String foreignContent = "Foreign";
+        
+        FetcherPolicy policy = new FetcherPolicy();
+        HttpServer server = startServer(new LanguageResponseHandler(englishContent, foreignContent), 8089);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        String url = "http://localhost:8089/";
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
+        server.stop();
+
+        Assert.assertArrayEquals("Should be English content", englishContent.getBytes("UTF-8"), result.getContentBytes());
+    }
 }

@@ -32,6 +32,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import javax.net.ssl.SSLContext;
@@ -67,6 +68,7 @@ import org.apache.http.cookie.params.CookieSpecParamBean;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.DefaultRedirectHandler;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
@@ -193,8 +195,6 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         this(DEFAULT_MAX_THREADS, userAgent);
     }
     
-    // TODO KKr - create UserAgent bean that's passed in here, which has
-    // separate fields for email, web site, name.
     public SimpleHttpFetcher(int maxThreads, UserAgent userAgent) {
         this(maxThreads, new FetcherPolicy(), userAgent);
     }
@@ -203,16 +203,16 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         _maxThreads = maxThreads;
         _fetcherPolicy = fetcherPolicy;
         _userAgent = userAgent;
-        
+
         _httpVersion = HttpVersion.HTTP_1_1;
         _socketTimeout = DEFAULT_SOCKET_TIMEOUT;
         _connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
         _maxRetryCount = DEFAULT_MAX_RETRY_COUNT;
-        
+
         // Just to be explicit, we rely on lazy initialization of this so that
         // we don't have to worry about serializing it.
         _httpClient = null;
-}
+    }
 
     @Override
     public int getMaxThreads() {
@@ -553,6 +553,11 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             ClientParamBean clientParams = new ClientParamBean(params);
             clientParams.setHandleRedirects(_fetcherPolicy.getMaxRedirects() != FetcherPolicy.NO_REDIRECTS);
             clientParams.setMaxRedirects(_fetcherPolicy.getMaxRedirects());
+            
+            // Set up default headers
+            HashSet<Header> defaultHeaders = new HashSet<Header>();
+            defaultHeaders.add(new BasicHeader(IHttpHeaders.ACCEPT_LANGUAGE, _fetcherPolicy.getAcceptLanguage()));
+            clientParams.setDefaultHeaders(defaultHeaders);
         }
     }
 

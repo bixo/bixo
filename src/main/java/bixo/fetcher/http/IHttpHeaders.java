@@ -46,4 +46,6 @@ public interface IHttpHeaders {
   
   public final static String LOCATION = "Location";
 
+public static final String ACCEPT_LANGUAGE = "Accept-Language";
+
 }

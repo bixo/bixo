@@ -37,6 +37,7 @@ public class FetcherPolicy implements Serializable {
     public static final int DEFAULT_MAX_CONTENT_SIZE = 64 * 1024;
     public static final long DEFAULT_CRAWL_END_TIME = NO_CRAWL_END_TIME;
     public static final int DEFAULT_MAX_REDIRECTS = 20;
+    public static final String DEFAULT_ACCEPT_LANGUAGE = "en-us,en-gb,en;q=0.7,*;q=0.3";
     
     // Interval between batched fetch requests, in milliseconds.
     protected static final long DEFAULT_FETCH_INTERVAL = 5 * 60 * 1000L;
@@ -49,6 +50,7 @@ public class FetcherPolicy implements Serializable {
     private long _crawlEndTime;          // When we want the crawl to end
     protected long _crawlDelay;            // Delay (in seconds) between requests
     private int _maxRedirects;
+    private String _acceptLanguage;    // What to pass for the Accept-Language request header
     
     public FetcherPolicy() {
         this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME, DEFAULT_CRAWL_DELAY, DEFAULT_MAX_REDIRECTS);
@@ -69,6 +71,9 @@ public class FetcherPolicy implements Serializable {
         _crawlEndTime = crawlEndTime;
         _crawlDelay = crawlDelay;
         _maxRedirects = maxRedirects;
+        
+        // For rarely used parameters, we'll set it to default values and then let callers set them  individually.
+        _acceptLanguage = DEFAULT_ACCEPT_LANGUAGE;
     }
 
     /**
@@ -140,6 +145,14 @@ public class FetcherPolicy implements Serializable {
 
     public void setMaxRedirects(int maxRedirects) {
     	_maxRedirects = maxRedirects;
+    }
+    
+    public String getAcceptLanguage() {
+        return _acceptLanguage;
+    }
+    
+    public void setAcceptLanguage(String acceptLanguage) {
+        _acceptLanguage = acceptLanguage;
     }
     
     public FetchRequest getFetchRequest(int maxUrls) {
