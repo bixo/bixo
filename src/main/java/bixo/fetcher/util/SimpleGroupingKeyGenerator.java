@@ -65,6 +65,14 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
 
 	// Since getGroupingKey will be called sequentially, we only need one thread.
 	private static final int DEFAULT_ROBOTS_FETCHER_THREADS = 1;
+
+	// Crank down default values when fetching robots.txt, as this should be super
+	// fast to get back, and we're single-threaded (effectively) here so keep the
+	// time down.
+    private static final int ROBOTS_CONNECTION_TIMEOUT = 10 * 1000;
+    private static final int ROBOTS_SOCKET_TIMEOUT = 10 * 1000;
+    private static final int ROBOTS_RETRY_COUNT = 5;
+
     
     private HashSet<String> _badHosts = new HashSet<String>();
     private HashMap<String, SimpleRobotRules> _rules = new HashMap<String, SimpleRobotRules>();
@@ -75,7 +83,11 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
     public SimpleGroupingKeyGenerator(UserAgent userAgent) {
     	FetcherPolicy policy = new FetcherPolicy();
     	policy.setMaxContentSize(MAX_ROBOTS_SIZE);
-    	_robotsFetcher = new SimpleHttpFetcher(DEFAULT_ROBOTS_FETCHER_THREADS, policy, userAgent);
+    	SimpleHttpFetcher fetcher = new SimpleHttpFetcher(DEFAULT_ROBOTS_FETCHER_THREADS, policy, userAgent);
+    	fetcher.setMaxRetryCount(ROBOTS_RETRY_COUNT);
+    	fetcher.setConnectionTimeout(ROBOTS_CONNECTION_TIMEOUT);
+    	fetcher.setSocketTimeout(ROBOTS_SOCKET_TIMEOUT);
+    	_robotsFetcher = fetcher;
     	_usePLD = false;
     }
     
