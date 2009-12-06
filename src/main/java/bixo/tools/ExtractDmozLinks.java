@@ -15,18 +15,21 @@ import java.util.regex.Pattern;
 public class ExtractDmozLinks {
 
     public static void main(String[] args) {
-        
+
         try {
             Properties properties = new Properties();
             properties.load(new FileInputStream("src/main/resources/dmoz.properties"));
             String adultTopic = properties.getProperty("topics.adult");
-            
+
             // <Topic r:id="Top/Adult/Arts/Animation/Anime/Fan_Works/Fan_Art">
-            Pattern topicPattern = Pattern.compile("[ \t]*<Topic[ \t]+r:id[ \t]*=[ \t]*\"([^\"]+)\">.*");
+            Pattern topicPattern = Pattern
+                            .compile("[ \t]*<Topic[ \t]+r:id[ \t]*=[ \t]*\"([^\"]+)\">.*");
             Matcher topicMatcher = topicPattern.matcher("");
 
-            //   <link r:resource="http://www.geocities.com/kaseychan17/index.html"/>
-            Pattern resourcePattern = Pattern.compile("[ \t]*<link(1|)[ \t]+r:resource[ \t]*=[ \t]*\"([^\"]+)\".*");
+            // <link
+            // r:resource="http://www.geocities.com/kaseychan17/index.html"/>
+            Pattern resourcePattern = Pattern
+                            .compile("[ \t]*<link(1|)[ \t]+r:resource[ \t]*=[ \t]*\"([^\"]+)\".*");
             Matcher resourceMatcher = resourcePattern.matcher("");
 
             String inputFile = args[0];
