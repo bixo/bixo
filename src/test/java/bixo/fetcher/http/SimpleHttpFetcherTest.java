@@ -1,6 +1,10 @@
 package bixo.fetcher.http;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.junit.Assert.*;
 
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -84,6 +88,25 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
             response.setStatus(HttpStatus.SC_OK);
             response.setContentType("text/plain");
 
+            response.setContentLength(content.length());
+            response.getOutputStream().write(content.getBytes());
+        }
+    }
+
+    @SuppressWarnings("serial")
+    private class MimeTypeResponseHandler extends AbstractHttpHandler {
+        
+        private String _mimeType;
+        
+        public MimeTypeResponseHandler(String mimeType) {
+            _mimeType = mimeType;
+        }
+
+        @Override
+        public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+            String content = "test";
+            response.setStatus(HttpStatus.SC_OK);
+            response.setContentType(_mimeType);
             response.setContentLength(content.length());
             response.getOutputStream().write(content.getBytes());
         }
@@ -247,5 +270,46 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         server.stop();
 
         Assert.assertArrayEquals("Should be English content", englishContent.getBytes("UTF-8"), result.getContentBytes());
+    }
+
+    @Test
+    public final void testMimeTypeFiltering() throws Exception {
+        FetcherPolicy policy = new FetcherPolicy();
+        Set<String> validMimeTypes = new HashSet<String>();
+        validMimeTypes.add("text/html");
+        policy.setValidMimeTypes(validMimeTypes);
+
+        HttpServer server = startServer(new MimeTypeResponseHandler("text/xml"), 8089);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        String url = "http://localhost:8089/";
+        
+        try {
+            fetcher.get(new ScoredUrlDatum(url));
+            fail("Fetch should have failed");
+        } catch (AbortedFetchException e) {
+            assertEquals(AbortedFetchReason.INVALID_MIME_TYPE, e.getAbortReason());
+        } finally {
+            server.stop();
+        }
+    }
+
+    @Test
+    public final void testMimeTypeFilteringWithCharset() throws Exception {
+        FetcherPolicy policy = new FetcherPolicy();
+        Set<String> validMimeTypes = new HashSet<String>();
+        validMimeTypes.add("text/html");
+        policy.setValidMimeTypes(validMimeTypes);
+
+        HttpServer server = startServer(new MimeTypeResponseHandler("text/html; charset=UTF-8"), 8089);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        String url = "http://localhost:8089/";
+        
+        try {
+            fetcher.get(new ScoredUrlDatum(url));
+        } catch (AbortedFetchException e) {
+            fail("Fetch should have worked");
+        } finally {
+            server.stop();
+        }
     }
 }

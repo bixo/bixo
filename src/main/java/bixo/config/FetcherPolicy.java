@@ -24,6 +24,7 @@ package bixo.config;
 
 import java.io.Serializable;
 import java.security.InvalidParameterException;
+import java.util.Set;
 
 import bixo.fetcher.FetchRequest;
 
@@ -51,6 +52,7 @@ public class FetcherPolicy implements Serializable {
     protected long _crawlDelay;            // Delay (in seconds) between requests
     private int _maxRedirects;
     private String _acceptLanguage;    // What to pass for the Accept-Language request header
+    private Set<String> _validMimeTypes;    // Set of mime-types that we'll accept, or null
     
     public FetcherPolicy() {
         this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME, DEFAULT_CRAWL_DELAY, DEFAULT_MAX_REDIRECTS);
@@ -74,6 +76,7 @@ public class FetcherPolicy implements Serializable {
         
         // For rarely used parameters, we'll set it to default values and then let callers set them  individually.
         _acceptLanguage = DEFAULT_ACCEPT_LANGUAGE;
+        _validMimeTypes = null;
     }
 
     /**
@@ -153,6 +156,14 @@ public class FetcherPolicy implements Serializable {
     
     public void setAcceptLanguage(String acceptLanguage) {
         _acceptLanguage = acceptLanguage;
+    }
+    
+    public Set<String> getValidMimeTypes() {
+        return _validMimeTypes;
+    }
+    
+    public void setValidMimeTypes(Set<String> validMimeTypes) {
+        _validMimeTypes = validMimeTypes;
     }
     
     public FetchRequest getFetchRequest(int maxUrls) {

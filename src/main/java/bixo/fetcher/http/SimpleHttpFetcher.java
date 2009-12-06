@@ -34,6 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
@@ -89,6 +90,7 @@ import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.UrlFetchException;
+import bixo.utils.HttpUtils;
 
 @SuppressWarnings("serial")
 public class SimpleHttpFetcher implements IHttpFetcher {
@@ -317,6 +319,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         String newBaseUrl = null;
         int numRedirects = 0;
         boolean needAbort = false;
+        String contentType = "";
         
         try {
             getter = new HttpGet(new URI(url));
@@ -354,6 +357,17 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             if (redirects != null) {
                 numRedirects = redirects.intValue();
             }
+            
+            Header cth = response.getFirstHeader(IHttpHeaders.CONTENT_TYPE);
+            if (cth != null) {
+                contentType = cth.getValue();
+            }
+            
+            // Check if we should abort due to mime-type filtering.
+            Set<String> mimeTypes = _fetcherPolicy.getValidMimeTypes();
+            if ((mimeTypes != null) && !mimeTypes.contains(HttpUtils.getMimeTypeFromContentType(contentType))) {
+                throw new AbortedFetchException(url, AbortedFetchReason.INVALID_MIME_TYPE);
+            }
         } catch (IOException e) {
             throw new IOFetchException(url, e);
         } catch (URISyntaxException e) {
@@ -365,6 +379,9 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             // connection gets returned.
             needAbort = true;
             throw e;
+        } catch (AbortedFetchException e) {
+            needAbort = true;
+            throw e;
         } catch (Exception e) {
             // We can get things like IllegalStateException, so map all of those to
             // a generic IOFetchException
@@ -373,7 +390,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         } finally {
             safeAbort(needAbort, getter);
         }
-
+        
         // Figure out how much data we want to try to fetch.
         int targetLength = _fetcherPolicy.getMaxContentSize();
         boolean truncated = false;
@@ -445,8 +462,6 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             }
         }
 
-        // Note that getContentType can return null.
-        String contentType = (entity == null || entity.getContentType() == null) ? "" : entity.getContentType().getValue();
         FetchedDatum result = new FetchedDatum(url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
         result.setNewBaseUrl(newBaseUrl);
         result.setNumRedirects(numRedirects);
