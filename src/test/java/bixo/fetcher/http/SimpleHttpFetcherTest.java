@@ -106,7 +106,10 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
             String content = "test";
             response.setStatus(HttpStatus.SC_OK);
-            response.setContentType(_mimeType);
+            if (_mimeType != null) {
+                response.setContentType(_mimeType);
+            }
+            
             response.setContentLength(content.length());
             response.getOutputStream().write(content.getBytes());
         }
@@ -288,6 +291,27 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
             fail("Fetch should have failed");
         } catch (AbortedFetchException e) {
             assertEquals(AbortedFetchReason.INVALID_MIME_TYPE, e.getAbortReason());
+        } finally {
+            server.stop();
+        }
+    }
+
+    @Test
+    public final void testMimeTypeFilteringNoContentType() throws Exception {
+        FetcherPolicy policy = new FetcherPolicy();
+        Set<String> validMimeTypes = new HashSet<String>();
+        validMimeTypes.add("text/html");
+        validMimeTypes.add(""); // We want unknown (not reported) mime-types too.
+        policy.setValidMimeTypes(validMimeTypes);
+
+        HttpServer server = startServer(new MimeTypeResponseHandler(null), 8089);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        String url = "http://localhost:8089/";
+        
+        try {
+            fetcher.get(new ScoredUrlDatum(url));
+        } catch (AbortedFetchException e) {
+            fail("Fetch should not have failed if no mime-type is specified");
         } finally {
             server.stop();
         }

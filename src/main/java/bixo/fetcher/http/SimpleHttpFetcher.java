@@ -347,23 +347,27 @@ public class SimpleHttpFetcher implements IHttpFetcher {
                 LOGGER.warn("Invalid host/uri specified in final fetch: " + host + finalRequest.getURI());
                 redirectedUrl = url;
             }
-            
+
             URI permRedirectUri = (URI)localContext.getAttribute(PERM_REDIRECT_CONTEXT_KEY);
             if (permRedirectUri != null) {
-            	newBaseUrl = permRedirectUri.toURL().toExternalForm();
+                newBaseUrl = permRedirectUri.toURL().toExternalForm();
             }
-            
+
             Integer redirects = (Integer)localContext.getAttribute(REDIRECT_COUNT_CONTEXT_KEY);
             if (redirects != null) {
                 numRedirects = redirects.intValue();
             }
-            
+
             Header cth = response.getFirstHeader(IHttpHeaders.CONTENT_TYPE);
             if (cth != null) {
                 contentType = cth.getValue();
             }
-            
-            // Check if we should abort due to mime-type filtering.
+
+            // Check if we should abort due to mime-type filtering. Note that this will fail if the server
+            // doesn't report a mime-type, but that's how we want it as this configuration is typically
+            // used when only a subset of parsers are installed/enabled, so we don't want the auto-detect
+            // code in Tika to get triggered & try to process an unsupported type. If you want unknown
+            // mime-types from the server to be processed, set "" as one of the valid mime-types in FetcherPolicy.
             Set<String> mimeTypes = _fetcherPolicy.getValidMimeTypes();
             if ((mimeTypes != null) && !mimeTypes.contains(HttpUtils.getMimeTypeFromContentType(contentType))) {
                 throw new AbortedFetchException(url, AbortedFetchReason.INVALID_MIME_TYPE);
