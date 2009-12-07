@@ -1,7 +1,10 @@
 package bixo.fetcher.http;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.util.Arrays;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -604,5 +607,16 @@ public class SimpleRobotRulesTest {
         
         SimpleRobotRules rules = createRobotRules("googlebot/2.1", krugleRobotsTxt.getBytes());
         Assert.assertTrue(rules.isAllowed("http://www.krugle.com/examples/index.html"));
+    }
+    
+    @Test
+    public void testRobotsWithBOM() throws IOException {
+        byte[] bigBuffer = new byte[8096];
+        InputStream is = SimpleRobotRulesTest.class.getResourceAsStream("/robots-with-bom.txt");
+        int len = is.read(bigBuffer);
+        byte[] robotsData = Arrays.copyOf(bigBuffer, len);
+        
+        SimpleRobotRules rules = createRobotRules("foobot", robotsData);
+        Assert.assertFalse("Disallow match against *", rules.isAllowed("http://www.domain.com/profile"));
     }
 }

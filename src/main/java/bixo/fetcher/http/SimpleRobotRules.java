@@ -315,17 +315,27 @@ public class SimpleRobotRules implements IRobotRules {
     	
         // If there's nothing there, treat it like we have no restrictions.
         if ((robotContent == null) || (robotContent.length == 0)) {
-            LOGGER.trace("Missing/empty robots.txt at " + _url);
             createAllOrNone(true);
             return;
         }
 
+        int bytesLen = robotContent.length;
+        int offset = 0;
+        String encoding = "us-ascii";
+        
+        // Check for a UTF-8 BOM at the beginning (EF BB BF)
+        if ((bytesLen >= 3) && (robotContent[0] == (byte)0xEF) && (robotContent[1] == (byte)0xBB) && (robotContent[2] == (byte)0xBF)) {
+            offset = 3;
+            bytesLen -= 3;
+            encoding = "UTF-8";
+        }
+        
         String content;
         try {
-            content = new String(robotContent, "us-ascii");
+            content = new String(robotContent, offset, bytesLen, encoding);
         } catch (UnsupportedEncodingException e) {
             // Should never happen.
-            LOGGER.error("Got unsupported encoding exception for us-ascii");
+            LOGGER.error("Got unsupported encoding exception for " + encoding);
             content = new String(robotContent);
         }
 
@@ -472,8 +482,7 @@ public class SimpleRobotRules implements IRobotRules {
                 	}
                 }
             } else if (line.startsWith(SITEMAP_FIELD)) {
-                String path = line.substring(DISALLOW_FIELD.length()).trim();
-               LOGGER.trace("Ignoring sitemap directive in robots.txt: " + path);
+                // Ignore for now
             } else if (line.contains(":")) {
             	reportWarning("Unknown directive in robots.txt file: " + line);
                 finishedAgentFields = true;
