@@ -95,6 +95,9 @@ public class FetcherManager implements Runnable {
 	            }
 	            
 	            // See if we should set up the next thing to fetch
+	            // TODO KKr - this creates a problem where the DOMAINS_FETCHING counter gets incremented by FetcherQueue when the call to
+	            // poll() succeeds, but we can't actually start fetching it until some point later - so you wind up with an incorrect
+	            // count of domains being fetched.
 	            if (nextRunnable == null) {
 	                FetchList items = _provider.poll();
 	                if (items != null) {
@@ -108,6 +111,7 @@ public class FetcherManager implements Runnable {
 	                    _pool.execute(nextRunnable);
 	                    nextRunnable = null;
 	                } catch (RejectedExecutionException e) {
+	                    // TODO KKr - set rejected execution handler, versus relying on exception to catch this (normal) situation.
 	                    LOGGER.trace("No spare capacity for fetching, sleeping");
 	                    Thread.sleep(NO_CAPACITY_SLEEP_INTERVAL);
 	                }
