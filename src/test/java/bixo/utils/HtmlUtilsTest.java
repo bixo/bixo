@@ -10,17 +10,19 @@ public class HtmlUtilsTest {
     public void testNoFollowMetaTags() {
         final String htmlText1 = "<html><head><meta name=\"ROBOTS\" content=\"NONE\" /></head><body></body></html>";
         final String htmlText2 = "<html><head><meta name=\"ROBOTS\" content=\"nofollow\" /></head><body></body></html>";
+        final String htmlText3 = "<html><head><meta name=\"ROBOTS\" content=\"NOINDEX,NOFOLLOW\" /></head><body></body></html>";
         
         assertTrue(HtmlUtils.hasNoFollowMetaTags(htmlText1));
         assertTrue(HtmlUtils.hasNoFollowMetaTags(htmlText2));
+        assertTrue(HtmlUtils.hasNoFollowMetaTags(htmlText3));
     }
     
     
     @Test
     public void testNoArchiveMetaTags() {
         final String htmlText1 = "<html><head><meta name=\"ROBOTS\" content=\"NONE\" /></head><body></body></html>";
-        
         final String htmlText2 = "<html><head><meta name=\"ROBOTS\" content=\"NoArchive\" /></head><body></body></html>";
+        final String htmlText21 = "<html><head><meta name=\"ROBOTS\" content=\"NOINDEX,NOARCHIVE\" /></head><body></body></html>";
         
         // <META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
         final String htmlText3 = "<html><head><meta HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\" /></head><body></body></html>";
@@ -36,6 +38,7 @@ public class HtmlUtilsTest {
 
         assertTrue(HtmlUtils.hasNoArchiveMetaTags(htmlText1));
         assertTrue(HtmlUtils.hasNoArchiveMetaTags(htmlText2));
+        assertTrue(HtmlUtils.hasNoArchiveMetaTags(htmlText21));
         assertTrue(HtmlUtils.hasNoArchiveMetaTags(htmlText3));
         assertTrue(HtmlUtils.hasNoArchiveMetaTags(htmlText4));
         assertTrue(HtmlUtils.hasNoArchiveMetaTags(htmlText5));

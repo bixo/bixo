@@ -20,8 +20,12 @@ public class HtmlUtils {
     public static boolean hasNoArchiveMetaTags(String htmlText) {
         Matcher m = META_ROBOTS_PATTERN.matcher(htmlText);
         if (m.find()) {
-            String directive = m.group(1).toLowerCase();
-            return (directive.equals("none") || directive.equals("noarchive"));
+            String[] directives = m.group(1).toLowerCase().split(",");
+            for (String directive : directives) {
+                if (directive.equals("none") || directive.equals("noarchive")) {
+                    return true;
+                }
+            }
         }
 
         m = META_PRAGMA_PATTERN.matcher(htmlText);
@@ -31,8 +35,12 @@ public class HtmlUtils {
         
         m = META_CACHE_CONTROL_PATTERN.matcher(htmlText);
         if (m.find()) {
-            String directive = m.group(1).toLowerCase();
-            return (directive.equals("no-cache") || directive.equals("no-store") || directive.equals("private"));
+            String[] directives = m.group(1).toLowerCase().split(",");
+            for (String directive : directives) {
+                if (directive.equals("no-cache") || directive.equals("no-store") || directive.equals("private")) {
+                    return true;
+                }
+            }
         }
         
         return false;
@@ -41,10 +49,14 @@ public class HtmlUtils {
     public static boolean hasNoFollowMetaTags(String htmlText) {
         Matcher m = META_ROBOTS_PATTERN.matcher(htmlText);
         if (m.find()) {
-            String directive = m.group(1).toLowerCase();
-            return (directive.equals("none") || directive.equals("nofollow"));
-        } else {
-            return false;
+            String[] directives = m.group(1).toLowerCase().split(",");
+            for (String directive : directives) {
+                if (directive.equals("none") || directive.equals("nofollow")) {
+                    return true;
+                }
+            }
         }
+        
+        return false;
     }
 }
