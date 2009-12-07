@@ -50,4 +50,7 @@ public interface IHttpHeaders {
 
     public static final String ACCEPT_CHARSET = "Accept-Charset";
 
+    public static final String ACCEPT = "Accept";
+    
+
 }

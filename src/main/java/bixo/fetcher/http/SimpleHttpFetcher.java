@@ -110,6 +110,12 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     private static final int BUFFER_SIZE = 8 * 1024;
     private static final int DEFAULT_MAX_RETRY_COUNT = 10;
     
+    // TODO KKr - figure out best value for this.
+    // This is what Firefox uses (below)
+    // Nutch has text/html,application/xml;q=0.9,application/xhtml+xml,text/xml;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+    private static final String DEFAULT_ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+    private static final String DEFAULT_ACCEPT_CHARSET = "utf-8,ISO-8859-1;q=0.7,*;q=0.7";
+    
     // Keys used to access data in the Http execution context.
 	private static final String PERM_REDIRECT_CONTEXT_KEY = "perm-redirect";
 	private static final String REDIRECT_COUNT_CONTEXT_KEY = "redirect-count";
@@ -119,6 +125,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         "Default",
         "SSL",
     };
+
     
     private int _maxThreads;
     private HttpVersion _httpVersion;
@@ -283,7 +290,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         	return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
         } catch (BaseFetchException e) {
         	if (LOGGER.isTraceEnabled()) {
-        		LOGGER.trace(String.format("Exception fetching %s", scoredUrl.getUrl()), e);
+        		LOGGER.trace(String.format("Exception fetching %s (%s)", scoredUrl.getUrl(), e.getMessage()), e);
         	}
         	
         	throw e;
@@ -370,7 +377,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             // mime-types from the server to be processed, set "" as one of the valid mime-types in FetcherPolicy.
             Set<String> mimeTypes = _fetcherPolicy.getValidMimeTypes();
             if ((mimeTypes != null) && !mimeTypes.contains(HttpUtils.getMimeTypeFromContentType(contentType))) {
-                throw new AbortedFetchException(url, AbortedFetchReason.INVALID_MIME_TYPE);
+                throw new AbortedFetchException(url, "Invalid mime-type: " + contentType, AbortedFetchReason.INVALID_MIMETYPE);
             }
         } catch (IOException e) {
             throw new IOFetchException(url, e);
@@ -379,8 +386,6 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         } catch (IllegalStateException e) {
             throw new UrlFetchException(url, e.getMessage());
         } catch (HttpFetchException e) {
-            // There may be residual content, so abort the request so that the
-            // connection gets returned.
             needAbort = true;
             throw e;
         } catch (AbortedFetchException e) {
@@ -573,11 +578,12 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             clientParams.setHandleRedirects(_fetcherPolicy.getMaxRedirects() != FetcherPolicy.NO_REDIRECTS);
             clientParams.setMaxRedirects(_fetcherPolicy.getMaxRedirects());
             
-            // Set up default headers
+            // Set up default headers. This helps us get back from servers what we want.
             HashSet<Header> defaultHeaders = new HashSet<Header>();
             defaultHeaders.add(new BasicHeader(IHttpHeaders.ACCEPT_LANGUAGE, _fetcherPolicy.getAcceptLanguage()));
-            defaultHeaders.add(new BasicHeader(IHttpHeaders.ACCEPT_CHARSET, "utf-8,ISO-8859-1;q=0.7,*;q=0.7"));
-
+            defaultHeaders.add(new BasicHeader(IHttpHeaders.ACCEPT_CHARSET, DEFAULT_ACCEPT_CHARSET));
+            defaultHeaders.add(new BasicHeader(IHttpHeaders.ACCEPT, DEFAULT_ACCEPT));
+            
             clientParams.setDefaultHeaders(defaultHeaders);
         }
     }
