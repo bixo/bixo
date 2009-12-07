@@ -75,13 +75,10 @@ public class HttpFetchException extends BaseFetchException implements WritableCo
             if (_httpStatus < 300) {
                 throw new RuntimeException("Invalid HTTP status for exception: " + _httpStatus);
             } else if (_httpStatus < 400) {
-                LOGGER.debug("No explicit mapping for HTTP status: " + _httpStatus);
                 return UrlStatus.HTTP_REDIRECTION_ERROR;
             } else if (_httpStatus < 500) {
-                LOGGER.debug("No explicit mapping for HTTP status: " + _httpStatus);
                 return UrlStatus.HTTP_CLIENT_ERROR;
             } else if (_httpStatus < 600) {
-                LOGGER.debug("No explicit mapping for HTTP status: " + _httpStatus);
                 return UrlStatus.HTTP_SERVER_ERROR;
             } else {
                 throw new RuntimeException("Unknown HTTP status for exception: " + _httpStatus);
