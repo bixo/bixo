@@ -15,6 +15,7 @@ public enum UrlStatus {
     
     // Not fetched due to mid-fetch abort
     ABORTED_SLOW_RESPONSE,
+    ABORTED_INVALID_MIMETYPE,
     
     // Not fetched during fetch operation, due to HTTP status code error
     HTTP_REDIRECTION_ERROR,

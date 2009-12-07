@@ -22,6 +22,12 @@ public class AbortedFetchException extends BaseFetchException implements Writabl
         _abortReason = abortReason;
     }
     
+    public AbortedFetchException(String url, String msg, AbortedFetchReason abortReason) {
+        super(url, msg);
+        
+        _abortReason = abortReason;
+    }
+    
     public AbortedFetchReason getAbortReason() {
         return _abortReason;
     }
@@ -32,6 +38,9 @@ public class AbortedFetchException extends BaseFetchException implements Writabl
         case SLOW_RESPONSE_RATE:
             return UrlStatus.ABORTED_SLOW_RESPONSE;
 
+        case INVALID_MIMETYPE:
+            return UrlStatus.ABORTED_INVALID_MIMETYPE;
+            
         default:
             throw new RuntimeException("Unknown abort reason: " + _abortReason);
         }

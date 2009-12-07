@@ -389,6 +389,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
 //        SKIPPED_BY_SCORER,          // Skipped explicitly by scorer
 //        SKIPPED_BY_SCORE,           // Skipped because score wasn't high enough
 //        ABORTED_SLOW_RESPONSE,
+//        ABORTED_INVALID_MIMETYPE
 //        HTTP_NOT_FOUND,
 //        ERROR_INVALID_URL,
 //        ERROR_IOEXCEPTION,

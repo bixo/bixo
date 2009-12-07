@@ -290,7 +290,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
             fetcher.get(new ScoredUrlDatum(url));
             fail("Fetch should have failed");
         } catch (AbortedFetchException e) {
-            assertEquals(AbortedFetchReason.INVALID_MIME_TYPE, e.getAbortReason());
+            assertEquals(AbortedFetchReason.INVALID_MIMETYPE, e.getAbortReason());
         } finally {
             server.stop();
         }
