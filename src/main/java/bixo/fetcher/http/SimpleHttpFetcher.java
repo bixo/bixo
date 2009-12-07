@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
@@ -58,7 +59,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.params.ClientParamBean;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.params.HttpClientParams;
-import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.ConnectionPoolTimeoutException;
 import org.apache.http.conn.params.ConnManagerParams;
 import org.apache.http.conn.params.ConnPerRouteBean;
 import org.apache.http.conn.scheme.PlainSocketFactory;
@@ -325,7 +326,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         String redirectedUrl = null;
         String newBaseUrl = null;
         int numRedirects = 0;
-        boolean needAbort = false;
+        boolean needAbort = true;
         String contentType = "";
         
         try {
@@ -340,7 +341,8 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             }
 
             int httpStatus = response.getStatusLine().getStatusCode();
-            if (httpStatus != HttpStatus.SC_OK) {
+            if ((httpStatus < 200) || (httpStatus >= 300)) {
+                // We can't just check against SC_OK, as some wackos return 201, 202, etc
                 throw new HttpFetchException(url, "Error fetching " + url, httpStatus, headerMap);
             }
 
@@ -379,21 +381,29 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             if ((mimeTypes != null) && !mimeTypes.contains(HttpUtils.getMimeTypeFromContentType(contentType))) {
                 throw new AbortedFetchException(url, "Invalid mime-type: " + contentType, AbortedFetchReason.INVALID_MIMETYPE);
             }
+            
+            needAbort = false;
         } catch (IOException e) {
+            // Oleg guarantees that no abort is needed in the case of an IOException
+            needAbort = false;
+            
+            if (e instanceof ConnectionPoolTimeoutException) {
+                // Should never happen, so let's dump some info about the connection pool.
+                ThreadSafeClientConnManager cm = (ThreadSafeClientConnManager)_httpClient.getConnectionManager();
+                int numConnections = cm.getConnectionsInPool();
+                cm.closeIdleConnections(0, TimeUnit.MILLISECONDS);
+                LOGGER.error(String.format("Got ConnectionPoolTimeoutException: %d connections before, %d after idle close", numConnections, cm.getConnectionsInPool()));
+            }
+            
             throw new IOFetchException(url, e);
         } catch (URISyntaxException e) {
             throw new UrlFetchException(url, e.getMessage());
         } catch (IllegalStateException e) {
             throw new UrlFetchException(url, e.getMessage());
-        } catch (HttpFetchException e) {
-            needAbort = true;
-            throw e;
-        } catch (AbortedFetchException e) {
-            needAbort = true;
+        } catch (BaseFetchException e) {
             throw e;
         } catch (Exception e) {
-            // We can get things like IllegalStateException, so map all of those to
-            // a generic IOFetchException
+            // Map anything else to a generic IOFetchException
             // TODO KKr - create generic fetch exception
             throw new IOFetchException(url, new IOException(e));
         } finally {
@@ -564,7 +574,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             }
 
             // Use ThreadSafeClientConnManager since more than one thread will be using the HttpClient.
-            ClientConnectionManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
+            ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
             _httpClient = new DefaultHttpClient(cm, params);
             _httpClient.setHttpRequestRetryHandler(new MyRequestRetryHandler(_maxRetryCount));
             _httpClient.setRedirectHandler(new MyRedirectHandler());
