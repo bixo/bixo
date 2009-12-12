@@ -122,6 +122,7 @@ public class SimpleUrlNormalizer implements IUrlNormalizer {
     public String normalizeHostname(String hostname) {
         String result = hostname.toLowerCase();
         // Convert domain.com => www.domain.com
+        // TODO - This isn't always valid, so make it an optional step?
 //        String paidLevelDomain = DomainNames.getPLD(result);
 //        if (result.equals(paidLevelDomain) && !isIPAddress(paidLevelDomain)) {
 //            result = "www." + paidLevelDomain;
