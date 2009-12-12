@@ -16,6 +16,24 @@ public class FsUtils {
 	private static final Pattern LOOP_DIRNAME_PATTERN = Pattern
 			.compile("(\\d+)-([^/]+)");
 
+	/**
+	 * Protect against earlier versions of Hadoop returning null if there
+	 * are no sub-directories in <path>
+	 * 
+	 * @param fs
+	 * @param path
+	 * @return
+	 * @throws IOException
+	 */
+	private static FileStatus[] listStatus(FileSystem fs, Path path) throws IOException {
+	    FileStatus[] result = fs.listStatus(path);
+	    if (result == null) {
+	        result = new FileStatus[0];
+	    }
+	    
+	    return result;
+	}
+	
 	public static Path makeLoopDir(FileSystem fs, Path outputDir, int loopNumber)
 			throws IOException {
 		String timestamp = new SimpleDateFormat("yyyyMMdd'T'HHmmss")
@@ -30,7 +48,7 @@ public class FsUtils {
 		int bestLoop = -1;
 		Path result = null;
 
-		FileStatus[] subdirs = fs.listStatus(outputPath);
+		FileStatus[] subdirs = listStatus(fs, outputPath);
 		for (FileStatus status : subdirs) {
 			if (!status.isDir()) {
 				continue;
@@ -56,7 +74,7 @@ public class FsUtils {
 		int bestLoop = Integer.MAX_VALUE;
 		Path result = null;
 
-		FileStatus[] subdirs = fs.listStatus(outputPath);
+		FileStatus[] subdirs = listStatus(fs, outputPath);
 		for (FileStatus status : subdirs) {
 			if (!status.isDir()) {
 				continue;
@@ -95,7 +113,7 @@ public class FsUtils {
 			String subdirName) throws IOException {
 		ArrayList<Path> result = new ArrayList<Path>();
 
-		FileStatus[] crawldirs = fs.listStatus(outputPath);
+		FileStatus[] crawldirs = listStatus(fs, outputPath);
 		for (FileStatus status : crawldirs) {
 			if (!status.isDir()) {
 				continue;
@@ -106,7 +124,7 @@ public class FsUtils {
 				extractLoopNumber(status.getPath());
 
 				Path subdirPath = new Path(status.getPath(), subdirName);
-				FileStatus[] subdirStatus = fs.listStatus(subdirPath);
+				FileStatus[] subdirStatus = listStatus(fs, subdirPath);
 				if ((subdirStatus.length == 1) && (subdirStatus[0].isDir())) {
 					result.add(subdirPath);
 				}
