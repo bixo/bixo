@@ -54,6 +54,10 @@ public class BixoFlowProcess extends FlowProcess {
         public TupleEntryCollector openTapForWrite(Tap tap) throws IOException {
             return null;
         }
+
+        @Override
+        public void setStatus(String status) {
+        }
     }
 
     private class HadoopFlowReporter implements IFlowReporter {
