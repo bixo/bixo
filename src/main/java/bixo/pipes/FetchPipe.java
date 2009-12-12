@@ -149,7 +149,8 @@ public class FetchPipe extends SubAssembly {
     }
 
     private void createFetchBuffer(Pipe fetchPipe, IHttpFetcher fetcher, Fields metaDataFields) {
-    	fetchPipe = new GroupBy(fetchPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
+        // Group by the key (which will be <unique ip>-<crawl delay>), and sort from high to low score.
+    	fetchPipe = new GroupBy(fetchPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD), new Fields(ScoredUrlDatum.SCORE_FIELD), true);
     	fetchPipe = new Every(fetchPipe, new FetcherBuffer(metaDataFields, fetcher), Fields.RESULTS);
 
         Fields fetchedFields = FetchedDatum.FIELDS.append(metaDataFields);
