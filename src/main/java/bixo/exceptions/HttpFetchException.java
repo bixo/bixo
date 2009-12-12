@@ -81,7 +81,8 @@ public class HttpFetchException extends BaseFetchException implements WritableCo
             } else if (_httpStatus < 600) {
                 return UrlStatus.HTTP_SERVER_ERROR;
             } else {
-                throw new RuntimeException("Unknown HTTP status for exception: " + _httpStatus);
+                LOGGER.warn("Unknown HTTP status for exception: " + _httpStatus);
+                return UrlStatus.HTTP_SERVER_ERROR;
             }
         }
     }
