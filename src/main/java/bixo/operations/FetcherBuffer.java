@@ -50,6 +50,14 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
     }
 
     @Override
+    public boolean isSafe() {
+        // We definitely DO NOT want to be called multiple times for the same
+        // scored datum, so let Cascading know that the output from us should
+        // be stashed in tempHfs if need be.
+        return false;
+    }
+    
+    @Override
     public void prepare(FlowProcess flowProcess, OperationCall operationCall) {
         super.prepare(flowProcess, operationCall);
 
