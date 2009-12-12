@@ -53,6 +53,13 @@ public class ParsePipe extends SubAssembly {
             _parser = parser;
         }
 
+        @Override
+        public boolean isSafe() {
+            // We don't want to get called multiple times for the same tuple
+            return false;
+        }
+        
+        @Override
         public void operate(FlowProcess flowProcess, FunctionCall<NullContext> functionCall) {
             TupleEntry arguments = functionCall.getArguments();
             FetchedDatum fetchedDatum = new FetchedDatum(arguments.getTuple(), _metaDataFields);
@@ -82,7 +89,8 @@ public class ParsePipe extends SubAssembly {
     public ParsePipe(Pipe fetcherPipe, IParser parser, Fields inMetaDataFields, Fields outMetaDataFields) {
         Pipe parsePipe = new Pipe(PARSE_PIPE_NAME, fetcherPipe);
 
-        parsePipe = new Each(parsePipe, new ParseFunction(parser, inMetaDataFields, outMetaDataFields), Fields.RESULTS);
+        ParseFunction parserFunction = new ParseFunction(parser, inMetaDataFields, outMetaDataFields);
+        parsePipe = new Each(parsePipe, parserFunction, Fields.RESULTS);
         setTails(parsePipe);
     }
 
