@@ -7,8 +7,10 @@ import java.io.InputStreamReader;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
+import bixo.datum.ParsedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.http.SimpleHttpFetcher;
+import bixo.parser.SimpleParser;
 
 public class RunHttpClientFetcher {
 
@@ -67,7 +69,12 @@ public class RunHttpClientFetcher {
 
             	System.out.println("Fetching " + url);
         		FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
-        		System.out.println("Result = " + result.toString());
+        		System.out.println(String.format("Fetched %s: headers = %s", result.getBaseUrl(), result.getHeaders()));
+        		// System.out.println("Result = " + result.toString());
+        		SimpleParser parser = new SimpleParser();
+        		ParsedDatum parsed = parser.parse(result);
+        		System.out.println(String.format("Parsed %s: lang = %s, size = %d", parsed.getUrl(),
+        		                parsed.getLanguage(), parsed.getParsedText().length()));
         	} catch (Exception e) {
         		e.printStackTrace(System.out);
                 
