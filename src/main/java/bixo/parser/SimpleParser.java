@@ -183,6 +183,13 @@ public class SimpleParser implements IParser {
             // TODO KKr - throw exception once ParseFunction handles this.
             LOGGER.warn("Exception parsing document " + fetchedDatum.getBaseUrl(), e);
             return null;
+        } catch (NoSuchMethodError e) {
+            LOGGER.warn("Attempting to use excluded parser", e);
+            return null;
+        } catch (Throwable t) {
+            // Make sure nothing inside Tika can kill us
+            LOGGER.error("Serious shut-down error thrown from Tika", t);
+            return null;
         } finally {
             IoUtils.safeClose(is);
         }
