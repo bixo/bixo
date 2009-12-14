@@ -93,4 +93,55 @@ public class DiskQueueTest {
             // valid
         }
     }
+    
+    @Test
+    public void testClearingQueue() {
+        DiskQueue<Integer> queue = new DiskQueue<Integer>(1);
+        assertTrue(queue.offer(new Integer(666)));
+        queue.clear();
+        
+        assertEquals(0, queue.size());
+        assertNull(queue.poll());
+    }
+    
+    @Test
+    public void testSizeWithCachedInternalEntry() {
+        // Tricky test to expose subtle bug. If we have a cached entry (read from
+        // disk, but not in queue) this needs to get accounted for in the size
+        // calculation.
+        
+        DiskQueue<Integer> queue = new DiskQueue<Integer>(1);
+        assertTrue(queue.offer(new Integer(1)));
+        assertTrue(queue.offer(new Integer(2)));
+        assertTrue(queue.offer(new Integer(3)));
+        
+        assertEquals(1, queue.remove().intValue());
+        assertEquals(2, queue.remove().intValue());
+        assertEquals(1, queue.size());
+    }
+    
+    @Test
+    public void testAddingNullElement() {
+        DiskQueue<Integer> queue = new DiskQueue<Integer>(1);
+
+        try {
+            queue.offer(null);
+            fail("Should have thrown exception");
+        } catch (Exception e) {
+            // valid
+        }
+        
+        // Now test when adding null that gets written to disk.
+        assertTrue(queue.offer(new Integer(666)));
+        assertTrue(queue.offer(new Integer(666)));
+        
+        try {
+            queue.offer(null);
+            fail("Should have thrown exception");
+        } catch (Exception e) {
+            // valid
+        }
+        
+
+    }
 }

@@ -62,14 +62,17 @@ public class DiskQueue<E> extends AbstractQueue<E> {
      * Make sure the file streams are all closed down, the temp file is closed, and the
      * temp file has been deleted.
      */
-    public void closeFile() {
+    private void closeFile() {
         if (_backingStore != null) {
             IoUtils.safeClose(_fileIn);
             _fileIn = null;
+            _fileInSaved = null;
 
             IoUtils.safeClose(_fileOut);
             _fileOut = null;
 
+            _fileElements = 0;
+            
             _backingStore.delete();
             _backingStore = null;
         }
@@ -79,6 +82,10 @@ public class DiskQueue<E> extends AbstractQueue<E> {
         if (_backingStore == null) {
             _backingStore = File.createTempFile(DiskQueue.class.getSimpleName() + "-backingstore-", null);
             _fileOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(_backingStore)));
+            
+            // Flush output file, so there's something written when we open the input stream.
+            _fileOut.flush();
+            
             _fileIn = new ObjectInputStream(new FileInputStream(_backingStore));
         }
     }
@@ -92,12 +99,16 @@ public class DiskQueue<E> extends AbstractQueue<E> {
 
     @Override
     public int size() {
-        return _memoryQueue.size() + _fileElements;
+        return _memoryQueue.size() + _fileElements + (_fileInSaved != null ? 1 : 0);
     }
 
 
     @Override
     public boolean offer(E element) {
+        if (element == null) {
+            throw new NullPointerException("Element cannot be null for AbstractQueue");
+        }
+        
         // If there's anything in the file, or the queue is full, then we have to write to the file.
         if ((_fileElements > 0) || !_memoryQueue.offer(element)) {
             try {
@@ -128,6 +139,18 @@ public class DiskQueue<E> extends AbstractQueue<E> {
         return _memoryQueue.poll();
     }
 
+    /* (non-Javadoc)
+     * @see java.util.AbstractQueue#clear()
+     * 
+     * Implement faster clear (so AbstractQueue doesn't call poll() repeatedly)
+     */
+    @Override
+    public void clear() {
+        _memoryQueue.clear();
+        
+        closeFile();
+    }
+    
     @SuppressWarnings("unchecked")
     private void loadMemoryQueue() {
         if (_memoryQueue.isEmpty()) {
@@ -141,6 +164,8 @@ public class DiskQueue<E> extends AbstractQueue<E> {
             }
 
             try {
+                openFile();
+                
                 _fileOut.flush();
 
                 while (_fileElements > 0) {
@@ -153,6 +178,7 @@ public class DiskQueue<E> extends AbstractQueue<E> {
                     }
                 }
 
+                // Nothing left in the file, so close it.
                 closeFile();
 
                 // FUTURE KKr - file queue is empty, so could reset length of file, read/write offsets
