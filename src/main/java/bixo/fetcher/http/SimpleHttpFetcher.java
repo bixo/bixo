@@ -459,7 +459,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
                     totalRead += bytesRead;
                     out.write(buffer, 0, bytesRead);
 
-                    // Assume read time is at least one microsecond, to avoid DBZ exception.
+                    // Assume read time is at least one millisecond, to avoid DBZ exception.
                     long totalReadTime = Math.max(1, System.currentTimeMillis() - readStartTime);
                     readRate = (totalRead * 1000L) / totalReadTime;
 
