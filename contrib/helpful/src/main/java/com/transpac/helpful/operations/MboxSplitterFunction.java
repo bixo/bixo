@@ -62,7 +62,7 @@ public class MboxSplitterFunction extends BaseOperation<NullContext> implements 
 		
 		BufferedReader reader;
 		try {
-			InputStream is = new ByteArrayInputStream(fetchedDatum.getContent().getBytes());
+			InputStream is = new ByteArrayInputStream(fetchedDatum.getContentBytes());
 			reader = new BufferedReader(new InputStreamReader(is, "us-ascii"));
 		} catch (UnsupportedEncodingException e) {
 			LOGGER.error("Unexpected exception while splitting mbox file", e);

@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.html.HtmlParser;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -76,10 +77,10 @@ public class ParseModMboxPageFunction extends BaseOperation<NullContext> impleme
         	init();
 
         	Metadata metadata = new Metadata();
-        	InputStream is = new ByteArrayInputStream(fetchedDatum.getContent().getBytes());
+        	InputStream is = new ByteArrayInputStream(fetchedDatum.getContentBytes());
         	
         	try {
-        		_parser.parse(is, _handler, metadata);
+        		_parser.parse(is, _handler, metadata, new ParseContext());
 
         		// _ids now has a list of the mailbox IDs that we use to create URLs.
         		for (String id : _ids) {

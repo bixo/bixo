@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.mbox.MboxParser;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -162,8 +163,8 @@ public class ParseEmailFunction extends BaseOperation<NullContext> implements Fu
         // output the results
         if (fetchedDatum.getContentType().equals("application/mbox")) {
         	Metadata metadata = new Metadata();
-        	Map<String, Object> context = new HashMap<String, Object>();
-        	InputStream is = new ByteArrayInputStream(fetchedDatum.getContent().getBytes());
+        	ParseContext context = new ParseContext();
+        	InputStream is = new ByteArrayInputStream(fetchedDatum.getContentBytes());
         	
         	try {
         		_parser.parse(is, _handler, metadata, context);
