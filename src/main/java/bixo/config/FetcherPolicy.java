@@ -118,6 +118,11 @@ public class FetcherPolicy implements Serializable {
         _crawlEndTime = crawlEndTime;
     }
 
+    /**
+     * Return the minimum response rate. If the speed at which bytes are being returned
+     * from the server drops below this, the fetch of that page will be aborted.
+     * @return bytes/second
+     */
     public int getMinResponseRate() {
         return _minResponseRate;
     }
