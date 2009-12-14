@@ -3,6 +3,7 @@ package bixo.pipes;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.http.HttpStatus;
@@ -30,8 +31,8 @@ import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.NullHttpFetcher;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
-import bixo.fetcher.util.LastFetchScoreGenerator;
 import bixo.fetcher.util.SimpleGroupingKeyGenerator;
+import bixo.fetcher.util.SimpleScoreGenerator;
 import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
 import cascading.CascadingTestCase;
@@ -50,7 +51,6 @@ import cascading.tuple.TupleEntryIterator;
 
 // Long-running test
 public class FetchPipeLRTest extends CascadingTestCase {
-    private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
     
     @SuppressWarnings("serial")
     private static class SkippedScoreGenerator implements IScoreGenerator {
@@ -58,6 +58,27 @@ public class FetchPipeLRTest extends CascadingTestCase {
         @Override
         public double generateScore(GroupedUrlDatum urlTuple) {
             return IScoreGenerator.SKIP_URL_SCORE;
+        }
+    }
+    
+    @SuppressWarnings("serial")
+    private static class RandomScoreGenerator implements IScoreGenerator {
+
+        private double _minScore;
+        private double _maxScore;
+        private Random _rand;
+        
+        public RandomScoreGenerator(double minScore, double maxScore) {
+            _minScore = minScore;
+            _maxScore = maxScore;
+            _rand = new Random();
+        }
+        
+        @Override
+        public double generateScore(GroupedUrlDatum urlTuple) {
+            double range = _maxScore - _minScore;
+            
+            return _minScore + (_rand.nextDouble() * range);
         }
     }
     
@@ -89,7 +110,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
         SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
-        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
+        IScoreGenerator scoring = new SimpleScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
         
         String outputPath = "build/test/FetchPipeTest-testHeadersInStatus/out";
@@ -112,11 +133,11 @@ public class FetchPipeLRTest extends CascadingTestCase {
     
     @Test
     public void testFetchPipe() throws Exception {
-        Lfs in = makeInputData(100, 1);
+        Lfs in = makeInputData(25, 4);
 
         Pipe pipe = new Pipe("urlSource");
         SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
-        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
+        IScoreGenerator scoring = new RandomScoreGenerator(0.0, 1.0);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
         
@@ -144,7 +165,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
             Assert.assertNotNull(datum.getBaseUrl());
             Assert.assertNotNull(datum.getFetchedUrl());
         }
-        
+                
         Assert.assertEquals(100, totalEntries);
         tupleEntryIterator.close();
         
@@ -173,7 +194,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
         SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
-        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
+        IScoreGenerator scoring = new SimpleScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher, new Fields("key"));
         
         String outputPath = "build/test/FetchPipeTest/dual";
@@ -238,7 +259,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         defaultPolicy.setCrawlEndTime(0);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
         SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
-        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
+        IScoreGenerator scoring = new SimpleScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
 
         // Create the output
