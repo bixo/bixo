@@ -22,8 +22,6 @@
  */
 package bixo.fetcher;
 
-import java.util.Random;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -98,9 +96,9 @@ public class FetcherQueueTest {
         MyCollector collector = new MyCollector();
         FetcherQueue queue = new FetcherQueue("domain.com", spy, new BixoFlowProcess(), collector);
 
-        ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 0.0d);
-        ScoredUrlDatum fetchItem2 = makeSUD("http://domain.com/page2", 1.0d);
-        ScoredUrlDatum fetchItem3 = makeSUD("http://domain.com/page3", 0.5d);
+        ScoredUrlDatum fetchItem1 = makeSUD("http://domain.com/page1", 1.0d);
+        ScoredUrlDatum fetchItem2 = makeSUD("http://domain.com/page2", 0.5d);
+        ScoredUrlDatum fetchItem3 = makeSUD("http://domain.com/page3", 0.0d);
 
         queue.offer(fetchItem1);
         queue.offer(fetchItem2);
@@ -114,40 +112,9 @@ public class FetcherQueueTest {
         FetchList items = queue.poll();
         Assert.assertNotNull(items);
         Assert.assertEquals(2, items.size());
-        Assert.assertTrue(items.get(0).getUrl().equals("http://domain.com/page2"));
+        Assert.assertTrue(items.get(0).getUrl().equals("http://domain.com/page1"));
 
         Assert.assertNull(queue.poll());
-    }
-
-    @Test
-    public void testSortedUrls() {
-        FetcherPolicy policy = new ControlledFetcherPolicy(1000, 1, 0);
-        
-        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), null);
-        Random rand = new Random(1L);
-
-        for (int i = 0; i < 100; i++) {
-            ScoredUrlDatum fetchQueueEntry = makeSUD("http://domain.com/page" + rand.nextInt(), rand.nextFloat());
-            queue.offer(fetchQueueEntry);
-        }
-
-        double curScore = 2.0;
-        int totalItems = 0;
-        while (totalItems < 10) {
-            FetchList items = queue.poll();
-            Assert.assertNotNull(items);
-            totalItems += items.size();
-
-            Assert.assertTrue(items.get(0).getScore() <= curScore);
-            for (ScoredUrlDatum item : items) {
-                Assert.assertTrue(item.getScore() <= curScore);
-                curScore = item.getScore();
-            }
-
-            queue.release(items);
-        }
-
-        Assert.assertEquals(10, totalItems);
     }
     
 
