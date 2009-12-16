@@ -34,6 +34,7 @@ import bixo.datum.UrlStatus;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.fetcher.http.IHttpFetcher;
+import bixo.hadoop.FetchCounters;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
@@ -61,19 +62,21 @@ public class FetcherRunnable implements Runnable {
             Comparable status = null;
             
             try {
-                process.increment(FetcherCounters.URLS_FETCHING, 1);
+                process.increment(FetchCounters.URLS_FETCHING, 1);
                 long startTime = System.currentTimeMillis();
                 result = _httpFetcher.get(item);
                 long deltaTime = System.currentTimeMillis() - startTime;
 
-                process.increment(FetcherCounters.FETCHED_TIME, (int)deltaTime);
-                process.increment(FetcherCounters.URLS_FETCHED, 1);
-                process.increment(FetcherCounters.FETCHED_BYTES, result.getContentLength());
+                process.increment(FetchCounters.FETCHED_TIME, (int)deltaTime);
+                process.increment(FetchCounters.URLS_FETCHED, 1);
+                process.decrement(FetchCounters.URLS_REMAINING, 1);
+                process.increment(FetchCounters.FETCHED_BYTES, result.getContentLength());
                 process.setStatus(Level.TRACE, "Fetched " + result);
 
                 status = UrlStatus.FETCHED.toString();
             } catch (BaseFetchException e) {
-                process.increment(FetcherCounters.URLS_FAILED, 1);
+                process.increment(FetchCounters.URLS_FAILED, 1);
+                process.decrement(FetchCounters.URLS_REMAINING, 1);
                 
                 // We can do this because each of the concrete subclasses of BaseFetchException implements
                 // WritableComparable
@@ -81,10 +84,11 @@ public class FetcherRunnable implements Runnable {
             } catch (Exception e) {
                 LOGGER.error("Expected exception while fetching " + item.getUrl(), e);
                 
-                process.increment(FetcherCounters.URLS_FAILED, 1);
+                process.increment(FetchCounters.URLS_FAILED, 1);
+                process.decrement(FetchCounters.URLS_REMAINING, 1);
                 status = new IOFetchException(item.getUrl(), new IOException(e));
             } finally {
-                process.decrement(FetcherCounters.URLS_FETCHING, 1);
+                process.decrement(FetchCounters.URLS_FETCHING, 1);
                 
                 // Cascading _collectors aren't thread-safe.
                 synchronized (collector) {

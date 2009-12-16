@@ -1,4 +1,4 @@
-package bixo.utils;
+package bixo.hadoop;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -7,6 +7,8 @@ import junit.framework.Assert;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
+
+import bixo.hadoop.HadoopUtils;
 
 
 public class HadoopUtilsTest {

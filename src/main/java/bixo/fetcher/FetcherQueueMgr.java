@@ -31,6 +31,7 @@ import cascading.tuple.TupleEntryCollector;
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
 import bixo.fetcher.http.IRobotRules;
+import bixo.hadoop.FetchCounters;
 
 /**
  * Manage a set of FetcherQueue objects, one per URL grouping (either domain or IP address)
@@ -124,7 +125,8 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	            if (queue.isEmpty()) {
 	                // Don't put it back in the queue, as there's nothing left to
 	                // do with it.
-	                _process.increment(FetcherCounters.DOMAINS_FINISHED, 1);
+	                _process.increment(FetchCounters.DOMAINS_FINISHED, 1);
+	                _process.decrement(FetchCounters.DOMAINS_REMAINING, 1);
 	            } else {
 	                result = queue.poll();
 	                _queues.add(queue);

@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.utils;
+package bixo.hadoop;
 
 import java.io.IOException;
 import java.net.URI;

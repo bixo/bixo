@@ -30,6 +30,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.util.IScoreGenerator;
+import bixo.hadoop.FetchCounters;
 import bixo.utils.DiskQueue;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
@@ -145,7 +146,7 @@ public class FetcherQueue implements IFetchListProvider {
         }
         
         if (result != null) {
-            _process.increment(FetcherCounters.DOMAINS_FETCHING, 1);
+            _process.increment(FetchCounters.DOMAINS_FETCHING, 1);
         }
         
         return result;
@@ -169,7 +170,7 @@ public class FetcherQueue implements IFetchListProvider {
      * @param items - items previously returned from call to poll()
      */
     public synchronized void release(FetchList items) {
-        _process.decrement(FetcherCounters.DOMAINS_FETCHING, 1);
+        _process.decrement(FetchCounters.DOMAINS_FETCHING, 1);
         _numActiveFetchers -= 1;
     }
 

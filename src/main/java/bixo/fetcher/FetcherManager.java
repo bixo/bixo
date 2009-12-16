@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.fetcher.http.IHttpFetcher;
+import bixo.hadoop.FetchCounters;
 
 /**
  * Manage the set of threads that one task spawns to fetch pages.
@@ -79,8 +80,8 @@ public class FetcherManager implements Runnable {
 	        
 	        while (true) {
 	            // See if we should update our status
-	            int curUrlsFetching = _process.getCounter(FetcherCounters.URLS_FETCHING);
-	            int curDomainsFetching = _process.getCounter(FetcherCounters.DOMAINS_FETCHING);
+	            int curUrlsFetching = _process.getCounter(FetchCounters.URLS_FETCHING);
+	            int curDomainsFetching = _process.getCounter(FetchCounters.DOMAINS_FETCHING);
 	            long curTime = System.currentTimeMillis();
 	            
 	            if ((curUrlsFetching != urlsFetching) || (curDomainsFetching != domainsFetching) || (curTime >= nextStatusTime)) {
@@ -89,8 +90,7 @@ public class FetcherManager implements Runnable {
 	                nextStatusTime = curTime + STATUS_UPDATE_INTERVAL;
 	                
 	                // Figure out number of URLs remaining = queued - (fetched + fetching + failed)
-	                int urlsDone = _process.getCounter(FetcherCounters.URLS_FETCHED) + _process.getCounter(FetcherCounters.URLS_FAILED);
-	                int urlsRemaining = _process.getCounter(FetcherCounters.URLS_QUEUED) - (urlsDone + urlsFetching);
+	                int urlsRemaining = _process.getCounter(FetchCounters.URLS_REMAINING);
 	                _process.setStatus(String.format("Fetching %d URLs from %d domains (%d URLs remaining)", urlsFetching, domainsFetching, urlsRemaining));
 	            }
 	            

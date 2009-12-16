@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.utils;
+package bixo.hadoop;
 
 import java.net.URI;
 
@@ -31,7 +31,7 @@ import org.apache.hadoop.fs.LocalFileSystem;
 import org.junit.Assert;
 import org.junit.Test;
 
-import bixo.utils.HadoopConfigured;
+import bixo.hadoop.HadoopConfigured;
 
 import cascading.ClusterTestCase;
 // import cascading.flow.MultiMapReducePlanner;

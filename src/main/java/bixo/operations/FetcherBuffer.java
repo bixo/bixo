@@ -10,11 +10,11 @@ import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.fetcher.FetcherCounters;
 import bixo.fetcher.FetcherManager;
 import bixo.fetcher.FetcherQueue;
 import bixo.fetcher.FetcherQueueMgr;
 import bixo.fetcher.http.IHttpFetcher;
+import bixo.hadoop.FetchCounters;
 import bixo.utils.GroupingKey;
 import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.HadoopFlowProcess;
@@ -102,8 +102,9 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                     queue.offer(scoreUrl);
                 }
 
-                _flowProcess.increment(FetcherCounters.URLS_QUEUED, queue.getNumQueued());
-                _flowProcess.increment(FetcherCounters.URLS_SKIPPED, queue.getNumSkipped());
+                _flowProcess.increment(FetchCounters.URLS_QUEUED, queue.getNumQueued());
+                _flowProcess.increment(FetchCounters.URLS_REMAINING, queue.getNumQueued());
+                _flowProcess.increment(FetchCounters.URLS_SKIPPED, queue.getNumSkipped());
 
                 // We're going to spin here until the queue manager decides that we
                 // have available space for this next queue.
@@ -115,7 +116,8 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                 LOGGER.info(String.format("Queued %d URLs from %s", queue.getNumQueued(), domain));
                 LOGGER.info(String.format("Skipped %d URLs from %s", queue.getNumSkipped(), domain));
 
-                _flowProcess.increment(FetcherCounters.DOMAINS_QUEUED, 1);
+                _flowProcess.increment(FetchCounters.DOMAINS_QUEUED, 1);
+                _flowProcess.increment(FetchCounters.DOMAINS_REMAINING, 1);
             }
 
         } catch (Throwable t) {

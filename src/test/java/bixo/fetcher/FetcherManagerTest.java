@@ -12,6 +12,7 @@ import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.SimulationWebServer;
+import bixo.hadoop.FetchCounters;
 import bixo.utils.ConfigUtils;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
@@ -92,7 +93,7 @@ public class FetcherManagerTest extends SimulationWebServer {
             // core+max threads, so we're
             // just doing a general test of the count here.
             Thread.sleep(1000);
-            int activeThreads = flowProcess.getCounter(FetcherCounters.URLS_FETCHING);
+            int activeThreads = flowProcess.getCounter(FetchCounters.URLS_FETCHING);
             Assert.assertTrue(activeThreads >= NUM_THREADS);
 
             // Time to terminate everything.

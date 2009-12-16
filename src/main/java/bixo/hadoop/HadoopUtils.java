@@ -1,4 +1,4 @@
-package bixo.utils;
+package bixo.hadoop;
 
 import java.io.IOException;
 import java.util.Properties;
