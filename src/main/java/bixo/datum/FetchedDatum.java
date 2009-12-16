@@ -106,8 +106,20 @@ public class FetchedDatum extends BaseDatum {
         return _baseUrl;
     }
 
+    public void setBaseUrl(String baseUrl) {
+        if (baseUrl == null) {
+            throw new InvalidParameterException("baseUrl cannot be null");
+        }
+
+        _baseUrl = baseUrl;
+    }
+    
     public String getNewBaseUrl() {
         return _newBaseUrl;
+    }
+
+    public void setNewBaseUrl(String newBaseUrl) {
+        _newBaseUrl = newBaseUrl;
     }
 
     public String getFetchedUrl() {
@@ -145,16 +157,12 @@ public class FetchedDatum extends BaseDatum {
         return _numRedirects;
     }
 
-    public HttpHeaders getHeaders() {
-        return _headers;
-    }
-
-    public void setNewBaseUrl(String newBaseUrl) {
-        _newBaseUrl = newBaseUrl;
-    }
-
     public void setNumRedirects(int numRedirects) {
         _numRedirects = numRedirects;
+    }
+
+    public HttpHeaders getHeaders() {
+        return _headers;
     }
 
     @Override
