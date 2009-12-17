@@ -378,8 +378,11 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             // code in Tika to get triggered & try to process an unsupported type. If you want unknown
             // mime-types from the server to be processed, set "" as one of the valid mime-types in FetcherPolicy.
             Set<String> mimeTypes = _fetcherPolicy.getValidMimeTypes();
-            if ((mimeTypes != null) && !mimeTypes.contains(HttpUtils.getMimeTypeFromContentType(contentType))) {
-                throw new AbortedFetchException(url, "Invalid mime-type: " + contentType, AbortedFetchReason.INVALID_MIMETYPE);
+            if (mimeTypes != null) {
+                String mimeType = HttpUtils.getMimeTypeFromContentType(contentType);
+                if (!mimeTypes.contains(mimeType)) {
+                    throw new AbortedFetchException(url, "Invalid mime-type: " + mimeType, AbortedFetchReason.INVALID_MIMETYPE);
+                }
             }
             
             needAbort = false;
