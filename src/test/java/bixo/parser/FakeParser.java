@@ -10,7 +10,7 @@ public class FakeParser implements IParser {
     @Override
     public ParsedDatum parse(FetchedDatum fetchedDatum) {
 
-        return new ParsedDatum("url", "someParsedText", "en", "title", new Outlink[0], fetchedDatum.getMetaDataMap());
+        return new ParsedDatum("url", "someParsedText", "en", "title", new Outlink[0], null, fetchedDatum.getMetaDataMap());
     }
 
 
