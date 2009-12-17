@@ -36,6 +36,13 @@ SOFTWARE.
 		</delete>
 	</target>
 
+	<target name="clean-eclipse-build">
+		<echo>cleaning ${ant.project.name}</echo>
+		<delete includeemptydirs="true" failonerror="false">
+			<fileset dir="${build.dir}" includes="classes-*-eclipse/" />
+		</delete>
+	</target>
+
 
 	<!-- ================================================================== -->
 	<!-- Maven                                                              -->
@@ -483,14 +490,45 @@ SOFTWARE.
 		</sequential>
 	</macrodef>
 
-	<target name="clean-all">
+	<target name="clean-all" description="--> clean all files">
 		<antcall target="clean" />
-		<iterate target="clean" />
+		<!-- <antcall target="clean-eclipse" /> -->
+		<antcall target="clean-eclipse-build"/>
+		<antcall target="clean-contrib" />
 	</target>
 
 	<target name="test-all"
-			depends="test, test-lr, test-it"
+			depends="test, test-lr, test-it, test-contrib"
 			description="--> run all tests">
+	</target>
+
+	<target name="compile-all"
+			depends="compile, compile-test, compile-integration-test, compile-contrib"
+			description="--> compile all files including tests and contrib">
+	</target>
+
+	<!-- ================================================================== -->
+	<!-- Contrib targets                                         			-->
+	<!-- ================================================================== -->
+	<target name="compile-contrib"
+	        description="--> compile contrib examples">
+		<subant target="compile">
+			<fileset dir="./contrib" includes="*/build.xml"/>
+        </subant>
+	</target>
+
+	<target name="test-contrib"
+	        description="--> run tests on contrib examples">
+		<subant target="test">
+			<fileset dir="./contrib" includes="*/build.xml"/>
+        </subant>
+	</target>
+
+	<target name="clean-contrib"
+	        description="--> clean all contrib examples">
+		<subant target="clean">
+			<fileset dir="./contrib" includes="*/build.xml"/>
+        </subant>
 	</target>
 
 </project>
