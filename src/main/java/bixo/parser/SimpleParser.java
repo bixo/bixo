@@ -5,7 +5,9 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,6 +27,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.fetcher.http.IHttpHeaders;
+import bixo.utils.HttpUtils;
 import bixo.utils.IoUtils;
 
 @SuppressWarnings("serial")
@@ -130,7 +133,7 @@ public class SimpleParser implements IParser {
         Metadata metadata = new Metadata();
         metadata.add(Metadata.RESOURCE_NAME_KEY, fetchedDatum.getBaseUrl());
         metadata.add(Metadata.CONTENT_TYPE, fetchedDatum.getContentType());
-        metadata.add(Metadata.CONTENT_ENCODING, fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_ENCODING));
+        metadata.add(Metadata.CONTENT_ENCODING, getCharset(fetchedDatum));
         String lang = fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_LANGUAGE);
         metadata.add(Metadata.CONTENT_LANGUAGE, lang);
         
@@ -151,7 +154,7 @@ public class SimpleParser implements IParser {
             
             lang = detectLanguage(metadata, profilingHandler);
             return new ParsedDatum(fetchedDatum.getBaseUrl(), handler.getContent(), lang, metadata.get(Metadata.TITLE),
-                            handler.getLinks(), fetchedDatum.getMetaDataMap());
+                            handler.getLinks(), makeMap(metadata), fetchedDatum.getMetaDataMap());
         } catch (MalformedURLException e) {
             // TODO KKr - throw exception once ParseFunction handles this.
             LOGGER.warn("Exception processing document URLs for " + fetchedDatum.getBaseUrl(), e);
@@ -162,7 +165,7 @@ public class SimpleParser implements IParser {
             	// TODO KKr - remove this when Tika bugs w/using XML parser on HTML, and failing
             	// on RSS, are fixed.
                 return new ParsedDatum(fetchedDatum.getBaseUrl(), handler.getContent(), lang, metadata.get(Metadata.TITLE),
-                        handler.getLinks(), fetchedDatum.getMetaDataMap());
+                        handler.getLinks(), makeMap(metadata), fetchedDatum.getMetaDataMap());
             } else {
             	// TODO KKr - throw exception once ParseFunction handles this.
             	return null;
@@ -183,7 +186,17 @@ public class SimpleParser implements IParser {
         }
     }
 
-	private URL getContentLocation(FetchedDatum fetchedDatum) throws MalformedURLException {
+	private Map<String, String> makeMap(Metadata metadata) {
+	    Map<String, String> result = new HashMap<String, String>();
+	    
+	    for (String key : metadata.names()) {
+	        result.put(key, metadata.get(key));
+	    }
+	    
+	    return result;
+    }
+
+    private URL getContentLocation(FetchedDatum fetchedDatum) throws MalformedURLException {
 		URL baseUrl = new URL(fetchedDatum.getFetchedUrl());
 		
 		// See if we have a content location from the HTTP headers that we should use as
@@ -197,7 +210,26 @@ public class SimpleParser implements IParser {
 		return baseUrl;
 	}
 
-	/**
+    /**
+     * Extract encoding from either explicit header, or from content-type
+     * 
+     * @param datum
+     * @return charset in response headers, or null
+     */
+    private String getCharset(FetchedDatum datum) {
+        String result = datum.getHeaders().getFirst(IHttpHeaders.CONTENT_ENCODING);
+        if (result == null) {
+            // HttpUtils will return "" if it can't find the charset.
+            result = HttpUtils.getCharsetFromContentType(datum.getContentType());
+            if (result.length() == 0) {
+                result = null;
+            }
+        }
+        
+        return result;
+    }
+
+    /**
 	 * See if a language was set by the parser, from meta tags.
 	 * As a last resort falls back to the result from the ProfilingHandler.
 	 *  
