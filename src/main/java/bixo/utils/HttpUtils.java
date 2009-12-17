@@ -1,29 +1,29 @@
 package bixo.utils;
 
-import java.security.InvalidParameterException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.apache.tika.mime.MediaType;
 
 public class HttpUtils {
-
-    private static final Pattern CONTENT_TYPE_PATTERN = Pattern.compile("(?i)\\s*([^; ]*)\\s*(?:|;\\s*charset\\s*=\\s*([^ ]*)\\s*)");
     
     public static String getMimeTypeFromContentType(String contentType) {
-        Matcher m = CONTENT_TYPE_PATTERN.matcher(contentType);
-        if (!m.matches()) {
-            throw new InvalidParameterException("Format of content-type not valid: " + contentType);
+        String result = "";
+        MediaType mt = MediaType.parse(contentType);
+        if (mt != null) {
+            result = mt.getType() + "/" + mt.getSubtype();
         }
         
-        return m.group(1);
+        return result;
     }
     
     public static String getCharsetFromContentType(String contentType) {
-        Matcher m = CONTENT_TYPE_PATTERN.matcher(contentType);
-        if (!m.matches()) {
-            throw new InvalidParameterException("Format of content-type not valid: " + contentType);
+        String result = "";
+        MediaType mt = MediaType.parse(contentType);
+        if (mt != null) {
+            String charset = mt.getParameters().get("charset");
+            if (charset != null) {
+                result = charset;
+            }
         }
         
-        String result = m.group(2);
-        return (result == null ? "" : result);
+        return result;
     }
 }

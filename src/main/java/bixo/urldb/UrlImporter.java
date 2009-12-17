@@ -28,9 +28,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import bixo.datum.UrlDatum;
+import bixo.hadoop.HadoopConfigured;
 import bixo.operations.LastUpdated;
 import bixo.operations.TextUrlParser;
-import bixo.utils.HadoopConfigured;
 import bixo.utils.TimeStampUtils;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;

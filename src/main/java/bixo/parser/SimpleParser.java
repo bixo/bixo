@@ -5,7 +5,9 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,6 +27,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.fetcher.http.IHttpHeaders;
+import bixo.utils.HttpUtils;
 import bixo.utils.IoUtils;
 
 @SuppressWarnings("serial")
@@ -34,7 +37,6 @@ public class SimpleParser implements IParser {
     // Simplistic language code pattern used when there are more than one languages specified
     // FUTURE KKr - improve this to handle en-US, and "eng" for those using old-style language codes.
     private static final Pattern LANGUAGE_CODE_PATTERN= Pattern.compile("([a-z]{2})([,;-]).*");
-    private static final Pattern HTTP_EQUIV_CHARSET_PATTERN = Pattern.compile("(?is)<meta\\s+http-equiv\\s*=\\s*['\"]\\s*Content-Type['\"]\\s+content\\s*=\\s*['\"][^;]+;\\s*charset\\s*=\\s*([^'\"]+)\"");
 
     private transient AutoDetectParser _parser;
     
@@ -131,20 +133,9 @@ public class SimpleParser implements IParser {
         Metadata metadata = new Metadata();
         metadata.add(Metadata.RESOURCE_NAME_KEY, fetchedDatum.getBaseUrl());
         metadata.add(Metadata.CONTENT_TYPE, fetchedDatum.getContentType());
-        metadata.add(Metadata.CONTENT_ENCODING, fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_ENCODING));
+        metadata.add(Metadata.CONTENT_ENCODING, getCharset(fetchedDatum));
         String lang = fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_LANGUAGE);
-        // TODO KKr - reenable this when TIKA-339 is fixed. We don't want to have anything in metadata
-        // before we call the HtmlParser, so that we can detect when the CharsetDetector has incorrectly
-        // set both Dublic Core and Http-Equiv languages using charset results.
-        // metadata.add(Metadata.CONTENT_LANGUAGE, lang);
-        
-        // Hack to detect content encoding - this is required due to a bug in Tika since it
-        // isn't using the http-equiv charset value.
-        String encoding = detectContentEncoding(new String(fetchedDatum.getContentBytes()), metadata);
-        if (encoding != null) {
-            // Overwrite the content encoding that was set up using the Http headers.
-            metadata.set(Metadata.CONTENT_ENCODING, encoding);
-        }
+        metadata.add(Metadata.CONTENT_LANGUAGE, lang);
         
         InputStream is = new ByteArrayInputStream(fetchedDatum.getContentBytes());
 
@@ -161,9 +152,9 @@ public class SimpleParser implements IParser {
             TeeContentHandler teeContentHandler = new TeeContentHandler(handler, profilingHandler);
             _parser.parse(is, teeContentHandler, metadata);
             
-            lang = detectLanguage(lang, metadata, profilingHandler);
+            lang = detectLanguage(metadata, profilingHandler);
             return new ParsedDatum(fetchedDatum.getBaseUrl(), handler.getContent(), lang, metadata.get(Metadata.TITLE),
-                            handler.getLinks(), fetchedDatum.getMetaDataMap());
+                            handler.getLinks(), makeMap(metadata), fetchedDatum.getMetaDataMap());
         } catch (MalformedURLException e) {
             // TODO KKr - throw exception once ParseFunction handles this.
             LOGGER.warn("Exception processing document URLs for " + fetchedDatum.getBaseUrl(), e);
@@ -174,7 +165,7 @@ public class SimpleParser implements IParser {
             	// TODO KKr - remove this when Tika bugs w/using XML parser on HTML, and failing
             	// on RSS, are fixed.
                 return new ParsedDatum(fetchedDatum.getBaseUrl(), handler.getContent(), lang, metadata.get(Metadata.TITLE),
-                        handler.getLinks(), fetchedDatum.getMetaDataMap());
+                        handler.getLinks(), makeMap(metadata), fetchedDatum.getMetaDataMap());
             } else {
             	// TODO KKr - throw exception once ParseFunction handles this.
             	return null;
@@ -195,32 +186,17 @@ public class SimpleParser implements IParser {
         }
     }
 
-	private String detectContentEncoding(String content, Metadata metadata) {
-		String result = null;
-		
-        // We are interested in finding if there is an http-equiv defined charset.
-        // So this only is needed when dealing with HTML
-        String contentType = metadata.get(Metadata.CONTENT_TYPE);
-        if (contentType == null) {
-            contentType = "";
-        } else if (contentType.indexOf(';') != -1) {
-            contentType = contentType.substring(0, contentType.indexOf(';')).trim();
-        }
+	private Map<String, String> makeMap(Metadata metadata) {
+	    Map<String, String> result = new HashMap<String, String>();
+	    
+	    for (String key : metadata.names()) {
+	        result.put(key, metadata.get(key));
+	    }
+	    
+	    return result;
+    }
 
-        if (contentType.equalsIgnoreCase("text/html")
-			|| contentType.equalsIgnoreCase("application/xhtml+xml")
-			|| contentType.equalsIgnoreCase("application/x-asp")) {
-			Matcher m = HTTP_EQUIV_CHARSET_PATTERN.matcher(content);
-			if (m.find()) {
-			    result = m.group(1);
-				LOGGER.debug("Using encoding specified by http-equiv: " + result);
-			}
-		}
-        
-        return result;
-	}
-
-	private URL getContentLocation(FetchedDatum fetchedDatum) throws MalformedURLException {
+    private URL getContentLocation(FetchedDatum fetchedDatum) throws MalformedURLException {
 		URL baseUrl = new URL(fetchedDatum.getFetchedUrl());
 		
 		// See if we have a content location from the HTTP headers that we should use as
@@ -234,42 +210,45 @@ public class SimpleParser implements IParser {
 		return baseUrl;
 	}
 
-	/**
-	 * If a language was specified in the HTTP response header, use that.
-	 * Otherwise see if a language was set by the CharsetDetector.
+    /**
+     * Extract encoding from either explicit header, or from content-type
+     * 
+     * @param datum
+     * @return charset in response headers, or null
+     */
+    private String getCharset(FetchedDatum datum) {
+        String result = datum.getHeaders().getFirst(IHttpHeaders.CONTENT_ENCODING);
+        if (result == null) {
+            // HttpUtils will return "" if it can't find the charset.
+            result = HttpUtils.getCharsetFromContentType(datum.getContentType());
+            if (result.length() == 0) {
+                result = null;
+            }
+        }
+        
+        return result;
+    }
+
+    /**
+	 * See if a language was set by the parser, from meta tags.
 	 * As a last resort falls back to the result from the ProfilingHandler.
-	 * TODO KKr - remove passing in response lang once TIKA-339 is fixed.
 	 *  
-	 * @param httpRespLang Language in HTTP response header, or null if no provided
 	 * @param metadata
 	 * @param profilingHandler
 	 * @return The first language found (two char lang code) or empty string if no language was detected.
 	 */
-	private String detectLanguage(String httpRespLang, Metadata metadata, ProfilingHandler profilingHandler) {
+	private String detectLanguage(Metadata metadata, ProfilingHandler profilingHandler) {
 	    String result = null;
 	    
 	    String dubCoreLang = metadata.get(Metadata.LANGUAGE);
 	    String httpEquivLang = metadata.get(Metadata.CONTENT_LANGUAGE);
 	    
 	    if (dubCoreLang != null) {
-	        // Assume this indicates the bug w/using CharsetDetector even when HTTP response lang exists,
-	        // or we find language info in the meta-data.
-	        if (httpEquivLang == dubCoreLang) {
-	            if (httpRespLang != null) {
-	                result = httpRespLang;
-	            } else {
-	                result = dubCoreLang;
-	            }
-	        } else {
-	            result = dubCoreLang;
-	        }
+	        result = dubCoreLang;
 	    } else if (httpEquivLang != null) {
 	        result = httpEquivLang;
-	    } else {
-	        result = httpRespLang;
 	    }
 	    
-		
 	    result = getFirstLanguage(result);
 		
 		if (result == null) {

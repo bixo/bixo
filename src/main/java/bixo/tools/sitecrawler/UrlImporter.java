@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 
 import bixo.cascading.NullContext;
 import bixo.datum.UrlDatum;
-import bixo.utils.HadoopUtils;
+import bixo.hadoop.HadoopUtils;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;

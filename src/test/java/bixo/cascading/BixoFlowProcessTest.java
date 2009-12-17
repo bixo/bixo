@@ -3,7 +3,7 @@ package bixo.cascading;
 import org.junit.Assert;
 import org.junit.Test;
 
-import bixo.fetcher.FetcherCounters;
+import bixo.hadoop.FetchCounters;
 
 public class BixoFlowProcessTest {
     
@@ -27,7 +27,7 @@ public class BixoFlowProcessTest {
     @Test
     public void testHadoopCounter() {
         
-        Enum<FetcherCounters> counter = FetcherCounters.URLS_FETCHING;
+        Enum<FetchCounters> counter = FetchCounters.URLS_FETCHING;
         String groupName = counter.getDeclaringClass().getName();
         String counterName = counter.toString();
         System.out.println(groupName + " / " + counterName);
