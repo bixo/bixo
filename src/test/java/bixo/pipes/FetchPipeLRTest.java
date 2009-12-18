@@ -31,6 +31,7 @@ import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.NullHttpFetcher;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
+import bixo.fetcher.util.ScoreGenerator;
 import bixo.fetcher.util.SimpleGroupingKeyGenerator;
 import bixo.fetcher.util.SimpleScoreGenerator;
 import bixo.utils.ConfigUtils;
@@ -51,57 +52,6 @@ import cascading.tuple.TupleEntryIterator;
 
 // Long-running test
 public class FetchPipeLRTest extends CascadingTestCase {
-    
-    @SuppressWarnings("serial")
-    private static class SkippedScoreGenerator implements IScoreGenerator {
-
-        @Override
-        public double generateScore(GroupedUrlDatum urlTuple) {
-            return IScoreGenerator.SKIP_URL_SCORE;
-        }
-    }
-    
-    @SuppressWarnings("serial")
-    private static class RandomScoreGenerator implements IScoreGenerator {
-
-        private double _minScore;
-        private double _maxScore;
-        private Random _rand;
-        
-        public RandomScoreGenerator(double minScore, double maxScore) {
-            _minScore = minScore;
-            _maxScore = maxScore;
-            _rand = new Random();
-        }
-        
-        @Override
-        public double generateScore(GroupedUrlDatum urlTuple) {
-            double range = _maxScore - _minScore;
-            
-            return _minScore + (_rand.nextDouble() * range);
-        }
-    }
-    
-    private Lfs makeInputData(int numDomains, int numPages) throws IOException {
-        return makeInputData(numDomains, numPages, null);
-    }
-    
-    @SuppressWarnings("unchecked")
-    private Lfs makeInputData(int numDomains, int numPages, Map<String, Comparable> metaData) throws IOException {
-        Fields sfFields = UrlDatum.FIELDS.append(BaseDatum.makeMetaDataFields(metaData));
-        Lfs in = new Lfs(new SequenceFile(sfFields), "build/test/FetchPipeLRTest/in", true);
-        TupleEntryCollector write = in.openForWrite(new JobConf());
-        for (int i = 0; i < numDomains; i++) {
-            for (int j = 0; j < numPages; j++) {
-                UrlDatum url = new UrlDatum("http://domain-" + i + ".com/page-" + j + ".html?size=10", 0, 0, UrlStatus.UNFETCHED, metaData);
-                Tuple tuple = url.toTuple();
-                write.add(tuple);
-            }
-        }
-        
-        write.close();
-        return in;
-    }
     
     @Test
     public void testHeadersInStatus() throws Exception {
@@ -132,7 +82,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
     }
     
     @Test
-    public void testFetchPipe() throws Exception {
+    public void testFetchPipeOriginal() throws Exception {
         Lfs in = makeInputData(25, 4);
 
         Pipe pipe = new Pipe("urlSource");
@@ -170,6 +120,66 @@ public class FetchPipeLRTest extends CascadingTestCase {
         tupleEntryIterator.close();
         
         validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
+        tupleEntryIterator = validate.openForRead(new JobConf());
+        totalEntries = 0;
+        while (tupleEntryIterator.hasNext()) {
+            TupleEntry entry = tupleEntryIterator.next();
+            totalEntries += 1;
+
+            // Verify we can convert properly
+            StatusDatum sd = new StatusDatum(entry, metaDataFields);
+            Assert.assertEquals(UrlStatus.FETCHED, sd.getStatus());
+        }
+        
+        Assert.assertEquals(100, totalEntries);
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testFetchPipeNew() throws Exception {
+        Fields metaDataFields = new Fields("meta-test");
+        Map<String, Comparable> metadata = new HashMap<String, Comparable>();
+        metadata.put("meta-test", "value");
+        Lfs in = makeInputData(25, 4, metadata);
+
+        Pipe pipe = new Pipe("urlSource");
+        ScoreGenerator scorer = new FixedScoreGenerator(0.5);
+        IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, metaDataFields);
+        
+        String outputPath = "build/test/FetchPipeTest/testFetchPipe";
+        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS.append(metaDataFields)), outputPath + "/status", true);
+        Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS.append(metaDataFields)), outputPath + "/content", true);
+
+        // Finally we can run it.
+        FlowConnector flowConnector = new FlowConnector();
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
+        flow.complete();
+        
+        // Verify 100 fetched and 100 status entries were saved.
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS.append(metaDataFields)), outputPath + "/content");
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        
+        int totalEntries = 0;
+        while (tupleEntryIterator.hasNext()) {
+            TupleEntry entry = tupleEntryIterator.next();
+            totalEntries += 1;
+
+            // Verify we can convert properly
+            FetchedDatum datum = new FetchedDatum(entry, metaDataFields);
+            Assert.assertNotNull(datum.getBaseUrl());
+            Assert.assertNotNull(datum.getFetchedUrl());
+            
+            // Verify metadata
+            String metaValue = entry.getString("meta-test");
+            Assert.assertNotNull(metaValue);
+            Assert.assertEquals("value", metaValue);
+        }
+                
+        Assert.assertEquals(100, totalEntries);
+        tupleEntryIterator.close();
+        
+        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS.append(metaDataFields)), outputPath + "/status");
         tupleEntryIterator = validate.openForRead(new JobConf());
         totalEntries = 0;
         while (tupleEntryIterator.hasNext()) {
@@ -290,6 +300,138 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertEquals(10, numEntries);
     }
     
+    @Test
+    public void testPassingAllStatus() throws Exception {
+        // Pretend like we have 10 URLs from one domain, to match the
+        // 10 cases we need to test.
+        Lfs in = makeInputData(1, 10);
+
+        // Create the fetch pipe we'll use to process these fake URLs
+        Pipe pipe = new Pipe("urlSource");
+        
+        // We need to skip things for all the SKIPPED/ABORTED/ERROR reasons in
+        // UrlStatus, plus one of the HTTP reasons. Note that we don't do
+        // SKIPPED_TIME_LIMIT, since that's hard to test in the middle of testing
+        // everything else.
+//        SKIPPED_BLOCKED,            // Blocked by robots.txt
+//        SKIPPED_UNKNOWN_HOST,       // Hostname couldn't be resolved to IP address
+//        SKIPPED_INVALID_URL,        // URL invalid
+//        SKIPPED_DEFERRED,           // Deferred because robots.txt couldn't be processed.
+//        SKIPPED_BY_SCORER,          // Skipped explicitly by scorer
+//        SKIPPED_BY_SCORE,           // Skipped because score wasn't high enough
+//        ABORTED_SLOW_RESPONSE,
+//        ABORTED_INVALID_MIMETYPE
+//        HTTP_NOT_FOUND,
+//        ERROR_INVALID_URL,
+//        ERROR_IOEXCEPTION,
+
+        FetchPipe fetchPipe = new FetchPipe(pipe, new CustomGrouper(), new CustomScorer(), new CustomFetcher());
+
+        // Create the output
+        String outputPath = "build/test/FetchPipeTest/out";
+        Tap statusSink = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
+        Tap contentSink = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+
+        FlowConnector flowConnector = new FlowConnector();
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(statusSink, contentSink), fetchPipe);
+        flow.complete();
+        
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        Assert.assertFalse(tupleEntryIterator.hasNext());
+        
+        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
+        tupleEntryIterator = validate.openForRead(new JobConf());
+        
+        int numStatus = UrlStatus.values().length;
+        boolean returnedStatus[] = new boolean[numStatus];
+        
+        Fields metaDataFields = new Fields();
+        int numEntries = 0;
+        while (tupleEntryIterator.hasNext()) {
+            numEntries += 1;
+            TupleEntry entry = tupleEntryIterator.next();
+            StatusDatum status = new StatusDatum(entry, metaDataFields);
+            int ordinal = status.getStatus().ordinal();
+            Assert.assertFalse(returnedStatus[ordinal]);
+            returnedStatus[ordinal] = true;
+        }
+        
+        Assert.assertEquals(10, numEntries);
+    }
+
+    @SuppressWarnings("serial")
+    private static class SkippedScoreGenerator implements IScoreGenerator {
+
+        @Override
+        public double generateScore(GroupedUrlDatum urlTuple) {
+            return IScoreGenerator.SKIP_URL_SCORE;
+        }
+    }
+    
+    @SuppressWarnings("serial")
+    private static class FixedScoreGenerator extends ScoreGenerator {
+
+        private double _score;
+        
+        public FixedScoreGenerator(double score) {
+            super();
+            
+            _score = score;
+        }
+        
+        @Override
+        public double generateScore(String domain, String pld, String url) {
+            return _score;
+        }
+        
+    }
+    
+    @SuppressWarnings("serial")
+    private static class RandomScoreGenerator implements IScoreGenerator {
+
+        private double _minScore;
+        private double _maxScore;
+        private Random _rand;
+        
+        public RandomScoreGenerator(double minScore, double maxScore) {
+            _minScore = minScore;
+            _maxScore = maxScore;
+            _rand = new Random();
+        }
+        
+        @Override
+        public double generateScore(GroupedUrlDatum urlTuple) {
+            double range = _maxScore - _minScore;
+            
+            return _minScore + (_rand.nextDouble() * range);
+        }
+    }
+    
+    private Lfs makeInputData(int numDomains, int numPages) throws IOException {
+        return makeInputData(numDomains, numPages, null);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Lfs makeInputData(int numDomains, int numPages, Map<String, Comparable> metaData) throws IOException {
+        Fields sfFields = UrlDatum.FIELDS.append(BaseDatum.makeMetaDataFields(metaData));
+        Lfs in = new Lfs(new SequenceFile(sfFields), "build/test/FetchPipeLRTest/in", true);
+        TupleEntryCollector write = in.openForWrite(new JobConf());
+        for (int i = 0; i < numDomains; i++) {
+            for (int j = 0; j < numPages; j++) {
+                // Use special domain name pattern so code deep inside of operations "knows" not
+                // to try to resolve host names to IP addresses.
+                UrlDatum url = new UrlDatum("http://bixo-test-domain-" + i + ".com/page-" + j + ".html?size=10", 0, 0, UrlStatus.UNFETCHED, metaData);
+                Tuple tuple = url.toTuple();
+                write.add(tuple);
+            }
+        }
+        
+        write.close();
+        return in;
+    }
+    
+
     /***********************************************************************
      * Lots of ugly custom classes to support serializable "mocking" for a
      * particular test case (which follows). Mockito mocks aren't serializable,
@@ -390,65 +532,6 @@ public class FetchPipeLRTest extends CascadingTestCase {
     };
 
 
-    @Test
-    public void testPassingAllStatus() throws Exception {
-        // Pretend like we have 10 URLs from one domain, to match the
-        // 10 cases we need to test.
-        Lfs in = makeInputData(1, 10);
-
-        // Create the fetch pipe we'll use to process these fake URLs
-        Pipe pipe = new Pipe("urlSource");
-        
-        // We need to skip things for all the SKIPPED/ABORTED/ERROR reasons in
-        // UrlStatus, plus one of the HTTP reasons. Note that we don't do
-        // SKIPPED_TIME_LIMIT, since that's hard to test in the middle of testing
-        // everything else.
-//        SKIPPED_BLOCKED,            // Blocked by robots.txt
-//        SKIPPED_UNKNOWN_HOST,       // Hostname couldn't be resolved to IP address
-//        SKIPPED_INVALID_URL,        // URL invalid
-//        SKIPPED_DEFERRED,           // Deferred because robots.txt couldn't be processed.
-//        SKIPPED_BY_SCORER,          // Skipped explicitly by scorer
-//        SKIPPED_BY_SCORE,           // Skipped because score wasn't high enough
-//        ABORTED_SLOW_RESPONSE,
-//        ABORTED_INVALID_MIMETYPE
-//        HTTP_NOT_FOUND,
-//        ERROR_INVALID_URL,
-//        ERROR_IOEXCEPTION,
-
-        FetchPipe fetchPipe = new FetchPipe(pipe, new CustomGrouper(), new CustomScorer(), new CustomFetcher());
-
-        // Create the output
-        String outputPath = "build/test/FetchPipeTest/out";
-        Tap statusSink = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
-        Tap contentSink = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
-
-        FlowConnector flowConnector = new FlowConnector();
-        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(statusSink, contentSink), fetchPipe);
-        flow.complete();
-        
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
-        Assert.assertFalse(tupleEntryIterator.hasNext());
-        
-        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
-        tupleEntryIterator = validate.openForRead(new JobConf());
-        
-        int numStatus = UrlStatus.values().length;
-        boolean returnedStatus[] = new boolean[numStatus];
-        
-        Fields metaDataFields = new Fields();
-        int numEntries = 0;
-        while (tupleEntryIterator.hasNext()) {
-            numEntries += 1;
-            TupleEntry entry = tupleEntryIterator.next();
-            StatusDatum status = new StatusDatum(entry, metaDataFields);
-            int ordinal = status.getStatus().ordinal();
-            Assert.assertFalse(returnedStatus[ordinal]);
-            returnedStatus[ordinal] = true;
-        }
-        
-        Assert.assertEquals(10, numEntries);
-    }
     
 
 }

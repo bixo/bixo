@@ -1,8 +1,12 @@
 package bixo.pipes;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
 
 import bixo.cascading.NullSinkTap;
 import bixo.config.UserAgent;
@@ -10,17 +14,21 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.StatusDatum;
+import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.exceptions.BaseFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
+import bixo.fetcher.util.ScoreGenerator;
 import bixo.fetcher.util.SimpleGroupingKeyGenerator;
 import bixo.fetcher.util.SimpleScoreGenerator;
 import bixo.operations.FetcherBuffer;
+import bixo.operations.FilterAndScoreByUrlAndRobots;
 import bixo.operations.GroupFunction;
 import bixo.operations.ScoreFunction;
+import bixo.utils.GroupingKey;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
@@ -36,12 +44,45 @@ import cascading.tuple.Tuple;
 
 @SuppressWarnings("serial")
 public class FetchPipe extends SubAssembly {
+    private static final Logger LOGGER = Logger.getLogger(FetchPipe.class);
+    
     // Pipe that outputs FetchedDatum tuples, for URLs that were fetched.
     public static final String CONTENT_PIPE_NAME = "FetchPipe-content";
     
     // Pipe that outputs StatusDatum tuples, for all URLs being processed.
     public static final String STATUS_PIPE_NAME = "FetchPipe-status";
     
+    /**
+     * Generate key using protocol+host+port, which is what we need in order
+     * to safely fetch robots.txt files.
+     *
+     */
+    private static class GroupByDomain implements IGroupingKeyGenerator {
+        
+        @Override
+        public String getGroupingKey(UrlDatum urlDatum) {
+            String urlAsString = urlDatum.getUrl();
+            
+            try {
+                URL url = new URL(urlAsString);
+                StringBuilder result = new StringBuilder(url.getProtocol());
+                result.append("://");
+                result.append(url.getHost());
+                int port = url.getPort();
+                if ((port != -1) && (port != url.getDefaultPort())) {
+                    result.append(':');
+                    result.append(port);
+                }
+                
+                return result.toString();
+            } catch (MalformedURLException e) {
+                LOGGER.warn("Invalid URL: " + urlAsString);
+                return GroupingKey.INVALID_URL_GROUPING_KEY;
+            }
+        }
+
+    }
+
     @SuppressWarnings({ "unchecked" })
     private static class FilterErrorsFunction extends BaseOperation implements Function {
         private int _fieldPos;
@@ -140,6 +181,15 @@ public class FetchPipe extends SubAssembly {
         Fields scoredFields = ScoredUrlDatum.FIELDS.append(metaDataFields);
         fetchPipe = new Each(fetchPipe, new ScoreFunction(scoreGenerator, metaDataFields), scoredFields);
 
+        createFetchBuffer(fetchPipe, fetcher, metaDataFields);
+    }
+    
+    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, Fields metaDataFields) {
+        Pipe fetchPipe = new Pipe("fetch_pipe", urlProvider);
+        Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
+        fetchPipe = new Each(fetchPipe, new GroupFunction(metaDataFields, new GroupByDomain()), groupedFields);
+        fetchPipe = new GroupBy(fetchPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
+        fetchPipe = new Every(fetchPipe, new FilterAndScoreByUrlAndRobots(fetcher, scorer, metaDataFields), Fields.RESULTS);
         createFetchBuffer(fetchPipe, fetcher, metaDataFields);
     }
     
