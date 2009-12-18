@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.security.InvalidParameterException;
 import java.util.AbstractQueue;
 import java.util.Iterator;
@@ -21,7 +22,7 @@ import org.apache.log4j.Logger;
  * A queue that writes extra elements to disk, and reads them in as needed.
  *
  */
-public class DiskQueue<E> extends AbstractQueue<E> {
+public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
     private static final Logger LOGGER = Logger.getLogger(DiskQueue.class);
 
     private LinkedBlockingQueue<E> _memoryQueue;

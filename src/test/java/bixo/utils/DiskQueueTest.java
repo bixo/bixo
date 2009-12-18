@@ -6,7 +6,6 @@ import java.util.Random;
 
 import org.junit.Test;
 
-
 public class DiskQueueTest {
 
     @Test
@@ -141,7 +140,6 @@ public class DiskQueueTest {
         } catch (Exception e) {
             // valid
         }
-        
-
     }
+    
 }
