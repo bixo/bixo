@@ -7,7 +7,8 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
-public class ScoredUrlDatum extends GroupedUrlDatum implements Comparable<ScoredUrlDatum> {
+@SuppressWarnings("serial")
+public class ScoredUrlDatum extends GroupedUrlDatum {
     private double _score;
 
     // Constructor for URL that has never been fetched and has no score.
@@ -27,22 +28,6 @@ public class ScoredUrlDatum extends GroupedUrlDatum implements Comparable<Scored
 
     public void setScore(double score) {
         _score = score;
-    }
-
-    @Override
-    public int compareTo(ScoredUrlDatum o) {
-        // Sort in reverse order, such that higher scores are first.
-        if (getScore() > o.getScore()) {
-            return -1;
-        } else if (getScore() < o.getScore()) {
-            return 1;
-        } else {
-            // TODO KKr - sort by URL, so that if we do a batch fetch, we're
-            // fetching pages from the same area of the website.
-
-            // TODO SG adding a simple sting comparison for now.
-            return getUrl().compareTo(o.getUrl());
-        }
     }
 
     // ======================================================================================

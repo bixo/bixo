@@ -1,5 +1,6 @@
 package bixo.datum;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,8 +11,8 @@ import java.util.Map;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 
-@SuppressWarnings("unchecked")
-public abstract class BaseDatum {
+@SuppressWarnings({ "unchecked", "serial" })
+public abstract class BaseDatum implements Serializable {
 	public static final Map<String, Comparable> EMPTY_METADATA_MAP = Collections.emptyMap();
 	public static final Fields EMPTY_METADATA_FIELDS = new Fields();
 	
@@ -119,7 +120,7 @@ public abstract class BaseDatum {
      * @return new Tuple
      */
     public Tuple toTuple() {
-        Tuple tuple = new Tuple(getStandardValues());
+        Tuple tuple = new Tuple((Object[])getStandardValues());
         
         Comparable[] metaDataValues = getMetaDataValues();
         for (Comparable value : metaDataValues) {

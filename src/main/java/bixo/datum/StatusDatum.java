@@ -30,7 +30,7 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({ "unchecked", "serial" })
 public class StatusDatum extends BaseDatum {
     private String _url;
     private UrlStatus _status;

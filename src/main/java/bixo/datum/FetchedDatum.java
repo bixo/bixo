@@ -31,6 +31,7 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
+@SuppressWarnings("serial")
 public class FetchedDatum extends BaseDatum {
     private String _baseUrl;
     private String _newBaseUrl;

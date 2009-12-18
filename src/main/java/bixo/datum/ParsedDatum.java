@@ -9,6 +9,7 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
+@SuppressWarnings("serial")
 public class ParsedDatum extends BaseDatum {
     private final String _url;
     private final String _parsedText;

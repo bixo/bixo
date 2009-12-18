@@ -29,6 +29,7 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
+@SuppressWarnings("serial")
 public class UrlDatum extends BaseDatum {
     private String _url;
     private long _lastFetched;

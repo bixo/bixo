@@ -7,6 +7,7 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
+@SuppressWarnings("serial")
 public class GroupedUrlDatum extends UrlDatum {
 
     private String _groupKey;
