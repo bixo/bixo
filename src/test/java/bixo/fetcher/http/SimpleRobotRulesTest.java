@@ -544,17 +544,15 @@ public class SimpleRobotRulesTest {
         Assert.assertTrue(rules.getDeferVisits());
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
         
-        rules = new SimpleRobotRules(FAKE_ROBOTS_URL, HttpServletResponse.SC_NOT_FOUND);
-        Assert.assertFalse(rules.getDeferVisits());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
-        
-        rules = new SimpleRobotRules(FAKE_ROBOTS_URL, HttpServletResponse.SC_GONE);
-        Assert.assertFalse(rules.getDeferVisits());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
-        
-        rules = new SimpleRobotRules(FAKE_ROBOTS_URL, HttpServletResponse.SC_FORBIDDEN);
-        Assert.assertFalse(rules.getDeferVisits());
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
+        // All 4xx status codes should result in open access (ala Google)
+        // SC_FORBIDDEN
+        // SC_NOT_FOUND
+        // SC_GONE
+        for (int status = 400; status < 420; status++) {
+            rules = new SimpleRobotRules(FAKE_ROBOTS_URL, status);
+            Assert.assertFalse(rules.getDeferVisits());
+            Assert.assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
+        }
     }
     
     @Test

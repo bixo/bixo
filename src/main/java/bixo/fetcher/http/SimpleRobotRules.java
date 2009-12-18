@@ -200,8 +200,10 @@ public class SimpleRobotRules implements IRobotRules {
             // treat it as a temporary failure.
             _deferVisits = true;
             createAllOrNone(false);
-        } else if ((httpStatus == HttpStatus.SC_NOT_FOUND) || (httpStatus == HttpStatus.SC_GONE)) {
+        } else if ((httpStatus >= 400) && (httpStatus < 500)) {
         	// Some sites return 410 (gone) instead of 404 (not found), so treat as the same.
+            // Actually treat all (including forbidden) as "no robots.txt", as that's what Google
+            // and other search engines do.
             createAllOrNone(true);
         } else if ((httpStatus == HttpStatus.SC_FORBIDDEN) || (httpStatus == HttpStatus.SC_UNAUTHORIZED)) {
             createAllOrNone(false);
