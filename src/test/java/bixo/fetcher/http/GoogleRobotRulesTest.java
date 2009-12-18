@@ -521,7 +521,7 @@ public class GoogleRobotRulesTest {
         
         rules = new SimpleRobotRules(FAKE_ROBOTS_URL, HttpServletResponse.SC_FORBIDDEN);
         Assert.assertFalse(rules.getDeferVisits());
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
+        Assert.assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
     }
     
     @Test
