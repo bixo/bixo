@@ -12,7 +12,7 @@ import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Lfs;
-import cascading.tap.MultiTap;
+import cascading.tap.MultiSourceTap;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
@@ -69,7 +69,7 @@ public class UrlDbPipeTest extends CascadingTestCase {
 
         UrlDbPipe urlDbPipe = new UrlDbPipe(pipe, new SimpleUrlFilter(), new Fields());
         FlowConnector flowConnector = new FlowConnector();
-        Tap input = new MultiTap(in1, in2, in3);
+        Tap input = new MultiSourceTap(in1, in2, in3);
 
         Flow flow = flowConnector.connect(input, out, urlDbPipe);
         flow.complete();

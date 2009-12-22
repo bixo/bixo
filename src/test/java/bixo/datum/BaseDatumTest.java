@@ -10,6 +10,8 @@ import cascading.tuple.Fields;
 
 
 public class BaseDatumTest {
+    
+    @SuppressWarnings("serial")
     private class MyDatum extends BaseDatum {
         private String _value;
         

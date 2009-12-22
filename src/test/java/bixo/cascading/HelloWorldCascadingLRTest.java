@@ -42,7 +42,6 @@ import cascading.scheme.TextLine;
 import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
-import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 
 // Long-running test
@@ -86,7 +85,7 @@ public class HelloWorldCascadingLRTest extends ClusterTestCase {
 
     TupleEntryIterator resultSink = flow.openSink();
     while (resultSink.hasNext()) {
-      TupleEntry tupleEntry = resultSink.next();
+      resultSink.next();
       // System.out.println(tupleEntry);
     }
 

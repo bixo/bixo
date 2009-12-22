@@ -44,7 +44,7 @@ import cascading.scheme.Scheme;
 import cascading.scheme.SequenceFile;
 import cascading.scheme.TextLine;
 import cascading.tap.Hfs;
-import cascading.tap.MultiTap;
+import cascading.tap.MultiSourceTap;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
@@ -71,7 +71,7 @@ public class UrlImporter extends HadoopConfigured {
 
             Tap newDbTap = new Hfs(new SequenceFile(UrlDatum.FIELDS), newDb.toUri().toASCIIString());
 
-            MultiTap source = new MultiTap(oldDbTap, newDbTap);
+            MultiSourceTap source = new MultiSourceTap(oldDbTap, newDbTap);
 
             Path mergeDb = new Path(workingFolder, URL_DB_NAME + "-merged-" + TimeStampUtils.nowWithUnderLine());
             Tap mergeSink = new Hfs(new SequenceFile(UrlDatum.FIELDS), mergeDb.toUri().toASCIIString(), true);

@@ -30,7 +30,7 @@ public class DummyTap extends Tap {
     public DummyTap() {
     }
 
-    public DummyTap(List<Tuple> inputData, @SuppressWarnings("unused") Fields fields) {
+    public DummyTap(List<Tuple> inputData, Fields fields) {
         super(new MyScheme());
 //        _id = UUID.randomUUID().toString();
         _inputData = inputData;
@@ -119,6 +119,7 @@ public class DummyTap extends Tap {
 
     private static class MyScheme extends Scheme {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void sink(TupleEntry tupleEntry, OutputCollector outputCollector) throws IOException {
             // TODO Auto-generated method stub
