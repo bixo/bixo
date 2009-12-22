@@ -32,7 +32,7 @@ public class SimpleCrawlTool {
 
     private static final long DEFAULT_CRAWL_DELAY = 5 * 1000L;
 
-	private static final String WEB_ADDRESS = "http://bixo.101tec.com";
+	private static final String WEB_ADDRESS = "http://wiki.github.com/bixo/bixo/bixocrawler";
 
 	private static final String EMAIL_ADDRESS = "bixo-dev@yahoogroups.com";
     

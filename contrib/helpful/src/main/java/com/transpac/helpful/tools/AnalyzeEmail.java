@@ -55,7 +55,7 @@ import com.transpac.helpful.operations.SumScoresBuffer;
 public class AnalyzeEmail {
 	private static final Logger LOGGER = Logger.getLogger(AnalyzeEmail.class);
 	
-	private static final String WEB_ADDRESS = "http://bixo.101tec.com";
+	private static final String WEB_ADDRESS = "http://wiki.github.com/bixo/bixo/bixocrawler";
 
 	private static final String EMAIL_ADDRESS = "bixo-dev@yahoogroups.com";
     

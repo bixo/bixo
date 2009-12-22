@@ -103,7 +103,7 @@ public class RunTestFetcher {
                 queueMgr.offer(queue);
             }
 
-            UserAgent userAgent = new UserAgent("bixo", "bixo-dev@groups.yahoo.com", "http://bixo.101tec.com");
+            UserAgent userAgent = new UserAgent("bixo test fetcher", "bixo-dev@groups.yahoo.com", "http://wiki.github.com/bixo/bixo/bixocrawler");
             FetcherManager threadMgr = new FetcherManager(queueMgr, new SimpleHttpFetcher(10, userAgent), new BixoFlowProcess());
             Thread t = new Thread(threadMgr);
             t.setName("Fetcher manager");
