@@ -25,8 +25,9 @@ public class SimpleRobotRules implements IRobotRules {
     private static final String ALLOW_FIELD = "allow:";
     private static final String CRAWL_DELAY_FIELD = "crawl-delay:";
     private static final String SITEMAP_FIELD = "sitemap:";
+    private static final String HOST_FIELD = "host:";
 
-    private static final Pattern SIMPLE_HTML_PATTERN = Pattern.compile("(?is)<html.*<body");
+    private static final Pattern SIMPLE_HTML_PATTERN = Pattern.compile("(?is)<(html|head|body)\\s*>");
     private static final Pattern USER_AGENT_PATTERN = Pattern.compile("(?i)user-agent:");
     
     // Max # of warnings during parse of any one robots.txt file.
@@ -35,6 +36,7 @@ public class SimpleRobotRules implements IRobotRules {
 	// Max value for crawl delay we'll use from robots.txt file. If the value is greater
 	// than this, we'll skip all pages.
 	private static final long MAX_CRAWL_DELAY = 200000;
+
 	
     // If true, then there was a problem getting/parsing robots.txt, and the crawler
     // should defer visits until some later time.
@@ -43,6 +45,7 @@ public class SimpleRobotRules implements IRobotRules {
     protected RobotRules _robotRules;
     
 	private String _url;
+	private boolean _isHtmlType;
 	private int _numWarnings;
     
     /**
@@ -137,8 +140,13 @@ public class SimpleRobotRules implements IRobotRules {
     }
     
     private void init(String url) {
-    	_url = url;
-    	_numWarnings = 0;
+    	init(url, false);
+    }
+    
+    private void init(String url, boolean isHtmlType) {
+        _url = url;
+        _isHtmlType = isHtmlType;
+        _numWarnings = 0;
     }
     
     public SimpleRobotRules(String url, int httpStatus) {
@@ -166,7 +174,9 @@ public class SimpleRobotRules implements IRobotRules {
             // our robots.txt parser will barf, and we treat that as a "deferred" case.
             // TODO KKr - make it so.
             
-            init(urlToFetch);
+            String contentType = result.getContentType();
+            boolean isHtmlType = ((contentType != null) && contentType.toLowerCase().startsWith("text/html"));
+            init(urlToFetch, isHtmlType);
             parseRules(fetcher.getUserAgent().getAgentName(), result.getContentBytes());
         } catch (MalformedURLException e) {
             LOGGER.error("Invalid URL: " + url);
@@ -345,14 +355,14 @@ public class SimpleRobotRules implements IRobotRules {
         // assume somebody messed up and returned back to us a random HTML page instead
         // of a robots.txt file.
         boolean hasHTML = false;
-        if (SIMPLE_HTML_PATTERN.matcher(content).find()) {
+        if (_isHtmlType || SIMPLE_HTML_PATTERN.matcher(content).find()) {
         	if (!USER_AGENT_PATTERN.matcher(content).find()) {
-                LOGGER.warn("Found non-robots.txt HTML file: " + _url);
+                LOGGER.trace("Found non-robots.txt HTML file: " + _url);
                 createAllOrNone(true);
                 return;
         	} else {
         		// We'll try to strip out HTML tags below.
-                LOGGER.warn("Found HTML in robots.txt file: " + _url);
+                LOGGER.debug("Found HTML in robots.txt file: " + _url);
                 hasHTML = true;
         	}
         }
@@ -485,6 +495,10 @@ public class SimpleRobotRules implements IRobotRules {
                 }
             } else if (line.startsWith(SITEMAP_FIELD)) {
                 // Ignore for now
+            } else if (line.startsWith(HOST_FIELD)) {
+                // Russian-specific directive for mirror site?
+                // Used by the zerkalschik robot?
+                // See http://wataro.ur/en/web/robot.html
             } else if (line.contains(":")) {
             	reportWarning("Unknown directive in robots.txt file: " + line);
                 finishedAgentFields = true;

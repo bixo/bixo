@@ -395,7 +395,15 @@ public class SimpleRobotRulesTest {
         Assert.assertEquals(30000, rules.getCrawlDelay());
     }
     
-    
+    @Test
+    public void testIgnoreOfHtml() throws MalformedURLException, UnsupportedEncodingException {
+        final String htmlFile = "<HTML><HEAD><TITLE>Site under Maintenance</TITLE></HTML>";
+        
+        SimpleRobotRules rules = createRobotRules("anybot", htmlFile.getBytes("us-ascii"));
+        Assert.assertTrue(rules.isAllowed("http://www.domain.com/"));
+        Assert.assertFalse(rules.getDeferVisits());
+    }
+
     @Test
     public void testHeritrixCases() throws MalformedURLException {
         final String heritrixRobotsTxt = "User-agent: *\n" +
