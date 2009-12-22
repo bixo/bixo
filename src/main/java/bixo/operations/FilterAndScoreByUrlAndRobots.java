@@ -1,5 +1,6 @@
 package bixo.operations;
 
+import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
@@ -13,22 +14,23 @@ import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
+import bixo.datum.UrlStatus;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.operations.ProcessRobotsTask.DomainInfo;
 import bixo.utils.DiskQueue;
+import bixo.utils.GroupingKey;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
 import cascading.operation.BufferCall;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
+import cascading.tuple.TupleEntryCollector;
 
 /**
  * Filter out URLs by either domain (not popular enough) or if they're blocked by robots.txt
- * 
- * TODO KKr - make sure URLs don't get lost due to errors.
  *
  */
 
@@ -106,12 +108,16 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         try {
             long startTime = System.currentTimeMillis();
             if (!_pool.awaitTermination(TERMINATION_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                // Since should only have as many entries in the queue as we have threads,
+                // we should never have to wait very long for robots.txt files to be fetched.
                 LOGGER.error("Had to force shutdown the robot thread pool");
                 _pool.shutdownNow();
             } else {
                 LOGGER.trace("Shutdown took " + (System.currentTimeMillis() - startTime) + "ms");
             }
         } catch (InterruptedException e) {
+            // FUTURE What's the right thing to do here? E.g. do I need to worry about
+            // losing URLs still to be processed?
             LOGGER.warn("Interrupted while waiting for termination");
         }
     };
@@ -130,8 +136,13 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         DomainInfo domainInfo;
         try {
             domainInfo = new DomainInfo(protocolAndDomain);
+        } catch (UnknownHostException e) {
+            LOGGER.trace("Unknown host: " + protocolAndDomain);
+            emptyQueue(urls, GroupingKey.UNKNOWN_HOST_GROUPING_KEY, bufferCall.getOutputCollector());
+            return;
         } catch (Exception e) {
-            LOGGER.error("Exception processing " + protocolAndDomain, e);
+            LOGGER.warn("Exception processing " + protocolAndDomain, e);
+            emptyQueue(urls, GroupingKey.INVALID_URL_GROUPING_KEY, bufferCall.getOutputCollector());
             return;
         }
 
@@ -141,7 +152,8 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
             try {
                 Thread.sleep(NO_CAPACITY_SLEEP_INTERVAL);
             } catch (InterruptedException e) {
-                LOGGER.warn("Interrupted - URLs will be lost!");
+                LOGGER.warn("Interrupted while waiting for available thread");
+                emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector());
                 return;
             }
         }
@@ -151,8 +163,26 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         } catch (RejectedExecutionException e) {
             // should never happen.
             LOGGER.error("Robots handling pool rejected our request: " + _pool.getActiveCount() + " active threads");
+            emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector());
         }
 	}
+
+    /**
+     * Clear out the queue by outputting all entries with <groupingKey>.
+     * 
+     * We do this to empty the queue when there's some kind of error.
+     * 
+     * @param urls Queue of URLs to empty out
+     * @param groupingKey grouping key to use for all entries.
+     * @param outputCollector
+     */
+    private void emptyQueue(DiskQueue<GroupedUrlDatum> urls, String groupingKey, TupleEntryCollector outputCollector) {
+        GroupedUrlDatum datum;
+        while ((datum = urls.poll()) != null) {
+            ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), 0, 0, UrlStatus.UNFETCHED, groupingKey, 1.0, datum.getMetaDataMap());
+            outputCollector.add(scoreUrl.toTuple());
+        }
+    }
 	
 
 }
