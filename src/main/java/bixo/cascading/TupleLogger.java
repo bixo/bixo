@@ -8,19 +8,58 @@ import cascading.operation.BaseOperation;
 import cascading.operation.Filter;
 import cascading.operation.FilterCall;
 import cascading.operation.OperationCall;
+import cascading.pipe.Each;
+import cascading.pipe.Pipe;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
+/**
+ * A version of Cascading's Debug() operator with two key changes:
+ * 
+ * 1. Use Log4J to log (and only if log level is <= debug)
+ * 2. Limit output length (and remove \r\n) for cleaner output.
+ *
+ */
 @SuppressWarnings("serial")
 public class TupleLogger extends BaseOperation<Long> implements Filter<Long> {
     private static final Logger LOGGER = Logger.getLogger(TupleLogger.class);
+    
+    public static final int DEFAULT_MAX_ELEMENT_LENGTH = 100;
     
     private String _prefix = null;
     private boolean _printFields = false;
 
     private int _printFieldsEvery = 10;
     private int _printTupleEvery = 1;
-    private int _maxPrintLength = 100;
+    private int _maxPrintLength = DEFAULT_MAX_ELEMENT_LENGTH;
+    
+    public static Pipe makePipe(Pipe inPipe, String prefix, boolean printFields) {
+        return makePipe(inPipe, prefix, printFields, DEFAULT_MAX_ELEMENT_LENGTH);
+    }
+    
+    /**
+     * Don't create a new operation if nothing will get logged.
+     * 
+     * Note this precludes dynamically changing the logging level, as the Flow will
+     * be created without the TupleLogger if the debug level is set to > DEBUG when
+     * the Flow is being created.
+     * 
+     * @param inPipe input pipe
+     * @param prefix prefix to use when printing results
+     * @param printFields print field names
+     * @param maxLength max length of any element string.
+     * @return pipe to use
+     */
+    public static Pipe makePipe(Pipe inPipe, String prefix, boolean printFields, int maxLength) {
+        if (LOGGER.isDebugEnabled()) {
+            TupleLogger tl = new TupleLogger(prefix, printFields);
+            tl.setMaxPrintLength(maxLength);
+            
+            return new Each(inPipe, tl);
+        } else {
+            return inPipe;
+        }
+    }
     
     public TupleLogger() {
     }
@@ -108,8 +147,8 @@ public class TupleLogger extends BaseOperation<Long> implements Filter<Long> {
         LOGGER.debug(message);
     }
     
-    private StringBuilder printTuple(StringBuilder buffer, Tuple tuple) {
-
+    @SuppressWarnings("unchecked")
+    public StringBuilder printTuple(StringBuilder buffer, Tuple tuple) {
         buffer.append( "[" );
         for (int i = 0; i < tuple.size(); i++) {
             Comparable element = tuple.get( i );
@@ -118,7 +157,7 @@ public class TupleLogger extends BaseOperation<Long> implements Filter<Long> {
                 printTuple(buffer, (Tuple)element);
             } else {
                 buffer.append("\'");
-                buffer.append(printComparable(element));
+                buffer.append(printComparable(element, _maxPrintLength));
                 buffer.append( "\'" );
             }
 
@@ -128,22 +167,35 @@ public class TupleLogger extends BaseOperation<Long> implements Filter<Long> {
         }
         
         buffer.append( "]" );
-
         return buffer;
     }
     
-    private String printComparable(Comparable element) {
-        // TODO KKr - replace all \n and \r with spaces or escape sequences.
+    @SuppressWarnings({ "unchecked", "deprecation" })
+    public static String printComparable(Comparable element, int maxLength) {
+        StringBuilder result = new StringBuilder();
         
-        if (element instanceof String) {
-            String stringElement = (String)element;
-            return stringElement.substring(0, _maxPrintLength);
+        if (element == null) {
+            result.append("null");
+        } else if (element instanceof String) {
+            result.append((String)element);
         } else if (element instanceof BytesWritable) {
-            // TODO - convert to hex bytes, but only up to _maxPrintLength/3 bytes
-            return "";
+            // Use get() vs. getBytes() so we work with Hadoop 0.18.3
+            byte[] bytes = ((BytesWritable)element).get();
+            int numBytes = Math.min(bytes.length, maxLength/3);
+            
+            for (int i = 0; i < numBytes; i++) {
+                result.append(String.format("%02X", bytes[i]));
+                result.append(' ');
+            }
+            
+            // Get rid of extra trailing space.
+            return result.substring(0, result.length() - 1);
         } else {
-            return element.toString().substring(0, _maxPrintLength);
+            result.append(element.toString());
         }
+        
+        // Now we want to limit the length, and get rid of control, \n, \r sequences
+        return result.substring(0, Math.min(maxLength, result.length())).replaceAll("[\r\n\t]", " ");
     }
 
 }
