@@ -289,11 +289,14 @@ public class SimpleHttpFetcher implements IHttpFetcher {
 
         try {
         	return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
+        } catch (HttpFetchException e) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Exception fetching %s (%s)", scoredUrl.getUrl(), e.getMessage()));
+            }
+            
+            throw e;
         } catch (BaseFetchException e) {
-        	if (LOGGER.isTraceEnabled()) {
-        		LOGGER.trace(String.format("Exception fetching %s (%s)", scoredUrl.getUrl(), e.getMessage()), e);
-        	}
-        	
+        	LOGGER.debug(String.format("Exception fetching %s (%s)", scoredUrl.getUrl(), e.getMessage()), e);
         	throw e;
         }
     }
