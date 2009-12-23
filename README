@@ -33,6 +33,6 @@ To create Eclipse project files:
 
 % ant eclipse
 
-Than choose "Import existing project" in Eclipse, and select the Bixo project directory.
+Then, from Eclipse follow the standard procedure to import an existing Java project into your Workspace.
 
 
