@@ -23,44 +23,38 @@
 package bixo.fetcher;
 
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.hadoop.FetchCounters;
+import bixo.utils.ThreadedExecutor;
 
 /**
  * Manage the set of threads that one task spawns to fetch pages.
- * 
- * @author kenkrugler
  *
  */
 public class FetcherManager implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(FetcherManager.class);
     
-    private static final long STATUS_UPDATE_INTERVAL = 10000L;
-    private static final long NO_CAPACITY_SLEEP_INTERVAL = 200L;
-
-    private static final int FETCH_THREAD_COUNT_CORE = 10;
-    private static final int FETCH_IDLE_TIMEOUT = 1;
+    private static final long STATUS_UPDATE_INTERVAL = 10000;
+    private static final long NO_URLS_SLEEP_TIME = 100;
+    
+    // Amount of time we'll wait for pending tasks to finish up
+    // TODO KKr - calculate from fetcher setting.
+    private static final long COMMAND_TIMEOUT = 120;
 
     private IFetchListProvider _provider;
     private IHttpFetcher _fetcher;
-    private ThreadPoolExecutor _pool;
+    private ThreadedExecutor _executor;
     private BixoFlowProcess _process;
     
     public FetcherManager(IFetchListProvider provider, IHttpFetcher fetcher, BixoFlowProcess process) {
         _provider = provider;
         _fetcher = fetcher;
         _process = process;
-
-        SynchronousQueue<Runnable> queue = new SynchronousQueue<Runnable>(true);
-        _pool = new ThreadPoolExecutor(Math.min(FETCH_THREAD_COUNT_CORE, _fetcher.getMaxThreads()),
-                        _fetcher.getMaxThreads(), FETCH_IDLE_TIMEOUT, TimeUnit.SECONDS, queue);
+        _executor = new ThreadedExecutor(_fetcher.getMaxThreads(), COMMAND_TIMEOUT);
     }
     
     
@@ -74,7 +68,6 @@ public class FetcherManager implements Runnable {
 	    // just terminate when there's nothing left to be fetched...more could be on the way.
 	    try {
 	        long nextStatusTime = 0;
-	        FetcherRunnable nextRunnable = null;
 	        int urlsFetching = -1;
 	        int domainsFetching = -1;
 	        
@@ -83,65 +76,48 @@ public class FetcherManager implements Runnable {
 	            int curUrlsFetching = _process.getCounter(FetchCounters.URLS_FETCHING);
 	            int curDomainsFetching = _process.getCounter(FetchCounters.DOMAINS_FETCHING);
 	            long curTime = System.currentTimeMillis();
-	            
+
 	            if ((curUrlsFetching != urlsFetching) || (curDomainsFetching != domainsFetching) || (curTime >= nextStatusTime)) {
 	                urlsFetching = curUrlsFetching;
 	                domainsFetching = curDomainsFetching;
 	                nextStatusTime = curTime + STATUS_UPDATE_INTERVAL;
-	                
+
 	                // Figure out number of URLs remaining = queued - (fetched + fetching + failed)
 	                int urlsRemaining = _process.getCounter(FetchCounters.URLS_REMAINING);
 	                _process.setStatus(String.format("Fetching %d URLs from %d domains (%d URLs remaining)", urlsFetching, domainsFetching, urlsRemaining));
 	            }
-	            
+
 	            // See if we should set up the next thing to fetch
 	            // TODO KKr - this creates a problem where the DOMAINS_FETCHING counter gets incremented by FetcherQueue when the call to
 	            // poll() succeeds, but we can't actually start fetching it until some point later - so you wind up with an incorrect
 	            // count of domains being fetched.
-	            if (nextRunnable == null) {
-	                FetchList items = _provider.poll();
-	                if (items != null) {
-	                    LOGGER.trace(String.format("Creating a FetcherRunnable for %d items from %s", items.size(), items.getDomain()));
-	                    nextRunnable = new FetcherRunnable(_fetcher, items);
-	                }
-	            }
-	            
-	            if (nextRunnable != null) {
+	            FetchList items = _provider.poll();
+	            if (items != null) {
+	                LOGGER.trace(String.format("Creating a FetcherRunnable for %d items from %s", items.size(), items.getDomain()));
+	                
 	                try {
-	                    _pool.execute(nextRunnable);
-	                    nextRunnable = null;
+	                    _executor.execute(new FetcherRunnable(_fetcher, items));
 	                } catch (RejectedExecutionException e) {
-	                    // TODO KKr - set rejected execution handler, versus relying on exception to catch this (normal) situation.
-	                    LOGGER.trace("No spare capacity for fetching, sleeping");
-	                    Thread.sleep(NO_CAPACITY_SLEEP_INTERVAL);
+	                    // should never happen.
+	                    LOGGER.error("Fetcher handling pool rejected our request");
 	                }
 	            } else {
                     LOGGER.trace("Nothing to fetch, sleeping");
-	                Thread.sleep(100);
+	                Thread.sleep(NO_URLS_SLEEP_TIME);
 	            }
 	        }
 	    } catch (InterruptedException e) {
 	        // ignore this one
 	    } finally {
-	        _pool.shutdown();
-	        while (!_pool.isShutdown()) {
-	            // Spin while waiting.
-	            safeSleep(1000);
-	            // TODO KKr - have timeout where we call _pool.terminate() to force
-	            // it to shut down.
-	        }
+            try {
+                if (!_executor.terminate()) {
+                    LOGGER.warn("Had to do a hard shutdown of robots fetching");
+                }
+            } catch (InterruptedException e) {
+                // TODO KKr - what to do here?
+            }
 	    }
 	} // run
-	
-	
-	// TODO KKr - move to bixo utils?
-	private static void safeSleep(long duration) {
-	    try {
-	        Thread.sleep(duration);
-	    } catch (InterruptedException e) {
-	        // Ignore
-	    }
-	}
 	
 	
 	/**
@@ -152,7 +128,7 @@ public class FetcherManager implements Runnable {
 	 *           there's nothing left to fetch.
 	 */
 	public boolean isDone() {
-	    return (_pool.getActiveCount() == 0) && _provider.isEmpty();
+	    return (_executor.getActiveCount() == 0) && _provider.isEmpty();
 	} // isDone
 	
 	

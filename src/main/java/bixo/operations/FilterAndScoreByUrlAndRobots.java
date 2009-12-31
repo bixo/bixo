@@ -3,9 +3,6 @@ package bixo.operations;
 import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 
@@ -21,6 +18,7 @@ import bixo.fetcher.util.ScoreGenerator;
 import bixo.operations.ProcessRobotsTask.DomainInfo;
 import bixo.utils.DiskQueue;
 import bixo.utils.GroupingKey;
+import bixo.utils.ThreadedExecutor;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
@@ -41,20 +39,20 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     // Some robots.txt files are > 64K
     private static final int MAX_ROBOTS_SIZE = 128 * 1024;
 
-    private static final int FETCH_THREAD_COUNT_CORE = 10;
-    private static final int FETCH_IDLE_TIMEOUT = 1;
-
     // Crank down default values when fetching robots.txt, as this should be super
     // fast to get back.
     private static final int ROBOTS_CONNECTION_TIMEOUT = 10 * 1000;
     private static final int ROBOTS_SOCKET_TIMEOUT = 10 * 1000;
     private static final int ROBOTS_RETRY_COUNT = 2;
 
-    // Amount of time we'll wait for pending tasks to finish up.
-    private static final long TERMINATION_TIMEOUT_SECONDS = 120;
-
-    // How long we wait (in ms) between each check for an open thread to use.
-    private static final long NO_CAPACITY_SLEEP_INTERVAL = 100L;
+    // TODO KKr - set up min response rate, use it with max size to calc max
+    // time for valid download, use it for COMMAND_TIMEOUT
+    
+    // Amount of time we'll wait for pending tasks to finish up. This is roughly equal
+    // to the max amount of time it might take to fetch a robots.txt file (excluding
+    // download time, which we could add).
+    // FUTURE KKr - add in time to do the download.
+    private static final long COMMAND_TIMEOUT = (ROBOTS_CONNECTION_TIMEOUT + ROBOTS_SOCKET_TIMEOUT) * ROBOTS_RETRY_COUNT;
 
     private static final int MAX_URLS_IN_MEMORY = 100;
 
@@ -62,7 +60,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     private Fields _metadataFields;
 	private IHttpFetcher _fetcher;
 	
-    private transient ThreadPoolExecutor _pool;
+    private transient ThreadedExecutor _executor;
 
     public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, ScoreGenerator scorer, Fields metadataFields) {
         // We're going to output a ScoredUrlDatum (what FetcherBuffer expects).
@@ -93,27 +91,15 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
 
     @Override
     public void prepare(FlowProcess flowProcess, cascading.operation.OperationCall<NullContext> operationCall) {
-        int maxThreads = _fetcher.getMaxThreads();
-        
-        SynchronousQueue<Runnable> queue = new SynchronousQueue<Runnable>(true);
-        _pool = new ThreadPoolExecutor(Math.min(FETCH_THREAD_COUNT_CORE, maxThreads), maxThreads,
-                        FETCH_IDLE_TIMEOUT, TimeUnit.SECONDS, queue);
-        _pool.allowCoreThreadTimeOut(true);
+        _executor = new ThreadedExecutor(_fetcher.getMaxThreads(), COMMAND_TIMEOUT);
     };
     
     @Override
     public void cleanup(FlowProcess flowProcess, cascading.operation.OperationCall<NullContext> operationCall) {
-        _pool.shutdown();
         
         try {
-            long startTime = System.currentTimeMillis();
-            if (!_pool.awaitTermination(TERMINATION_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-                // Since should only have as many entries in the queue as we have threads,
-                // we should never have to wait very long for robots.txt files to be fetched.
-                LOGGER.error("Had to force shutdown the robot thread pool");
-                _pool.shutdownNow();
-            } else {
-                LOGGER.trace("Shutdown took " + (System.currentTimeMillis() - startTime) + "ms");
+            if (!_executor.terminate()) {
+                LOGGER.warn("Had to do a hard shutdown of robots fetching");
             }
         } catch (InterruptedException e) {
             // FUTURE What's the right thing to do here? E.g. do I need to worry about
@@ -146,23 +132,12 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
             return;
         }
 
-        Runnable doRobots = new ProcessRobotsTask(domainInfo, _scorer, urls, _fetcher, bufferCall.getOutputCollector());
-        while (_pool.getActiveCount() == _pool.getMaximumPoolSize()) {
-            // Spin until we have a slot.
-            try {
-                Thread.sleep(NO_CAPACITY_SLEEP_INTERVAL);
-            } catch (InterruptedException e) {
-                LOGGER.warn("Interrupted while waiting for available thread");
-                emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector());
-                return;
-            }
-        }
-        
         try {
-            _pool.execute(doRobots);
+            Runnable doRobots = new ProcessRobotsTask(domainInfo, _scorer, urls, _fetcher, bufferCall.getOutputCollector());
+            _executor.execute(doRobots);
         } catch (RejectedExecutionException e) {
             // should never happen.
-            LOGGER.error("Robots handling pool rejected our request: " + _pool.getActiveCount() + " active threads");
+            LOGGER.error("Robots handling pool rejected our request");
             emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector());
         }
 	}
