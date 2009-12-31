@@ -26,6 +26,11 @@ public class TupleLoggerTest {
     }
     
     @Test
+    public void testEmptyBytesWritable() {
+        assertEquals("", TupleLogger.printComparable(new BytesWritable(), 10));
+    }
+    
+    @Test
     public void testPrintingTupleInTuple() {
         TupleLogger tl = new TupleLogger(true);
         tl.setMaxPrintLength(10);
