@@ -20,20 +20,40 @@ import org.apache.log4j.Logger;
 
 /**
  * A queue that writes extra elements to disk, and reads them in as needed.
+ * 
+ * This implementation is optimized for being filled once (ie by the iterator in a reducer)
+ * and then incrementally read. So it wouldn't work very well if reads/writes were happening
+ * simultaneously, once anything had spilled to disk.
  *
  */
 public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
     private static final Logger LOGGER = Logger.getLogger(DiskQueue.class);
 
+    // The _memoryQueue represents the head of the queue. It can also be the tail, if
+    // nothing has spilled over onto the disk.
     private LinkedBlockingQueue<E> _memoryQueue;
+    
+    // Number of elements in the backing store file on disk.
     private int _fileElements;
 
-    // FUTURE Use a buffered output stream, maybe as the underlying 
     private ObjectOutputStream _fileOut;
     private ObjectInputStream _fileIn;
+    
+    // When moving elements from disk to memory, we don't know whether the memory queue
+    // has space until the offer is rejected. So rather than trying to push back an element
+    // into the file, just cache it in _fileInSaved.
     private E _fileInSaved;
     private File _backingStore;
 
+    // FUTURE - KKr could have another memory-resident queue for the tail, so that writes
+    // to the file are buffered that way, and we get better performance if the queue is
+    // being used for parallel read/write access, so you frequently wind up crossing the
+    // 'spill' boundary from memory onto disk.
+    //
+    // Another issue with parallel read/write is that the backing store file could grow
+    // unbounded, if elements spill to disk and then the disk is never exhausted when
+    // refilling the memory queue, and you keep adding more elements at the same time.
+    
     /**
      * Construct a disk-backed queue that keeps at most <maxSize> elements in memory.
      * 
