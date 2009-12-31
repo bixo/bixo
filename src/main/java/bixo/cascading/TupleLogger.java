@@ -189,7 +189,9 @@ public class TupleLogger extends BaseOperation<Long> implements Filter<Long> {
             }
             
             // Get rid of extra trailing space.
-            return result.substring(0, result.length() - 1);
+            if (numBytes > 0) {
+                return result.substring(0, result.length() - 1);
+            }
         } else {
             result.append(element.toString());
         }
