@@ -52,7 +52,7 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
     @Override
     public boolean isSafe() {
         // We definitely DO NOT want to be called multiple times for the same
-        // scored datum, so let Cascading know that the output from us should
+        // scored datum, so let Cascading 1.1 know that the output from us should
         // be stashed in tempHfs if need be.
         return false;
     }
@@ -111,6 +111,7 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                 // TODO KKr - have timeout here based on target fetch duration.
                 while (!_queueMgr.offer(queue)) {
                     process.keepAlive();
+                    // TODO KKr - put sleep delay here.
                 }
 
                 LOGGER.info(String.format("Queued %d URLs from %s", queue.getNumQueued(), domain));
@@ -135,6 +136,7 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                 try {
                     Thread.sleep(1000L);
                 } catch (InterruptedException e) {
+                    // TODO KKr - handle hard termination of fetcherMgr
                 }
 
             }
