@@ -26,6 +26,7 @@ public class SimpleRobotRules implements IRobotRules {
     private static final String CRAWL_DELAY_FIELD = "crawl-delay:";
     private static final String SITEMAP_FIELD = "sitemap:";
     private static final String HOST_FIELD = "host:";
+    private static final String NO_INDEX_FIELD = "noindex:";
 
     private static final Pattern SIMPLE_HTML_PATTERN = Pattern.compile("(?is)<(html|head|body)\\s*>");
     private static final Pattern USER_AGENT_PATTERN = Pattern.compile("(?i)user-agent:");
@@ -37,7 +38,6 @@ public class SimpleRobotRules implements IRobotRules {
 	// than this, we'll skip all pages.
 	private static final long MAX_CRAWL_DELAY = 200000;
 
-	
     // If true, then there was a problem getting/parsing robots.txt, and the crawler
     // should defer visits until some later time.
     private boolean _deferVisits = false;
@@ -499,6 +499,8 @@ public class SimpleRobotRules implements IRobotRules {
                 // Russian-specific directive for mirror site?
                 // Used by the zerkalschik robot?
                 // See http://wataro.ur/en/web/robot.html
+            } else if (line.startsWith(NO_INDEX_FIELD)) {
+                // Ignore Google extension
             } else if (line.contains(":")) {
             	reportWarning("Unknown directive in robots.txt file: " + line);
                 finishedAgentFields = true;
