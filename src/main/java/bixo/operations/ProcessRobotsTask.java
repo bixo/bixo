@@ -97,11 +97,11 @@ public class ProcessRobotsTask implements Runnable {
         } catch (IOFetchException e) {
             // Couldn't load robots.txt for some reason (e.g. ConnectTimeoutException), so
             // treat it like a server internal error case.
-            // We don't cache it, so that next time we have to reload it
             robotRules = new SimpleRobotRules(robotsUrl, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
+            // TODO KKr - should we have separate InterruptedException block? We'd get this if we
+            // had to interrupt the fetch to terminate things in a timely manner.
             LOGGER.warn("Unexpected exception handling robots.txt: " + robotsUrl, e);
-            // We don't cache it, so that next time we have to reload it
             robotRules = new SimpleRobotRules(robotsUrl, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
 
@@ -111,7 +111,7 @@ public class ProcessRobotsTask implements Runnable {
             // key so that the FetchBuffer will emit status, and we can try again later.
             key = GroupingKey.DEFERRED_GROUPING_KEY;
         } else {
-            key = GroupingKey.makeGroupingKey(_domainInfo.getHostAddress(), robotRules.getCrawlDelay());
+            key = GroupingKey.makeGroupingKey(_urls.size(), _domainInfo.getHostAddress(), robotRules.getCrawlDelay());
         }
 
         // Use the same key for every URL from this domain

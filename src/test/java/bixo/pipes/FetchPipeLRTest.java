@@ -1,6 +1,7 @@
 package bixo.pipes;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -301,6 +302,59 @@ public class FetchPipeLRTest extends CascadingTestCase {
     }
     
     @Test
+    public void testOrderingQueuesByCounts() throws Exception {
+        Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), "build/test/FetchPipeLRTest/in", true);
+        TupleEntryCollector write = in.openForWrite(new JobConf());
+        final int numDomains = 10;
+        
+        for (int i = 0; i < numDomains; i++) {
+            int numPages = numDomains - i;
+            for (int j = 0; j < numPages; j++) {
+                // Use special domain name pattern so code deep inside of operations "knows" not
+                // to try to resolve host names to IP addresses.
+                UrlDatum url = new UrlDatum("http://bixo-test-domain-" + i + ".com/page-" + j + ".html?size=10", 0, 0, UrlStatus.UNFETCHED, BaseDatum.EMPTY_METADATA_MAP);
+                Tuple tuple = url.toTuple();
+                write.add(tuple);
+            }
+        }
+
+        write.close();
+
+        Pipe pipe = new Pipe("urlSource");
+        ScoreGenerator scorer = new FixedScoreGenerator(0.5);
+        
+        // Only one thread, so we'll fetch domains sequentially
+        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, BaseDatum.EMPTY_METADATA_FIELDS);
+
+        String outputPath = "build/test/FetchPipeTest/testFetchPipe";
+        Tap out = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+
+        // Finally we can run it.
+        FlowConnector flowConnector = new FlowConnector();
+        Flow flow = flowConnector.connect(in, out, fetchPipe.getContentTailPipe());
+        flow.complete();
+
+        // Verify that URLs from domain 1 were fetched first (since there were more of them)
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        int curHostId = -1;
+        
+        while (tupleEntryIterator.hasNext()) {
+            TupleEntry entry = tupleEntryIterator.next();
+            FetchedDatum datum = new FetchedDatum(entry, BaseDatum.EMPTY_METADATA_FIELDS);
+            URL url = new URL(datum.getBaseUrl());
+            String host = url.getHost();
+            int hostLength = host.length();
+            int hostId = Integer.parseInt(host.substring(hostLength - 5, hostLength - 4));
+            Assert.assertTrue(hostId >= curHostId);
+            curHostId = hostId;
+        }
+        
+        tupleEntryIterator.close();
+    }
+    
+    @Test
     public void testPassingAllStatus() throws Exception {
         // Pretend like we have 10 URLs from one domain, to match the
         // 10 cases we need to test.
@@ -434,7 +488,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
     /***********************************************************************
      * Lots of ugly custom classes to support serializable "mocking" for a
-     * particular test case (which follows). Mockito mocks aren't serializable,
+     * particular test case. Mockito mocks aren't serializable,
      * or at least I couldn't see an easy way to make this work.
      */
 
@@ -455,7 +509,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
             } else if (url.contains("page-4")) {
                 return GroupingKey.SKIPPED_GROUPING_KEY;
             } else {
-                return GroupingKey.makeGroupingKey("domain-0.com", 30000);
+                return GroupingKey.makeGroupingKey(1, "domain-0.com", 30000);
             }
         }
     };

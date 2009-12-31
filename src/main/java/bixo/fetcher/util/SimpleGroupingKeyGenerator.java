@@ -157,7 +157,9 @@ public class SimpleGroupingKeyGenerator implements IGroupingKeyGenerator {
         if (robotRules.getDeferVisits()) {
             return GroupingKey.DEFERRED_GROUPING_KEY;
         } else if (robotRules.isAllowed(url)) {
-            return GroupingKey.makeGroupingKey(_usePLD ? DomainNames.getPLD(host) : ia.getHostAddress(), robotRules.getCrawlDelay());
+            // TODO KKr - because we don't know the count of URLs for the domain, we can't create accurate
+            // grouping keys, which is another reason why this should be deprecated.
+            return GroupingKey.makeGroupingKey(1, _usePLD ? DomainNames.getPLD(host) : ia.getHostAddress(), robotRules.getCrawlDelay());
         } else {
             return GroupingKey.BLOCKED_GROUPING_KEY;
         }
