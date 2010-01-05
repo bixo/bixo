@@ -11,7 +11,7 @@ public class ThreadedExecutorTest {
 
     @Test
     public void testNoRejection() {
-        final long timeoutInMS = 4;
+        final long timeoutInMS = 10;
         
         ThreadedExecutor executor = new ThreadedExecutor(1, timeoutInMS);
         
@@ -28,6 +28,36 @@ public class ThreadedExecutorTest {
                 };
                 
                 executor.execute(cmd);
+            } catch (RejectedExecutionException e) {
+                Assert.fail("Execution was rejected");
+            }
+        }
+    }
+    
+    @Test
+    public void testNoRejectionMultiThreaded() {
+        final long timeoutInMS = 10;
+        final int numThreads = 2;
+        
+        ThreadedExecutor executor = new ThreadedExecutor(numThreads, timeoutInMS);
+        for (int i = 0; i < (numThreads + 1); i++) {
+            try {
+                Runnable cmd = new Runnable() {
+                    public void run() {
+                        try {
+                            Thread.sleep(timeoutInMS - 1);
+                        } catch (InterruptedException e) {
+                            // Terminate the run
+                        }
+                    }
+                };
+                
+                // The key is the <numThreads + 1> request. This should block
+                // until one of the threads has completed.
+                long startTime = System.currentTimeMillis();
+                executor.execute(cmd);
+                long deltaTime = System.currentTimeMillis() - startTime;
+                System.out.println("Request took: " + deltaTime);
             } catch (RejectedExecutionException e) {
                 Assert.fail("Execution was rejected");
             }
