@@ -43,4 +43,24 @@ public class UrlUtils {
             return relativeUrl;
         }
     }
+    
+    public static String makeProtocolAndDomain(String urlAsString) throws MalformedURLException {
+        URL url = new URL(urlAsString);
+        StringBuilder result = new StringBuilder(url.getProtocol());
+        result.append("://");
+        
+        String host = url.getHost();
+        if (host.length() == 0) {
+            throw new MalformedURLException("URL without a domain: " + urlAsString);
+        }
+        
+        result.append(host);
+        int port = url.getPort();
+        if ((port != -1) && (port != url.getDefaultPort())) {
+            result.append(':');
+            result.append(port);
+        }
+        
+        return result.toString();
+    }
 }
