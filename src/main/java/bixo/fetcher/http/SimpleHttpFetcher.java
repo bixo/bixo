@@ -437,7 +437,9 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         // Now finally read in response body, up to targetLength bytes.
         // FUTURE KKr - use content-type to exclude/include data, as that's
         // a more accurate way to skip unwanted content versus relying on suffix.
-        byte[] content = null;
+        
+        // entity might be null, for zero length responses.
+        byte[] content = new byte[0];
         long readRate = 0;
         HttpEntity entity = response.getEntity();
         needAbort = true;
