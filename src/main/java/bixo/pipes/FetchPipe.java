@@ -1,7 +1,6 @@
 package bixo.pipes;
 
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +28,7 @@ import bixo.operations.FilterAndScoreByUrlAndRobots;
 import bixo.operations.GroupFunction;
 import bixo.operations.ScoreFunction;
 import bixo.utils.GroupingKey;
+import bixo.utils.UrlUtils;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
@@ -64,17 +64,7 @@ public class FetchPipe extends SubAssembly {
             String urlAsString = urlDatum.getUrl();
             
             try {
-                URL url = new URL(urlAsString);
-                StringBuilder result = new StringBuilder(url.getProtocol());
-                result.append("://");
-                result.append(url.getHost());
-                int port = url.getPort();
-                if ((port != -1) && (port != url.getDefaultPort())) {
-                    result.append(':');
-                    result.append(port);
-                }
-                
-                return result.toString();
+                return UrlUtils.makeProtocolAndDomain(urlAsString);
             } catch (MalformedURLException e) {
                 LOGGER.warn("Invalid URL: " + urlAsString);
                 return GroupingKey.INVALID_URL_GROUPING_KEY;
