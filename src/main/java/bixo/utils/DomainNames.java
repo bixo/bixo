@@ -22,6 +22,7 @@
  */
 package bixo.utils;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -135,4 +136,19 @@ public class DomainNames {
     public static String getPLD(URL url) {
         return getPLD(url.getHost());
     } // getPLD
+    
+    
+    /**
+     * No-exception utility routine to return the hostname for a URL.
+     * 
+     * @param url
+     * @return hostname, or <invalid URL>.
+     */
+    public static String safeGetHost(String url) {
+        try {
+            return new URL(url).getHost();
+        } catch (MalformedURLException e) {
+            return "<invalid URL>";
+        }
+    }
 } // DomainNames
