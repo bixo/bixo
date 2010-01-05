@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 import bixo.cascading.BixoFlowProcess;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.hadoop.FetchCounters;
+import bixo.utils.DomainNames;
 import bixo.utils.ThreadedExecutor;
 
 /**
@@ -41,9 +42,9 @@ public class FetcherManager implements Runnable {
     private static final long STATUS_UPDATE_INTERVAL = 10000;
     private static final long NO_URLS_SLEEP_TIME = 100;
     
-    // Amount of time we'll wait for pending tasks to finish up
+    // Amount of time we'll wait for pending tasks to finish up, in milliseconds
     // TODO KKr - calculate from fetcher setting.
-    private static final long COMMAND_TIMEOUT = 120;
+    private static final long COMMAND_TIMEOUT = 120 * 1000;
 
     private IFetchListProvider _provider;
     private IHttpFetcher _fetcher;
@@ -71,10 +72,10 @@ public class FetcherManager implements Runnable {
 	        int urlsFetching = -1;
 	        int domainsFetching = -1;
 	        
-	        while (true) {
+	        while (!Thread.interrupted()) {
 	            // See if we should update our status
 	            int curUrlsFetching = _process.getCounter(FetchCounters.URLS_FETCHING);
-	            int curDomainsFetching = _process.getCounter(FetchCounters.DOMAINS_FETCHING);
+	            int curDomainsFetching = _process.getCounter(FetchCounters.DOMAINS_PROCESSING);
 	            long curTime = System.currentTimeMillis();
 
 	            if ((curUrlsFetching != urlsFetching) || (curDomainsFetching != domainsFetching) || (curTime >= nextStatusTime)) {
@@ -88,18 +89,23 @@ public class FetcherManager implements Runnable {
 	            }
 
 	            // See if we should set up the next thing to fetch
-	            // TODO KKr - this creates a problem where the DOMAINS_FETCHING counter gets incremented by FetcherQueue when the call to
-	            // poll() succeeds, but we can't actually start fetching it until some point later - so you wind up with an incorrect
-	            // count of domains being fetched.
 	            FetchList items = _provider.poll();
 	            if (items != null) {
-	                LOGGER.trace(String.format("Creating a FetcherRunnable for %d items from %s", items.size(), items.getDomain()));
+	                if (LOGGER.isTraceEnabled()) {
+	                    // Typically we're using the IP address for the domain, so extract a
+	                    // representative host name from the first item's URL.
+	                    String host = DomainNames.safeGetHost(items.get(0).getUrl());
+	                    LOGGER.trace(String.format("Creating a FetcherRunnable for %d items from %s (%s)", items.size(), items.getDomain(), host));
+	                }
 	                
 	                try {
 	                    _executor.execute(new FetcherRunnable(_fetcher, items));
 	                } catch (RejectedExecutionException e) {
-	                    // should never happen.
-	                    LOGGER.error("Fetcher handling pool rejected our request");
+	                    // This would only happen if all of the threads were tied up for longer than our
+	                    // command timeout value, or if the attempt to enqueue the URL was interrupted.
+	                    items.finished();
+	                    // TODO KKr - we need to record that all of these URLs got skipped
+	                    LOGGER.warn("Fetcher handling pool rejected our request");
 	                }
 	            } else {
                     LOGGER.trace("Nothing to fetch, sleeping");
@@ -107,14 +113,15 @@ public class FetcherManager implements Runnable {
 	            }
 	        }
 	    } catch (InterruptedException e) {
-	        // ignore this one
+	        // ignore this one, we're just exiting
 	    } finally {
             try {
                 if (!_executor.terminate()) {
                     LOGGER.warn("Had to do a hard shutdown of robots fetching");
                 }
             } catch (InterruptedException e) {
-                // TODO KKr - what to do here?
+                Thread.currentThread().interrupt();
+                LOGGER.warn("Interrupted while trying to terminate the thread pool");
             }
 	    }
 	} // run
@@ -132,4 +139,7 @@ public class FetcherManager implements Runnable {
 	} // isDone
 	
 	
+	public int getActiveThreadCount() {
+	    return _executor.getActiveCount();
+	}
 }
