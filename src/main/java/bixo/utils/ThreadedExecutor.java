@@ -34,6 +34,7 @@ public class ThreadedExecutor {
             try {
                 return offer(element, _timeout, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 return false;
             }
         }
