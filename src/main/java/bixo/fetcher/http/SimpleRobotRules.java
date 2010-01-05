@@ -27,6 +27,7 @@ public class SimpleRobotRules implements IRobotRules {
     private static final String SITEMAP_FIELD = "sitemap:";
     private static final String HOST_FIELD = "host:";
     private static final String NO_INDEX_FIELD = "noindex:";
+    private static final String ACAP_FIELD = "acap-";
 
     private static final Pattern SIMPLE_HTML_PATTERN = Pattern.compile("(?is)<(html|head|body)\\s*>");
     private static final Pattern USER_AGENT_PATTERN = Pattern.compile("(?i)user-agent:");
@@ -292,6 +293,10 @@ public class SimpleRobotRules implements IRobotRules {
     	}
     }
     
+    public int getNumWarnings() {
+        return _numWarnings;
+    }
+    
     // TODO KKr - catch & report/log issues with the file
     // contains HTML
     // has unknown directives
@@ -397,6 +402,8 @@ public class SimpleRobotRules implements IRobotRules {
             }
             line = line.trim().toLowerCase();
 
+            // TODO KKr - use regex versus line.startsWith, so we can handle things
+            // like common typos, missing ':'
             if (line.startsWith(USER_AGENT_FIELD)) {
                 if (matchedRealName) {
                     if (finishedAgentFields) {
@@ -476,15 +483,14 @@ public class SimpleRobotRules implements IRobotRules {
                 if (!addingRules) {
                      continue;
                 }
-                 
+                
                 String delayString = line.substring(CRAWL_DELAY_FIELD.length()).trim();
                 if (delayString.length() > 0) {
                 	try {
                 		// Some sites use values like 0.5 for the delay.
                 		if (delayString.indexOf('.') != -1) {
                 			double delayValue = Double.parseDouble(delayString) * 1000.0;
-                			curRules.setCrawlDelay((long)delayValue);
-                			reportWarning("Floating point crawl delay value: " + delayString);
+                			curRules.setCrawlDelay(Math.round(delayValue));
                 		} else {
                 			long delayValue = Integer.parseInt(delayString) * 1000L; // sec to millisec
                 			curRules.setCrawlDelay(delayValue);
@@ -493,7 +499,11 @@ public class SimpleRobotRules implements IRobotRules {
             			reportWarning("Error parsing robots rules - can't decode crawl delay: " + delayString);
                 	}
                 }
-            } else if (line.startsWith(SITEMAP_FIELD)) {
+            }
+
+            // TODO KKr - which of these should be setting finishedAgentFields to true?
+            
+            else if (line.startsWith(SITEMAP_FIELD)) {
                 // Ignore for now
             } else if (line.startsWith(HOST_FIELD)) {
                 // Russian-specific directive for mirror site?
@@ -501,11 +511,13 @@ public class SimpleRobotRules implements IRobotRules {
                 // See http://wataro.ur/en/web/robot.html
             } else if (line.startsWith(NO_INDEX_FIELD)) {
                 // Ignore Google extension
+            } else if (line.startsWith(ACAP_FIELD)) {
+                // Ignore ACAP extensions
             } else if (line.contains(":")) {
             	reportWarning("Unknown directive in robots.txt file: " + line);
                 finishedAgentFields = true;
             } else if (line.length() > 0) {
-            	reportWarning("Unknown line in robots.txt file: " + line);
+            	reportWarning(String.format("Unknown line in robots.txt file (size %d): %s", robotContent.length, line));
                 finishedAgentFields = true;
             }
         }

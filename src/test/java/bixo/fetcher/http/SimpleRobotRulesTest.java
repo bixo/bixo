@@ -528,7 +528,6 @@ public class SimpleRobotRulesTest {
     @Test
     public void testUnsupportedFields() throws MalformedURLException {
         // When we have a new field type that we don't know about.
-        // When there are more than one agent name on a line.
         final String simpleRobotsTxt = "User-agent: crawler1" + CRLF
         + "Disallow: /index.html" + CRLF
         + "Allow: /" + CRLF
@@ -538,6 +537,15 @@ public class SimpleRobotRulesTest {
 
         SimpleRobotRules rules = createRobotRules("crawler2", simpleRobotsTxt.getBytes());
         Assert.assertFalse(rules.isAllowed("http://www.domain.com/anypage.html"));
+    }
+    
+    @Test
+    public void testAcapFields() throws MalformedURLException {
+        final String robotsTxt = "acap-crawler: *" + CRLF
+        + "acap-disallow-crawl: /ultima_ora/";
+
+        SimpleRobotRules rules = createRobotRules("foobot", robotsTxt.getBytes());
+        Assert.assertEquals(0, rules.getNumWarnings());
     }
     
     @Test
@@ -624,5 +632,15 @@ public class SimpleRobotRulesTest {
         
         SimpleRobotRules rules = createRobotRules("foobot", robotsData);
         Assert.assertFalse("Disallow match against *", rules.isAllowed("http://www.domain.com/profile"));
+    }
+    
+    @Test
+    public void testFloatingPointCrawlDelay() throws MalformedURLException {
+        final String robotsTxt = "User-agent: *" + CR +
+        "Crawl-delay: 0.5" + CR +
+        "Disallow:" + CR;
+
+        SimpleRobotRules rules = createRobotRules("bixo", robotsTxt.getBytes());
+        Assert.assertEquals(500, rules.getCrawlDelay());
     }
 }
