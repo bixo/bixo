@@ -10,6 +10,11 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mortbay.http.HttpException;
+import org.mortbay.http.HttpRequest;
+import org.mortbay.http.HttpResponse;
+import org.mortbay.http.HttpServer;
+import org.mortbay.http.handler.AbstractHttpHandler;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
@@ -27,9 +32,12 @@ import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.UrlFetchException;
+import bixo.fetcher.RandomResponseHandler;
 import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.NullHttpFetcher;
+import bixo.fetcher.simulation.SimulationWebServer;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
 import bixo.fetcher.util.ScoreGenerator;
@@ -53,6 +61,22 @@ import cascading.tuple.TupleEntryIterator;
 
 // Long-running test
 public class FetchPipeLRTest extends CascadingTestCase {
+    
+    private static class TestWebServer extends SimulationWebServer {
+        private HttpServer _server;
+        
+        public TestWebServer(AbstractHttpHandler handler, int port) throws Exception {
+            _server = startServer(handler, port);
+        }
+        
+        public void stop() {
+            try {
+                _server.stop();
+            } catch (Exception e) {
+                
+            }
+        }
+    }
     
     @Test
     public void testHeadersInStatus() throws Exception {
@@ -138,14 +162,19 @@ public class FetchPipeLRTest extends CascadingTestCase {
     @SuppressWarnings("unchecked")
     @Test
     public void testFetchPipeNew() throws Exception {
+        // System.setProperty("bixo.root.level", "TRACE");
+        
+        final int numPages = 10;
+        final int port = 8089;
+        
         Fields metaDataFields = new Fields("meta-test");
         Map<String, Comparable> metadata = new HashMap<String, Comparable>();
         metadata.put("meta-test", "value");
-        Lfs in = makeInputData(25, 4, metadata);
+        Lfs in = makeInputData("localhost:" + port, numPages, metadata);
 
         Pipe pipe = new Pipe("urlSource");
         ScoreGenerator scorer = new FixedScoreGenerator(0.5);
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(ConfigUtils.BIXO_TEST_AGENT);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, metaDataFields);
         
         String outputPath = "build/test/FetchPipeTest/testFetchPipe";
@@ -155,9 +184,16 @@ public class FetchPipeLRTest extends CascadingTestCase {
         // Finally we can run it.
         FlowConnector flowConnector = new FlowConnector();
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
-        flow.complete();
+        TestWebServer webServer = null;
         
-        // Verify 100 fetched and 100 status entries were saved.
+        try {
+            webServer = new TestWebServer(new NoRobotsResponseHandler(), port);
+            flow.complete();
+        } finally {
+            webServer.stop();
+        }
+        
+        // Verify numPages fetched and numPages status entries were saved.
         Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS.append(metaDataFields)), outputPath + "/content");
         TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
         
@@ -177,7 +213,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
             Assert.assertEquals("value", metaValue);
         }
                 
-        Assert.assertEquals(100, totalEntries);
+        Assert.assertEquals(numPages, totalEntries);
         tupleEntryIterator.close();
         
         validate = new Lfs(new SequenceFile(StatusDatum.FIELDS.append(metaDataFields)), outputPath + "/status");
@@ -192,7 +228,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
             Assert.assertEquals(UrlStatus.FETCHED, sd.getStatus());
         }
         
-        Assert.assertEquals(100, totalEntries);
+        Assert.assertEquals(numPages, totalEntries);
     }
     
     @SuppressWarnings("unchecked")
@@ -475,9 +511,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
             for (int j = 0; j < numPages; j++) {
                 // Use special domain name pattern so code deep inside of operations "knows" not
                 // to try to resolve host names to IP addresses.
-                UrlDatum url = new UrlDatum("http://bixo-test-domain-" + i + ".com/page-" + j + ".html?size=10", 0, 0, UrlStatus.UNFETCHED, metaData);
-                Tuple tuple = url.toTuple();
-                write.add(tuple);
+                write.add(makeTuple("bixo-test-domain-" + i + ".com", j, metaData));
             }
         }
         
@@ -485,7 +519,42 @@ public class FetchPipeLRTest extends CascadingTestCase {
         return in;
     }
     
+    @SuppressWarnings("unchecked")
+    private Lfs makeInputData(String domain, int numPages, Map<String, Comparable> metaData) throws IOException {
+        Fields sfFields = UrlDatum.FIELDS.append(BaseDatum.makeMetaDataFields(metaData));
+        Lfs in = new Lfs(new SequenceFile(sfFields), "build/test/FetchPipeLRTest/in", true);
+        TupleEntryCollector write = in.openForWrite(new JobConf());
+        for (int j = 0; j < numPages; j++) {
+            write.add(makeTuple(domain, j, metaData));
+        }
 
+        write.close();
+        return in;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Tuple makeTuple(String domain, int pageNumber, Map<String, Comparable> metaData) {
+        UrlDatum url = new UrlDatum("http://" + domain + "/page-" + pageNumber + ".html?size=10", 0, 0, UrlStatus.UNFETCHED, metaData);
+        return url.toTuple();
+    }
+    
+    @SuppressWarnings("serial")
+    private static class NoRobotsResponseHandler extends RandomResponseHandler {
+
+        public NoRobotsResponseHandler() {
+            super(1000, 10);
+        }
+        
+        @Override
+        public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+            if (pathInContext.endsWith("/robots.txt")) {
+                throw new HttpException(HttpStatus.SC_NOT_FOUND, "No robots.txt");
+            } else {
+                super.handle(pathInContext, pathParams, request, response);
+            }
+        }
+    }
+    
     /***********************************************************************
      * Lots of ugly custom classes to support serializable "mocking" for a
      * particular test case. Mockito mocks aren't serializable,
