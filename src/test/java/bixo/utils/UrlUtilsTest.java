@@ -3,7 +3,7 @@ package bixo.utils;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.junit.Assert;
+import static org.junit.Assert.*;
 import org.junit.Test;
 
 public class UrlUtilsTest {
@@ -12,14 +12,14 @@ public class UrlUtilsTest {
     public void testQueryParamReplacingQueryParam() throws MalformedURLException {
         URL baseUrl = new URL("http://domain.com?p=1");
         String derivedUrl = UrlUtils.makeUrl(baseUrl, "?pid=2");
-        Assert.assertEquals("http://domain.com/?pid=2", derivedUrl);
+        assertEquals("http://domain.com/?pid=2", derivedUrl);
     }
 
     @Test
     public void testQueryParamCase() throws MalformedURLException {
         URL baseUrl = new URL("http://domain.com");
         String derivedUrl = UrlUtils.makeUrl(baseUrl, "?pid=1");
-        Assert.assertEquals("http://domain.com/?pid=1", derivedUrl);
+        assertEquals("http://domain.com/?pid=1", derivedUrl);
     }
 
     @Test
@@ -28,7 +28,7 @@ public class UrlUtilsTest {
 
         baseUrl = new URL("http://domain.com/path/to/file");
         String derivedUrl = UrlUtils.makeUrl(baseUrl, "/file.html");
-        Assert.assertEquals("http://domain.com/file.html", derivedUrl);
+        assertEquals("http://domain.com/file.html", derivedUrl);
     }
 
     @Test
@@ -38,7 +38,7 @@ public class UrlUtilsTest {
         baseUrl = new URL("http://domain.com/");
         String relativeUrl = "JavaScript:GoURL(dowURL, '')";
         String derivedUrl = UrlUtils.makeUrl(baseUrl, relativeUrl);
-        Assert.assertEquals(relativeUrl, derivedUrl);
+        assertEquals(relativeUrl, derivedUrl);
     }
     
     @Test
@@ -47,7 +47,7 @@ public class UrlUtilsTest {
 
         baseUrl = new URL("http://domain.com/path/");
         String derivedUrl = UrlUtils.makeUrl(baseUrl, "./file.html");
-        Assert.assertEquals("http://domain.com/path/file.html", derivedUrl);
+        assertEquals("http://domain.com/path/file.html", derivedUrl);
     }
 
     @Test
@@ -57,7 +57,7 @@ public class UrlUtilsTest {
 
         baseUrl = new URL("http://domain.com/path/");
         derivedUrl = UrlUtils.makeUrl(baseUrl, "file.html");
-        Assert.assertEquals("http://domain.com/path/file.html", derivedUrl);
+        assertEquals("http://domain.com/path/file.html", derivedUrl);
     }
 
     @Test
@@ -72,15 +72,15 @@ public class UrlUtilsTest {
         // Also http://issues.apache.org/jira/browse/NUTCH-436
         baseUrl = new URL("http://domain.com/path/");
         derivedUrl = UrlUtils.makeUrl(baseUrl, "?pid=1");
-        Assert.assertEquals("http://domain.com/path/?pid=1", derivedUrl);
+        assertEquals("http://domain.com/path/?pid=1", derivedUrl);
 
         baseUrl = new URL("http://domain.com/file");
         derivedUrl = UrlUtils.makeUrl(baseUrl, "?pid=1");
-        Assert.assertEquals("http://domain.com/file?pid=1", derivedUrl);
+        assertEquals("http://domain.com/file?pid=1", derivedUrl);
 
         baseUrl = new URL("http://domain.com/path/d;p?q#f");
         derivedUrl = UrlUtils.makeUrl(baseUrl, "?pid=1");
-        Assert.assertEquals("http://domain.com/path/d;p?pid=1", derivedUrl);
+        assertEquals("http://domain.com/path/d;p?pid=1", derivedUrl);
     }
 
     @Test
@@ -89,7 +89,21 @@ public class UrlUtilsTest {
 
         baseUrl = new URL("http://domain.com/path/to/file");
         String derivedUrl = UrlUtils.makeUrl(baseUrl, "http://domain2.com/newpath");
-        Assert.assertEquals("http://domain2.com/newpath", derivedUrl);
+        assertEquals("http://domain2.com/newpath", derivedUrl);
     }
 
+    @Test
+    public void testProtocolAndDomain() throws MalformedURLException {
+        assertEquals("http://domain.com", UrlUtils.makeProtocolAndDomain("http://domain.com/index.html"));
+        assertEquals("http://domain.com", UrlUtils.makeProtocolAndDomain("http://domain.com:80/index.html"));
+        assertEquals("http://domain.com:8080", UrlUtils.makeProtocolAndDomain("http://domain.com:8080/index.html"));
+        assertEquals("https://domain.com", UrlUtils.makeProtocolAndDomain("https://domain.com/"));
+        
+        try {
+            UrlUtils.makeProtocolAndDomain("mailto:name@domain.com");
+            fail("Exception should be thrown");
+        } catch (MalformedURLException e) {
+            
+        }
+    }
 }
