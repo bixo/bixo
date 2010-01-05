@@ -79,5 +79,10 @@ public class DomainNamesTest extends TestCase {
         assertEquals("xxx.com.it", DomainNames.getPLD("xxx.com.it"));
         assertEquals("xxx.com.it", DomainNames.getPLD("www.xxx.com.it"));
     }
+    
+    public final void testSafeGetHost() {
+        assertEquals("domain.com", DomainNames.safeGetHost("http://domain.com"));
+        assertTrue(!DomainNames.safeGetHost("mailto:ken@domain.com").equals("domain.com"));
+    }
 
 }
