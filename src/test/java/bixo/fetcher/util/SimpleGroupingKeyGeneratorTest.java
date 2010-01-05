@@ -37,7 +37,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
         UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
 
-        Assert.assertEquals("127.0.0.1-unset", key);
+        Assert.assertEquals("000001-127.0.0.1-unset", key);
     }
     
     @Test
@@ -71,7 +71,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
         String url = "http://localhost:8089/allowed/page.html";
         UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
-        Assert.assertEquals("127.0.0.1-10000", key);
+        Assert.assertEquals("000001-127.0.0.1-10000", key);
         
         url = "http://localhost:8089/disallowed/page.html";
         urlDatum = new UrlDatum(url);
@@ -89,7 +89,7 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
         UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
 
-        Assert.assertEquals("localhost-unset", key);
+        Assert.assertEquals("000001-localhost-unset", key);
     }
     
     @Test
@@ -103,6 +103,6 @@ public class SimpleGroupingKeyGeneratorTest extends SimulationWebServer {
         UrlDatum urlDatum = new UrlDatum(url);
         String key = keyGen.getGroupingKey(urlDatum);
 
-        Assert.assertEquals("localhost-unset", key);
+        Assert.assertEquals("000001-localhost-unset", key);
     }
 }
