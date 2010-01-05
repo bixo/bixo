@@ -79,28 +79,12 @@ public class ProcessRobotsTask implements Runnable {
         _flowProcess = flowProcess;
     }
 
-    @Override
-    public void run() {
-        _flowProcess.increment(FetchCounters.DOMAINS_PROCESSING, 1);
-
-        String domain = _domainInfo.getDomain();
-        String pld = DomainNames.getPLD(domain);
-        if (!_scorer.isGoodDomain(domain, pld)) {
-            _flowProcess.decrement(FetchCounters.DOMAINS_PROCESSING, 1);
-            _flowProcess.increment(FetchCounters.DOMAINS_SKIPPED, 1);
-
-            // TODO KKr - don't lose URLs.
-            LOGGER.debug("Skipping URLs from not-good domain: " + domain);
-            return;
-        }
-
-        String robotsUrl = "";
-        IRobotRules robotRules = null;
-
+    public static IRobotRules createRules(String robotsUrl, IHttpFetcher fetcher) {
+        IRobotRules robotRules;
+        
         try {
-            robotsUrl = new URL(_domainInfo.getProtocolAndDomain() + "/robots.txt").toExternalForm();
-            byte[] robotsContent = _fetcher.get(robotsUrl);
-            robotRules = new SimpleRobotRules(_fetcher.getUserAgent().getAgentName(), robotsUrl, robotsContent);
+            byte[] robotsContent = fetcher.get(robotsUrl);
+            robotRules = new SimpleRobotRules(fetcher.getUserAgent().getAgentName(), robotsUrl, robotsContent);
         } catch (HttpFetchException e) {
             robotRules = new SimpleRobotRules(robotsUrl, e.getHttpStatus());
         } catch (IOFetchException e) {
@@ -117,13 +101,41 @@ public class ProcessRobotsTask implements Runnable {
             robotRules = new SimpleRobotRules(robotsUrl, HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
 
+        return robotRules;
+    }
+    
+    @Override
+    public void run() {
+        _flowProcess.increment(FetchCounters.DOMAINS_PROCESSING, 1);
+
+        String domain = _domainInfo.getDomain();
+        String pld = DomainNames.getPLD(domain);
+        if (!_scorer.isGoodDomain(domain, pld)) {
+            _flowProcess.decrement(FetchCounters.DOMAINS_PROCESSING, 1);
+            _flowProcess.increment(FetchCounters.DOMAINS_SKIPPED, 1);
+
+            // TODO KKr - don't lose URLs.
+            LOGGER.debug("Skipping URLs from not-good domain: " + domain);
+            return;
+        }
+
+        String robotsUrl = "";
+
+        try {
+            robotsUrl = new URL(_domainInfo.getProtocolAndDomain() + "/robots.txt").toExternalForm();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Unexpected error with robots URL: " + _domainInfo.getProtocolAndDomain());
+        }
+        
+        IRobotRules robotRules = createRules(robotsUrl, _fetcher);
+
         String key;
         if (robotRules.getDeferVisits()) {
             // We don't want to toss these URLs just because the server is
             // acting up, so use the special
             // key so that the FetchBuffer will emit status, and we can try
             // again later.
-            LOGGER.trace("Deferring visits to URLs from " + _domainInfo.getDomain());
+            LOGGER.debug("Deferring visits to URLs from " + _domainInfo.getDomain());
             key = GroupingKey.DEFERRED_GROUPING_KEY;
             _flowProcess.increment(FetchCounters.DOMAINS_DEFERRED, 1);
         } else {
