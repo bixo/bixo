@@ -48,6 +48,7 @@ import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;
 import cascading.scheme.SequenceFile;
+import cascading.scheme.TextLine;
 import cascading.tap.Lfs;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
@@ -124,11 +125,11 @@ public class FetcherTest {
 
     @Test
     public void testRunFetcher() throws Exception {
-        String workingFolder = "build/it/FetcherTest-run/working";
+        String workingFolder = "build/test-it/FetcherTest-testRunFetcher";
         String inputPath = makeUrlDB(workingFolder, "src/it/resources/top10urls.txt");
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
-        String outPath = workingFolder + "/FetcherTest-testRunFetcher";
-        Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath + "/content", true);
+        Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), workingFolder + "/content", true);
+        Lfs status = new Lfs(new TextLine(), workingFolder + "/status", true);
 
         Pipe pipe = new Pipe("urlSource");
 
@@ -140,11 +141,11 @@ public class FetcherTest {
 
         FlowConnector flowConnector = new FlowConnector();
 
-        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(null, content), fetchPipe);
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
         
         // Test for 10 good fetches.
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath + "/content");
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), workingFolder + "/content");
         TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
         Fields metaDataFields = new Fields();
         int fetchedPages = 0;
