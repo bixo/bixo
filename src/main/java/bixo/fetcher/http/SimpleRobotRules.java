@@ -160,34 +160,47 @@ public class SimpleRobotRules implements IRobotRules {
     // Java URL code to fetch it, as well as a version that takes an output stream (e.g. from
     // HttpClient) and a version that takes a String with the content.
     public SimpleRobotRules(IHttpFetcher fetcher, String url) {
-    	init(url);
-    	
+        String urlToFetch;
+
         try {
             URL realUrl = new URL(url);
-            String urlToFetch = new URL(realUrl, "/robots.txt").toExternalForm();
+            urlToFetch = realUrl.toExternalForm();
+            if (!urlToFetch.endsWith("/robots.txt")) {
+                urlToFetch = new URL(realUrl, "/robots.txt").toExternalForm();
+            }
+        } catch (MalformedURLException e) {
+            LOGGER.error("Invalid URL: " + url);
+            init(url);
+            createAllOrNone(false);
+            return;
+        }
 
+        init(urlToFetch);
+
+        try {
             ScoredUrlDatum scoredUrl = new ScoredUrlDatum(urlToFetch);
             FetchedDatum result = fetcher.get(scoredUrl);
-            
+
             // HACK! DANGER! Some sites will redirect the request to the top-level domain
             // page, without returning a 404. So if we have a redirect, and the normalized
             // redirect URL is the same as the domain, then treat it like a 404...otherwise
             // our robots.txt parser will barf, and we treat that as a "deferred" case.
             // TODO KKr - make it so.
-            
+
             String contentType = result.getContentType();
             boolean isHtmlType = ((contentType != null) && contentType.toLowerCase().startsWith("text/html"));
+            if (isHtmlType && LOGGER.isTraceEnabled()) {
+                LOGGER.trace("Got HTML for robots.txt: " + urlToFetch);
+            }
+            
             init(urlToFetch, isHtmlType);
             parseRules(fetcher.getUserAgent().getAgentName(), result.getContentBytes());
-        } catch (MalformedURLException e) {
-            LOGGER.error("Invalid URL: " + url);
-            createAllOrNone(false);
         } catch (HttpFetchException e) {
             createAllOrNone(e.getHttpStatus());
         } catch (IOFetchException e) {
             createAllOrNone(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
-            LOGGER.error("Unexpected exception fetching robots.txt: " + url);
+            LOGGER.error("Unexpected exception fetching robots.txt: " + url, e);
             createAllOrNone(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
@@ -295,6 +308,10 @@ public class SimpleRobotRules implements IRobotRules {
     
     public int getNumWarnings() {
         return _numWarnings;
+    }
+    
+    public boolean isHtmlType() {
+        return _isHtmlType;
     }
     
     // TODO KKr - catch & report/log issues with the file
