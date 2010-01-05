@@ -13,8 +13,6 @@ import org.junit.Test;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
-import org.mortbay.http.HttpServer;
-import org.mortbay.http.handler.AbstractHttpHandler;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
@@ -37,7 +35,8 @@ import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.NullHttpFetcher;
-import bixo.fetcher.simulation.SimulationWebServer;
+import bixo.fetcher.simulation.TestWebServer;
+import bixo.fetcher.util.FixedScoreGenerator;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
 import bixo.fetcher.util.ScoreGenerator;
@@ -61,22 +60,6 @@ import cascading.tuple.TupleEntryIterator;
 
 // Long-running test
 public class FetchPipeLRTest extends CascadingTestCase {
-    
-    private static class TestWebServer extends SimulationWebServer {
-        private HttpServer _server;
-        
-        public TestWebServer(AbstractHttpHandler handler, int port) throws Exception {
-            _server = startServer(handler, port);
-        }
-        
-        public void stop() {
-            try {
-                _server.stop();
-            } catch (Exception e) {
-                
-            }
-        }
-    }
     
     @Test
     public void testHeadersInStatus() throws Exception {
@@ -457,24 +440,6 @@ public class FetchPipeLRTest extends CascadingTestCase {
         public double generateScore(GroupedUrlDatum urlTuple) {
             return IScoreGenerator.SKIP_URL_SCORE;
         }
-    }
-    
-    @SuppressWarnings("serial")
-    private static class FixedScoreGenerator extends ScoreGenerator {
-
-        private double _score;
-        
-        public FixedScoreGenerator(double score) {
-            super();
-            
-            _score = score;
-        }
-        
-        @Override
-        public double generateScore(String domain, String pld, String url) {
-            return _score;
-        }
-        
     }
     
     @SuppressWarnings("serial")
