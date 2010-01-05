@@ -54,55 +54,54 @@ public class FetcherRunnable implements Runnable {
     public void run() {
         BixoFlowProcess process = _items.getProcess();
         TupleEntryCollector collector = _items.getCollector();
+        process.increment(FetchCounters.DOMAINS_PROCESSING, 1);
 
-        // TODO KKr - when fetching the last item, send a Connection: close
-        // header to let the server know it doesn't need to keep the socket open.
-        for (ScoredUrlDatum item : _items) {
-            FetchedDatum result = new FetchedDatum(item);
-            Comparable status = null;
-            
-            try {
-                process.increment(FetchCounters.URLS_FETCHING, 1);
-                long startTime = System.currentTimeMillis();
-                result = _httpFetcher.get(item);
-                long deltaTime = System.currentTimeMillis() - startTime;
+        try {
+            // TODO KKr - when fetching the last item, send a Connection: close
+            // header to let the server know it doesn't need to keep the socket open.
+            for (ScoredUrlDatum item : _items) {
+                FetchedDatum result = new FetchedDatum(item);
+                Comparable status = null;
 
-                process.increment(FetchCounters.FETCHED_TIME, (int)deltaTime);
-                process.increment(FetchCounters.URLS_FETCHED, 1);
-                process.decrement(FetchCounters.URLS_REMAINING, 1);
-                process.increment(FetchCounters.FETCHED_BYTES, result.getContentLength());
-                process.setStatus(Level.TRACE, "Fetched " + result);
+                try {
+                    process.increment(FetchCounters.URLS_FETCHING, 1);
+                    long startTime = System.currentTimeMillis();
+                    result = _httpFetcher.get(item);
+                    long deltaTime = System.currentTimeMillis() - startTime;
 
-                status = UrlStatus.FETCHED.toString();
-            } catch (BaseFetchException e) {
-                process.increment(FetchCounters.URLS_FAILED, 1);
-                process.decrement(FetchCounters.URLS_REMAINING, 1);
-                
-                // We can do this because each of the concrete subclasses of BaseFetchException implements
-                // WritableComparable
-                status = (Comparable)e;
-            } catch (Exception e) {
-                LOGGER.error("Expected exception while fetching " + item.getUrl(), e);
-                
-                process.increment(FetchCounters.URLS_FAILED, 1);
-                process.decrement(FetchCounters.URLS_REMAINING, 1);
-                status = new IOFetchException(item.getUrl(), new IOException(e));
-            } finally {
-                process.decrement(FetchCounters.URLS_FETCHING, 1);
-                
-                // Cascading _collectors aren't thread-safe.
-                synchronized (collector) {
-                    Tuple tuple = result.toTuple();
-                    tuple.add(status);
-                    collector.add(tuple);
+                    process.increment(FetchCounters.FETCHED_TIME, (int)deltaTime);
+                    process.increment(FetchCounters.URLS_FETCHED, 1);
+                    process.increment(FetchCounters.FETCHED_BYTES, result.getContentLength());
+                    process.setStatus(Level.TRACE, "Fetched " + result);
+
+                    status = UrlStatus.FETCHED.toString();
+                } catch (BaseFetchException e) {
+                    process.increment(FetchCounters.URLS_FAILED, 1);
+
+                    // We can do this because each of the concrete subclasses of BaseFetchException implements
+                    // WritableComparable
+                    status = (Comparable)e;
+                } catch (Exception e) {
+                    LOGGER.warn("Unexpected exception while fetching " + item.getUrl(), e);
+
+                    process.increment(FetchCounters.URLS_FAILED, 1);
+                    status = new IOFetchException(item.getUrl(), new IOException(e));
+                } finally {
+                    process.decrement(FetchCounters.URLS_FETCHING, 1);
+                    process.decrement(FetchCounters.URLS_REMAINING, 1);
+
+                    // Cascading _collectors aren't thread-safe.
+                    synchronized (collector) {
+                        Tuple tuple = result.toTuple();
+                        tuple.add(status);
+                        collector.add(tuple);
+                    }
                 }
             }
+        } finally {
+            process.decrement(FetchCounters.DOMAINS_PROCESSING, 1);
+            _items.finished();
         }
-
-        // All done fetching these items, so we're no longer hitting this
-        // domain.
-        
-        _items.finished();
     }
 
 }
