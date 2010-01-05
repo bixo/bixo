@@ -6,8 +6,12 @@ public enum FetchCounters {
     DOMAINS_QUEUED,     // Added a new domain queue
     DOMAINS_FINISHED,   // Domains where we've fetched all of the URLs
     DOMAINS_REMAINING,  // Domains left to process
+    DOMAINS_PROCESSING, // Domains that are in the process of being fetched/robots.txt
     
-    DOMAINS_FETCHING,   // Domains that are in the process of being fetched.
+    // Specific to robots.txt processing 
+    DOMAINS_REJECTED,   // Domains we rejected
+    DOMAINS_SKIPPED,    // Domains we ignored
+    DOMAINS_DEFERRED,   // Domains we deferred
     
     URLS_QUEUED,
     URLS_SKIPPED,
@@ -19,4 +23,5 @@ public enum FetchCounters {
     
     FETCHED_BYTES,          // Total bytes of fetched content.
     FETCHED_TIME            // Total time in milliseconds spent fetching
+
 }
