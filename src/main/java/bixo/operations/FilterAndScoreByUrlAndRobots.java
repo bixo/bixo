@@ -85,7 +85,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         _fetcher = createFetcher(fetcher.getUserAgent(), fetcher.getMaxThreads());
     }
 
-    private IHttpFetcher createFetcher(UserAgent userAgent, int maxThreads) {
+    public static IHttpFetcher createFetcher(UserAgent userAgent, int maxThreads) {
         // TODO KKr - add static createRobotsFetcher method somewhere that
         // I can use here, and also in SimpleGroupingKeyGenerator
         FetcherPolicy policy = new FetcherPolicy();
@@ -159,7 +159,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
             _flowProcess.increment(FetchCounters.DOMAINS_REMAINING, 1);
         } catch (RejectedExecutionException e) {
             // should never happen.
-            LOGGER.error("Robots handling pool rejected our request");
+            LOGGER.error("Robots handling pool rejected our request for " + protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector());
         }
