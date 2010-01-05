@@ -73,7 +73,8 @@ public class HttpFetchException extends BaseFetchException implements WritableCo
             
         default:
             if (_httpStatus < 300) {
-                throw new RuntimeException("Invalid HTTP status for exception: " + _httpStatus);
+                LOGGER.warn("Invalid HTTP status for exception: " + _httpStatus);
+                return UrlStatus.HTTP_SERVER_ERROR;
             } else if (_httpStatus < 400) {
                 return UrlStatus.HTTP_REDIRECTION_ERROR;
             } else if (_httpStatus < 500) {
