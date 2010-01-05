@@ -31,6 +31,9 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
     private static Logger LOGGER = Logger.getLogger(FetcherBuffer.class);
 
     private static final Fields FETCH_RESULT_FIELD = new Fields(BaseDatum.fieldName(FetcherBuffer.class, "fetch-exception"));
+
+    // Time to sleep while offering URLs to the queue manager.
+    private static final long OFFER_QUEUE_DELAY = 10;
     
     private FetcherManager _fetcherMgr;
     private FetcherQueueMgr _queueMgr;
@@ -96,29 +99,43 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                 TupleEntryCollector collector = buffCall.getOutputCollector();
                 FetcherQueue queue = _queueMgr.createQueue(domain, collector, crawlDelay);
 
+                int numQueued = 0;
+                int numSkipped = 0;
                 while (values.hasNext()) {
                     Tuple curTuple = values.next().getTuple();
                     ScoredUrlDatum scoreUrl = new ScoredUrlDatum(curTuple, _metaDataFields);
-                    queue.offer(scoreUrl);
+                    if (queue.offer(scoreUrl)) {
+                        numQueued += 1;
+                    } else {
+                        numSkipped += 1;
+                    }
                 }
 
-                _flowProcess.increment(FetchCounters.URLS_QUEUED, queue.getNumQueued());
-                _flowProcess.increment(FetchCounters.URLS_REMAINING, queue.getNumQueued());
-                _flowProcess.increment(FetchCounters.URLS_SKIPPED, queue.getNumSkipped());
+                // Typically we're using the IP address for the domain, so extract a
+                // representative host name from the first item's URL.
+                String host = queue.getHost();
 
                 // We're going to spin here until the queue manager decides that we
                 // have available space for this next queue.
-                // TODO KKr - have timeout here based on target fetch duration.
+                // TODO KKr - have timeout here based on target fetch duration. Or we might
+                // want to have the offer() method do this automatically for us, hmm but then
+                // we'd need it to call process.keepAlive().
                 while (!_queueMgr.offer(queue)) {
                     process.keepAlive();
-                    // TODO KKr - put sleep delay here.
+                    Thread.sleep(OFFER_QUEUE_DELAY);
                 }
 
-                LOGGER.info(String.format("Queued %d URLs from %s", queue.getNumQueued(), domain));
-                LOGGER.info(String.format("Skipped %d URLs from %s", queue.getNumSkipped(), domain));
+                _flowProcess.increment(FetchCounters.URLS_QUEUED, numQueued);
+                _flowProcess.increment(FetchCounters.URLS_REMAINING, numQueued);
+                _flowProcess.increment(FetchCounters.URLS_SKIPPED, numSkipped);
 
-                _flowProcess.increment(FetchCounters.DOMAINS_QUEUED, 1);
-                _flowProcess.increment(FetchCounters.DOMAINS_REMAINING, 1);
+                if (numQueued > 0) {
+                    LOGGER.info(String.format("Queued %d URLs from %s (%s)", numQueued, domain, host));
+                }
+                
+                if (numSkipped > 0) {
+                    LOGGER.info(String.format("Skipped %d URLs from %s (%s)", numSkipped, domain, host));
+                }
             }
 
         } catch (Throwable t) {
@@ -130,6 +147,8 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
     @Override
     public void cleanup(FlowProcess process, OperationCall operationCall) {
         try {
+            // TODO KKr - use fetcherMgr.shutdown (new API) that sets a flag, and
+            // waits for termination.
             while (!_fetcherMgr.isDone()) {
                 process.keepAlive();
 

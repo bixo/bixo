@@ -22,31 +22,26 @@
  */
 package bixo.fetcher;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import org.apache.log4j.Logger;
-
-import cascading.tuple.TupleEntryCollector;
+import java.util.concurrent.DelayQueue;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
 import bixo.fetcher.http.IRobotRules;
 import bixo.hadoop.FetchCounters;
+import cascading.tuple.TupleEntryCollector;
 
 /**
  * Manage a set of FetcherQueue objects, one per URL grouping (either domain or IP address)
  *
  */
 public class FetcherQueueMgr implements IFetchListProvider {
-    private static final Logger LOGGER = Logger.getLogger(FetcherQueueMgr.class);
+
+    private static final int MAX_DOMAINS_IN_QUEUE = 1000;
     
-    // TODO KKr - look at using a DelayQueue here (from Concurrent package) so that
-    // queues are ordered by time until they can be used again. Empty queues would
-    // sort at the end, and we could check for this when getting a poll call, and
-    // remove them.
-	private ConcurrentLinkedQueue<FetcherQueue> _queues;	
+	private DelayQueue<FetcherQueue> _queues;	
 	private BixoFlowProcess _process;
 	private FetcherPolicy _defaultPolicy;
+	private boolean _needDomains;
 	
     public FetcherQueueMgr(BixoFlowProcess process) {
         this(process, new FetcherPolicy());
@@ -55,20 +50,26 @@ public class FetcherQueueMgr implements IFetchListProvider {
     public FetcherQueueMgr(BixoFlowProcess process, FetcherPolicy defaultPolicy) {
         _process = process;
         _defaultPolicy = defaultPolicy;
-        _queues = new ConcurrentLinkedQueue<FetcherQueue>();
+        _queues = new DelayQueue<FetcherQueue>();
+        _needDomains = true;
     }
     
 	public FetcherQueue createQueue(String domain, TupleEntryCollector collector, long crawlDelay) {
 	    // If the URLs we're going to be queueing don't have a specific crawl delay, or are the same
 	    // as our default policy, then we can just re-use the default policy.
+	    // TODO KKr - use policy.equals() to decide if they are equivalent.
+	    // TODO KKr - use policy.clone() to create copy, set crawl delay, as otherwise we could
+	    // "lose" the custom fetcher policy that was set as the default (e.g. if adaptive was being used)
+	    FetcherPolicy policy;
 	    if ((crawlDelay == IRobotRules.UNSET_CRAWL_DELAY) || (crawlDelay == _defaultPolicy.getCrawlDelay())) {
-	        return new FetcherQueue(domain, _defaultPolicy, _process, collector);
+	        policy = _defaultPolicy;
 	    } else {
-	        FetcherPolicy customPolicy = new FetcherPolicy(_defaultPolicy.getMinResponseRate(),
+	        policy = new FetcherPolicy(_defaultPolicy.getMinResponseRate(),
 	                        _defaultPolicy.getMaxContentSize(), _defaultPolicy.getCrawlEndTime(),
 	                        crawlDelay, _defaultPolicy.getMaxRedirects());
-	        return new FetcherQueue(domain, customPolicy, _process, collector);
 	    }
+	    
+        return new FetcherQueue(domain, policy, _process, collector);
 	}
 	
 	/**
@@ -78,10 +79,18 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	 * @return - true if we were able to add it, false if at capacity
 	 */
 	public boolean offer(FetcherQueue newQueue) {
-		// TODO KKr - return false if we've got too many URLs in memory?
-		// Add at the front of the queue.
+	    // FUTURE KKr - also limit by max # of URLs in memory?
+	    // FUTURE KKr - make MAX_QUEUES a configurable value.
+	    if (!_needDomains || (_queues.size() >= MAX_DOMAINS_IN_QUEUE)) {
+	        return false;
+	    }
+
 	    _queues.add(newQueue);
-		return true;
+	    
+	    _process.increment(FetchCounters.DOMAINS_QUEUED, 1);
+	    _process.increment(FetchCounters.DOMAINS_REMAINING, 1);
+
+	    return true;
 	} // offer
 	
 	
@@ -90,8 +99,8 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	 */
 	public boolean isEmpty() {
 	    // Note that we have to synchronize on _queues since the poll() method
-	    // temporarily removes items from the queue and then stuffs them back at
-	    // the end, so w/o this we could get a false positive "is empty" result.
+	    // temporarily removes items from the queue and then stuffs them back,
+	    // so w/o this we could get a false positive "is empty" result.
 	    synchronized (_queues) {
 	        return _queues.size() == 0;
 	    }
@@ -108,37 +117,23 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	    FetchList result = null;
 	    
 	    synchronized (_queues) {
-	        int numQueues = _queues.size();
-	        
-	        // We know that we might process the same queue multiple times, or not
-	        // get to all of the queues, because new FetcherQueue elements are being
-	        // added (or removed) by other threads at the same time...but that's OK,
-	        // as processing the same FetcherQueue twice is harmless, and if we don't
-	        // get to all of the queues this time (and thus return a false negative)
-	        // we'll get to them the next time we get called.
-	        for (int i = 0; i < numQueues; i++) {
-	            FetcherQueue queue = _queues.poll();
-	            if (queue == null) {
-	                break;
-	            }
-
+	        FetcherQueue queue;
+	        while ((queue = _queues.poll()) != null) {
 	            if (queue.isEmpty()) {
 	                // Don't put it back in the queue, as there's nothing left to
-	                // do with it.
+	                // do with it. We make sure empty queues get put in the front,
+	                // so that we clean them out right away.
 	                _process.increment(FetchCounters.DOMAINS_FINISHED, 1);
 	                _process.decrement(FetchCounters.DOMAINS_REMAINING, 1);
 	            } else {
 	                result = queue.poll();
 	                _queues.add(queue);
-	                if (result != null) {
-	                    if (LOGGER.isTraceEnabled()) {
-	                        LOGGER.trace(String.format("Generating fetch list for %s with %d URLs", result.getDomain(), result.size()));
-	                    }
-	                    
-	                    break;
-	                }
+	                break;
 	            }
 	        }
+	        
+	        // If we have nothing to fetch, we could use more domain queues.
+	        _needDomains = (result == null);
 	    }
 	    
 		return result;

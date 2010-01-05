@@ -22,7 +22,8 @@
  */
 package bixo.fetcher;
 
-import org.apache.log4j.Logger;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
@@ -30,14 +31,14 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.util.IScoreGenerator;
-import bixo.hadoop.FetchCounters;
 import bixo.utils.DiskQueue;
+import bixo.utils.DomainNames;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
-public class FetcherQueue implements IFetchListProvider {
-    private static Logger LOGGER = Logger.getLogger(FetcherQueue.class);
+public class FetcherQueue implements IFetchListProvider, Delayed {
     
+    // FUTURE KKr - make this a configurable value.
     private static int MAX_URLS_IN_MEMORY = 100;
     
     private String _domain;
@@ -47,8 +48,6 @@ public class FetcherQueue implements IFetchListProvider {
     private TupleEntryCollector _collector;
     private int _numActiveFetchers;
     private long _nextFetchTime;
-    private int _numQueued;
-    private int _numSkipped;
 
     public FetcherQueue(String domain, FetcherPolicy policy, BixoFlowProcess process, TupleEntryCollector collector) {
         _domain = domain;
@@ -59,13 +58,6 @@ public class FetcherQueue implements IFetchListProvider {
         _numActiveFetchers = 0;
         _nextFetchTime = System.currentTimeMillis();
         _queue = new DiskQueue<ScoredUrlDatum>(MAX_URLS_IN_MEMORY);
-
-        _numQueued = 0;
-        _numSkipped = 0;
-        
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format("Setting up queue for %s with next fetch time of %d", _domain, _nextFetchTime));
-        }
     }
 
 
@@ -74,35 +66,32 @@ public class FetcherQueue implements IFetchListProvider {
      * 
      * @param scoredUrlDatum - item that we'd like to have fetched. Must be valid format.
      */
-    public synchronized void offer(ScoredUrlDatum scoredUrlDatum) {
+    public synchronized boolean offer(ScoredUrlDatum scoredUrlDatum) {
         // TODO KKr - add lock that prevents anyone from adding new items after we've
         // started polling.
 
         int maxSize = _policy.getMaxUrls();
         if (maxSize == 0) {
-            _numSkipped += 1;
             skip(scoredUrlDatum, UrlStatus.SKIPPED_TIME_LIMIT);
-            return;
+            return false;
         }
 
         // TODO KKr - remove this when we no longer pass skipped URLs through to the
         // FetchBuffer.
         double score = scoredUrlDatum.getScore();
         if (score == IScoreGenerator.SKIP_URL_SCORE) {
-            _numSkipped += 1;
             skip(scoredUrlDatum, UrlStatus.SKIPPED_BY_SCORER);
-            return;
+            return false;
         }
 
-        // See if we can just add without worrying about sorting.
         if (_queue.size() < maxSize) {
-            _numQueued += 1;
             _queue.add(scoredUrlDatum);
+            return true;
         } else {
             // URLs come in sorted order (by score, high to low) so we can just skip
             // everything after we've hit our max limit.
-            _numSkipped += 1;
             skip(scoredUrlDatum, UrlStatus.SKIPPED_BY_SCORE);
+            return false;
         }
     }
 
@@ -139,14 +128,6 @@ public class FetcherQueue implements IFetchListProvider {
             }
             
             _nextFetchTime = fetchRequest.getNextRequestTime();
-            
-            if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace(String.format("Return list for %s with next fetch time of %d", _domain, _nextFetchTime));
-            }
-        }
-        
-        if (result != null) {
-            _process.increment(FetchCounters.DOMAINS_FETCHING, 1);
         }
         
         return result;
@@ -157,12 +138,27 @@ public class FetcherQueue implements IFetchListProvider {
         return _queue.size();
     }
     
-    public int getNumSkipped() {
-        return _numSkipped;
+    public String getDomain() {
+        return _domain;
     }
-    
-    public int getNumQueued() {
-        return _numQueued;
+
+    /**
+     * Return a guess as to the host name for URLs in this queue.
+     * 
+     * Since we typically group by IP address, we might have multiple host
+     * names. And if the queue is empty, this will return whatever we get back
+     * from DomainNames.safeGetHost() for an invalid URL.
+     * 
+     * @return host name
+     */
+    public String getHost() {
+        String url = "";
+        ScoredUrlDatum datum = _queue.peek();
+        if (datum != null) {
+            url = datum.getUrl();
+        }
+        
+        return DomainNames.safeGetHost(url);
     }
     
     /**
@@ -170,14 +166,9 @@ public class FetcherQueue implements IFetchListProvider {
      * @param items - items previously returned from call to poll()
      */
     public synchronized void release(FetchList items) {
-        _process.decrement(FetchCounters.DOMAINS_FETCHING, 1);
         _numActiveFetchers -= 1;
     }
 
-
-    public String getDomain() {
-        return _domain;
-    }
 
 
     /**
@@ -190,12 +181,53 @@ public class FetcherQueue implements IFetchListProvider {
         }
     }
     
+    
     private void skip(ScoredUrlDatum datum, UrlStatus status) {
         String url = datum.getUrl();
         Tuple result = new FetchedDatum(url, datum.getMetaDataMap()).toTuple();
         result.add(status.toString());
         synchronized (_collector) {
             _collector.add(result);
+        }
+    }
+
+
+    @Override
+    public long getDelay(TimeUnit timeUnit) {
+        // If we're empty, then we want to go to the front of the queue, so
+        // that polls will return us, and we can get tossed.
+        if (isEmpty()) {
+            return Long.MIN_VALUE;
+        }
+        
+        // Calc a delay that will be <= 0 if we're ready to fetch, and is smaller for
+        // larger numbers of URLs.
+        long delayInMS = _nextFetchTime - System.currentTimeMillis();
+        if (delayInMS <= 0) {
+            delayInMS = -1 * _queue.size();
+        }
+        
+        return timeUnit.convert(delayInMS, TimeUnit.MILLISECONDS);
+    }
+
+
+    /* (non-Javadoc)
+     * @see java.lang.Comparable#compareTo(java.lang.Object)
+     * 
+     * When comparing elements, we don't want the comparison ordering to dynamically
+     * change just because the delay time has expired - which is what would happen if
+     * we used the getDelay value.
+     */
+    @Override
+    public int compareTo(Delayed other) {
+        long otherTime = ((FetcherQueue)other)._nextFetchTime;
+        
+        if (_nextFetchTime < otherTime) {
+            return -1;
+        } else if (_nextFetchTime > otherTime) {
+            return 1;
+        } else {
+            return 0;
         }
     }
     

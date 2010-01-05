@@ -50,55 +50,57 @@ public class FetcherManagerTest extends SimulationWebServer {
 
     @Test
     public final void testThreadPool() {
-        final int NUM_THREADS = 100;
+        // System.setProperty("bixo.root.level", "TRACE");
+        
+        final int NUM_THREADS = 5;
 
         HttpServer server = null;
 
         try {
-            server = startServer(new RandomResponseHandler(20000, 100 * 1000L), 8089);
+            // Go for really slow response, so that all threads will be used up.
+            server = startServer(new RandomResponseHandler(20000, 5 * 1000L), 8089);
 
             BixoFlowProcess flowProcess = new BixoFlowProcess();
             FetcherPolicy defaultPolicy = new FetcherPolicy();
             defaultPolicy.setMinResponseRate(0);
             FetcherQueueMgr queueMgr = new FetcherQueueMgr(flowProcess, defaultPolicy);
             
-            // TODO KKr - use real user agent name here.
-            FetcherManager threadMgr = new FetcherManager(queueMgr,
-            		new SimpleHttpFetcher(NUM_THREADS, ConfigUtils.BIXO_IT_AGENT), flowProcess);
+            FetcherManager manager = new FetcherManager(queueMgr,
+            		new SimpleHttpFetcher(NUM_THREADS, ConfigUtils.BIXO_TEST_AGENT), flowProcess);
 
-            Thread t = new Thread(threadMgr);
+            Thread t = new Thread(manager);
             t.setName("Fetcher manager");
             t.start();
 
-            for (int i = 0; i < 200; i++) {
+            for (int i = 0; i < NUM_THREADS; i++) {
                 String host = "domain-" + i + ".com";
                 FetcherQueue queue = queueMgr.createQueue(host, new FakeCollector(), 0);
 
-                for (int j = 0; j < 2; j++) {
+                for (int j = 0; j < 1; j++) {
                     String file = "/page-" + j + ".html";
 
                     String url = "http://localhost:8089" + file;
                     ScoredUrlDatum urlScore = new ScoredUrlDatum(url, 0, 0, UrlStatus.UNFETCHED, null, 1.0f - j, null);
-                    queue.offer(urlScore);
+                    Assert.assertTrue(queue.offer(urlScore));
+                    flowProcess.increment(FetchCounters.URLS_QUEUED, 1);
+                    flowProcess.increment(FetchCounters.URLS_REMAINING, 1);
                 }
 
                 while (!queueMgr.offer(queue)) {
-                    // Spin until it's accepted.
+                    Thread.sleep(10);
                 }
             }
 
             // We have a bunch of pages to fetch. In a few milliseconds the
-            // FetcherManager should have
-            // fired up all of the threads. The ThreadPool seems to have up to
-            // core+max threads, so we're
-            // just doing a general test of the count here.
-            Thread.sleep(1000);
-            int activeThreads = flowProcess.getCounter(FetchCounters.URLS_FETCHING);
-            Assert.assertTrue(activeThreads >= NUM_THREADS);
+            // FetcherManager should have fired up all of the threads.
+            Thread.sleep(500);
+            Assert.assertEquals(manager.getActiveThreadCount(), NUM_THREADS);
 
             // Time to terminate everything.
             t.interrupt();
         } catch (Throwable t) {
+            System.out.println("Exception during test: " + t.getMessage());
+            t.printStackTrace();
             Assert.fail(t.getMessage());
         } finally {
             try {

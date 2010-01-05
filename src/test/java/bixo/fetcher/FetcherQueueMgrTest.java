@@ -45,11 +45,14 @@ public class FetcherQueueMgrTest {
         FetcherQueue queue = queueMgr.createQueue("domain", collector, IRobotRules.UNSET_CRAWL_DELAY);
         
         ScoredUrlDatum datum = Mockito.mock(ScoredUrlDatum.class);
+        int numQueued = 0;
         for (int i = 0; i < 30; i++) {
-            queue.offer(datum);
+            if (queue.offer(datum)) {
+                numQueued += 1;
+            }
         }
         
-        Assert.assertEquals(30, queue.getNumQueued());
+        Assert.assertEquals(30, numQueued);
         FetchList fl = queue.poll();
         Assert.assertNotNull(fl);
         Assert.assertEquals(30, fl.size());
@@ -65,8 +68,7 @@ public class FetcherQueueMgrTest {
         FetcherQueue newQueue = queueMgr.createQueue("domain.com", collector, spy.getCrawlDelay());
         
         ScoredUrlDatum scoredDatum = new ScoredUrlDatum("http://domain.com", 0, 0, UrlStatus.UNFETCHED, "domain.com-30000", 1.0, null);
-        newQueue.offer(scoredDatum);
-        Assert.assertEquals(1, newQueue.getNumQueued());
+        Assert.assertTrue(newQueue.offer(scoredDatum));
         Assert.assertTrue(queueMgr.offer(newQueue));
         
         Assert.assertEquals(0, collector.getNumCollected());
