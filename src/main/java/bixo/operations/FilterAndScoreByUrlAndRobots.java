@@ -6,6 +6,8 @@ import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.log4j.Logger;
 
+import bixo.cascading.BixoFlowProcess;
+import bixo.cascading.LoggingFlowReporter;
 import bixo.cascading.NullContext;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
@@ -15,11 +17,13 @@ import bixo.datum.UrlStatus;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.ScoreGenerator;
+import bixo.hadoop.FetchCounters;
 import bixo.operations.ProcessRobotsTask.DomainInfo;
 import bixo.utils.DiskQueue;
 import bixo.utils.GroupingKey;
 import bixo.utils.ThreadedExecutor;
 import cascading.flow.FlowProcess;
+import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
 import cascading.operation.BufferCall;
@@ -36,7 +40,7 @@ import cascading.tuple.TupleEntryCollector;
 public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> implements Buffer<NullContext> {
 	private static final Logger LOGGER = Logger.getLogger(FilterAndScoreByUrlAndRobots.class);
 	
-    // Some robots.txt files are > 64K
+    // Some robots.txt files are > 64K, amazingly enough.
     private static final int MAX_ROBOTS_SIZE = 128 * 1024;
 
     // Crank down default values when fetching robots.txt, as this should be super
@@ -61,11 +65,27 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
 	private IHttpFetcher _fetcher;
 	
     private transient ThreadedExecutor _executor;
+    private transient BixoFlowProcess _flowProcess;
 
     public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, ScoreGenerator scorer, Fields metadataFields) {
         // We're going to output a ScoredUrlDatum (what FetcherBuffer expects).
         super(ScoredUrlDatum.FIELDS.append(metadataFields));
 
+        _scorer = scorer;
+        _metadataFields = metadataFields;
+        _fetcher = createFetcher(userAgent, maxThreads);
+    }
+
+    public FilterAndScoreByUrlAndRobots(IHttpFetcher fetcher, ScoreGenerator scorer, Fields metadataFields) {
+        // We're going to output a ScoredUrlDatum (what FetcherBuffer expects).
+        super(ScoredUrlDatum.FIELDS.append(metadataFields));
+
+        _scorer = scorer;
+        _metadataFields = metadataFields;
+        _fetcher = createFetcher(fetcher.getUserAgent(), fetcher.getMaxThreads());
+    }
+
+    private IHttpFetcher createFetcher(UserAgent userAgent, int maxThreads) {
         // TODO KKr - add static createRobotsFetcher method somewhere that
         // I can use here, and also in SimpleGroupingKeyGenerator
         FetcherPolicy policy = new FetcherPolicy();
@@ -75,23 +95,19 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         fetcher.setConnectionTimeout(ROBOTS_CONNECTION_TIMEOUT);
         fetcher.setSocketTimeout(ROBOTS_SOCKET_TIMEOUT);
         
-        _fetcher = fetcher;
-        _scorer = scorer;
-        _metadataFields = metadataFields;
+        return fetcher;
     }
-
-    public FilterAndScoreByUrlAndRobots(IHttpFetcher fetcher, ScoreGenerator scorer, Fields metadataFields) {
-        // We're going to output a ScoredUrlDatum (what FetcherBuffer expects).
-        super(ScoredUrlDatum.FIELDS.append(metadataFields));
-
-        _fetcher = fetcher;
-        _scorer = scorer;
-        _metadataFields = metadataFields;
-    }
-
+    
     @Override
     public void prepare(FlowProcess flowProcess, cascading.operation.OperationCall<NullContext> operationCall) {
         _executor = new ThreadedExecutor(_fetcher.getMaxThreads(), COMMAND_TIMEOUT);
+        
+        // FUTURE KKr - use Cascading process vs creating our own, once it
+        // supports logging in local mode, and a setStatus() call.
+        // FUTURE KKr - check for a serialized external reporter in the process,
+        // add it if it exists.
+        _flowProcess = new BixoFlowProcess((HadoopFlowProcess)flowProcess);
+        _flowProcess.addReporter(new LoggingFlowReporter());
     };
     
     @Override
@@ -106,6 +122,8 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
             // losing URLs still to be processed?
             LOGGER.warn("Interrupted while waiting for termination");
         }
+        
+        _flowProcess.dumpCounters();
     };
     
 	@Override
@@ -123,21 +141,26 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         try {
             domainInfo = new DomainInfo(protocolAndDomain);
         } catch (UnknownHostException e) {
-            LOGGER.trace("Unknown host: " + protocolAndDomain);
+            LOGGER.debug("Unknown host: " + protocolAndDomain);
+            _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             emptyQueue(urls, GroupingKey.UNKNOWN_HOST_GROUPING_KEY, bufferCall.getOutputCollector());
             return;
         } catch (Exception e) {
             LOGGER.warn("Exception processing " + protocolAndDomain, e);
+            _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             emptyQueue(urls, GroupingKey.INVALID_URL_GROUPING_KEY, bufferCall.getOutputCollector());
             return;
         }
 
         try {
-            Runnable doRobots = new ProcessRobotsTask(domainInfo, _scorer, urls, _fetcher, bufferCall.getOutputCollector());
+            Runnable doRobots = new ProcessRobotsTask(domainInfo, _scorer, urls, _fetcher, bufferCall.getOutputCollector(), _flowProcess);
             _executor.execute(doRobots);
+            _flowProcess.increment(FetchCounters.DOMAINS_QUEUED, 1);
+            _flowProcess.increment(FetchCounters.DOMAINS_REMAINING, 1);
         } catch (RejectedExecutionException e) {
             // should never happen.
             LOGGER.error("Robots handling pool rejected our request");
+            _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector());
         }
 	}
