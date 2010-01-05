@@ -11,6 +11,8 @@ import org.mortbay.http.handler.AbstractHttpHandler;
 
 @SuppressWarnings("serial")
 public class RandomResponseHandler extends AbstractHttpHandler {
+    private static final long DEFAULT_DURATION = 1000L;
+    
     private int _length;
     private long _duration;
     private Random _rand;
@@ -33,7 +35,7 @@ public class RandomResponseHandler extends AbstractHttpHandler {
      * @param length - number of bytes to return
      */
     public RandomResponseHandler(int length) {
-        this(length, 1000);
+        this(length, DEFAULT_DURATION);
     }
     
     @Override
