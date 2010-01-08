@@ -40,7 +40,7 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
     private Thread _fetcherThread;
     private BixoFlowProcess _flowProcess;
     private IHttpFetcher _fetcher;
-
+    
     private final Fields _metaDataFields;
 
     public FetcherBuffer(Fields metaDataFields, IHttpFetcher fetcher) {
@@ -99,15 +99,15 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                 TupleEntryCollector collector = buffCall.getOutputCollector();
                 FetcherQueue queue = _queueMgr.createQueue(domain, collector, crawlDelay);
 
-                int numQueued = 0;
-                int numSkipped = 0;
+                int numUrlsQueued = 0;
+                int numUrlsSkipped = 0;
                 while (values.hasNext()) {
                     Tuple curTuple = values.next().getTuple();
                     ScoredUrlDatum scoreUrl = new ScoredUrlDatum(curTuple, _metaDataFields);
                     if (queue.offer(scoreUrl)) {
-                        numQueued += 1;
+                        numUrlsQueued += 1;
                     } else {
-                        numSkipped += 1;
+                        numUrlsSkipped += 1;
                     }
                 }
 
@@ -125,16 +125,16 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                     Thread.sleep(OFFER_QUEUE_DELAY);
                 }
 
-                _flowProcess.increment(FetchCounters.URLS_QUEUED, numQueued);
-                _flowProcess.increment(FetchCounters.URLS_REMAINING, numQueued);
-                _flowProcess.increment(FetchCounters.URLS_SKIPPED, numSkipped);
+                _flowProcess.increment(FetchCounters.URLS_QUEUED, numUrlsQueued);
+                _flowProcess.increment(FetchCounters.URLS_REMAINING, numUrlsQueued);
+                _flowProcess.increment(FetchCounters.URLS_SKIPPED, numUrlsSkipped);
 
-                if (numQueued > 0) {
-                    LOGGER.info(String.format("Queued %d URLs from %s (%s)", numQueued, domain, host));
+                if (numUrlsQueued > 0) {
+                    LOGGER.info(String.format("Queued %d URLs from %s (%s)", numUrlsQueued, domain, host));
                 }
                 
-                if (numSkipped > 0) {
-                    LOGGER.info(String.format("Skipped %d URLs from %s (%s)", numSkipped, domain, host));
+                if (numUrlsSkipped > 0) {
+                    LOGGER.info(String.format("Skipped %d URLs from %s (%s)", numUrlsSkipped, domain, host));
                 }
             }
 
