@@ -30,7 +30,6 @@ public interface IFetchListProvider {
 	 */
 	public FetchList poll();
 	
-	
 	/**
 	 * @return - true if this provider has nothing more to offer, and thus
 	 *           all calls to poll() will return null.
