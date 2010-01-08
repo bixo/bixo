@@ -7,15 +7,12 @@ import java.net.UnknownHostException;
 import java.util.Queue;
 import java.util.regex.Pattern;
 
-import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.exceptions.HttpFetchException;
-import bixo.exceptions.IOFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.IRobotRules;
 import bixo.fetcher.http.SimpleRobotRules;
@@ -28,11 +25,10 @@ import cascading.tuple.TupleEntryCollector;
 public class ProcessRobotsTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ProcessRobotsTask.class);
 
-    public static class DomainInfo {
+    private static class DomainInfo {
 
         // Pay no attention to this cheesy hack - special case handling of
-        // certain domains
-        // so we can test without trying to resolve domain names.
+        // certain domains so we can test without trying to resolve domain names.
         private static final Pattern TESTING_DOMAIN_PATTERN = Pattern.compile("bixo-test-domain-\\d+\\.com");
 
         private String _protocolAndDomain;
@@ -63,15 +59,17 @@ public class ProcessRobotsTask implements Runnable {
         }
     }
 
-    private DomainInfo _domainInfo;
+    
+    
+    private String _protocolAndDomain;
     private ScoreGenerator _scorer;
     private Queue<GroupedUrlDatum> _urls;
     private IHttpFetcher _fetcher;
     private TupleEntryCollector _collector;
     private BixoFlowProcess _flowProcess;
 
-    public ProcessRobotsTask(DomainInfo domainInfo, ScoreGenerator scorer, Queue<GroupedUrlDatum> urls, IHttpFetcher fetcher, TupleEntryCollector collector, BixoFlowProcess flowProcess) {
-        _domainInfo = domainInfo;
+    public ProcessRobotsTask(String protocolAndDomain, ScoreGenerator scorer, Queue<GroupedUrlDatum> urls, IHttpFetcher fetcher, TupleEntryCollector collector, BixoFlowProcess flowProcess) {
+        _protocolAndDomain = protocolAndDomain;
         _scorer = scorer;
         _urls = urls;
         _fetcher = fetcher;
@@ -79,82 +77,89 @@ public class ProcessRobotsTask implements Runnable {
         _flowProcess = flowProcess;
     }
 
-    public static IRobotRules createRules(String robotsUrl, IHttpFetcher fetcher) {
-        IRobotRules robotRules;
-        
-        try {
-            byte[] robotsContent = fetcher.get(robotsUrl);
-            robotRules = new SimpleRobotRules(fetcher.getUserAgent().getAgentName(), robotsUrl, robotsContent);
-        } catch (HttpFetchException e) {
-            robotRules = new SimpleRobotRules(robotsUrl, e.getHttpStatus());
-        } catch (IOFetchException e) {
-            // Couldn't load robots.txt for some reason (e.g.
-            // ConnectTimeoutException), so
-            // treat it like a server internal error case.
-            robotRules = new SimpleRobotRules(robotsUrl, HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        } catch (Exception e) {
-            // TODO KKr - should we have separate InterruptedException block?
-            // We'd get this if we
-            // had to interrupt the fetch to terminate things in a timely
-            // manner.
-            LOGGER.warn("Unexpected exception handling robots.txt: " + robotsUrl, e);
-            robotRules = new SimpleRobotRules(robotsUrl, HttpStatus.SC_INTERNAL_SERVER_ERROR);
+    /**
+     * Clear out the queue by outputting all entries with <groupingKey>.
+     * 
+     * We do this to empty the queue when there's some kind of error.
+     * 
+     * @param urls Queue of URLs to empty out
+     * @param groupingKey grouping key to use for all entries.
+     * @param outputCollector
+     */
+    public static void emptyQueue(Queue<GroupedUrlDatum> urls, String groupingKey, TupleEntryCollector collector) {
+        GroupedUrlDatum datum;
+        while ((datum = urls.poll()) != null) {
+            ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), 0, 0, UrlStatus.UNFETCHED, groupingKey, 1.0, datum.getMetaDataMap());
+            synchronized (collector) {
+                collector.add(scoreUrl.toTuple());
+            }
         }
-
-        return robotRules;
     }
-    
+
+    /* (non-Javadoc)
+     * @see java.lang.Runnable#run()
+     * 
+     * Get robots.txt for the domain, and use it to generate a new grouping key
+     * for all of the URLs that provides the count & crawl delay (or deferred/blocked)
+     * values that we need.
+     */
     @Override
     public void run() {
         _flowProcess.increment(FetchCounters.DOMAINS_PROCESSING, 1);
 
-        String domain = _domainInfo.getDomain();
-        String pld = DomainNames.getPLD(domain);
-        if (!_scorer.isGoodDomain(domain, pld)) {
-            _flowProcess.decrement(FetchCounters.DOMAINS_PROCESSING, 1);
-            _flowProcess.increment(FetchCounters.DOMAINS_SKIPPED, 1);
-
-            // TODO KKr - don't lose URLs.
-            LOGGER.debug("Skipping URLs from not-good domain: " + domain);
-            return;
-        }
-
-        String robotsUrl = "";
-
         try {
-            robotsUrl = new URL(_domainInfo.getProtocolAndDomain() + "/robots.txt").toExternalForm();
-        } catch (MalformedURLException e) {
-            throw new RuntimeException("Unexpected error with robots URL: " + _domainInfo.getProtocolAndDomain());
-        }
-        
-        IRobotRules robotRules = createRules(robotsUrl, _fetcher);
+            DomainInfo domainInfo = new DomainInfo(_protocolAndDomain);
 
-        String key;
-        if (robotRules.getDeferVisits()) {
-            // We don't want to toss these URLs just because the server is
-            // acting up, so use the special
-            // key so that the FetchBuffer will emit status, and we can try
-            // again later.
-            LOGGER.debug("Deferring visits to URLs from " + _domainInfo.getDomain());
-            key = GroupingKey.DEFERRED_GROUPING_KEY;
-            _flowProcess.increment(FetchCounters.DOMAINS_DEFERRED, 1);
-        } else {
-            key = GroupingKey.makeGroupingKey(_urls.size(), _domainInfo.getHostAddress(), robotRules.getCrawlDelay());
-            _flowProcess.increment(FetchCounters.DOMAINS_FINISHED, 1);
-        }
+            String domain = domainInfo.getDomain();
+            String pld = DomainNames.getPLD(domain);
+            if (!_scorer.isGoodDomain(domain, pld)) {
+                _flowProcess.increment(FetchCounters.DOMAINS_SKIPPED, 1);
+                LOGGER.debug("Skipping URLs from not-good domain: " + domain);
+                emptyQueue(_urls, GroupingKey.SKIPPED_GROUPING_KEY, _collector);
+            } else {
+                String robotsUrl = new URL(domainInfo.getProtocolAndDomain() + "/robots.txt").toExternalForm();
+                IRobotRules robotRules = new SimpleRobotRules(_fetcher, robotsUrl);
 
-        // Use the same key for every URL from this domain
-        GroupedUrlDatum datum;
-        while ((datum = _urls.poll()) != null) {
-            double score = _scorer.generateScore(domain, pld, datum.getUrl());
-            ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), 0, 0, UrlStatus.UNFETCHED, key, score, datum.getMetaDataMap());
-            synchronized (_collector) {
-                // collectors aren't thread safe
-                _collector.add(scoreUrl.toTuple());
+                String key;
+                if (robotRules.getDeferVisits()) {
+                    // We don't want to toss these URLs just because the server is
+                    // acting up, so use the special
+                    // key so that the FetchBuffer will emit status, and we can try
+                    // again later.
+                    LOGGER.debug("Deferring visits to URLs from " + domainInfo.getDomain());
+                    key = GroupingKey.DEFERRED_GROUPING_KEY;
+                    _flowProcess.increment(FetchCounters.DOMAINS_DEFERRED, 1);
+                } else {
+                    key = GroupingKey.makeGroupingKey(_urls.size(), domainInfo.getHostAddress(), robotRules.getCrawlDelay());
+                    _flowProcess.increment(FetchCounters.DOMAINS_FINISHED, 1);
+                }
+
+                // Use the same key for every URL from this domain
+                GroupedUrlDatum datum;
+                while ((datum = _urls.poll()) != null) {
+                    double score = _scorer.generateScore(domain, pld, datum.getUrl());
+                    ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), 0, 0, UrlStatus.UNFETCHED, key, score, datum.getMetaDataMap());
+                    synchronized (_collector) {
+                        // collectors aren't thread safe
+                        _collector.add(scoreUrl.toTuple());
+                    }
+                }
             }
+        } catch (UnknownHostException e) {
+            LOGGER.debug("Unknown host: " + _protocolAndDomain);
+            _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
+            emptyQueue(_urls, GroupingKey.UNKNOWN_HOST_GROUPING_KEY, _collector);
+        } catch (MalformedURLException e) {
+            LOGGER.debug("Invalid URL: " + _protocolAndDomain);
+            _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
+            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector);
+        } catch (Exception e) {
+            LOGGER.warn("Exception processing " + _protocolAndDomain, e);
+            _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
+            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector);
+        } finally {
+            _flowProcess.decrement(FetchCounters.DOMAINS_PROCESSING, 1);
+            _flowProcess.decrement(FetchCounters.DOMAINS_REMAINING, 1);
         }
-        
-        _flowProcess.decrement(FetchCounters.DOMAINS_REMAINING, 1);
-        _flowProcess.decrement(FetchCounters.DOMAINS_PROCESSING, 1);
     }
 }
