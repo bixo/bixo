@@ -46,12 +46,12 @@ public class FetcherManager implements Runnable {
     // TODO KKr - calculate from fetcher setting.
     private static final long COMMAND_TIMEOUT = 120 * 1000;
 
-    private IFetchListProvider _provider;
+    private FetcherQueueMgr _provider;
     private IHttpFetcher _fetcher;
     private ThreadedExecutor _executor;
     private BixoFlowProcess _process;
     
-    public FetcherManager(IFetchListProvider provider, IHttpFetcher fetcher, BixoFlowProcess process) {
+    public FetcherManager(FetcherQueueMgr provider, IHttpFetcher fetcher, BixoFlowProcess process) {
         _provider = provider;
         _fetcher = fetcher;
         _process = process;
@@ -83,9 +83,18 @@ public class FetcherManager implements Runnable {
 	                domainsFetching = curDomainsFetching;
 	                nextStatusTime = curTime + STATUS_UPDATE_INTERVAL;
 
-	                // Figure out number of URLs remaining = queued - (fetched + fetching + failed)
-	                int urlsRemaining = _process.getCounter(FetchCounters.URLS_REMAINING);
-	                _process.setStatus(String.format("Fetching %d URLs from %d domains (%d URLs remaining)", urlsFetching, domainsFetching, urlsRemaining));
+                    int urlsRemaining = _process.getCounter(FetchCounters.URLS_REMAINING);
+	                if (urlsFetching == 0) {
+	                    FetcherQueue lastQueue = _provider.getLastQueue();
+	                    if (lastQueue != null) {
+	                        String host = lastQueue.getHost();
+	                        _process.setStatus(String.format("Nothing to fetch (%d URLs remaining, last host is %s with %d URLs)",
+	                                        urlsRemaining, host, lastQueue.size()));
+	                    }
+	                } else {
+	                    _process.setStatus(String.format("Fetching %d URLs from %d domains (%d URLs remaining)",
+	                                    urlsFetching, domainsFetching, urlsRemaining));
+	                }
 	            }
 
 	            // See if we should set up the next thing to fetch
@@ -113,7 +122,13 @@ public class FetcherManager implements Runnable {
 	            }
 	        }
 	    } catch (InterruptedException e) {
-	        // ignore this one, we're just exiting
+	        if (isDone()) {
+	            // ignore this one, we're just exiting
+	        } else {
+	            LOGGER.warn("Interrupting FetcherManager while URLs remain");
+	        }
+	    } catch (Throwable t) {
+	        LOGGER.error("Unexpected exception", t);
 	    } finally {
             try {
                 if (!_executor.terminate()) {
