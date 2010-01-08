@@ -230,5 +230,26 @@ public class FetcherQueue implements IFetchListProvider, Delayed {
             return 0;
         }
     }
+
+
+    /**
+     * Return guess as to when this queue would be finished.
+     * 
+     * Note that this is just a quess, e.g. if all remaining URLs could be fetched in
+     * the next batch, then it might finish must faster.
+     * 
+     * @return time (in milliseconds) when queue should be done.
+     */
+    public long getFinishTime() {
+        int numItems = _queue.size();
+        long now = System.currentTimeMillis();
+        if (numItems == 0) {
+            return now;
+        } else {
+            FetchRequest fetchRequest = _policy.getFetchRequest(numItems);
+            long millisecondsPerItem = (fetchRequest.getNextRequestTime() - now) / fetchRequest.getNumUrls();
+            return now + (millisecondsPerItem * numItems);
+        }
+    }
     
 }
