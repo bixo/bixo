@@ -27,6 +27,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.fetcher.http.IHttpHeaders;
+import bixo.utils.CharsetUtils;
 import bixo.utils.HttpUtils;
 import bixo.utils.IoUtils;
 
@@ -217,11 +218,10 @@ public class SimpleParser implements IParser {
      * @return charset in response headers, or null
      */
     private String getCharset(FetchedDatum datum) {
-        String result = datum.getHeaders().getFirst(IHttpHeaders.CONTENT_ENCODING);
-        if (result == null) {
-            // HttpUtils will return "" if it can't find the charset.
-            result = HttpUtils.getCharsetFromContentType(datum.getContentType());
-            if (result.length() == 0) {
+        String result = CharsetUtils.clean(datum.getHeaders().getFirst(IHttpHeaders.CONTENT_ENCODING));
+        if (!CharsetUtils.safeIsSupported(result)) {
+            result = CharsetUtils.clean(HttpUtils.getCharsetFromContentType(datum.getContentType()));
+            if (!CharsetUtils.safeIsSupported(result)) {
                 result = null;
             }
         }
