@@ -1,6 +1,5 @@
 package bixo.operations;
 
-import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -13,12 +12,10 @@ import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.datum.UrlStatus;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.hadoop.FetchCounters;
-import bixo.operations.ProcessRobotsTask.DomainInfo;
 import bixo.utils.DiskQueue;
 import bixo.utils.GroupingKey;
 import bixo.utils.ThreadedExecutor;
@@ -29,7 +26,6 @@ import cascading.operation.Buffer;
 import cascading.operation.BufferCall;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
-import cascading.tuple.TupleEntryCollector;
 
 /**
  * Filter out URLs by either domain (not popular enough) or if they're blocked by robots.txt
@@ -137,23 +133,8 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
             urls.add(new GroupedUrlDatum(values.next().getTuple(), _metadataFields));
         }
         
-        DomainInfo domainInfo;
         try {
-            domainInfo = new DomainInfo(protocolAndDomain);
-        } catch (UnknownHostException e) {
-            LOGGER.debug("Unknown host: " + protocolAndDomain);
-            _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
-            emptyQueue(urls, GroupingKey.UNKNOWN_HOST_GROUPING_KEY, bufferCall.getOutputCollector());
-            return;
-        } catch (Exception e) {
-            LOGGER.warn("Exception processing " + protocolAndDomain, e);
-            _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
-            emptyQueue(urls, GroupingKey.INVALID_URL_GROUPING_KEY, bufferCall.getOutputCollector());
-            return;
-        }
-
-        try {
-            Runnable doRobots = new ProcessRobotsTask(domainInfo, _scorer, urls, _fetcher, bufferCall.getOutputCollector(), _flowProcess);
+            Runnable doRobots = new ProcessRobotsTask(protocolAndDomain, _scorer, urls, _fetcher, bufferCall.getOutputCollector(), _flowProcess);
             _executor.execute(doRobots);
             _flowProcess.increment(FetchCounters.DOMAINS_QUEUED, 1);
             _flowProcess.increment(FetchCounters.DOMAINS_REMAINING, 1);
@@ -161,26 +142,10 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
             // should never happen.
             LOGGER.error("Robots handling pool rejected our request for " + protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
-            emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector());
+            ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector());
         }
 	}
 
-    /**
-     * Clear out the queue by outputting all entries with <groupingKey>.
-     * 
-     * We do this to empty the queue when there's some kind of error.
-     * 
-     * @param urls Queue of URLs to empty out
-     * @param groupingKey grouping key to use for all entries.
-     * @param outputCollector
-     */
-    private void emptyQueue(DiskQueue<GroupedUrlDatum> urls, String groupingKey, TupleEntryCollector outputCollector) {
-        GroupedUrlDatum datum;
-        while ((datum = urls.poll()) != null) {
-            ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), 0, 0, UrlStatus.UNFETCHED, groupingKey, 1.0, datum.getMetaDataMap());
-            outputCollector.add(scoreUrl.toTuple());
-        }
-    }
 	
 
 }
