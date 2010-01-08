@@ -25,6 +25,7 @@ public class BestDelayQueue<E extends Delayed> extends DelayQueue<E> {
         _maxElementToInspect = maxElementsToInspect;
     }
     
+    
     /* (non-Javadoc)
      * @see java.util.concurrent.DelayQueue#poll()
      * 
@@ -38,18 +39,24 @@ public class BestDelayQueue<E extends Delayed> extends DelayQueue<E> {
         
         E bestElement = null;
         E curElement;
-        while (((curElement = super.poll()) != null) && (available.size() < _maxElementToInspect)) {
-            available.add(curElement);
-            
-            if ((bestElement == null) || (curElement.getDelay(TimeUnit.MILLISECONDS) < bestElement.getDelay(TimeUnit.MILLISECONDS))) {
-                bestElement = curElement;
-            }
-        }
         
-        // Now put back all of the elements that we're not returning.
-        for (E element : available) {
-            if (element != bestElement) {
-                this.offer(element);
+        // Nobody else can be using the queue while we do this operation, as otherwise it's not thread-safe.
+        synchronized(this) {
+            while ((available.size() < _maxElementToInspect) && ((curElement = super.poll()) != null)) {
+                available.add(curElement);
+
+                if ((bestElement == null) || (curElement.getDelay(TimeUnit.MILLISECONDS) < bestElement.getDelay(TimeUnit.MILLISECONDS))) {
+                    bestElement = curElement;
+                }
+            }
+
+            // Now put back all of the elements that we're not returning.
+            for (E element : available) {
+                if (element != bestElement) {
+                    if (!this.offer(element)) {
+                        throw new RuntimeException("Unexpected problem pushing elements back onto queue");
+                    }
+                }
             }
         }
         

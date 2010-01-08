@@ -1,10 +1,14 @@
 package bixo.utils;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Iterator;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
 import org.junit.Test;
 
 
@@ -43,6 +47,43 @@ public class BestDelayQueueTest {
 
         public int getValue() {
             return _value;
+        }
+    }
+    
+    private static class PollQueueRunnable implements Runnable {
+        
+        private DelayQueue<DelayUntilTime> _queue;
+        private long _startTime;
+        private boolean _done;
+        private boolean _gotEntry;
+        
+        public PollQueueRunnable(DelayQueue<DelayUntilTime> q, long startTime) {
+            _queue = q;
+            _startTime = startTime;
+            _done = false;
+            _gotEntry = false;
+        }
+
+        @Override
+        public void run() {
+            while (System.currentTimeMillis() <= _startTime) {
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            
+            _gotEntry = _queue.poll() != null;
+            _done = true;
+        }
+        
+        public boolean isDone() {
+            return _done;
+        }
+        
+        public boolean gotEntry() {
+            return _gotEntry;
         }
     }
     
@@ -100,6 +141,52 @@ public class BestDelayQueueTest {
         assertEquals(e2, queue.poll());
         assertEquals(e1, queue.poll());
         assertEquals(e3, queue.poll());
+    }
+    
+    @Test
+    public void testThreadContention() throws InterruptedException {
+        DelayQueue<DelayUntilTime> queue = new BestDelayQueue<DelayUntilTime>();
+        
+        final int numElements = 100;
+        
+        long curTime = System.currentTimeMillis();
+        for (int i = 0; i < numElements; i++) {
+            DelayUntilTime element = new DelayUntilTime(curTime, i);
+            assertTrue(queue.offer(element));
+        }
+        
+        long startTime = System.currentTimeMillis() + 10;
+        PollQueueRunnable runnables[] = new PollQueueRunnable[100];
+        for (int i = 0; i < numElements; i++) {
+            runnables[i] = new PollQueueRunnable(queue, startTime);
+            Thread t = new Thread(runnables[i]);
+            t.start();
+        }
+        
+        while (System.currentTimeMillis() < startTime) {
+            Thread.sleep(1);
+        }
+        
+        synchronized (queue) {
+            Iterator<DelayUntilTime> iter = queue.iterator();
+            while (iter.hasNext()) {
+                iter.next();
+            }
+        }
+
+        boolean allDone = false;
+        while (!allDone) {
+            allDone = true;
+            for (int i = 0; i < numElements; i++) {
+                if (!runnables[i].isDone()) {
+                    allDone = false;
+                    break;
+                } else {
+                    assertTrue(runnables[i].gotEntry());
+                }
+            }
+        }
+        
     }
 
 }
