@@ -277,6 +277,31 @@ public class FetcherQueueTest {
         assertEquals(Long.MIN_VALUE, queue.getDelay(TimeUnit.MILLISECONDS));
     }
     
+    @Test
+    public void testEstimatedEndTime() {
+        final int crawlDelay = 100;
+        final int numUrlsPerRequest = 10;
+        
+        long now = System.currentTimeMillis();
+
+        FetcherPolicy policy = Mockito.mock(FetcherPolicy.class);
+        Mockito.when(policy.getMaxUrls()).thenReturn(1000);
+        Mockito.when(policy.getFetchRequest(Mockito.anyInt())).thenReturn(new FetchRequest(numUrlsPerRequest, now + crawlDelay));
+        FetcherQueue queue = new FetcherQueue("domain.com", policy, new BixoFlowProcess(), Mockito.mock(TupleEntryCollector.class));
+        
+        // Result from empty queue should be basically "now".
+        assertTrue(queue.getFinishTime() <= System.currentTimeMillis() + 10);
+        
+        ScoredUrlDatum fetchItem = makeSUD("http://domain.com/page1", 1.0d);
+        for (int i = 0; i < numUrlsPerRequest; i++) {
+            assertTrue(queue.offer(fetchItem));
+        }
+        
+        // Finish time should be roughly the same as what we return from getFetchRequest
+        long delta = (queue.getFinishTime() - now) - crawlDelay;
+        assertTrue(Math.abs(delta) <= 20);
+    }
+    
     // TODO KKr - add test for multiple threads hitting the queue at the same
     // time.
 }

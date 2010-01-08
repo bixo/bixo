@@ -22,12 +22,14 @@
  */
 package bixo.fetcher;
 
+import java.util.Iterator;
 import java.util.concurrent.DelayQueue;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
 import bixo.fetcher.http.IRobotRules;
 import bixo.hadoop.FetchCounters;
+import bixo.utils.BestDelayQueue;
 import cascading.tuple.TupleEntryCollector;
 
 /**
@@ -50,7 +52,7 @@ public class FetcherQueueMgr implements IFetchListProvider {
     public FetcherQueueMgr(BixoFlowProcess process, FetcherPolicy defaultPolicy) {
         _process = process;
         _defaultPolicy = defaultPolicy;
-        _queues = new DelayQueue<FetcherQueue>();
+        _queues = new BestDelayQueue<FetcherQueue>();
         _needDomains = true;
     }
     
@@ -85,7 +87,11 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	        return false;
 	    }
 
-	    _queues.add(newQueue);
+	    // We synchronize on _queues so that we can iterate in getLastQueue without
+	    // worrying about getting a ConcurrentModificationException
+	    synchronized (_queues) {
+	        _queues.add(newQueue);
+	    }
 	    
 	    _process.increment(FetchCounters.DOMAINS_QUEUED, 1);
 	    _process.increment(FetchCounters.DOMAINS_REMAINING, 1);
@@ -139,4 +145,32 @@ public class FetcherQueueMgr implements IFetchListProvider {
 		return result;
 	} // poll
 	
+	
+	/**
+	 * Figure out which remaining queue will take the longest to finish, based
+	 * on the next crawl time setting, the number of URLs, and the crawl delay.
+	 * 
+	 * This is an expensive operation that blocks the poll request, so it should
+	 * only be called occasionally.
+	 * 
+	 * @return queue which will end last (guesstimate), or null if no queue is pending.
+	 */
+	public FetcherQueue getLastQueue() {
+	    FetcherQueue lastQueue = null;
+	    long lastFinishTime = 0;
+	    
+	    synchronized (_queues) {
+	        Iterator<FetcherQueue> iter = _queues.iterator();
+	        while (iter.hasNext()) {
+	            FetcherQueue curQueue = iter.next();
+	            long curFinishTime = curQueue.getFinishTime();
+	            if (curFinishTime > lastFinishTime) {
+	                lastFinishTime = curFinishTime;
+	                lastQueue = curQueue;
+	            }
+	        }
+	    }
+
+	    return lastQueue;
+	}
 }
