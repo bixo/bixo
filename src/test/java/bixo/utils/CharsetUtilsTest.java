@@ -22,11 +22,30 @@ public class CharsetUtilsTest {
     
     @Test
     public void testCleaningCharsetName() {
-        assertEquals("utf-8", CharsetUtils.clean("utf-8"));
+        assertEquals("UTF-8", CharsetUtils.clean("utf-8"));
         assertEquals(null, CharsetUtils.clean(""));
         assertEquals(null, CharsetUtils.clean(null));
-        assertEquals("us-ascii", CharsetUtils.clean(" us-ascii  "));
-        assertEquals("utf-8", CharsetUtils.clean("\"utf-8\""));
-        assertEquals("utf-8", CharsetUtils.clean("utf-8; latin-1"));
+        assertEquals("US-ASCII", CharsetUtils.clean(" us-ascii  "));
+        assertEquals("UTF-8", CharsetUtils.clean("\"utf-8\""));
+        assertEquals("ISO-8859-1", CharsetUtils.clean("ISO-8859-1, latin1"));
+    }
+    
+    @Test
+    public void testFunkyNames() {
+        assertEquals(null, CharsetUtils.clean("none"));
+        assertEquals(null, CharsetUtils.clean("no"));
+        
+        assertEquals("UTF-8", CharsetUtils.clean("utf-8>"));
+        
+        assertEquals("ISO-8859-1", CharsetUtils.clean("iso-8851-1"));
+        assertEquals("ISO-8859-15", CharsetUtils.clean("8859-15"));
+        
+        assertEquals("windows-1251", CharsetUtils.clean("cp-1251"));
+        assertEquals("windows-1251", CharsetUtils.clean("win1251"));
+        assertEquals("windows-1251", CharsetUtils.clean("WIN-1251"));
+        assertEquals("windows-1251", CharsetUtils.clean("win-1251"));
+        assertEquals("windows-1252", CharsetUtils.clean("Windows"));
+        
+        assertEquals("KOI8-R", CharsetUtils.clean("koi8r"));
     }
 }
