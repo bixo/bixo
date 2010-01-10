@@ -52,6 +52,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
 import org.apache.http.NoHttpResponseException;
 import org.apache.http.ProtocolException;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -59,6 +60,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.params.ClientParamBean;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.params.HttpClientParams;
+import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.conn.ConnectionPoolTimeoutException;
 import org.apache.http.conn.params.ConnManagerParams;
 import org.apache.http.conn.params.ConnPerRouteBean;
@@ -67,6 +69,7 @@ import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.cookie.params.CookieSpecParamBean;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.DefaultRedirectHandler;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
@@ -104,9 +107,11 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     
     private static final int DEFAULT_MAX_THREADS = 1;
     
-    // This should never actually be a timeout we hit, since we manage the number of
+    // This normally don't ever hit this timeout, since we manage the number of
     // fetcher threads to be <= the maxThreads value used to configure an IHttpFetcher.
-    private static final long CONNECTION_POOL_TIMEOUT = 20 * 1000L;
+    // But the limit of connections/host can cause a timeout, when redirects cause
+    // multiple threads to hit the same domain. So jack the value way up.
+    private static final long CONNECTION_POOL_TIMEOUT = 100 * 1000L;
     
     private static final int BUFFER_SIZE = 8 * 1024;
     private static final int DEFAULT_MAX_RETRY_COUNT = 10;
@@ -334,7 +339,13 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         
         try {
             getter = new HttpGet(new URI(url));
+
+            // Create a local instance of cookie store, and bind to local context
+            // Without this we get killed w/lots of threads, due to sync() on single cookie store.
             HttpContext localContext = new BasicHttpContext();
+            CookieStore cookieStore = new BasicCookieStore();
+            localContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
+
             readStartTime = System.currentTimeMillis();
             response = _httpClient.execute(getter, localContext);
 
@@ -520,6 +531,9 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             // Create and initialize HTTP parameters
             HttpParams params = new BasicHttpParams();
 
+            // TODO KKr - w/4.1, switch to new api (ThreadSafeClientConnManager)
+            // cm.setMaxTotalConnections(_maxThreads);
+            // cm.setDefaultMaxPerRoute(Math.max(10, _maxThreads/10));
             ConnManagerParams.setMaxTotalConnections(params, _maxThreads);
             
             // Set the maximum time we'll wait for a spare connection in the connection pool. We
@@ -536,14 +550,9 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             // and disabling this check improves performance.
             HttpConnectionParams.setStaleCheckingEnabled(params, false);
             
-            // We need to set up for at least the number of per-host connections as is specified
-            // by our policy, plus one for slop so that we can potentially fetch robots.txt at the
-            // same time as a page from the server.
             // FUTURE - set this on a per-route (host) basis when we have per-host policies for
             // doing partner crawls. We could define a BixoConnPerRoute class that supports this.
-            // FUTURE - reenable threads-per-host support, if we actually need it.
-            // ConnPerRouteBean connPerRoute = new ConnPerRouteBean(_fetcherPolicy.getThreadsPerHost() + 1);
-            ConnPerRouteBean connPerRoute = new ConnPerRouteBean(1 + 1);
+            ConnPerRouteBean connPerRoute = new ConnPerRouteBean(_fetcherPolicy.getMaxConnectionsPerHost());
             ConnManagerParams.setMaxConnectionsPerRoute(params, connPerRoute);
 
             HttpProtocolParams.setVersion(params, _httpVersion);
