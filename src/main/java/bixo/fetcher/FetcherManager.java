@@ -86,10 +86,12 @@ public class FetcherManager implements Runnable {
                     int urlsRemaining = _process.getCounter(FetchCounters.URLS_REMAINING);
 	                if (urlsFetching == 0) {
 	                    FetcherQueue lastQueue = _provider.getLastQueue();
-	                    if (lastQueue != null) {
+	                    if ((lastQueue != null) && (lastQueue.size() > 0)) {
 	                        String host = lastQueue.getHost();
 	                        _process.setStatus(String.format("Nothing to fetch (%d URLs remaining, last host is %s with %d URLs)",
 	                                        urlsRemaining, host, lastQueue.size()));
+	                    } else {
+	                        _process.setStatus("Nothing to fetch (0 URLs remaining)");
 	                    }
 	                } else {
 	                    _process.setStatus(String.format("Fetching %d URLs from %d domains (%d URLs remaining)",
