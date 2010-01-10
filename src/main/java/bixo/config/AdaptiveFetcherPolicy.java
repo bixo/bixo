@@ -18,6 +18,11 @@ public class AdaptiveFetcherPolicy extends FetcherPolicy {
     }
     
     @Override
+    public FetcherPolicy makeNewPolicy(long crawlDelay) {
+        return new AdaptiveFetcherPolicy(getCrawlEndTime(), crawlDelay);
+    }
+    
+    @Override
     public int getMaxUrls() {
         return calcMaxUrls();
     }

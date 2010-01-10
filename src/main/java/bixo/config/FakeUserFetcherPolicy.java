@@ -17,7 +17,12 @@ public class FakeUserFetcherPolicy extends FetcherPolicy {
     public FakeUserFetcherPolicy(long crawlDelay) {
         _crawlDelay = crawlDelay;
     }
-        
+      
+    @Override
+    public FetcherPolicy makeNewPolicy(long crawlDelay) {
+        return new FakeUserFetcherPolicy(crawlDelay);
+    }
+    
     @Override
     public FetchRequest getFetchRequest(int maxUrls) {
         // Set up the next request to have random variance.

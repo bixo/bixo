@@ -28,6 +28,13 @@ import java.util.Set;
 
 import bixo.fetcher.FetchRequest;
 
+/**
+ * Definition of policy for fetches.
+ * 
+ * WARNING - if you create a subclass of FetcherPolicy, you MUST override
+ * the makeNewPolicy() method.
+ *
+ */
 @SuppressWarnings("serial")
 public class FetcherPolicy implements Serializable {
     public static final int NO_MIN_RESPONSE_RATE = Integer.MIN_VALUE;
@@ -36,6 +43,7 @@ public class FetcherPolicy implements Serializable {
     
     public static final int DEFAULT_MIN_RESPONSE_RATE = NO_MIN_RESPONSE_RATE;
     public static final int DEFAULT_MAX_CONTENT_SIZE = 64 * 1024;
+    public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 2;
     public static final long DEFAULT_CRAWL_END_TIME = NO_CRAWL_END_TIME;
     public static final int DEFAULT_MAX_REDIRECTS = 20;
     public static final String DEFAULT_ACCEPT_LANGUAGE = "en-us,en-gb,en;q=0.7,*;q=0.3";
@@ -51,6 +59,7 @@ public class FetcherPolicy implements Serializable {
     private long _crawlEndTime;          // When we want the crawl to end
     protected long _crawlDelay;            // Delay (in seconds) between requests
     private int _maxRedirects;
+    private int _maxConnectionsPerHost; // 
     private String _acceptLanguage;    // What to pass for the Accept-Language request header
     private Set<String> _validMimeTypes;    // Set of mime-types that we'll accept, or null
     
@@ -75,10 +84,28 @@ public class FetcherPolicy implements Serializable {
         _maxRedirects = maxRedirects;
         
         // For rarely used parameters, we'll set it to default values and then let callers set them  individually.
+        // WARNING - any fields added to this set need to be explicitly set in the makeNewPolicy method.
         _acceptLanguage = DEFAULT_ACCEPT_LANGUAGE;
         _validMimeTypes = null;
+        _maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
     }
 
+    /**
+     * Create a copy of the current policy, but with a different crawlDelay value.
+     * 
+     * @param crawlDelay
+     * @return
+     */
+    public FetcherPolicy makeNewPolicy(long crawlDelay) {
+        FetcherPolicy result = new FetcherPolicy(getMinResponseRate(), getMaxContentSize(), getCrawlEndTime(), crawlDelay, getMaxRedirects());
+        
+        result.setAcceptLanguage(getAcceptLanguage());
+        result.setValidMimeTypes(getValidMimeTypes());
+        result.setMaxConnectionsPerHost(getMaxConnectionsPerHost());
+        
+        return result;
+    }
+    
     /**
      * Calculate the maximum number of URLs that could be processed in the remaining time.
      * 
@@ -118,6 +145,14 @@ public class FetcherPolicy implements Serializable {
         _crawlEndTime = crawlEndTime;
     }
 
+    public int getMaxConnectionsPerHost() {
+        return _maxConnectionsPerHost;
+    }
+    
+    public void setMaxConnectionsPerHost(int maxConnectionsPerHost) {
+        _maxConnectionsPerHost = maxConnectionsPerHost;
+    }
+    
     /**
      * Return the minimum response rate. If the speed at which bytes are being returned
      * from the server drops below this, the fetch of that page will be aborted.
@@ -184,6 +219,56 @@ public class FetcherPolicy implements Serializable {
         return new FetchRequest(numUrls, nextFetchTime);
     }
     
+    
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((_acceptLanguage == null) ? 0 : _acceptLanguage.hashCode());
+        result = prime * result + (int) (_crawlDelay ^ (_crawlDelay >>> 32));
+        result = prime * result + (int) (_crawlEndTime ^ (_crawlEndTime >>> 32));
+        result = prime * result + _maxConnectionsPerHost;
+        result = prime * result + _maxContentSize;
+        result = prime * result + _maxRedirects;
+        result = prime * result + _minResponseRate;
+        result = prime * result + ((_validMimeTypes == null) ? 0 : _validMimeTypes.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        FetcherPolicy other = (FetcherPolicy) obj;
+        if (_acceptLanguage == null) {
+            if (other._acceptLanguage != null)
+                return false;
+        } else if (!_acceptLanguage.equals(other._acceptLanguage))
+            return false;
+        if (_crawlDelay != other._crawlDelay)
+            return false;
+        if (_crawlEndTime != other._crawlEndTime)
+            return false;
+        if (_maxConnectionsPerHost != other._maxConnectionsPerHost)
+            return false;
+        if (_maxContentSize != other._maxContentSize)
+            return false;
+        if (_maxRedirects != other._maxRedirects)
+            return false;
+        if (_minResponseRate != other._minResponseRate)
+            return false;
+        if (_validMimeTypes == null) {
+            if (other._validMimeTypes != null)
+                return false;
+        } else if (!_validMimeTypes.equals(other._validMimeTypes))
+            return false;
+        return true;
+    }
+
     @Override
 	public String toString() {
         StringBuilder result = new StringBuilder();

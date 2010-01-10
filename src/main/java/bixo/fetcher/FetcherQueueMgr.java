@@ -59,16 +59,15 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	public FetcherQueue createQueue(String domain, TupleEntryCollector collector, long crawlDelay) {
 	    // If the URLs we're going to be queueing don't have a specific crawl delay, or are the same
 	    // as our default policy, then we can just re-use the default policy.
-	    // TODO KKr - use policy.equals() to decide if they are equivalent.
-	    // TODO KKr - use policy.clone() to create copy, set crawl delay, as otherwise we could
-	    // "lose" the custom fetcher policy that was set as the default (e.g. if adaptive was being used)
 	    FetcherPolicy policy;
 	    if ((crawlDelay == IRobotRules.UNSET_CRAWL_DELAY) || (crawlDelay == _defaultPolicy.getCrawlDelay())) {
 	        policy = _defaultPolicy;
 	    } else {
-	        policy = new FetcherPolicy(_defaultPolicy.getMinResponseRate(),
-	                        _defaultPolicy.getMaxContentSize(), _defaultPolicy.getCrawlEndTime(),
-	                        crawlDelay, _defaultPolicy.getMaxRedirects());
+	        policy = _defaultPolicy.makeNewPolicy(crawlDelay);
+	        if (policy.getClass() != _defaultPolicy.getClass()) {
+	            // Catch case of somebody subclassing FetcherPolicy but not overriding the makeNewPolicy method
+	            throw new RuntimeException("makeNewPolicy was not overridden");
+	        }
 	    }
 	    
         return new FetcherQueue(domain, policy, _process, collector);
