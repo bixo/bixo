@@ -39,6 +39,10 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     // Some robots.txt files are > 64K, amazingly enough.
     private static final int MAX_ROBOTS_SIZE = 128 * 1024;
 
+    // subdomain.domain.com can direct to domain.com, so if we're simultaneously fetching
+    // a bunch of robots from subdomains that redirect, we'll exceed the default limit.
+    private static final int MAX_CONNECTIONS_PER_HOST = 20;
+    
     // Crank down default values when fetching robots.txt, as this should be super
     // fast to get back.
     private static final int ROBOTS_CONNECTION_TIMEOUT = 10 * 1000;
@@ -86,6 +90,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         // I can use here, and also in SimpleGroupingKeyGenerator
         FetcherPolicy policy = new FetcherPolicy();
         policy.setMaxContentSize(MAX_ROBOTS_SIZE);
+        policy.setMaxConnectionsPerHost(MAX_CONNECTIONS_PER_HOST);
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, policy, userAgent);
         fetcher.setMaxRetryCount(ROBOTS_RETRY_COUNT);
         fetcher.setConnectionTimeout(ROBOTS_CONNECTION_TIMEOUT);
