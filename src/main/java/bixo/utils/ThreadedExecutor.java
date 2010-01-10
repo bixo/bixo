@@ -17,7 +17,7 @@ public class ThreadedExecutor {
     
     /**
      * Always wait for some time when offer() is called. This gives any
-     * active threads that much time to complete, befure a RejectedExectionException
+     * active threads that much time to complete, before a RejectedExectionException
      * is thrown.
      *
      * @param <E> element stored in queue
@@ -50,10 +50,10 @@ public class ThreadedExecutor {
         // be set to the same as the corePoolSize, as otherwise things get very inefficient
         // since each execute() call will will delay by <timeout> even if we could add more
         // threads. And since these two values are the same, the keepAliveTime value has
-        // no meaning.
+        // no meaning (especially since we no longer incorrectly set allowCoreThreadTimeOut to true,
+        // as if that's true then the timeout value still does apply).
         BlockingQueue<Runnable> queue = new MyBlockingQueue<Runnable>();
         _pool = new ThreadPoolExecutor(maxThreads, maxThreads, 1, TimeUnit.SECONDS, queue);
-        _pool.allowCoreThreadTimeOut(true);
     }
     
     /**
