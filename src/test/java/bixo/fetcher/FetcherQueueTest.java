@@ -76,6 +76,11 @@ public class FetcherQueueTest {
         }
 
         @Override
+        public FetcherPolicy makeNewPolicy(long crawlDelay) {
+            return new ControlledFetcherPolicy(getMaxUrls(), _numUrlsPerRequest, crawlDelay);
+        }
+        
+        @Override
         public int getMaxUrls() {
             return _maxUrls;
         }

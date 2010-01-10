@@ -573,6 +573,11 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
         
         @Override
+        public FetcherPolicy makeNewPolicy(long crawlDelay) {
+            return new MaxUrlFetcherPolicy(getMaxUrls());
+        }
+        
+        @Override
         public int getMaxUrls() {
             return _maxUrls;
         }
