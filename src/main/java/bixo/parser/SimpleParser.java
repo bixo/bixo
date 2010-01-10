@@ -214,16 +214,16 @@ public class SimpleParser implements IParser {
     /**
      * Extract encoding from either explicit header, or from content-type
      * 
+     * If a charset is returned, then it's a valid/normalized charset name that's
+     * supported on this platform.
+     * 
      * @param datum
      * @return charset in response headers, or null
      */
     private String getCharset(FetchedDatum datum) {
         String result = CharsetUtils.clean(datum.getHeaders().getFirst(IHttpHeaders.CONTENT_ENCODING));
-        if (!CharsetUtils.safeIsSupported(result)) {
+        if (result == null) {
             result = CharsetUtils.clean(HttpUtils.getCharsetFromContentType(datum.getContentType()));
-            if (!CharsetUtils.safeIsSupported(result)) {
-                result = null;
-            }
         }
         
         return result;
