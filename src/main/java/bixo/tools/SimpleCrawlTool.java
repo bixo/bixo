@@ -44,6 +44,13 @@ public class SimpleCrawlTool {
         }
 
         @Override
+        public FetcherPolicy makeNewPolicy(long crawlDelay) {
+            MyFetchPolicy result = new MyFetchPolicy();
+            result.setCrawlDelay(crawlDelay);
+            return result;
+        }
+        
+        @Override
         public FetchRequest getFetchRequest(int maxUrls) {
             FetchRequest result = super.getFetchRequest(maxUrls);
             int numUrls = Math.min(50, result.getNumUrls());
