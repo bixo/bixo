@@ -116,6 +116,8 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     private static final int BUFFER_SIZE = 8 * 1024;
     private static final int DEFAULT_MAX_RETRY_COUNT = 10;
     
+    private static final int DEFAULT_BYTEARRAY_SIZE = 32 * 1024;
+    
     // TODO KKr - figure out best value for this.
     // This is what Firefox uses (below)
     // Nutch has text/html,application/xml;q=0.9,application/xhtml+xml,text/xml;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
@@ -463,7 +465,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
                 byte[] buffer = new byte[BUFFER_SIZE];
                 int bytesRead = 0;
                 int totalRead = 0;
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                ByteArrayOutputStream out = new ByteArrayOutputStream(DEFAULT_BYTEARRAY_SIZE);
 
                 int readRequests = 0;
                 int minResponseRate = _fetcherPolicy.getMinResponseRate();
