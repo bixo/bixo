@@ -125,6 +125,8 @@ public class FetcherTest {
 
     @Test
     public void testRunFetcher() throws Exception {
+        System.setProperty("bixo.root.level", "TRACE");
+        
         String workingFolder = "build/test-it/FetcherTest-testRunFetcher";
         String inputPath = makeUrlDB(workingFolder, "src/it/resources/top10urls.txt");
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
