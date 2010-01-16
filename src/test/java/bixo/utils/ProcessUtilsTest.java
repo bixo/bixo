@@ -26,4 +26,21 @@ public class ProcessUtilsTest {
         }
 
     }
+    
+    @Test
+    public void testUlimitCmd() {
+        final String[] commandLine = new String[] { "ulimit", "-a" };
+        StringBuffer infoBuffer = new StringBuffer();
+        StringBuffer errorBuffer = new StringBuffer();
+        
+        try {
+            assertEquals(0, ProcessUtils.execute(commandLine, infoBuffer, errorBuffer, null));
+            String[] lines = infoBuffer.toString().split("\n");
+            for (String line : lines) {
+                LOGGER.info(line);
+            }
+        } catch (Exception e) {
+            fail(e.getMessage());
+        }
+    }
 }
