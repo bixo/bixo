@@ -19,7 +19,7 @@ public abstract class BaseDatum implements Serializable {
     private Map<String, Comparable> _metaDataMap;
 
     public BaseDatum(Map<String, Comparable> metaData) {
-        _metaDataMap = (Map<String, Comparable>) metaData;
+        _metaDataMap = metaData;
     }
 
     public BaseDatum(Tuple tuple, Fields metaDataFields) {
@@ -46,6 +46,10 @@ public abstract class BaseDatum implements Serializable {
     protected abstract Comparable[] getStandardValues();
     protected abstract Fields getStandardFields();
 
+    public static Comparable[] makeStandardValues(Comparable... values) {
+        return values;
+    }
+    
     public static Fields makeMetaDataFields(String... fieldNames) {
         Arrays.sort(fieldNames);
         return new Fields(fieldNames);
@@ -110,7 +114,9 @@ public abstract class BaseDatum implements Serializable {
         return _metaDataMap;
     }
 
-    
+    public void setMetaDataMap(Map<String, Comparable> metaDataMap) {
+        _metaDataMap = metaDataMap;
+    }
 
     /**
      * Create a tuple from the "standard" fields, plus all of the meta-data,
