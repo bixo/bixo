@@ -230,6 +230,11 @@ else
 
   # Hadoop
   "$HADOOP_HOME"/bin/hadoop-daemon.sh start datanode
+  
+  # Set limits for tasktracker - use roughly half of max (65535) since
+  # we'll typically have two trackers per server.
+  ulimit -n 30000
+  ulimit -s 256
   "$HADOOP_HOME"/bin/hadoop-daemon.sh start tasktracker
 fi
 
