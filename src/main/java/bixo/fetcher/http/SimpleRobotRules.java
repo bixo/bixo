@@ -159,20 +159,13 @@ public class SimpleRobotRules implements IRobotRules {
     // TODO KKr - get rid of this version, and add a generic one (robot name, URL) that uses
     // Java URL code to fetch it, as well as a version that takes an output stream (e.g. from
     // HttpClient) and a version that takes a String with the content.
-    public SimpleRobotRules(IHttpFetcher fetcher, String url) {
+    public SimpleRobotRules(IHttpFetcher fetcher, String url) throws MalformedURLException {
         String urlToFetch;
 
-        try {
-            URL realUrl = new URL(url);
-            urlToFetch = realUrl.toExternalForm();
-            if (!urlToFetch.endsWith("/robots.txt")) {
-                urlToFetch = new URL(realUrl, "/robots.txt").toExternalForm();
-            }
-        } catch (MalformedURLException e) {
-            LOGGER.error("Invalid URL: " + url);
-            init(url);
-            createAllOrNone(false);
-            return;
+        URL realUrl = new URL(url);
+        urlToFetch = realUrl.toExternalForm();
+        if (!urlToFetch.endsWith("/robots.txt")) {
+            urlToFetch = new URL(realUrl, "/robots.txt").toExternalForm();
         }
 
         init(urlToFetch);
@@ -368,9 +361,7 @@ public class SimpleRobotRules implements IRobotRules {
         try {
             content = new String(robotContent, offset, bytesLen, encoding);
         } catch (UnsupportedEncodingException e) {
-            // Should never happen.
-            LOGGER.error("Got unsupported encoding exception for " + encoding);
-            content = new String(robotContent);
+            throw new RuntimeException("Got unsupported encoding exception for " + encoding);
         }
 
         // If it looks like it contains HTML, but doesn't have a user agent field, then
