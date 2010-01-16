@@ -54,10 +54,10 @@ public class HttpHeaders {
         for (String headerLine : headerLines) {
             String[] linePieces = StringUtils.splitOnChar(headerLine, '\t');
             if (linePieces.length != 2) {
-                LOGGER.error("Invalid encoded header: " + encodedAsString);
-            } else {
-                add(decodeHeaderString(linePieces[0]), decodeHeaderString(linePieces[1]));
+                throw new RuntimeException("Invalid encoded header: " + encodedAsString);
             }
+
+            add(decodeHeaderString(linePieces[0]), decodeHeaderString(linePieces[1]));
         }
     }
     
