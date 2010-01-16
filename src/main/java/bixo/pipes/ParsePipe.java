@@ -22,6 +22,8 @@
  */
 package bixo.pipes;
 
+import org.apache.log4j.Logger;
+
 import bixo.cascading.NullContext;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
@@ -40,6 +42,8 @@ import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
 public class ParsePipe extends SubAssembly {
+    private static final Logger LOGGER = Logger.getLogger(ParsePipe.class);
+    
     public static final String PARSE_PIPE_NAME = "parse_pipe";
 
     private static class ParseFunction extends BaseOperation<NullContext> implements Function<NullContext> {
@@ -63,13 +67,15 @@ public class ParsePipe extends SubAssembly {
         public void operate(FlowProcess flowProcess, FunctionCall<NullContext> functionCall) {
             TupleEntry arguments = functionCall.getArguments();
             FetchedDatum fetchedDatum = new FetchedDatum(arguments.getTuple(), _metaDataFields);
-            ParsedDatum parseResult = _parser.parse(fetchedDatum);
             
-            // TODO KKr - add status to ParsedDatum, use it here to increment parsed vs. failed doc counters.
-            // Or since this operation is part of a regular Cascading flow, we could trap exceptions.
-            if (parseResult != null) {
+            try {
+                ParsedDatum parseResult = _parser.parse(fetchedDatum);
                 flowProcess.increment(ParserCounters.DOCUMENTS_PARSED, 1);
                 functionCall.getOutputCollector().add(parseResult.toTuple());
+            } catch (Exception e) {
+                LOGGER.warn("Error processing " + fetchedDatum.getBaseUrl(), e);
+                flowProcess.increment(ParserCounters.DOCUMENTS_FAILED, 1);
+                // TODO KKr - don't lose datums for documents that couldn't be parsed
             }
         }
     }
