@@ -46,6 +46,9 @@ public class FetcherManager implements Runnable {
     // TODO KKr - calculate from fetcher setting.
     private static final long COMMAND_TIMEOUT = 120 * 1000;
 
+    private static final long QUEUE_LOG_INTERVAL = 5 * 60 * 1000;
+    private static final int NUM_QUEUES_TO_LOG = 100;
+
     private FetcherQueueMgr _provider;
     private IHttpFetcher _fetcher;
     private ThreadedExecutor _executor;
@@ -68,6 +71,7 @@ public class FetcherManager implements Runnable {
 	    // URLs as a rate different from our consumption, we could be ahead or behind, so we can't
 	    // just terminate when there's nothing left to be fetched...more could be on the way.
 	    try {
+	        long nextQueueLogTime = 0;
 	        long nextStatusTime = 0;
 	        int urlsFetching = -1;
 	        int domainsFetching = -1;
@@ -81,15 +85,15 @@ public class FetcherManager implements Runnable {
 	            if ((curUrlsFetching != urlsFetching) || (curDomainsFetching != domainsFetching) || (curTime >= nextStatusTime)) {
 	                urlsFetching = curUrlsFetching;
 	                domainsFetching = curDomainsFetching;
-	                nextStatusTime = curTime + STATUS_UPDATE_INTERVAL;
 
                     int urlsRemaining = _process.getCounter(FetchCounters.URLS_REMAINING);
 	                if (urlsFetching == 0) {
-	                    FetcherQueue lastQueue = _provider.getLastQueue();
-	                    if ((lastQueue != null) && (lastQueue.size() > 0)) {
-	                        String host = lastQueue.getHost();
-	                        _process.setStatus(String.format("Nothing to fetch (%d URLs remaining, last host is %s with %d URLs)",
-	                                        urlsRemaining, host, lastQueue.size()));
+	                    FetcherQueue nextQueue = _provider.getNextQueue();
+	                    if ((nextQueue != null) && (nextQueue.size() > 0)) {
+	                        String host = nextQueue.getHost();
+	                        long deltaSeconds = (nextQueue.getNextFetchTime() - System.currentTimeMillis()) / 1000L;
+	                        _process.setStatus(String.format("Nothing to fetch (%d URLs remaining, next host is %s with %d URLs in %d seconds)",
+	                                        urlsRemaining, host, nextQueue.size(), deltaSeconds));
 	                    } else {
 	                        _process.setStatus("Nothing to fetch (0 URLs remaining)");
 	                    }
@@ -97,8 +101,16 @@ public class FetcherManager implements Runnable {
 	                    _process.setStatus(String.format("Fetching %d URLs from %d domains (%d URLs remaining)",
 	                                    urlsFetching, domainsFetching, urlsRemaining));
 	                }
+	                
+	                nextStatusTime = System.currentTimeMillis() + STATUS_UPDATE_INTERVAL;
 	            }
 
+	            // See if it's time to log the top N entries in the queue.
+	            if (curTime >= nextQueueLogTime) {
+	                _provider.logPendingQueues(LOGGER, NUM_QUEUES_TO_LOG);
+	                nextQueueLogTime = System.currentTimeMillis() + QUEUE_LOG_INTERVAL;
+	            }
+	            
 	            // See if we should set up the next thing to fetch
 	            FetchList items = _provider.poll();
 	            if (items != null) {

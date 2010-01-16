@@ -35,6 +35,7 @@ import org.apache.hadoop.mapred.JobConf;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
+import bixo.config.QueuePolicy;
 import bixo.config.UserAgent;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
@@ -89,7 +90,8 @@ public class RunTestFetcher {
             BixoFlowProcess process = new BixoFlowProcess();
             FetcherPolicy defaultPolicy = new FetcherPolicy();
             defaultPolicy.setCrawlEndTime(System.currentTimeMillis() + TEN_MINUTES);
-            FetcherQueueMgr queueMgr = new FetcherQueueMgr(process, defaultPolicy);
+            QueuePolicy queuePolicy = new QueuePolicy(FetcherQueueMgr.DEFAULT_MAX_URLS_IN_MEMORY, defaultPolicy);
+            FetcherQueueMgr queueMgr = new FetcherQueueMgr(process, defaultPolicy, queuePolicy);
             
             for (String pld : domainMap.keySet()) {
                 FetcherQueue queue = queueMgr.createQueue(pld, tupleEntryCollector, 30);

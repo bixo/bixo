@@ -6,6 +6,7 @@ import org.mortbay.http.HttpServer;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
+import bixo.config.QueuePolicy;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.http.IHttpFetcher;
@@ -61,9 +62,10 @@ public class FetcherManagerTest extends SimulationWebServer {
             server = startServer(new RandomResponseHandler(20000, 5 * 1000L), 8089);
 
             BixoFlowProcess flowProcess = new BixoFlowProcess();
-            FetcherPolicy defaultPolicy = new FetcherPolicy();
-            defaultPolicy.setMinResponseRate(0);
-            FetcherQueueMgr queueMgr = new FetcherQueueMgr(flowProcess, defaultPolicy);
+            FetcherPolicy fetcherPolicy = new FetcherPolicy();
+            fetcherPolicy.setMinResponseRate(0);
+            QueuePolicy queuePolicy = new QueuePolicy(FetcherQueueMgr.DEFAULT_MAX_URLS_IN_MEMORY, fetcherPolicy);
+            FetcherQueueMgr queueMgr = new FetcherQueueMgr(flowProcess, fetcherPolicy, queuePolicy);
             
             FetcherManager manager = new FetcherManager(queueMgr,
             		new SimpleHttpFetcher(NUM_THREADS, ConfigUtils.BIXO_TEST_AGENT), flowProcess);

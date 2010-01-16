@@ -23,13 +23,20 @@
 package bixo.fetcher;
 
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
+
+import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
+import bixo.config.QueuePolicy;
+import bixo.datum.ScoredUrlDatum;
+import bixo.datum.UrlStatus;
 import bixo.fetcher.http.IRobotRules;
 import bixo.hadoop.FetchCounters;
-import bixo.utils.BestDelayQueue;
 import cascading.tuple.TupleEntryCollector;
 
 /**
@@ -37,40 +44,62 @@ import cascading.tuple.TupleEntryCollector;
  *
  */
 public class FetcherQueueMgr implements IFetchListProvider {
-
-    private static final int MAX_DOMAINS_IN_QUEUE = 1000;
+    public static final int DEFAULT_MAX_URLS_IN_MEMORY = 100000;
     
-	private DelayQueue<FetcherQueue> _queues;	
-	private BixoFlowProcess _process;
-	private FetcherPolicy _defaultPolicy;
+	private DelayQueue<FetcherQueue> _pendingQueues;	
+    private Map<FetchList, FetcherQueue> _activeQueues;
+    private Object _queueLock;
+
+    private BixoFlowProcess _process;
+    
+	private FetcherPolicy _fetcherPolicy;
+	private QueuePolicy _queuePolicy;
+	
+	private boolean _skipAll;
+	private UrlStatus _skipStatus;
+	
 	private boolean _needDomains;
+	private int _maxQueues;
 	
     public FetcherQueueMgr(BixoFlowProcess process) {
-        this(process, new FetcherPolicy());
+        FetcherPolicy fetcherPolicy = new FetcherPolicy();
+        QueuePolicy queuePolicy = new QueuePolicy(DEFAULT_MAX_URLS_IN_MEMORY, fetcherPolicy.getDefaultUrlsPerRequest());
+        init(process, fetcherPolicy, queuePolicy);
     }
     
-    public FetcherQueueMgr(BixoFlowProcess process, FetcherPolicy defaultPolicy) {
+    public FetcherQueueMgr(BixoFlowProcess process, FetcherPolicy fetcherPolicy, QueuePolicy queuePolicy) {
+        init(process, fetcherPolicy, queuePolicy);
+    }
+    
+    private void init(BixoFlowProcess process, FetcherPolicy fetcherPolicy, QueuePolicy queuePolicy) {
         _process = process;
-        _defaultPolicy = defaultPolicy;
-        _queues = new BestDelayQueue<FetcherQueue>();
+        _fetcherPolicy = fetcherPolicy;
+        _queuePolicy = queuePolicy;
+        _pendingQueues = new DelayQueue<FetcherQueue>();
         _needDomains = true;
+        
+        _activeQueues = new ConcurrentHashMap<FetchList, FetcherQueue>();
+        _maxQueues = queuePolicy.getMaxUrlsInMemory() / queuePolicy.getMaxUrlsInMemoryPerQueue();
+        _queueLock = new Object();
+        
+        _skipAll = false;
     }
     
 	public FetcherQueue createQueue(String domain, TupleEntryCollector collector, long crawlDelay) {
 	    // If the URLs we're going to be queueing don't have a specific crawl delay, or are the same
 	    // as our default policy, then we can just re-use the default policy.
 	    FetcherPolicy policy;
-	    if ((crawlDelay == IRobotRules.UNSET_CRAWL_DELAY) || (crawlDelay == _defaultPolicy.getCrawlDelay())) {
-	        policy = _defaultPolicy;
+	    if ((crawlDelay == IRobotRules.UNSET_CRAWL_DELAY) || (crawlDelay == _fetcherPolicy.getCrawlDelay())) {
+	        policy = _fetcherPolicy;
 	    } else {
-	        policy = _defaultPolicy.makeNewPolicy(crawlDelay);
-	        if (policy.getClass() != _defaultPolicy.getClass()) {
+	        policy = _fetcherPolicy.makeNewPolicy(crawlDelay);
+	        if (policy.getClass() != _fetcherPolicy.getClass()) {
 	            // Catch case of somebody subclassing FetcherPolicy but not overriding the makeNewPolicy method
 	            throw new RuntimeException("makeNewPolicy was not overridden");
 	        }
 	    }
 	    
-        return new FetcherQueue(domain, policy, _process, collector);
+        return new FetcherQueue(domain, policy, _queuePolicy.getMaxUrlsInMemoryPerQueue(), collector);
 	}
 	
 	/**
@@ -81,15 +110,14 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	 */
 	public boolean offer(FetcherQueue newQueue) {
 	    // FUTURE KKr - also limit by max # of URLs in memory?
-	    // FUTURE KKr - make MAX_QUEUES a configurable value.
-	    if (!_needDomains || (_queues.size() >= MAX_DOMAINS_IN_QUEUE)) {
+	    if (!_needDomains || (_pendingQueues.size() >= _maxQueues)) {
 	        return false;
 	    }
 
-	    // We synchronize on _queues so that we can iterate in getLastQueue without
+	    // We synchronize on _queues so that we can iterate in getNextQueue without
 	    // worrying about getting a ConcurrentModificationException
-	    synchronized (_queues) {
-	        _queues.add(newQueue);
+	    synchronized (_queueLock) {
+	        _pendingQueues.add(newQueue);
 	    }
 	    
 	    _process.increment(FetchCounters.DOMAINS_QUEUED, 1);
@@ -104,10 +132,10 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	 */
 	public boolean isEmpty() {
 	    // Note that we have to synchronize on _queues since the poll() method
-	    // temporarily removes items from the queue and then stuffs them back,
-	    // so w/o this we could get a false positive "is empty" result.
-	    synchronized (_queues) {
-	        return _queues.size() == 0;
+	    // moves items between the pending and active queues, and release does
+	    // the opposite, so w/o this we could get a false positive "is empty" result.
+	    synchronized (_queueLock) {
+	        return (_pendingQueues.size() == 0) && (_activeQueues.size() == 0);
 	    }
 	}
 	
@@ -119,57 +147,106 @@ public class FetcherQueueMgr implements IFetchListProvider {
 	 * @see bixo.fetcher.IFetchItemProvider#poll()
 	 */
 	public FetchList poll() {
-	    FetchList result = null;
-	    
-	    synchronized (_queues) {
-	        FetcherQueue queue;
-	        while ((queue = _queues.poll()) != null) {
-	            if (queue.isEmpty()) {
-	                // Don't put it back in the queue, as there's nothing left to
-	                // do with it. We make sure empty queues get put in the front,
-	                // so that we clean them out right away.
-	                _process.increment(FetchCounters.DOMAINS_FINISHED, 1);
-	                _process.decrement(FetchCounters.DOMAINS_REMAINING, 1);
-	            } else {
-	                result = queue.poll();
-	                _queues.add(queue);
-	                break;
+
+	    synchronized (_queueLock) {
+	        FetcherQueue queue = _pendingQueues.poll();
+	        if (queue != null) {
+	            _needDomains = false;
+
+	            List<ScoredUrlDatum> urls = queue.poll();
+	            if (urls == null) {
+	                throw new RuntimeException("Available queue has nothing to fetch!");
 	            }
+
+	            FetchList result = new FetchList(_process, queue.getCollector(), this, queue.getDomain(), urls);
+	            _activeQueues.put(result, queue);
+	            return result;
+	        } else {
+	            _needDomains = true;
+	            return null;
 	        }
-	        
-	        // If we have nothing to fetch, we could use more domain queues.
-	        _needDomains = (result == null);
 	    }
-	    
-		return result;
 	} // poll
 	
 	
+    public void skipAll(UrlStatus status) {
+        synchronized (_queueLock) {
+            Iterator<FetcherQueue> iter = _pendingQueues.iterator();
+            while (iter.hasNext()) {
+                FetcherQueue queue = iter.next();
+                queue.skipAll(status);
+                iter.remove();
+            }
+            
+            _skipAll = true;
+            _skipStatus = status;
+        }        
+    }
+
 	/**
-	 * Figure out which remaining queue will take the longest to finish, based
-	 * on the next crawl time setting, the number of URLs, and the crawl delay.
+	 * A fetcher thread has finished with <fetchList>, so we call tell
+	 * the corresponding queue that it's finished, and we can move it
+	 * from the set of active queues to the queue of pending queues.
 	 * 
-	 * This is an expensive operation that blocks the poll request, so it should
-	 * only be called occasionally.
-	 * 
-	 * @return queue which will end last (guesstimate), or null if no queue is pending.
+	 * @param fetchList
 	 */
-	public FetcherQueue getLastQueue() {
-	    FetcherQueue lastQueue = null;
-	    long lastFinishTime = 0;
-	    
-	    synchronized (_queues) {
-	        Iterator<FetcherQueue> iter = _queues.iterator();
-	        while (iter.hasNext()) {
-	            FetcherQueue curQueue = iter.next();
-	            long curFinishTime = curQueue.getFinishTime();
-	            if (curFinishTime > lastFinishTime) {
-	                lastFinishTime = curFinishTime;
-	                lastQueue = curQueue;
-	            }
+	public synchronized void finished(FetchList fetchList) {
+	    synchronized(_queueLock) {
+	        FetcherQueue queue = _activeQueues.get(fetchList);
+	        if (queue == null) {
+	            throw new RuntimeException("No such fetchlist: " + fetchList);
+	        }
+
+	        _activeQueues.remove(fetchList);
+	        queue.release(fetchList.getUrls());
+
+	        // As fetches are finished, if we're skipping everything that's left then
+	        // don't re-queue it.
+	        if (_skipAll) {
+	            queue.skipAll(_skipStatus);
+                _process.increment(FetchCounters.DOMAINS_FINISHED, 1);
+                _process.decrement(FetchCounters.DOMAINS_REMAINING, 1);
+	        } else if (!queue.isEmpty()) {
+	            _pendingQueues.add(queue);
+	            // TODO KKr - decrement active domains? Or still do this down lower?
+	            // Feels better to do it at the same level as DOMAINS_FINISHED.
+	        } else {
+                _process.increment(FetchCounters.DOMAINS_FINISHED, 1);
+                _process.decrement(FetchCounters.DOMAINS_REMAINING, 1);
 	        }
 	    }
-
-	    return lastQueue;
 	}
+	
+	
+	/**
+	 * Return the next entry from the priority queue.
+	 * 
+	 * @return next fetcher queue, based on target time to fetch.
+	 */
+	public FetcherQueue getNextQueue() {
+	    synchronized (_queueLock) {
+	        Iterator<FetcherQueue> iter = _pendingQueues.iterator();
+	        if (iter.hasNext()) {
+	            return iter.next();
+	        } else {
+	            return null;
+	        }
+	    }
+	}
+	
+	public void logPendingQueues(Logger logger) {
+	    logPendingQueues(logger, Integer.MAX_VALUE);
+	}
+	
+	public void logPendingQueues(Logger logger, int numToLog) {
+	    synchronized (_queueLock) {
+	        Iterator<FetcherQueue> iter = _pendingQueues.iterator();
+	        int curLogged = 0;
+	        while ((curLogged < numToLog) && iter.hasNext()) {
+	            logger.info(iter.next());
+	            curLogged += 1;
+	        }
+	    }
+	}
+
 }

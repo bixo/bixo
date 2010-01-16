@@ -6,6 +6,8 @@ import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
 import bixo.cascading.LoggingFlowReporter;
+import bixo.config.FetcherPolicy;
+import bixo.config.QueuePolicy;
 import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
@@ -40,16 +42,20 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
     private Thread _fetcherThread;
     private BixoFlowProcess _flowProcess;
     private IHttpFetcher _fetcher;
+    private FetcherPolicy _fetcherPolicy;
+    private QueuePolicy _queuePolicy;
     
     private final Fields _metaDataFields;
 
-    public FetcherBuffer(Fields metaDataFields, IHttpFetcher fetcher) {
+    public FetcherBuffer(Fields metaDataFields, IHttpFetcher fetcher, QueuePolicy queuePolicy) {
         // We're going to output a tuple that contains a FetchedDatum, plus meta-data,
         // plus a result that could be a string, a status, or an exception
         super(FetchedDatum.FIELDS.append(metaDataFields).append(FETCH_RESULT_FIELD));
 
         _metaDataFields = metaDataFields;
         _fetcher = fetcher;
+        _fetcherPolicy = fetcher.getFetcherPolicy();
+        _queuePolicy = queuePolicy;
     }
 
     @Override
@@ -71,7 +77,7 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
         _flowProcess = new BixoFlowProcess((HadoopFlowProcess) flowProcess);
         _flowProcess.addReporter(new LoggingFlowReporter());
         
-        _queueMgr = new FetcherQueueMgr(_flowProcess, _fetcher.getFetcherPolicy());
+        _queueMgr = new FetcherQueueMgr(_flowProcess, _fetcherPolicy, _queuePolicy);
         _fetcherMgr = new FetcherManager(_queueMgr, _fetcher, _flowProcess);
 
         _fetcherThread = new Thread(_fetcherMgr);
@@ -137,27 +143,25 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
                     LOGGER.info(String.format("Skipped %d URLs from %s (%s)", numUrlsSkipped, domain, host));
                 }
             }
-
         } catch (Throwable t) {
             LOGGER.error("Exception during creating of fetcher queues", t);
+            // TODO KKr - don't lose any of the URLs
         }
-
     }
 
     @Override
     public void cleanup(FlowProcess process, OperationCall operationCall) {
         try {
-            // TODO KKr - use fetcherMgr.shutdown (new API) that sets a flag, and
-            // waits for termination.
+            boolean skippedAll = false;
             while (!_fetcherMgr.isDone()) {
                 process.keepAlive();
-
-                try {
-                    Thread.sleep(1000L);
-                } catch (InterruptedException e) {
-                    // TODO KKr - handle hard termination of fetcherMgr
+                Thread.sleep(1000L);
+                
+                long endTime = _fetcherPolicy.getCrawlEndTime();
+                if (!skippedAll && (endTime != FetcherPolicy.NO_CRAWL_END_TIME) && (System.currentTimeMillis() >= endTime)) {
+                    _queueMgr.skipAll(UrlStatus.SKIPPED_TIME_LIMIT);
+                    skippedAll = true;
                 }
-
             }
 
             // TODO KKr - this need to interrupt the fetcher thread feels awkward.
@@ -177,6 +181,8 @@ public class FetcherBuffer extends BaseOperation implements cascading.operation.
             // Write out counter info we've collected, in case we're running in
             // local mode.
             _flowProcess.dumpCounters();
+        } catch (InterruptedException e) {
+            LOGGER.error("Interruption while waiting for fetcher manager to finish");
         } catch (Throwable t) {
             // If we run into a serious error, just log it and return, so that we
             // don't lose the entire fetch result.

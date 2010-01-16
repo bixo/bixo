@@ -23,6 +23,7 @@
 package bixo.fetcher;
 
 import java.io.IOException;
+import java.util.Iterator;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -59,7 +60,9 @@ public class FetcherRunnable implements Runnable {
         try {
             // TODO KKr - when fetching the last item, send a Connection: close
             // header to let the server know it doesn't need to keep the socket open.
-            for (ScoredUrlDatum item : _items) {
+            Iterator<ScoredUrlDatum> iter = _items.iterator();
+            while (iter.hasNext()) {
+                ScoredUrlDatum item = iter.next();
                 FetchedDatum result = new FetchedDatum(item);
                 Comparable status = null;
 

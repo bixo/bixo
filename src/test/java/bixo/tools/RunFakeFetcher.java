@@ -61,7 +61,7 @@ public class RunFakeFetcher {
                 LOGGER.trace(String.format("Creating queue for %s", host));
 
                 FetcherPolicy policy = new FetcherPolicy();
-                FetcherQueue queue = new FetcherQueue(host, policy, flowProcess, new FakeCollector());
+                FetcherQueue queue = new FetcherQueue(host, policy, new FakeCollector());
 
                 for (int j = 0; j < 5; j++) {
                     String file = "/page-" + j + ".html";

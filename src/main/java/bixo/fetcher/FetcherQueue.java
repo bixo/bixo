@@ -22,10 +22,12 @@
  */
 package bixo.fetcher;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
-import bixo.cascading.BixoFlowProcess;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
@@ -36,28 +38,30 @@ import bixo.utils.DomainNames;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
-public class FetcherQueue implements IFetchListProvider, Delayed {
+public class FetcherQueue implements Delayed {
     
-    // FUTURE KKr - make this a configurable value.
-    private static int MAX_URLS_IN_MEMORY = 100;
-    
+    private static int DEFAULT_MAX_URLS_IN_MEMORY = 100;
+
     private String _domain;
     private DiskQueue<ScoredUrlDatum> _queue;
     private FetcherPolicy _policy;
-    private BixoFlowProcess _process;
     private TupleEntryCollector _collector;
     private int _numActiveFetchers;
     private long _nextFetchTime;
 
-    public FetcherQueue(String domain, FetcherPolicy policy, BixoFlowProcess process, TupleEntryCollector collector) {
+    public FetcherQueue(String domain, FetcherPolicy policy, TupleEntryCollector collector) {
+        this(domain, policy, DEFAULT_MAX_URLS_IN_MEMORY, collector);
+    }
+    
+    // TODO KKr - get rid of use of _collector here, do skipping at higher level
+    public FetcherQueue(String domain, FetcherPolicy policy, int maxUrlsInMemory, TupleEntryCollector collector) {
         _domain = domain;
         _policy = policy;
-        _process = process;
         _collector = collector;
 
         _numActiveFetchers = 0;
         _nextFetchTime = System.currentTimeMillis();
-        _queue = new DiskQueue<ScoredUrlDatum>(MAX_URLS_IN_MEMORY);
+        _queue = new DiskQueue<ScoredUrlDatum>(maxUrlsInMemory);
     }
 
 
@@ -107,22 +111,21 @@ public class FetcherQueue implements IFetchListProvider, Delayed {
     /* (non-Javadoc)
      * @see bixo.fetcher.IFetchItemProvider#poll()
      */
-    public synchronized FetchList poll() {
+    public synchronized List<ScoredUrlDatum> poll() {
         // Based on our fetch policy, decide if we can return back one or more URLs to
         // be fetched.
-        FetchList result = null;
+        List<ScoredUrlDatum> result = null;
         
         if (_queue.size() == 0) {
             // Nothing to return
-        } else if ((_policy.getCrawlEndTime() != FetcherPolicy.NO_CRAWL_END_TIME) && (System.currentTimeMillis() >= _policy.getCrawlEndTime())) {
-            // We're past the end of the target fetch window, so bail.
-            skipAll(UrlStatus.SKIPPED_TIME_LIMIT);
-        } else if ((_numActiveFetchers == 0) && (System.currentTimeMillis() >= _nextFetchTime)) {
+        } else if (_numActiveFetchers > 0) {
+            // Only one active thread per domain/server at a time.
+        } else if (System.currentTimeMillis() >= _nextFetchTime) {
             _numActiveFetchers += 1;
             
             FetchRequest fetchRequest = _policy.getFetchRequest(_queue.size());
             int numUrls = fetchRequest.getNumUrls();
-            result = new FetchList(this, _process, _collector);
+            result = new ArrayList<ScoredUrlDatum>();
             for (int i = 0; i < numUrls; i++) {
                 result.add(_queue.remove());
             }
@@ -142,6 +145,14 @@ public class FetcherQueue implements IFetchListProvider, Delayed {
         return _domain;
     }
 
+    public long getNextFetchTime() {
+        return _nextFetchTime;
+    }
+    
+    public TupleEntryCollector getCollector() {
+        return _collector;
+    }
+    
     /**
      * Return a guess as to the host name for URLs in this queue.
      * 
@@ -165,7 +176,7 @@ public class FetcherQueue implements IFetchListProvider, Delayed {
      * We're done trying to fetch <items>
      * @param items - items previously returned from call to poll()
      */
-    public synchronized void release(FetchList items) {
+    public synchronized void release(List<ScoredUrlDatum> urls) {
         _numActiveFetchers -= 1;
     }
 
@@ -194,19 +205,7 @@ public class FetcherQueue implements IFetchListProvider, Delayed {
 
     @Override
     public long getDelay(TimeUnit timeUnit) {
-        // If we're empty, then we want to go to the front of the queue, so
-        // that polls will return us, and we can get tossed.
-        if (isEmpty()) {
-            return Long.MIN_VALUE;
-        }
-        
-        // Calc a delay that will be <= 0 if we're ready to fetch, and is smaller for
-        // larger numbers of URLs.
         long delayInMS = _nextFetchTime - System.currentTimeMillis();
-        if (delayInMS <= 0) {
-            delayInMS = -1 * _queue.size();
-        }
-        
         return timeUnit.convert(delayInMS, TimeUnit.MILLISECONDS);
     }
 
@@ -214,9 +213,6 @@ public class FetcherQueue implements IFetchListProvider, Delayed {
     /* (non-Javadoc)
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      * 
-     * When comparing elements, we don't want the comparison ordering to dynamically
-     * change just because the delay time has expired - which is what would happen if
-     * we used the getDelay value.
      */
     @Override
     public int compareTo(Delayed other) {
@@ -232,10 +228,18 @@ public class FetcherQueue implements IFetchListProvider, Delayed {
     }
 
 
+    @Override
+    public String toString() {
+        long now = System.currentTimeMillis();
+        return String.format("%s: %d URLs remaining, next fetch at %s (in %dms), delay is %dms (%d active threads)", 
+                        getDomain(), _queue.size(), new Date(_nextFetchTime).toString(), _nextFetchTime - now,
+                        _policy.getCrawlDelay(), _numActiveFetchers);
+    }
+    
     /**
      * Return guess as to when this queue would be finished.
      * 
-     * Note that this is just a quess, e.g. if all remaining URLs could be fetched in
+     * Note that this is just a guess, e.g. if all remaining URLs could be fetched in
      * the next batch, then it might finish must faster.
      * 
      * @return time (in milliseconds) when queue should be done.
@@ -244,11 +248,14 @@ public class FetcherQueue implements IFetchListProvider, Delayed {
         int numItems = _queue.size();
         long now = System.currentTimeMillis();
         if (numItems == 0) {
+            // TODO KKr - this is only an OK result if num fetchers == 0, otherwise
+            // finish time is # of URLs being fetched currently from this queue * some
+            // value, but we don't keep track of current fetch count.
             return now;
         } else {
             FetchRequest fetchRequest = _policy.getFetchRequest(numItems);
             long millisecondsPerItem = (fetchRequest.getNextRequestTime() - now) / fetchRequest.getNumUrls();
-            return now + (millisecondsPerItem * numItems);
+            return _nextFetchTime + (millisecondsPerItem * numItems);
         }
     }
     

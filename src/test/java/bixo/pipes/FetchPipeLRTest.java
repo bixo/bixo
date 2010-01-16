@@ -15,6 +15,7 @@ import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.QueuePolicy;
 import bixo.config.UserAgent;
 import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
@@ -158,7 +159,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Pipe pipe = new Pipe("urlSource");
         ScoreGenerator scorer = new FixedScoreGenerator(0.5);
         IHttpFetcher fetcher = new SimpleHttpFetcher(ConfigUtils.BIXO_TEST_AGENT);
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, metaDataFields);
+        QueuePolicy queuePolicy = new QueuePolicy();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, queuePolicy, metaDataFields);
         
         String outputPath = "build/test/FetchPipeTest/testFetchPipe";
         Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS.append(metaDataFields)), outputPath + "/status", true);
@@ -344,7 +346,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         
         // Only one thread, so we'll fetch domains sequentially
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, BaseDatum.EMPTY_METADATA_FIELDS);
+        QueuePolicy queuePolicy = new QueuePolicy();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, queuePolicy, BaseDatum.EMPTY_METADATA_FIELDS);
 
         String outputPath = "build/test/FetchPipeTest/testFetchPipe";
         Tap out = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
