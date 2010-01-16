@@ -11,12 +11,19 @@ import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
 public class ParsedDatum extends BaseDatum {
-    private final String _url;
-    private final String _parsedText;
-    private final String _language;
-    private final String _title;
-    private final Outlink[] _outLinks;
-    private final Map<String, String> _parsedMeta;
+    private String _url;
+    private String _parsedText;
+    private String _language;
+    private String _title;
+    private Outlink[] _outLinks;
+    private Map<String, String> _parsedMeta;
+    
+    /**
+     * No argument constructor for use with FutureTask
+     */
+    public ParsedDatum() {
+        super(BaseDatum.EMPTY_METADATA_MAP);
+    }
     
     @SuppressWarnings("unchecked")
     public ParsedDatum(String url, String parsedText, String language, String title, Outlink[] outLinks, Map<String, String> parsedMeta, Map<String, Comparable> metaData) {
@@ -34,30 +41,54 @@ public class ParsedDatum extends BaseDatum {
         return _url;
     }
 
+    public void setUrl(String url) {
+        _url = url;
+    }
+
     public String getParsedText() {
         return _parsedText;
     }
 
-    public String getLanguage() {
-    	return _language;
+    public void setParsedText(String parsedText) {
+        _parsedText = parsedText;
     }
-    
+
+    public String getLanguage() {
+        return _language;
+    }
+
+    public void setLanguage(String language) {
+        _language = language;
+    }
+
     public String getTitle() {
         return _title;
     }
-    
-    public Outlink[] getOutlinks() {
+
+    public void setTitle(String title) {
+        _title = title;
+    }
+
+    public Outlink[] getOutLinks() {
         return _outLinks;
     }
-    
+
+    public void setOutLinks(Outlink[] outLinks) {
+        _outLinks = outLinks;
+    }
+
     public Map<String, String> getParsedMeta() {
         return _parsedMeta;
     }
-    
+
+    public void setParsedMeta(Map<String, String> parsedMeta) {
+        _parsedMeta = parsedMeta;
+    }
+
     // ======================================================================================
     // Below here is all Cascading-specific implementation
     // ======================================================================================
-    
+
     // Cascading field names that correspond to the datum fields.
     public static final String URL_FIELD = fieldName(ParsedDatum.class, "url");
     public static final String PARSED_TEXT_FIELD = fieldName(ParsedDatum.class, "parsedText");
