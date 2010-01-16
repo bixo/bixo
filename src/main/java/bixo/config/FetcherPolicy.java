@@ -57,7 +57,7 @@ public class FetcherPolicy implements Serializable {
     private int _minResponseRate;        // lower bounds on bytes-per-second
     private int _maxContentSize;        // Max # of bytes to use.
     private long _crawlEndTime;          // When we want the crawl to end
-    protected long _crawlDelay;            // Delay (in seconds) between requests
+    protected long _crawlDelay;            // Delay (in milliseconds) between requests
     private int _maxRedirects;
     private int _maxConnectionsPerHost; // 
     private String _acceptLanguage;    // What to pass for the Accept-Language request header
@@ -116,6 +116,19 @@ public class FetcherPolicy implements Serializable {
             return Integer.MAX_VALUE;
         } else {
             return calcMaxUrls();
+        }
+    }
+    
+    public long getDefaultFetchInterval() {
+        return DEFAULT_FETCH_INTERVAL;
+    }
+    
+    public int getDefaultUrlsPerRequest() {
+        long crawlDelay = getDefaultCrawlDelay();
+        if (crawlDelay > 0) {
+            return (int)(getDefaultFetchInterval() / crawlDelay);
+        } else {
+            return Integer.MAX_VALUE;
         }
     }
     
