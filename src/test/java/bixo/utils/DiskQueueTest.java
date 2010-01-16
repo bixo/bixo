@@ -2,9 +2,15 @@ package bixo.utils;
 
 import static org.junit.Assert.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
+import org.apache.hadoop.io.BytesWritable;
 import org.junit.Test;
+
+import bixo.datum.FetchedDatum;
+import bixo.datum.HttpHeaders;
 
 public class DiskQueueTest {
 
@@ -119,6 +125,57 @@ public class DiskQueueTest {
         assertEquals(1, queue.size());
     }
     
+    @Test
+    public void testReleasingMemory() {
+        DiskQueue<String> queue = new DiskQueue<String>(1);
+
+        assertTrue(queue.offer("first"));
+        assertTrue(queue.offer("second"));
+        try {
+            for (int i = 0; i < 30; i++) {
+                System.out.println(i);
+                byte data[] = new byte[1000000];
+                assertTrue(queue.offer(new String(data)));
+                assertNotNull(queue.poll());
+            }
+        } finally {
+            queue.clear();
+        }
+    }
+    
+    // TODO KKr - reenable when FetchedDatum is serializable
+    // @Test
+    @SuppressWarnings("unchecked")
+    public void testGettingBackWhatWasWritten() {
+        final int numElements = 100;
+        DiskQueue<FetchedDatum> queue = new DiskQueue<FetchedDatum>(numElements/10);
+        
+        FetchedDatum datums[] = new FetchedDatum[numElements];
+        for (int i = 0; i < numElements; i++) {
+            String baseUrl = "http://domain-" + i + "+.com/index.html";
+            String redirectedUrl = "http://www.domain-" + i + ".com/index.html";
+            long fetchTime = System.currentTimeMillis();
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("key", "value-" + i);
+            BytesWritable content = new BytesWritable(new String("content-" + i).getBytes());
+            String contentType = "text/plain";
+            int responseRate = (i + 1) * 1000;
+            Map<String, Comparable> metaData = new HashMap<String, Comparable>();
+            metaData.put("key", "value-" + i);
+            FetchedDatum datum = new FetchedDatum(baseUrl, redirectedUrl, fetchTime, headers, content, contentType, responseRate, metaData);
+            datums[i] = datum;
+            assertTrue(queue.offer(datum));
+        }
+        
+        for (int i = 0; i < numElements; i++) {
+            FetchedDatum datum = queue.poll();
+            assertNotNull(datum);
+            assertEquals(datums[i], datum);
+        }
+        
+        assertNull(queue.poll());
+    }
+
     @Test
     public void testAddingNullElement() {
         DiskQueue<Integer> queue = new DiskQueue<Integer>(1);

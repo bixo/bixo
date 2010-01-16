@@ -11,7 +11,8 @@ import java.io.Serializable;
 import java.security.InvalidParameterException;
 import java.util.AbstractQueue;
 import java.util.Iterator;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.Queue;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.log4j.Logger;
 
@@ -31,7 +32,7 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
 
     // The _memoryQueue represents the head of the queue. It can also be the tail, if
     // nothing has spilled over onto the disk.
-    private LinkedBlockingQueue<E> _memoryQueue;
+    private Queue<E> _memoryQueue;
     
     // Number of elements in the backing store file on disk.
     private int _fileElements;
@@ -64,7 +65,7 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
             throw new InvalidParameterException("DiskQueue max size must be at least one");
         }
 
-        _memoryQueue = new LinkedBlockingQueue<E>(maxSize);
+        _memoryQueue = new ArrayBlockingQueue<E>(maxSize);
     }
 
 
@@ -75,38 +76,46 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
      */
     @Override
     protected void finalize() throws Throwable {
-        closeFile();
+        if (closeFile()) {
+            LOGGER.warn("Disk queue still had open file in finalize");
+        }
     }
 
 
     /**
      * Make sure the file streams are all closed down, the temp file is closed, and the
      * temp file has been deleted.
+     * 
+     * @return true if we had to close down the file.
      */
-    private void closeFile() {
-        if (_backingStore != null) {
-            IoUtils.safeClose(_fileIn);
-            _fileIn = null;
-            _fileInSaved = null;
-
-            IoUtils.safeClose(_fileOut);
-            _fileOut = null;
-
-            _fileElements = 0;
-            
-            _backingStore.delete();
-            _backingStore = null;
+    private boolean closeFile() {
+        if (_backingStore == null) {
+            return false;
         }
+
+        IoUtils.safeClose(_fileIn);
+        _fileIn = null;
+        _fileInSaved = null;
+
+        IoUtils.safeClose(_fileOut);
+        _fileOut = null;
+
+        _fileElements = 0;
+
+        _backingStore.delete();
+        _backingStore = null;
+        return true;
     }
 
     private void openFile() throws IOException {
+        
         if (_backingStore == null) {
             _backingStore = File.createTempFile(DiskQueue.class.getSimpleName() + "-backingstore-", null);
             _fileOut = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(_backingStore)));
-            
+
             // Flush output file, so there's something written when we open the input stream.
             _fileOut.flush();
-            
+
             _fileIn = new ObjectInputStream(new FileInputStream(_backingStore));
         }
     }
@@ -131,16 +140,19 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
         }
         
         // If there's anything in the file, or the queue is full, then we have to write to the file.
-        if ((_fileElements > 0) || !_memoryQueue.offer(element)) {
+        if ((_backingStore != null) || !_memoryQueue.offer(element)) {
             try {
                 openFile();
                 _fileOut.writeObject(element);
+                _fileElements += 1;
+                
+                // Release memory ref to <element>, since we don't have any back-references from
+                // it to other serialized objects.
+                _fileOut.reset();
             } catch (IOException e) {
                 LOGGER.error("Error writing to DiskQueue backing store", e);
                 return false;
             }
-
-            _fileElements += 1;
         }
 
         return true;
@@ -168,25 +180,31 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
     @Override
     public void clear() {
         _memoryQueue.clear();
-        
+        _fileInSaved = null;
         closeFile();
     }
     
     @SuppressWarnings("unchecked")
     private void loadMemoryQueue() {
-        if (_memoryQueue.isEmpty()) {
-            // See if we have one saved element from the previous read request
-            if (_fileInSaved != null) {
-                if (!_memoryQueue.offer(_fileInSaved)) {
-                    throw new RuntimeException("Impossible error - can't offer to an empty queue");
-                }
+        // use the memory queue as our buffer, so only load it up when it's empty
+        if (!_memoryQueue.isEmpty()) {
+            return;
+        }
 
-                _fileInSaved = null;
+        // See if we have one saved element from the previous read request
+        if (_fileInSaved != null) {
+            if (!_memoryQueue.offer(_fileInSaved)) {
+                throw new RuntimeException("Unexpected error - can't offer to an empty queue");
             }
 
+            _fileInSaved = null;
+        }
+
+        // Now see if we have anything on disk
+        if (_backingStore != null) {
             try {
-                openFile();
-                
+                // Since we buffer writes, we need to make sure everything has been written before
+                // we start reading.
                 _fileOut.flush();
 
                 while (_fileElements > 0) {
@@ -199,7 +217,7 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
                     }
                 }
 
-                // Nothing left in the file, so close it.
+                // Nothing left in the file, so close/delete it.
                 closeFile();
 
                 // FUTURE KKr - file queue is empty, so could reset length of file, read/write offsets
@@ -209,7 +227,7 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
                 LOGGER.error("Error reading from DiskQueue backing store", e);
                 return;
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Impossible error - can't find class for object in backing store");
+                throw new RuntimeException("Unexpected error - can't find class for object in backing store");
             }
         }
     }
