@@ -26,7 +26,7 @@ import bixo.fetcher.http.IHttpHeaders;
 public class SimpleParserTest {
 
 	@Test
-	public void testRelativeLinkWithBaseUrl() throws IOException {
+	public void testRelativeLinkWithBaseUrl() throws Exception {
 		// Read in test data from test/resources
 		String html = readFromFile("parser-files/base-url.html");
 		
@@ -44,7 +44,7 @@ public class SimpleParserTest {
 		ParsedDatum parsedDatum = parser.parse(fetchedDatum);
 		
 		// Verify outlink is correct.
-		Outlink[] outlinks = parsedDatum.getOutlinks();
+		Outlink[] outlinks = parsedDatum.getOutLinks();
 		Assert.assertEquals(2, outlinks.length);
 		
 		// TODO KKr - reenable this test when Tika parser calls my handler with
@@ -56,7 +56,7 @@ public class SimpleParserTest {
 	}
 	
 	@Test
-	public void testRelativeLinkWithLocationUrl() throws IOException {
+	public void testRelativeLinkWithLocationUrl() throws Exception {
 		// Read in test data from test/resources
 		String html = readFromFile("parser-files/relative-urls.html");
 		
@@ -77,7 +77,7 @@ public class SimpleParserTest {
 		ParsedDatum parsedDatum = parser.parse(fetchedDatum);
 		
 		// Verify outlink is correct.
-		Outlink[] outlinks = parsedDatum.getOutlinks();
+		Outlink[] outlinks = parsedDatum.getOutLinks();
 		Assert.assertEquals(2, outlinks.length);
 		
 		Assert.assertEquals("http://newdomain.com/link1", outlinks[0].getToUrl());
@@ -87,7 +87,7 @@ public class SimpleParserTest {
 	}
 	
 	@Test
-	public void testRelativeLinkWithRelativeLocationUrl() throws IOException {
+	public void testRelativeLinkWithRelativeLocationUrl() throws Exception {
 		// Read in test data from test/resources
 		String html = readFromFile("parser-files/relative-urls.html");
 		
@@ -108,7 +108,7 @@ public class SimpleParserTest {
 		ParsedDatum parsedDatum = parser.parse(fetchedDatum);
 		
 		// Verify outlink is correct.
-		Outlink[] outlinks = parsedDatum.getOutlinks();
+		Outlink[] outlinks = parsedDatum.getOutLinks();
 		Assert.assertEquals(2, outlinks.length);
 		
 		Assert.assertEquals("http://olddomain.com/redirected/link1", outlinks[0].getToUrl());
@@ -118,7 +118,7 @@ public class SimpleParserTest {
 	}
 	
 	@Test
-	public void testRelativeLinkWithRedirectUrl() throws IOException {
+	public void testRelativeLinkWithRedirectUrl() throws Exception {
 		// Read in test data from test/resources
 		String html = readFromFile("parser-files/relative-urls.html");
 		
@@ -138,7 +138,7 @@ public class SimpleParserTest {
 		ParsedDatum parsedDatum = parser.parse(fetchedDatum);
 		
 		// Verify outlink is correct.
-		Outlink[] outlinks = parsedDatum.getOutlinks();
+		Outlink[] outlinks = parsedDatum.getOutLinks();
 		Assert.assertEquals(2, outlinks.length);
 		
 		Assert.assertEquals("http://newdomain.com/link1", outlinks[0].getToUrl());
@@ -148,7 +148,7 @@ public class SimpleParserTest {
 	}
 	
 	@Test
-	public void testContentExtraction() throws IOException {
+	public void testContentExtraction() throws Exception {
 		// Read in test data from test/resources
 		String html = readFromFile("parser-files/simple-content.html");
 		
@@ -172,7 +172,7 @@ public class SimpleParserTest {
 	}
 	
     @Test
-    public void testHtlmParsing() throws IOException {
+    public void testHtlmParsing() throws Exception {
         URL path = SimpleParserTest.class.getResource("/" + "simple-page.html");
 
         IParser parser = new SimpleParser();
@@ -197,7 +197,7 @@ public class SimpleParserTest {
     }
 
     @Test
-    public void testLanguageDetectionHttpHeader() throws IOException {
+    public void testLanguageDetectionHttpHeader() throws Exception {
 		// Read in test data from test/resources
 		String html = readFromFile("parser-files/simple-content.html");
 		
@@ -225,7 +225,7 @@ public class SimpleParserTest {
     }
     
     @Test
-    public void testLanguageDetectionDublinCore() throws IOException {
+    public void testLanguageDetectionDublinCore() throws Exception {
 		// Read in test data from test/resources
 		String html = readFromFile("parser-files/lang-dc.html");
 		
@@ -254,7 +254,7 @@ public class SimpleParserTest {
     }
 
     @Test
-    public void testLanguageDetectionHttpEquiv() throws IOException {
+    public void testLanguageDetectionHttpEquiv() throws Exception {
 		// Read in test data from test/resources
 		String html = readFromFile("parser-files/lang-http-equiv.html");
 		
