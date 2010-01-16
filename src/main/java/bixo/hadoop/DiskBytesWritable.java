@@ -11,8 +11,8 @@ import org.apache.hadoop.io.WritableComparable;
 
 @SuppressWarnings("unchecked")
 public class DiskBytesWritable implements WritableComparable {
-    private static final int LENGTH_BYTES = 4;
-    private static final byte[] EMPTY_BYTES = {};
+    // private static final int LENGTH_BYTES = 4;
+    // private static final byte[] EMPTY_BYTES = {};
 
     private int _memSize;
     private byte[] _bytes;
