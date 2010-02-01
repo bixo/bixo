@@ -58,6 +58,8 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     // FUTURE KKr - add in time to do the download.
     private static final long COMMAND_TIMEOUT = (ROBOTS_CONNECTION_TIMEOUT + ROBOTS_SOCKET_TIMEOUT) * ROBOTS_RETRY_COUNT;
 
+    private static final long TERMINATE_TIMEOUT = COMMAND_TIMEOUT;
+
     private static final int MAX_URLS_IN_MEMORY = 100;
 
     private ScoreGenerator _scorer;
@@ -115,7 +117,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     public void cleanup(FlowProcess flowProcess, cascading.operation.OperationCall<NullContext> operationCall) {
         
         try {
-            if (!_executor.terminate()) {
+            if (!_executor.terminate(TERMINATE_TIMEOUT)) {
                 LOGGER.warn("Had to do a hard shutdown of robots fetching");
             }
         } catch (InterruptedException e) {

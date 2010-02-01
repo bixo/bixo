@@ -23,8 +23,8 @@ import bixo.utils.IoUtils;
 public class SimpleParser implements IParser {
     private static final Logger LOGGER = Logger.getLogger(SimpleParser.class);
 
-    // We'll give Tika 20 seconds to parse the document before timing out.
-    private static final long MAX_PARSE_DURATION = 20;
+    // Number of seconds we'll give Tika to parse the document before timing out.
+    private static final long MAX_PARSE_DURATION = 30;
     
     private transient AutoDetectParser _parser;
     

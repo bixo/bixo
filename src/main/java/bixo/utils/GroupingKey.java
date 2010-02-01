@@ -3,6 +3,7 @@ package bixo.utils;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import bixo.datum.UrlStatus;
 import bixo.fetcher.http.IRobotRules;
 
 
@@ -70,5 +71,41 @@ public class GroupingKey {
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid crawl delay in grouping key: " + key);
         }
+    }
+    
+    public static int getCountFromKey(String key) {
+        Matcher m = GROUPING_KEY_PATTERN.matcher(key);
+        if (!m.matches()) {
+            throw new RuntimeException("Invalid grouping key: " + key);
+        }
+
+        try {
+            String countAsString = m.group(1);
+            return Integer.parseInt(countAsString);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Invalid crawl delay in grouping key: " + key);
+        }
+    }
+    
+    public static UrlStatus makeUrlStatusFromKey(String key) {
+        UrlStatus status;
+        
+        if (!isSpecialKey(key)) {
+            status = UrlStatus.UNFETCHED;
+        } else if (key.equals(GroupingKey.BLOCKED_GROUPING_KEY)) {
+            status = UrlStatus.SKIPPED_BLOCKED;
+        } else if (key.equals(GroupingKey.UNKNOWN_HOST_GROUPING_KEY)) {
+            status = UrlStatus.SKIPPED_UNKNOWN_HOST;
+        } else if (key.equals(GroupingKey.INVALID_URL_GROUPING_KEY)) {
+            status = UrlStatus.SKIPPED_INVALID_URL;
+        } else if (key.equals(GroupingKey.DEFERRED_GROUPING_KEY)) {
+            status = UrlStatus.SKIPPED_DEFERRED;
+        } else if (key.equals(GroupingKey.SKIPPED_GROUPING_KEY)) {
+            status = UrlStatus.SKIPPED_BY_SCORER;
+        } else {
+            throw new RuntimeException("Unknown value for special grouping key: " + key);
+        }
+
+        return status;
     }
 }

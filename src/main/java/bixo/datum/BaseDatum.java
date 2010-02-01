@@ -139,6 +139,31 @@ public abstract class BaseDatum implements Serializable {
     public static String fieldName(Class clazz, String field) {
         return clazz.getSimpleName() + "-" + field;
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((_metaDataMap == null) ? 0 : _metaDataMap.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        BaseDatum other = (BaseDatum) obj;
+        if (_metaDataMap == null) {
+            if (other._metaDataMap != null)
+                return false;
+        } else if (!_metaDataMap.equals(other._metaDataMap))
+            return false;
+        return true;
+    }
     
     
 }

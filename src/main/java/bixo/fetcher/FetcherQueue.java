@@ -123,7 +123,7 @@ public class FetcherQueue implements Delayed {
         } else if (System.currentTimeMillis() >= _nextFetchTime) {
             _numActiveFetchers += 1;
             
-            FetchRequest fetchRequest = _policy.getFetchRequest(_queue.size());
+            FetchRequest fetchRequest = _policy.getFetchRequest(System.currentTimeMillis(), _policy.getCrawlDelay(), _queue.size());
             int numUrls = fetchRequest.getNumUrls();
             result = new ArrayList<ScoredUrlDatum>();
             for (int i = 0; i < numUrls; i++) {
@@ -253,7 +253,7 @@ public class FetcherQueue implements Delayed {
             // value, but we don't keep track of current fetch count.
             return now;
         } else {
-            FetchRequest fetchRequest = _policy.getFetchRequest(numItems);
+            FetchRequest fetchRequest = _policy.getFetchRequest(System.currentTimeMillis(), _policy.getCrawlDelay(), numItems);
             long millisecondsPerItem = (fetchRequest.getNextRequestTime() - now) / fetchRequest.getNumUrls();
             return _nextFetchTime + (millisecondsPerItem * numItems);
         }

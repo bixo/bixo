@@ -15,7 +15,7 @@ public class ParsedDatum extends BaseDatum {
     private String _parsedText;
     private String _language;
     private String _title;
-    private Outlink[] _outLinks;
+    private Outlink[] _outlinks;
     private Map<String, String> _parsedMeta;
     
     /**
@@ -26,14 +26,14 @@ public class ParsedDatum extends BaseDatum {
     }
     
     @SuppressWarnings("unchecked")
-    public ParsedDatum(String url, String parsedText, String language, String title, Outlink[] outLinks, Map<String, String> parsedMeta, Map<String, Comparable> metaData) {
+    public ParsedDatum(String url, String parsedText, String language, String title, Outlink[] outlinks, Map<String, String> parsedMeta, Map<String, Comparable> metaData) {
         super(metaData);
         
         _url = url;
         _parsedText = parsedText;
         _language = language;
         _title = title;
-        _outLinks = outLinks;
+        _outlinks = outlinks;
         _parsedMeta = parsedMeta;
     }
 
@@ -69,12 +69,12 @@ public class ParsedDatum extends BaseDatum {
         _title = title;
     }
 
-    public Outlink[] getOutLinks() {
-        return _outLinks;
+    public Outlink[] getOutlinks() {
+        return _outlinks;
     }
 
-    public void setOutLinks(Outlink[] outLinks) {
-        _outLinks = outLinks;
+    public void setOutlinks(Outlink[] outlinks) {
+        _outlinks = outlinks;
     }
 
     public Map<String, String> getParsedMeta() {
@@ -107,7 +107,7 @@ public class ParsedDatum extends BaseDatum {
         _parsedText = entry.getString(PARSED_TEXT_FIELD);
         _language = entry.getString(LANGUAGE_FIELD);
         _title = entry.getString(TITLE_FIELD);
-        _outLinks = convertTupleToOutlinks((Tuple)entry.get(OUTLINKS_FIELD));
+        _outlinks = convertTupleToOutlinks((Tuple)entry.get(OUTLINKS_FIELD));
         _parsedMeta = convertTupleToMap((Tuple)entry.get(PARSED_META_FIELD));
     }
 
@@ -119,7 +119,7 @@ public class ParsedDatum extends BaseDatum {
     @SuppressWarnings("unchecked")
     @Override
     protected Comparable[] getStandardValues() {
-        return new Comparable[] { _url, _parsedText, _language, _title, convertOutlinksToTuple(_outLinks), convertMapToTuple(_parsedMeta) };
+        return new Comparable[] { _url, _parsedText, _language, _title, convertOutlinksToTuple(_outlinks), convertMapToTuple(_parsedMeta) };
     }
 
     private Tuple convertOutlinksToTuple(Outlink[] outLinks) {

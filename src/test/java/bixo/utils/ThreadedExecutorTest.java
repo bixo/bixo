@@ -116,7 +116,7 @@ public class ThreadedExecutorTest {
 
             executor.execute(cmd);
             
-            Assert.assertTrue(executor.terminate());
+            Assert.assertTrue(executor.terminate(timeoutInMS));
         } catch (RejectedExecutionException e) {
             Assert.fail("Execution was rejected");
         } catch (InterruptedException e) {
@@ -143,7 +143,7 @@ public class ThreadedExecutorTest {
 
             executor.execute(cmd);
             
-            Assert.assertFalse(executor.terminate());
+            Assert.assertFalse(executor.terminate(timeoutInMS));
         } catch (RejectedExecutionException e) {
             Assert.fail("Execution was rejected");
         } catch (InterruptedException e) {

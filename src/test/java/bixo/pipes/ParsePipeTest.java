@@ -86,8 +86,8 @@ public class ParsePipeTest extends CascadingTestCase {
         Flow flow = flowConnector.connect(in, out, parserPipe);
         flow.complete();
         
-        // Currently five (was four???) of the docs fail parsing - ugh.
-        final int invalidDocs = 5;
+        // Currently four of the docs fail parsing - ugh.
+        final int invalidDocs = 4;
         validateLength(flow, validRecords - invalidDocs);
     }
 

@@ -24,11 +24,11 @@ public class FakeUserFetcherPolicy extends FetcherPolicy {
     }
     
     @Override
-    public FetchRequest getFetchRequest(int maxUrls) {
+    public FetchRequest getFetchRequest(long now, long crawlDelay, int maxUrls) {
         // Set up the next request to have random variance.
         double baseDelay = _crawlDelay;
         double delayVariance = (Math.random() * baseDelay) - (baseDelay/2.0);
-        long nextRequestTime = System.currentTimeMillis() + Math.round(baseDelay + delayVariance);
+        long nextRequestTime = now + Math.round(baseDelay + delayVariance);
         FetchRequest result = new FetchRequest(Math.min(maxUrls, 1), nextRequestTime);
         return result;
     }

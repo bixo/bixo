@@ -33,11 +33,11 @@ public abstract class ScoreGenerator implements Serializable {
     }
     
     /**
-     * Return score for URL, based on when it should be crawled.
+     * Return score for URL, based on domain & URL path
      * 
-     * @param domain
-     * @param pld
-     * @param url
+     * @param domain hostname
+     * @param pld paid-level domain (derived from domain()
+     * @param url URL, or null for scoring domain/pld
      * @return
      */
     abstract public double generateScore(String domain, String pld, String url);

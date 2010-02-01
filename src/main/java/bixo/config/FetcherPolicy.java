@@ -38,7 +38,7 @@ import bixo.fetcher.FetchRequest;
 @SuppressWarnings("serial")
 public class FetcherPolicy implements Serializable {
     public static final int NO_MIN_RESPONSE_RATE = Integer.MIN_VALUE;
-    public static final long NO_CRAWL_END_TIME = Long.MIN_VALUE;
+    public static final long NO_CRAWL_END_TIME = Long.MAX_VALUE;
     public static final int NO_REDIRECTS = 0;
     
     public static final int DEFAULT_MIN_RESPONSE_RATE = NO_MIN_RESPONSE_RATE;
@@ -51,6 +51,8 @@ public class FetcherPolicy implements Serializable {
     // Interval between batched fetch requests, in milliseconds.
     protected static final long DEFAULT_FETCH_INTERVAL = 5 * 60 * 1000L;
     
+    protected static final int DEFAULT_MAX_REQUESTS_PER_CONNECTION = 50;
+    
     // Interval between requests, in milliseconds.
     protected static final long DEFAULT_CRAWL_DELAY = 30 * 1000L;
 
@@ -62,6 +64,7 @@ public class FetcherPolicy implements Serializable {
     private int _maxConnectionsPerHost; // 
     private String _acceptLanguage;    // What to pass for the Accept-Language request header
     private Set<String> _validMimeTypes;    // Set of mime-types that we'll accept, or null
+    private int _maxRequestsPerConnection;  // Max # of URLs to request in any one connection
     
     public FetcherPolicy() {
         this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME, DEFAULT_CRAWL_DELAY, DEFAULT_MAX_REDIRECTS);
@@ -88,6 +91,7 @@ public class FetcherPolicy implements Serializable {
         _acceptLanguage = DEFAULT_ACCEPT_LANGUAGE;
         _validMimeTypes = null;
         _maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
+        _maxRequestsPerConnection = DEFAULT_MAX_REQUESTS_PER_CONNECTION;
     }
 
     /**
@@ -166,6 +170,14 @@ public class FetcherPolicy implements Serializable {
         _maxConnectionsPerHost = maxConnectionsPerHost;
     }
     
+    public int getMaxRequestsPerConnection() {
+        return _maxRequestsPerConnection;
+    }
+    
+    public void setMaxRequestsPerConnection(int maxRequestsPerConnection) {
+        _maxRequestsPerConnection = maxRequestsPerConnection;
+    }
+    
     /**
      * Return the minimum response rate. If the speed at which bytes are being returned
      * from the server drops below this, the fetch of that page will be aborted.
@@ -219,19 +231,19 @@ public class FetcherPolicy implements Serializable {
         _validMimeTypes = validMimeTypes;
     }
     
-    public FetchRequest getFetchRequest(int maxUrls) {
+    public FetchRequest getFetchRequest(long now, long crawlDelay, int maxUrls) {
         int numUrls;
         
-        if (_crawlDelay > 0) {
-            numUrls = Math.min(maxUrls, (int)(DEFAULT_FETCH_INTERVAL / _crawlDelay));
+        if (crawlDelay > 0) {
+            numUrls = Math.min(maxUrls, (int)(getDefaultFetchInterval() / crawlDelay));
         } else {
             numUrls = maxUrls;
         }
         
-        long nextFetchTime = System.currentTimeMillis() + (numUrls * _crawlDelay);
+        numUrls = Math.min(numUrls, getMaxRequestsPerConnection());
+        long nextFetchTime = now + (numUrls * crawlDelay);
         return new FetchRequest(numUrls, nextFetchTime);
     }
-    
     
     @Override
     public int hashCode() {
@@ -243,6 +255,7 @@ public class FetcherPolicy implements Serializable {
         result = prime * result + _maxConnectionsPerHost;
         result = prime * result + _maxContentSize;
         result = prime * result + _maxRedirects;
+        result = prime * result + _maxRequestsPerConnection;
         result = prime * result + _minResponseRate;
         result = prime * result + ((_validMimeTypes == null) ? 0 : _validMimeTypes.hashCode());
         return result;
@@ -271,6 +284,8 @@ public class FetcherPolicy implements Serializable {
         if (_maxContentSize != other._maxContentSize)
             return false;
         if (_maxRedirects != other._maxRedirects)
+            return false;
+        if (_maxRequestsPerConnection != other._maxRequestsPerConnection)
             return false;
         if (_minResponseRate != other._minResponseRate)
             return false;

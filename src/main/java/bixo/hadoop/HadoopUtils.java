@@ -30,15 +30,28 @@ public class HadoopUtils {
     	return getDefaultJobConf(DEFAULT_STACKSIZE);
     }
     
-    public static JobConf getDefaultJobConf(int stackSizeInKB) throws IOException {
-        JobClient jobClient = new JobClient(new JobConf());
+    public static int getTaskTrackers(JobConf conf) throws IOException {
+        JobClient jobClient = new JobClient(conf);
         ClusterStatus status = jobClient.getClusterStatus();
-        int trackers = status.getTaskTrackers();
-
+        return status.getTaskTrackers();
+    }
+    
+    public static JobConf getDefaultJobConf(int stackSizeInKB) throws IOException {
         JobConf conf = new JobConf();
-        conf.setNumMapTasks(trackers * 10);
         
-        conf.setNumReduceTasks((trackers * conf.getInt("mapred.tasktracker.reduce.tasks.maximum", 2)));
+        // We explicitly set task counts to 1 for local so that code which dependes on
+        // things like the reducer count runs properly.
+        if (isJobLocal(conf)) {
+            conf.setNumMapTasks(1);
+            conf.setNumReduceTasks(1);
+        } else {
+            JobClient jobClient = new JobClient(conf);
+            ClusterStatus status = jobClient.getClusterStatus();
+            int trackers = status.getTaskTrackers();
+
+            conf.setNumMapTasks(trackers * 10);
+            conf.setNumReduceTasks((trackers * conf.getInt("mapred.tasktracker.reduce.tasks.maximum", 2)));
+        }
         
         conf.setMapSpeculativeExecution(false);
         conf.setReduceSpeculativeExecution(false);
@@ -72,6 +85,10 @@ public class HadoopUtils {
         MultiMapReducePlanner.setJobConf(properties, conf);
 
         return properties;
+    }
+    
+    public static boolean isJobLocal(JobConf conf) {
+        return conf.get( "mapred.job.tracker" ).equalsIgnoreCase( "local" );
     }
 
 }

@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 
 public class HtmlUtils {
 
-    // <META NAME="ROBOTS" CONTENT="XXX"> 
+    // <META NAME="ROBOTS" CONTENT="xxx"> 
     private static final Pattern META_ROBOTS_PATTERN = Pattern
     .compile("(?is)<meta\\s+name\\s*=\\s*['\\\"]\\s*robots['\\\"]\\s+content\\s*=\\s*['\\\"]([^'\"]+)['\\\"]");
 

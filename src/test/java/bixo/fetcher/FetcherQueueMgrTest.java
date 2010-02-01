@@ -46,23 +46,17 @@ public class FetcherQueueMgrTest {
 
     @SuppressWarnings("serial")
     private class TestFetcherPolicy extends FetcherPolicy {
-        private int _maxUrlsPerRequest;
         
         TestFetcherPolicy(long crawlDelay, int maxUrlsPerRequest) {
             super();
             
             setCrawlDelay(crawlDelay);
-            _maxUrlsPerRequest = maxUrlsPerRequest;
-        }
-        
-        @Override
-        public FetchRequest getFetchRequest(int maxUrls) {
-            return super.getFetchRequest(Math.min(_maxUrlsPerRequest, maxUrls));
+            setMaxRequestsPerConnection(maxUrlsPerRequest);
         }
         
         @Override
         public FetcherPolicy makeNewPolicy(long crawlDelay) {
-            return new TestFetcherPolicy(crawlDelay, _maxUrlsPerRequest);
+            return new TestFetcherPolicy(crawlDelay, getMaxRequestsPerConnection());
         }
     }
     

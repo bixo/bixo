@@ -38,7 +38,7 @@ public class CreateUrlFromOutlinksFunction extends BaseOperation<NullContext> im
     @Override
     public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
     	ParsedDatum datum = new ParsedDatum(funcCall.getArguments().getTuple(), MetaData.FIELDS);
-    	Outlink outlinks[] = datum.getOutLinks();
+    	Outlink outlinks[] = datum.getOutlinks();
     	
     	// Bump the crawl depth metadata value
     	Map<String, Comparable> metaData = datum.getMetaDataMap();

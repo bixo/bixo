@@ -20,9 +20,10 @@ public class FetcherPolicyTest {
         FetcherPolicy policy = new FetcherPolicy(FetcherPolicy.NO_MIN_RESPONSE_RATE,
                         FetcherPolicy.DEFAULT_MAX_CONTENT_SIZE, FetcherPolicy.NO_CRAWL_END_TIME, 0,
                         FetcherPolicy.DEFAULT_MAX_REDIRECTS);
-
+        policy.setMaxRequestsPerConnection(100);
+        
         try {
-            FetchRequest request = policy.getFetchRequest(100);
+            FetchRequest request = policy.getFetchRequest(System.currentTimeMillis(), 0, 100);
             Assert.assertEquals(100, request.getNumUrls());
             Assert.assertTrue(request.getNextRequestTime() <= System.currentTimeMillis());
         } catch (Exception e) {

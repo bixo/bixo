@@ -44,7 +44,7 @@ public class SimpleParserTest {
 		ParsedDatum parsedDatum = parser.parse(fetchedDatum);
 		
 		// Verify outlink is correct.
-		Outlink[] outlinks = parsedDatum.getOutLinks();
+		Outlink[] outlinks = parsedDatum.getOutlinks();
 		Assert.assertEquals(2, outlinks.length);
 		
 		// TODO KKr - reenable this test when Tika parser calls my handler with
@@ -77,7 +77,7 @@ public class SimpleParserTest {
 		ParsedDatum parsedDatum = parser.parse(fetchedDatum);
 		
 		// Verify outlink is correct.
-		Outlink[] outlinks = parsedDatum.getOutLinks();
+		Outlink[] outlinks = parsedDatum.getOutlinks();
 		Assert.assertEquals(2, outlinks.length);
 		
 		Assert.assertEquals("http://newdomain.com/link1", outlinks[0].getToUrl());
@@ -108,7 +108,7 @@ public class SimpleParserTest {
 		ParsedDatum parsedDatum = parser.parse(fetchedDatum);
 		
 		// Verify outlink is correct.
-		Outlink[] outlinks = parsedDatum.getOutLinks();
+		Outlink[] outlinks = parsedDatum.getOutlinks();
 		Assert.assertEquals(2, outlinks.length);
 		
 		Assert.assertEquals("http://olddomain.com/redirected/link1", outlinks[0].getToUrl());
@@ -138,7 +138,7 @@ public class SimpleParserTest {
 		ParsedDatum parsedDatum = parser.parse(fetchedDatum);
 		
 		// Verify outlink is correct.
-		Outlink[] outlinks = parsedDatum.getOutLinks();
+		Outlink[] outlinks = parsedDatum.getOutlinks();
 		Assert.assertEquals(2, outlinks.length);
 		
 		Assert.assertEquals("http://newdomain.com/link1", outlinks[0].getToUrl());

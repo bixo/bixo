@@ -32,7 +32,7 @@ public class ThreadedExecutor {
         @Override
         public boolean offer(E element) {
             try {
-                return offer(element, _timeout, TimeUnit.MILLISECONDS);
+                return offer(element, _requestTimeout, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return false;
@@ -40,12 +40,13 @@ public class ThreadedExecutor {
         }
     }
 
-    private long _timeout;
+
+    private long _requestTimeout;
     private ThreadPoolExecutor _pool;
     
-    public ThreadedExecutor(int maxThreads, long timeout) {
-        _timeout = timeout;
-
+    public ThreadedExecutor(int maxThreads, long requestTimeout) {
+        _requestTimeout = requestTimeout;
+        
         // With the "always offer with a timeout" queue, the maximumPoolSize should always
         // be set to the same as the corePoolSize, as otherwise things get very inefficient
         // since each execute() call will will delay by <timeout> even if we could add more
@@ -82,11 +83,11 @@ public class ThreadedExecutor {
      * @return true if we did a normal termination, false if we had to do a hard shutdown
      * @throws InterruptedException 
      */
-    public boolean terminate() throws InterruptedException {
+    public boolean terminate(long terminationTimeout) throws InterruptedException {
         
         // First just wait for threads to terminate naturally.
         _pool.shutdown();
-        if (_pool.awaitTermination(_timeout, TimeUnit.MILLISECONDS)) {
+        if (_pool.awaitTermination(terminationTimeout, TimeUnit.MILLISECONDS)) {
             return true;
         }
         

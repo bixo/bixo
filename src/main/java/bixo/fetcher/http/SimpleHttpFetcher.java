@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManager;
 
@@ -67,6 +68,7 @@ import org.apache.http.conn.params.ConnPerRouteBean;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.AbstractVerifier;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.cookie.params.CookieSpecParamBean;
 import org.apache.http.impl.client.BasicCookieStore;
@@ -208,6 +210,24 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     	}
     }
     
+    private static class DummyX509HostnameVerifier extends AbstractVerifier {
+
+        @Override
+        public void verify(String host, String[] cns, String[] subjectAlts) throws SSLException {
+            try {
+                verify(host, cns, subjectAlts, false);
+            } catch (SSLException e) {
+                LOGGER.warn("Invalid SSL certificate for " + host + ": " + e.getMessage());
+            }
+        }
+        
+        @Override
+        public final String toString() { 
+            return "DUMMY_VERIFIER"; 
+        }
+
+    }
+    
     public SimpleHttpFetcher(UserAgent userAgent) {
         this(DEFAULT_MAX_THREADS, userAgent);
     }
@@ -297,7 +317,8 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         try {
         	return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
         } catch (HttpFetchException e) {
-            if (LOGGER.isTraceEnabled()) {
+            // Don't bother generating a trace for a 404 (not found)
+            if (LOGGER.isTraceEnabled() && (e.getHttpStatus() != HttpStatus.SC_NOT_FOUND)) {
                 LOGGER.trace(String.format("Exception fetching %s (%s)", scoredUrl.getUrl(), e.getMessage()));
             }
             
@@ -487,7 +508,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
                     // Don't bail on the first read cycle, as we can get a hiccup starting out.
                     // Also don't bail if we've read everything we need.
                     if ((readRequests > 1) && (totalRead < targetLength) && (readRate < minResponseRate)) {
-                        throw new AbortedFetchException(url, AbortedFetchReason.SLOW_RESPONSE_RATE);
+                        throw new AbortedFetchException(url, "Slow response rate of " + readRate + " bytes/sec", AbortedFetchReason.SLOW_RESPONSE_RATE);
                     }
                 }
 
@@ -586,7 +607,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             }
             
             if (sf != null) {
-                sf.setHostnameVerifier(SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER);
+                sf.setHostnameVerifier(new DummyX509HostnameVerifier());
                 schemeRegistry.register(new Scheme("https", sf, 443));
             } else {
                 LOGGER.warn("No valid SSLContext found for https");

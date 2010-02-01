@@ -1,11 +1,9 @@
 package bixo.operations;
 
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Queue;
-import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
@@ -18,6 +16,7 @@ import bixo.fetcher.http.IRobotRules;
 import bixo.fetcher.http.SimpleRobotRules;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.hadoop.FetchCounters;
+import bixo.utils.DomainInfo;
 import bixo.utils.DomainNames;
 import bixo.utils.GroupingKey;
 import cascading.tuple.TupleEntryCollector;
@@ -25,41 +24,6 @@ import cascading.tuple.TupleEntryCollector;
 public class ProcessRobotsTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ProcessRobotsTask.class);
 
-    private static class DomainInfo {
-
-        // Pay no attention to this cheesy hack - special case handling of
-        // certain domains so we can test without trying to resolve domain names.
-        private static final Pattern TESTING_DOMAIN_PATTERN = Pattern.compile("bixo-test-domain-\\d+\\.com");
-
-        private String _protocolAndDomain;
-        private String _domain;
-        private String _hostAddress;
-
-        public DomainInfo(String protocolAndDomain) throws UnknownHostException, MalformedURLException {
-            _protocolAndDomain = protocolAndDomain;
-            _domain = new URL(protocolAndDomain).getHost();
-
-            if (TESTING_DOMAIN_PATTERN.matcher(_domain).matches()) {
-                _hostAddress = _domain;
-            } else {
-                _hostAddress = InetAddress.getByName(_domain).getHostAddress();
-            }
-        }
-
-        public String getProtocolAndDomain() {
-            return _protocolAndDomain;
-        }
-
-        public String getDomain() {
-            return _domain;
-        }
-
-        public String getHostAddress() {
-            return _hostAddress;
-        }
-    }
-
-    
     
     private String _protocolAndDomain;
     private ScoreGenerator _scorer;
@@ -109,7 +73,14 @@ public class ProcessRobotsTask implements Runnable {
 
         try {
             DomainInfo domainInfo = new DomainInfo(_protocolAndDomain);
-
+            if (!domainInfo.isValidHostAddress()) {
+                throw new UnknownHostException(_protocolAndDomain);
+            }
+            
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace(String.format("Resolved %s to %s", _protocolAndDomain, domainInfo.getHostAddress()));
+            }
+            
             String domain = domainInfo.getDomain();
             String pld = DomainNames.getPLD(domain);
             if (!_scorer.isGoodDomain(domain, pld)) {
@@ -130,7 +101,9 @@ public class ProcessRobotsTask implements Runnable {
                     key = GroupingKey.DEFERRED_GROUPING_KEY;
                     _flowProcess.increment(FetchCounters.DOMAINS_DEFERRED, 1);
                 } else {
-                    key = GroupingKey.makeGroupingKey(_urls.size(), domainInfo.getHostAddress(), robotRules.getCrawlDelay());
+                    // TODO KKr - stop passing count in, since that's not workable for keys (multiple domains
+                    // map to the same IP address, so count-<ip> throws off downstream processing.
+                    key = GroupingKey.makeGroupingKey(0, domainInfo.getHostAddress(), robotRules.getCrawlDelay());
                     _flowProcess.increment(FetchCounters.DOMAINS_FINISHED, 1);
                 }
 
@@ -146,7 +119,7 @@ public class ProcessRobotsTask implements Runnable {
                 }
             }
         } catch (UnknownHostException e) {
-            LOGGER.debug("Unknown host: " + _protocolAndDomain);
+            LOGGER.debug("Unknown host", e);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             emptyQueue(_urls, GroupingKey.UNKNOWN_HOST_GROUPING_KEY, _collector);
         } catch (MalformedURLException e) {

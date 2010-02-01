@@ -4,6 +4,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
@@ -12,7 +15,7 @@ import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.parser.SimpleParser;
 
-public class RunHttpClientFetcher {
+public class FetchAndParseTool {
 
 	@SuppressWarnings("serial")
 	private static class FirefoxUserAgent extends UserAgent {
@@ -40,20 +43,37 @@ public class RunHttpClientFetcher {
         }
     }
 
+    private static void printUsageAndExit(CmdLineParser parser) {
+        parser.printUsage(System.err);
+        System.exit(-1);
+    }
+
     /**
      * @param args - URL to fetch
      */
     public static void main(String[] args) {
+        FetchAndParseToolOptions options = new FetchAndParseToolOptions();
+        CmdLineParser cmdParser = new CmdLineParser(options);
+        
+        try {
+            cmdParser.parseArgument(args);
+        } catch(CmdLineException e) {
+            System.err.println(e.getMessage());
+            printUsageAndExit(cmdParser);
+        }
+
         // Just to be really robust, allow a huge number of redirects and retries.
         FetcherPolicy policy = new FetcherPolicy();
-        policy.setMaxRedirects(100);
+        policy.setMaxRedirects(options.getMaxRedirects());
+        policy.setMaxContentSize(options.getMaxSize());
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, new FirefoxUserAgent());
-        fetcher.setMaxRetryCount(100);
+        fetcher.setMaxRetryCount(options.getMaxRetries());
         
-        boolean interactive = args.length == 0;
+        String urls[] = options.getUrls() == null ? null : options.getUrls().split(",");
+        boolean interactive = (urls == null);
         int index = 0;
         
-        while (interactive || (index < args.length)) {
+        while (interactive || (index < urls.length)) {
         	String url;
         	
         	try {
@@ -70,6 +90,8 @@ public class RunHttpClientFetcher {
             	System.out.println("Fetching " + url);
         		FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         		System.out.println(String.format("Fetched %s: headers = %s", result.getBaseUrl(), result.getHeaders()));
+        		System.out.flush();
+        		
         		// System.out.println("Result = " + result.toString());
         		SimpleParser parser = new SimpleParser();
         		ParsedDatum parsed = parser.parse(result);

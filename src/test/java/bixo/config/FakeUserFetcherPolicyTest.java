@@ -24,7 +24,7 @@ public class FakeUserFetcherPolicyTest {
     @Test
     public void testEmptyFetchList() {
         FakeUserFetcherPolicy policy = new FakeUserFetcherPolicy();
-        FetchRequest request = policy.getFetchRequest(0);
+        FetchRequest request = policy.getFetchRequest(System.currentTimeMillis(), 30 * 1000L, 0);
         Assert.assertEquals(0, request.getNumUrls());
     }
     
@@ -39,7 +39,7 @@ public class FakeUserFetcherPolicyTest {
         
         for (int i = 0; i < 100; i++) {
             long curTime = System.currentTimeMillis();
-            FetchRequest request = policy.getFetchRequest(100);
+            FetchRequest request = policy.getFetchRequest(curTime, 30 * 1000L, 100);
             Assert.assertEquals(1, request.getNumUrls());
             int delayInSeconds = (int)(request.getNextRequestTime() - curTime)/1000;
             

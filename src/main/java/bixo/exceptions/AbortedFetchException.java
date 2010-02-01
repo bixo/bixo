@@ -17,7 +17,7 @@ public class AbortedFetchException extends BaseFetchException implements Writabl
     }
     
     public AbortedFetchException(String url, AbortedFetchReason abortReason) {
-        super(url);
+        super(url, "Aborted due to " + abortReason);
         
         _abortReason = abortReason;
     }

@@ -18,6 +18,10 @@ import cascading.tuple.TupleEntry;
  * 
  * 1. Use Log4J to log (and only if log level is <= debug)
  * 2. Limit output length (and remove \r\n) for cleaner output.
+ * 
+ * It also has a static makePipe method, that does nothing if the log
+ * level is set to > DEBUG. That way it's easy to leave code in and not
+ * pay the price during production runs.
  *
  */
 @SuppressWarnings("serial")

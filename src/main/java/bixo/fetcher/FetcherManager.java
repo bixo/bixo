@@ -44,8 +44,9 @@ public class FetcherManager implements Runnable {
     
     // Amount of time we'll wait for pending tasks to finish up, in milliseconds
     // TODO KKr - calculate from fetcher setting.
-    private static final long COMMAND_TIMEOUT = 120 * 1000;
-
+    private static final long COMMAND_TIMEOUT = 120 * 1000L;
+    private static final long TERMINATE_TIMEOUT = COMMAND_TIMEOUT;
+    
     private static final long QUEUE_LOG_INTERVAL = 5 * 60 * 1000;
     private static final int NUM_QUEUES_TO_LOG = 100;
 
@@ -145,8 +146,8 @@ public class FetcherManager implements Runnable {
 	        LOGGER.error("Unexpected exception", t);
 	    } finally {
             try {
-                if (!_executor.terminate()) {
-                    LOGGER.warn("Had to do a hard shutdown of robots fetching");
+                if (!_executor.terminate(TERMINATE_TIMEOUT)) {
+                    LOGGER.warn("Had to do a hard termination of regular fetching");
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

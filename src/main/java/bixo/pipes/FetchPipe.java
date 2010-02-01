@@ -5,13 +5,15 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
+import bixo.cascading.ISplitter;
+import bixo.cascading.NullContext;
 import bixo.cascading.NullSinkTap;
+import bixo.cascading.SplitterAssembly;
 import bixo.config.QueuePolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
+import bixo.datum.PreFetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
@@ -23,9 +25,11 @@ import bixo.fetcher.util.FixedScoreGenerator;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.IScoreGenerator;
 import bixo.fetcher.util.ScoreGenerator;
+import bixo.operations.FetchBuffer;
 import bixo.operations.FetcherBuffer;
 import bixo.operations.FilterAndScoreByUrlAndRobots;
 import bixo.operations.GroupFunction;
+import bixo.operations.PreFetchBuffer;
 import bixo.operations.ScoreFunction;
 import bixo.utils.GroupingKey;
 import bixo.utils.UrlUtils;
@@ -44,7 +48,6 @@ import cascading.tuple.Tuple;
 
 @SuppressWarnings("serial")
 public class FetchPipe extends SubAssembly {
-    private static final Logger LOGGER = Logger.getLogger(FetchPipe.class);
         
     // Pipe that outputs FetchedDatum tuples, for URLs that were fetched.
     public static final String CONTENT_PIPE_NAME = "FetchPipe-content";
@@ -66,13 +69,25 @@ public class FetchPipe extends SubAssembly {
             try {
                 return UrlUtils.makeProtocolAndDomain(urlAsString);
             } catch (MalformedURLException e) {
-                LOGGER.warn("Invalid URL: " + urlAsString);
-                return GroupingKey.INVALID_URL_GROUPING_KEY;
+                throw new RuntimeException("Invalid URL: " + urlAsString);
             }
         }
-
     }
 
+    private static class SplitIntoSpecialAndRegularKeys implements ISplitter {
+
+        @Override
+        public String getLHSName() {
+            return "special grouping key";
+        }
+
+        @Override
+        public boolean isLHS(Tuple tuple) {
+            int pos = ScoredUrlDatum.FIELDS.getPos(ScoredUrlDatum.GROUP_KEY_FIELD);
+            return GroupingKey.isSpecialKey(tuple.getString(pos));
+        }
+    }
+    
     @SuppressWarnings({ "unchecked" })
     private static class FilterErrorsFunction extends BaseOperation implements Function {
         private int _fieldPos;
@@ -148,6 +163,33 @@ public class FetchPipe extends SubAssembly {
         }
     }
 
+    private static class MakeSkippedStatus extends BaseOperation<NullContext> implements Function<NullContext> {
+        private Fields _metaDataFields;
+        
+        // Output an appropriate StatusDatum based on the grouping key (which must be special)
+        public MakeSkippedStatus(Fields metaDataFields) {
+            super(StatusDatum.FIELDS.append(metaDataFields));
+            
+            _metaDataFields = metaDataFields;
+        }
+
+        @Override
+        public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
+            Tuple t = funcCall.getArguments().getTuple();
+            ScoredUrlDatum sd = new ScoredUrlDatum(t, _metaDataFields);
+            
+            String key = sd.getGroupKey();
+            if (!GroupingKey.isSpecialKey(key)) {
+                throw new RuntimeException("Can't make skipped status for regular grouping key: " + key);
+            }
+            
+            StatusDatum status = new StatusDatum(sd.getUrl(), GroupingKey.makeUrlStatusFromKey(key),
+                            sd.getMetaDataMap());
+            
+            funcCall.getOutputCollector().add(status.toTuple());
+        }
+    }
+
     /**
      * Create FetchPipe with default SimpleXXX classes and default parameters.
      * 
@@ -175,12 +217,60 @@ public class FetchPipe extends SubAssembly {
         createFetchBuffer(fetchPipe, fetcher, new QueuePolicy(), metaDataFields);
     }
     
+    /**
+     * Generate an assembly that will fetch all of the UrlDatum tuples coming out of urlProvider.
+     * 
+     * We assume that these UrlDatums have been validated, and thus we'll only have valid URLs.
+     * 
+     * @param urlProvider
+     * @param scorer
+     * @param fetcher
+     * @param metaDataFields
+     */
+    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, long crawlEndTime, int numReducers, Fields metaDataFields) {
+        Pipe robotsPipe = new Pipe("robots pipe", urlProvider);
+        Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
+        robotsPipe = new Each(robotsPipe, new GroupFunction(metaDataFields, new GroupByDomain()), groupedFields);
+        robotsPipe = new GroupBy(robotsPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
+        robotsPipe = new Every(robotsPipe, new FilterAndScoreByUrlAndRobots(fetcher, scorer, metaDataFields), Fields.RESULTS);
+        
+        // Split into records for URLs that are special (not fetchable) and regular
+        SplitterAssembly splitter = new SplitterAssembly(robotsPipe, new SplitIntoSpecialAndRegularKeys());
+        
+        // Now generate sets of URLs to fetch. We'll wind up with all URLs for the same server & the same crawl delay,
+        // ordered by score, getting passed per list to the PreFetchBuffer. This will generate PreFetchDatums that contain a key
+        // based on the hash of the IP address (with a range of values == number of reducers), plus a list of URLs and a target
+        // crawl time.
+        Pipe fetchPipe = new Pipe("fetch pipe", splitter.getRHSPipe());
+        fetchPipe  = new GroupBy(fetchPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD), new Fields(ScoredUrlDatum.SCORE_FIELD), true);
+        fetchPipe = new Every(fetchPipe, new PreFetchBuffer(fetcher.getFetcherPolicy(), numReducers, metaDataFields), Fields.RESULTS);
+        
+        fetchPipe = new GroupBy(fetchPipe, new Fields(PreFetchedDatum.GROUPING_KEY_FN), new Fields(PreFetchedDatum.FETCH_TIME_FN));
+        fetchPipe = new Every(fetchPipe, new FetchBuffer(fetcher, crawlEndTime, metaDataFields), Fields.RESULTS);
+
+        Fields fetchedFields = FetchedDatum.FIELDS.append(metaDataFields);
+        Pipe fetchedContent = new Pipe(CONTENT_PIPE_NAME, new Each(fetchPipe, new FilterErrorsFunction(fetchedFields)));
+        
+        Pipe fetchedStatus = new Pipe("fetched status", new Each(fetchPipe, new MakeStatusFunction(metaDataFields)));
+        
+        // We need to merge URLs from the LHS of the splitter (never fetched) so that our status pipe
+        // gets status for every URL we put into this sub-assembly.
+        Pipe skippedStatus = new Pipe("skipped status", new Each(splitter.getLHSPipe(), new MakeSkippedStatus(metaDataFields)));
+        
+        Pipe joinedStatus = new GroupBy(STATUS_PIPE_NAME, Pipe.pipes(skippedStatus, fetchedStatus),
+                        new Fields(StatusDatum.URL_FIELD));
+
+        setTails(fetchedContent, joinedStatus);
+    }
+    
+
     public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, QueuePolicy queuePolicy, Fields metaDataFields) {
         Pipe fetchPipe = new Pipe("fetch_pipe", urlProvider);
         Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
         fetchPipe = new Each(fetchPipe, new GroupFunction(metaDataFields, new GroupByDomain()), groupedFields);
         fetchPipe = new GroupBy(fetchPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
         fetchPipe = new Every(fetchPipe, new FilterAndScoreByUrlAndRobots(fetcher, scorer, metaDataFields), Fields.RESULTS);
+        
         createFetchBuffer(fetchPipe, fetcher, queuePolicy, metaDataFields);
     }
     
@@ -190,7 +280,7 @@ public class FetchPipe extends SubAssembly {
     }
 
     private void createFetchBuffer(Pipe fetchPipe, IHttpFetcher fetcher, QueuePolicy queuePolicy, Fields metaDataFields) {
-        // Group by the key (which will be <unique ip>-<crawl delay>), and sort from high to low score.
+        // Group by the key (which will be <count>-<unique ip>-<crawl delay>), and sort from high to low score.
     	fetchPipe = new GroupBy(fetchPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD), new Fields(ScoredUrlDatum.SCORE_FIELD), true);
     	fetchPipe = new Every(fetchPipe, new FetcherBuffer(metaDataFields, fetcher, queuePolicy), Fields.RESULTS);
 

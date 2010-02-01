@@ -11,16 +11,16 @@ public class AdaptiveFetcherPolicyTest {
     @Test
     public void testMinDelayLimit() {
         // Target end is now + 10 seconds, and our min delay is 1 second.
-        AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(System.currentTimeMillis() + (10 * 1000), 1000L);
+        long now = System.currentTimeMillis();
+        AdaptiveFetcherPolicy policy = new AdaptiveFetcherPolicy(now + (10 * 1000), 1000L);
         
         // Ask for more than we can get in the remaining time, so it has to use a 5 minutes
         // window.
-        FetchRequest request = policy.getFetchRequest(1000);
+        final long crawlDelay = 30 * 1000L;
+        FetchRequest request = policy.getFetchRequest(now, crawlDelay, 1000);
         
-        // No way we can get more than 301. Might wind up being 300, depending on how long
-        // it takes this code to execute.
-        Assert.assertTrue(request.getNumUrls() <= 301);
-        Assert.assertTrue(request.getNumUrls() >= 300);
+        // No way we can get more than 300.
+        Assert.assertEquals(300, request.getNumUrls());
     }
     
     @Test
@@ -31,13 +31,12 @@ public class AdaptiveFetcherPolicyTest {
 
         // Ask for more than will fit in the duration assuming a 30 second delay, but less than what
         // would be constrained by the 1 second min delay.
-        FetchRequest request = policy.getFetchRequest(100);
+        final long crawlDelay = 30 * 1000L;
+        FetchRequest request = policy.getFetchRequest(now, crawlDelay, 100);
         
         // Our per-request rate is about 600/100 = 6 seconds. So in 5 minutes (the default
-        // window) we should get back 50 + 1 = 51 (fencepost), though potentially one less
-        // due to elapsed time for the above code.
-        Assert.assertTrue(request.getNumUrls() <= 51);
-        Assert.assertTrue(request.getNumUrls() >= 50);
+        // window) we should get back 50
+        Assert.assertEquals(50, request.getNumUrls());
         
         // Our next fetch time should be around 5 minutes.
         long deltaFromTarget = Math.abs(request.getNextRequestTime() - (now + (5 * 60 * 1000L)));
@@ -53,10 +52,10 @@ public class AdaptiveFetcherPolicyTest {
         
         // Ask for more than we can get in the remaining time, so it has to use a 5 minutes
         // window.
-        FetchRequest request = policy.getFetchRequest(1000);
+        final long crawlDelay = 30 * 1000L;
+        FetchRequest request = policy.getFetchRequest(now, crawlDelay, 1000);
         
-        Assert.assertTrue(request.getNumUrls() <= 31);
-        Assert.assertTrue(request.getNumUrls() >= 30);
+        Assert.assertEquals(30, request.getNumUrls());
 
         // Our next fetch time should be around 5 minutes.
         long deltaFromTarget = Math.abs(request.getNextRequestTime() - (now + (5 * 60 * 1000L)));

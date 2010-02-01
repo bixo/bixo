@@ -26,6 +26,12 @@ public class GroupingKeyTest {
     }
     
     @Test
+    public void testExtractingCount() {
+        assertEquals(1, GroupingKey.getCountFromKey("000001-domain.com-30000"));
+        assertEquals(999, GroupingKey.getCountFromKey("000999-domain.com-unset"));
+    }
+    
+    @Test
     public void testFunkyDomainNames() {
         assertEquals("domain-name.com", GroupingKey.getDomainFromKey("000001-domain-name.com-unset"));
     }

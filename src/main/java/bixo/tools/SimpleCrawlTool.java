@@ -16,7 +16,6 @@ import org.kohsuke.args4j.CmdLineParser;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.FetchRequest;
 import bixo.tools.sitecrawler.SiteCrawler;
 import bixo.tools.sitecrawler.UrlImporter;
 import bixo.urldb.IUrlFilter;
@@ -36,29 +35,6 @@ public class SimpleCrawlTool {
 
 	private static final String EMAIL_ADDRESS = "bixo-dev@yahoogroups.com";
     
-    // Limit the maximum number of requests made per connection to 50.
-    @SuppressWarnings("serial")
-    private static class MyFetchPolicy extends FetcherPolicy {
-        public MyFetchPolicy() {
-            super();
-        }
-
-        @Override
-        public FetcherPolicy makeNewPolicy(long crawlDelay) {
-            MyFetchPolicy result = new MyFetchPolicy();
-            result.setCrawlDelay(crawlDelay);
-            return result;
-        }
-        
-        @Override
-        public FetchRequest getFetchRequest(int maxUrls) {
-            FetchRequest result = super.getFetchRequest(maxUrls);
-            int numUrls = Math.min(50, result.getNumUrls());
-            long nextTime = System.currentTimeMillis() + (numUrls * _crawlDelay);
-            return new FetchRequest(numUrls, nextTime);
-        }
-    }
-
     // Filter URLs that fall outside of the target domain
     @SuppressWarnings("serial")
     private static class DomainUrlFilter implements IUrlFilter {
@@ -191,7 +167,7 @@ public class SimpleCrawlTool {
 
             UserAgent userAgent = new UserAgent(options.getAgentName(), EMAIL_ADDRESS, WEB_ADDRESS);
 
-            FetcherPolicy defaultPolicy = new MyFetchPolicy();
+            FetcherPolicy defaultPolicy = new FetcherPolicy();
             defaultPolicy.setCrawlDelay(DEFAULT_CRAWL_DELAY);
             defaultPolicy.setMaxContentSize(MAX_CONTENT_SIZE);
             
