@@ -13,7 +13,7 @@
 			<url>http://www.opensource.org/licenses/mit-license.php</url>
 		</license>
 	</licenses>
-	<url>http://bixo.101tec.com</url>
+	<url>http://openbixo.org</url>
 	<description>Bixo is an open source Java web mining toolkit that runs as a series of Cascading pipes. It is designed to be used as a tool for creating customized crawlers and analyzers, thus each Cascading pipe implements a discrete operation.</description>
 	<scm>
 		<connection>scm:git:git://github.com/bixo/bixo.git</connection>
@@ -25,16 +25,9 @@
 	
 	<repositories>
 		<repository>
-			<id>101tec Public</id>
-			<name>101tec Nexus repository</name>
-			<url>http://oss.101tec.com/nexus/content/groups/public/</url>
-			<releases>
-				<enabled>true</enabled>
-				<checksumPolicy>ignore</checksumPolicy>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
+			<id>Bixo</id>
+			<name>Bixo GitHub repository</name>
+			<url>http://bixo.github.com/repo/</url>
 		</repository>
 
 		<repository>
@@ -58,7 +51,7 @@
 		<dependency>
             <groupId>cascading</groupId>
             <artifactId>cascading-core</artifactId>
-            <version>1.1-WIP-84</version>
+            <version>1.1-WIP-97</version>
         </dependency>
         
 		<dependency>
@@ -82,7 +75,7 @@
 		<dependency>
 			<groupId>org.apache.tika</groupId>
 			<artifactId>tika-parsers</artifactId>
-			<version>0.6-SNAPSHOT</version>
+			<version>0.7-SNAPSHOT</version>
 		</dependency>
 	
 		<dependency>
@@ -166,7 +159,7 @@
 		<dependency>
             <groupId>cascading</groupId>
             <artifactId>cascading-test</artifactId>
-            <version>1.1-WIP-84</version>
+            <version>1.1-WIP-97</version>
             <scope>test</scope>
         </dependency>
         
