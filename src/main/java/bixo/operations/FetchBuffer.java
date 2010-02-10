@@ -39,7 +39,8 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     private static final Fields FETCH_RESULT_FIELD = new Fields(BaseDatum.fieldName(FetchBuffer.class, "fetch-exception"));
 
     // How long to wait before a fetch request gets rejected.
-    private static final long REQUEST_TIMEOUT = 10 * 1000L;
+    // TODO KKr - calculate this based on the fetcher policy's max URLs/request
+    private static final long REQUEST_TIMEOUT = 100 * 1000L;
     
     // How long to wait before doing a hard termination.
     private static final long TERMINATION_TIMEOUT = 100 * 1000L;
