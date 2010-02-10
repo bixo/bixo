@@ -12,6 +12,7 @@ import bixo.config.FetcherPolicy;
 import bixo.datum.PreFetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.FetchRequest;
+import bixo.fetcher.http.IRobotRules;
 import bixo.utils.GroupingKey;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
@@ -51,6 +52,9 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
         }
 
         long crawlDelay = GroupingKey.getCrawlDelayFromKey(key);
+        if (crawlDelay == IRobotRules.UNSET_CRAWL_DELAY) {
+            crawlDelay = _fetcherPolicy.getCrawlDelay();
+        }
         
         TupleEntryCollector collector = buffCall.getOutputCollector();
 
