@@ -42,6 +42,10 @@ public class BixoFlowProcess extends FlowProcess {
         }
 
         @Override
+        public void increment(String group, String counter, int amount) {
+        }
+        
+        @Override
         public void keepAlive() {
         }
 
@@ -158,6 +162,13 @@ public class BixoFlowProcess extends FlowProcess {
         }
     }
 
+    @Override
+    public void increment(String group, String counter, int amount) {
+        _baseProcess.increment(group, counter, amount);
+        
+        // TODO KKr - get my local counters in sync?
+    }
+
     public void decrement(Enum counter, int amount) {
         increment(counter, -amount);
     }
@@ -229,5 +240,6 @@ public class BixoFlowProcess extends FlowProcess {
     public TupleEntryCollector openTapForWrite(Tap tap) throws IOException {
         return _baseProcess.openTapForWrite(tap);
     }
+
 
 }
