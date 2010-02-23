@@ -18,7 +18,12 @@ public class FakeUserFetcherPolicyTest {
     @Test
     public void testExplicitDelay() {
         FakeUserFetcherPolicy policy = new FakeUserFetcherPolicy(10);
-        Assert.assertEquals(10, policy.getDefaultCrawlDelay());
+        
+        for (int i = 0; i < 100; i++) {
+            long delay = policy.getCrawlDelay();
+            Assert.assertTrue(delay >= 5);
+            Assert.assertTrue(delay <= 15);
+        }
     }
     
     @Test
@@ -30,7 +35,7 @@ public class FakeUserFetcherPolicyTest {
     
     @Test
     public void testRandomDelay() {
-        FakeUserFetcherPolicy policy = new FakeUserFetcherPolicy();
+        FakeUserFetcherPolicy policy = new FakeUserFetcherPolicy(60 * 1000L);
         
         int delayCounts[] = new int[70];
         for (int i = 0; i < 70; i++) {
@@ -39,11 +44,13 @@ public class FakeUserFetcherPolicyTest {
         
         for (int i = 0; i < 100; i++) {
             long curTime = System.currentTimeMillis();
-            FetchRequest request = policy.getFetchRequest(curTime, 30 * 1000L, 100);
+            
+            // Pass in longer crawl delay, that we'll ignore
+            FetchRequest request = policy.getFetchRequest(curTime, 100 * 1000L, 100);
             Assert.assertEquals(1, request.getNumUrls());
             int delayInSeconds = (int)(request.getNextRequestTime() - curTime)/1000;
             
-            Assert.assertTrue("Delay #" + i + " must be at least 30 seconds: " + delayInSeconds, delayInSeconds >= 30);
+            Assert.assertTrue("Delay #" + i + " must be at least 5 seconds: " + delayInSeconds, delayInSeconds >= 30);
             Assert.assertTrue(delayInSeconds <= 91);
             delayCounts[delayInSeconds - 30] += 1;
         }

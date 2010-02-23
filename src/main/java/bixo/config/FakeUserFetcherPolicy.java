@@ -9,15 +9,28 @@ public class FakeUserFetcherPolicy extends FetcherPolicy {
     // Set requests to be about 60 seconds apart (on average)
     private static final long DEFAULT_USER_CRAWL_DELAY = 60 * 1000L;
     
-    private long _crawlDelay = DEFAULT_USER_CRAWL_DELAY;
-    
     public FakeUserFetcherPolicy() {
+        this(DEFAULT_USER_CRAWL_DELAY);
     }
         
     public FakeUserFetcherPolicy(long crawlDelay) {
-        _crawlDelay = crawlDelay;
+        super();
+        
+        setCrawlDelay(crawlDelay);
     }
-      
+    
+    @Override
+    public long getDefaultCrawlDelay() {
+        return DEFAULT_USER_CRAWL_DELAY;
+    }
+    
+    @Override
+    public long getCrawlDelay() {
+        double baseDelay = super.getCrawlDelay();
+        double delayVariance = (Math.random() * baseDelay) - (baseDelay/2.0);
+        return Math.round(baseDelay + delayVariance);
+    }
+    
     @Override
     public FetcherPolicy makeNewPolicy(long crawlDelay) {
         return new FakeUserFetcherPolicy(crawlDelay);
@@ -25,16 +38,10 @@ public class FakeUserFetcherPolicy extends FetcherPolicy {
     
     @Override
     public FetchRequest getFetchRequest(long now, long crawlDelay, int maxUrls) {
-        // Set up the next request to have random variance.
-        double baseDelay = _crawlDelay;
-        double delayVariance = (Math.random() * baseDelay) - (baseDelay/2.0);
-        long nextRequestTime = now + Math.round(baseDelay + delayVariance);
+        // Ignore crawlDelay, and always use our delay.
+        long nextRequestTime = now + getCrawlDelay();
         FetchRequest result = new FetchRequest(Math.min(maxUrls, 1), nextRequestTime);
         return result;
     }
 
-    @Override
-    public long getDefaultCrawlDelay() {
-        return _crawlDelay;
-    }
 }
