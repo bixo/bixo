@@ -97,6 +97,22 @@ public class FetchAndParseTool {
         		ParsedDatum parsed = parser.parse(result);
         		System.out.println(String.format("Parsed %s: lang = %s, size = %d", parsed.getUrl(),
         		                parsed.getLanguage(), parsed.getParsedText().length()));
+        		
+        		if (interactive) {
+        		    while (true) {
+        		        System.out.print("Next action - (d)ump, (e)xit: ");
+        		        String action = readInputLine();
+        		        if (action.startsWith("e") || (action.length() == 0)) {
+        		            break;
+        		        } else if (action.startsWith("d")) {
+                            System.out.println("=====================================================================");
+                            System.out.println(parsed.getParsedText());
+                            System.out.println("=====================================================================");
+        		        } else {
+        		            System.out.println("Unknown command - " + action);
+        		        }
+        		    }
+        		}
         	} catch (Exception e) {
         		e.printStackTrace(System.out);
                 
