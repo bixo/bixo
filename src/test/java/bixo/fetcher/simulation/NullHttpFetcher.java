@@ -47,6 +47,11 @@ public class NullHttpFetcher implements IHttpFetcher {
     }
 
     @Override
+    public FetchedDatum head(ScoredUrlDatum scoredUrl) throws BaseFetchException {
+        throw new HttpFetchException(scoredUrl.getUrl(), "All requests throw 404 exception", HttpStatus.SC_NOT_FOUND, null);
+    }
+    
+    @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
         throw new HttpFetchException(scoredUrl.getUrl(), "All requests throw 404 exception", HttpStatus.SC_NOT_FOUND, null);
     }

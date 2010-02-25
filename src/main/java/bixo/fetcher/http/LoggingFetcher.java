@@ -44,10 +44,64 @@ public class LoggingFetcher implements IHttpFetcher {
 
     @SuppressWarnings("unchecked")
     @Override
+    public FetchedDatum head(ScoredUrlDatum datum) throws BaseFetchException {
+        String url = datum.getUrl();
+        Map<String, Comparable> metaData = datum.getMetaDataMap();
+        logMetaData(url, metaData);
+        
+        // Create a simple HTML page here, where we fill in the URL as
+        // the field, and return that as the BytesWritable. we could add
+        // more of the datum values to the template if we cared.
+        try {
+            return makeFetchedDatum(url, metaData, "");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Should never happen", e);
+        } catch (MalformedURLException e) {
+            throw new UrlFetchException(url, e.getMessage());
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    @Override
     public FetchedDatum get(ScoredUrlDatum datum) throws BaseFetchException {
         String url = datum.getUrl();
         Map<String, Comparable> metaData = datum.getMetaDataMap();
+        logMetaData(url, metaData);
+        
+        // Create a simple HTML page here, where we fill in the URL as
+        // the field, and return that as the BytesWritable. we could add
+        // more of the datum values to the template if we cared.
+        try {
+            return makeFetchedDatum(url, metaData, String.format(HTML_TEMPLATE, url));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Should never happen", e);
+        } catch (MalformedURLException e) {
+            throw new UrlFetchException(url, e.getMessage());
+        }
+    }
 
+    @SuppressWarnings("unchecked")
+    private FetchedDatum makeFetchedDatum(String url, Map<String, Comparable> metaData, String htmlContent) throws MalformedURLException, HttpFetchException, UnsupportedEncodingException {
+        URL theUrl = new URL(url);
+        if (theUrl.getFile().equals("/robots.txt")) {
+            throw new HttpFetchException(url, "Never return robots.txt from LoggingFetcher", HttpStatus.SC_NOT_FOUND, null);
+        }
+        
+        byte[] content = htmlContent.getBytes("UTF-8");
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(IHttpHeaders.CONTENT_LENGTH, "" + content.length);
+        headers.add(IHttpHeaders.CONTENT_TYPE, "text/html");
+        
+        // Set the location to a fixed value, so that when we're processing entries from
+        // the URL DB that might have been set using fake content, we know to ignore the
+        // refetch time if we're doing a real fetch.
+        headers.add(IHttpHeaders.CONTENT_LOCATION, FAKE_CONTENT_LOCATION);
+        return new FetchedDatum(url, url, System.currentTimeMillis(), headers, new BytesWritable(content), "text/html", 100000, metaData);
+    }
+
+
+    @SuppressWarnings("unchecked")
+    private void logMetaData(String url, Map<String, Comparable> metaData) {
         StringBuilder msg = new StringBuilder(url);
         msg.append(" ( ");
         for (String key : metaData.keySet()) {
@@ -60,33 +114,8 @@ public class LoggingFetcher implements IHttpFetcher {
         msg.append(")");
 
         LOGGER.info(msg.toString());
-        
-        // Create a simple HTML page here, where we fill in the URL as
-        // the field, and return that as the BytesWritable. we could add
-        // more of the datum values to the template if we cared.
-        try {
-            URL theUrl = new URL(url);
-            if (theUrl.getFile().equals("/robots.txt")) {
-                throw new HttpFetchException(url, "Never return robots.txt from LoggingFetcher", HttpStatus.SC_NOT_FOUND, null);
-            }
-            
-            String htmlContent = String.format(HTML_TEMPLATE, url);
-            byte[] content = htmlContent.getBytes("UTF-8");
-            HttpHeaders headers = new HttpHeaders();
-            headers.add(IHttpHeaders.CONTENT_LENGTH, "" + content.length);
-            headers.add(IHttpHeaders.CONTENT_TYPE, "text/html");
-            
-            // Set the location to a fixed value, so that when we're processing entries from
-            // the URL DB that might have been set using fake content, we know to ignore the
-            // refetch time if we're doing a real fetch.
-            headers.add(IHttpHeaders.CONTENT_LOCATION, FAKE_CONTENT_LOCATION);
-            return new FetchedDatum(url, url, System.currentTimeMillis(), headers, new BytesWritable(content), "text/html", 100000, metaData);
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Should never happen", e);
-        } catch (MalformedURLException e) {
-            throw new UrlFetchException(url, e.getMessage());
-        }
     }
+
 
     @Override
     public byte[] get(String url) throws BaseFetchException {

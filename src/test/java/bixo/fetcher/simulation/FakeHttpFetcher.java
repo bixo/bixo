@@ -78,15 +78,20 @@ public class FakeHttpFetcher implements IHttpFetcher {
     }
 
     @Override
+    public FetchedDatum head(ScoredUrlDatum scoredUrl) throws BaseFetchException {
+        return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap(), false);
+    }
+    
+    @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
-        return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
+        return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap(), true);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public byte[] get(String url) throws BaseFetchException {
         try {
-            FetchedDatum result = doGet(url, new HashMap<String, Comparable>());
+            FetchedDatum result = doGet(url, new HashMap<String, Comparable>(), true);
             return result.getContentBytes();
         } catch (HttpFetchException e) {
             if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
@@ -98,7 +103,7 @@ public class FakeHttpFetcher implements IHttpFetcher {
     }
     
     @SuppressWarnings("unchecked")
-    private FetchedDatum doGet(String url, Map<String, Comparable> metaData) throws BaseFetchException {
+    private FetchedDatum doGet(String url, Map<String, Comparable> metaData, boolean returnContent) throws BaseFetchException {
         LOGGER.trace("Fake fetching " + url);
         
         URL theUrl;
@@ -138,6 +143,10 @@ public class FakeHttpFetcher implements IHttpFetcher {
             throw new HttpFetchException(url, "Exception requested from FakeHttpFetcher", statusCode, null);
         }
 
+        if (!returnContent) {
+            contentSize = 0;
+        }
+        
         // Now we want to delay for as long as it would take to fill in the data.
         float duration = (float) contentSize / (float) bytesPerSecond;
         LOGGER.trace(String.format("Fake fetching %d bytes at %d bps (%fs) from %s", contentSize, bytesPerSecond, duration, url));

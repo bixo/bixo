@@ -53,9 +53,12 @@ import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
 import org.apache.http.NoHttpResponseException;
 import org.apache.http.ProtocolException;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpRequestRetryHandler;
+import org.apache.http.client.RedirectException;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.params.ClientParamBean;
@@ -95,6 +98,7 @@ import bixo.exceptions.AbortedFetchReason;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
+import bixo.exceptions.RedirectFetchException;
 import bixo.exceptions.UrlFetchException;
 import bixo.utils.HttpUtils;
 
@@ -309,13 +313,22 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     public void setMaxRetryCount(int maxRetryCount) {
         _maxRetryCount = maxRetryCount;
     }
+
+    @Override
+    public FetchedDatum head(ScoredUrlDatum scoredUrl) throws BaseFetchException {
+        return request(new HttpHead(), scoredUrl);
+    }
     
     @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
+        return request(new HttpGet(), scoredUrl);
+    }
+
+    private FetchedDatum request(HttpRequestBase request, ScoredUrlDatum scoredUrl) throws BaseFetchException {
         init();
 
         try {
-        	return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
+            return doRequest(request, scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
         } catch (HttpFetchException e) {
             // Don't bother generating a trace for a 404 (not found)
             if (LOGGER.isTraceEnabled() && (e.getHttpStatus() != HttpStatus.SC_NOT_FOUND)) {
@@ -324,8 +337,8 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             
             throw e;
         } catch (BaseFetchException e) {
-        	LOGGER.debug(String.format("Exception fetching %s (%s)", scoredUrl.getUrl(), e.getMessage()), e);
-        	throw e;
+            LOGGER.debug(String.format("Exception fetching %s (%s)", scoredUrl.getUrl(), e.getMessage()), e);
+            throw e;
         }
     }
 
@@ -335,7 +348,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         init();
         
         try {
-            FetchedDatum result = doGet(url, new HashMap<String, Comparable>());
+            FetchedDatum result = doRequest(new HttpGet(), url, new HashMap<String, Comparable>());
             return result.getContentBytes();
         } catch (HttpFetchException e) {
             if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
@@ -347,10 +360,9 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     }
 
     @SuppressWarnings("unchecked")
-    private FetchedDatum doGet(String url, Map<String, Comparable> metaData) throws BaseFetchException {
+    private FetchedDatum doRequest(HttpRequestBase request, String url, Map<String, Comparable> metaData) throws BaseFetchException {
         LOGGER.trace("Fetching " + url);
 
-        HttpGet getter = null;
         HttpResponse response;
         long readStartTime;
         HttpHeaders headerMap = new HttpHeaders();
@@ -360,17 +372,17 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         boolean needAbort = true;
         String contentType = "";
         
+        // Create a local instance of cookie store, and bind to local context
+        // Without this we get killed w/lots of threads, due to sync() on single cookie store.
+        HttpContext localContext = new BasicHttpContext();
+        CookieStore cookieStore = new BasicCookieStore();
+        localContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
+
         try {
-            getter = new HttpGet(new URI(url));
-
-            // Create a local instance of cookie store, and bind to local context
-            // Without this we get killed w/lots of threads, due to sync() on single cookie store.
-            HttpContext localContext = new BasicHttpContext();
-            CookieStore cookieStore = new BasicCookieStore();
-            localContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
-
+            request.setURI(new URI(url));
+            
             readStartTime = System.currentTimeMillis();
-            response = _httpClient.execute(getter, localContext);
+            response = _httpClient.execute(request, localContext);
 
             Header[] headers = response.getAllHeaders();
             for (Header header : headers) {
@@ -383,16 +395,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
                 throw new HttpFetchException(url, "Error fetching " + url, httpStatus, headerMap);
             }
 
-            HttpHost host = (HttpHost)localContext.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
-            HttpUriRequest finalRequest = (HttpUriRequest)localContext.getAttribute(ExecutionContext.HTTP_REQUEST);
-
-            try {
-                URL hostUrl = new URI(host.toURI()).toURL();
-                redirectedUrl = new URL(hostUrl, finalRequest.getURI().toString()).toExternalForm();
-            } catch (MalformedURLException e) {
-                LOGGER.warn("Invalid host/uri specified in final fetch: " + host + finalRequest.getURI());
-                redirectedUrl = url;
-            }
+            redirectedUrl = extractRedirectedUrl(url, localContext);
 
             URI permRedirectUri = (URI)localContext.getAttribute(PERM_REDIRECT_CONTEXT_KEY);
             if (permRedirectUri != null) {
@@ -423,6 +426,17 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             }
             
             needAbort = false;
+        } catch (ClientProtocolException e) {
+            // Oleg guarantees that no abort is needed in the case of an IOException (which is is a subclass of)
+            needAbort = false;
+
+            // If the root case was a "too many redirects" error, we want to map this to a specific
+            // exception that contains the final redirect.
+            if (e.getCause() instanceof RedirectException) {
+                throw new RedirectFetchException(url, extractRedirectedUrl(url, localContext));
+            } else {
+                throw new IOFetchException(url, e);
+            }
         } catch (IOException e) {
             // Oleg guarantees that no abort is needed in the case of an IOException
             needAbort = false;
@@ -447,7 +461,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             // TODO KKr - create generic fetch exception
             throw new IOFetchException(url, new IOException(e));
         } finally {
-            safeAbort(needAbort, getter);
+            safeAbort(needAbort, request);
         }
         
         // Figure out how much data we want to try to fetch.
@@ -469,10 +483,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         }
 
         // Now finally read in response body, up to targetLength bytes.
-        // FUTURE KKr - use content-type to exclude/include data, as that's
-        // a more accurate way to skip unwanted content versus relying on suffix.
-        
-        // entity might be null, for zero length responses.
+        // Note that entity might be null, for zero length responses.
         byte[] content = new byte[0];
         long readRate = 0;
         HttpEntity entity = response.getEntity();
@@ -518,7 +529,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
                 // We don't need to abort if there's an IOException
                 throw new IOFetchException(url, e);
             } finally {
-                safeAbort(needAbort, getter);
+                safeAbort(needAbort, request);
                 safeClose(in);
             }
         }
@@ -529,6 +540,22 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         return result;
     }
     
+    private String extractRedirectedUrl(String url, HttpContext localContext) {
+        HttpHost host = (HttpHost)localContext.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
+        HttpUriRequest finalRequest = (HttpUriRequest)localContext.getAttribute(ExecutionContext.HTTP_REQUEST);
+
+        try {
+            URL hostUrl = new URI(host.toURI()).toURL();
+            return new URL(hostUrl, finalRequest.getURI().toString()).toExternalForm();
+        } catch (MalformedURLException e) {
+            LOGGER.warn("Invalid host/uri specified in final fetch: " + host + finalRequest.getURI());
+            return url;
+        } catch (URISyntaxException e) {
+            LOGGER.warn("Invalid host/uri specified in final fetch: " + host + finalRequest.getURI());
+            return url;
+        }
+    }
+
     private static void safeClose(Closeable o) {
         if (o != null) {
             try {

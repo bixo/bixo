@@ -590,6 +590,11 @@ public class FetchPipeLRTest extends CascadingTestCase {
     private static class CustomFetcher implements IHttpFetcher {
 
         @Override
+        public FetchedDatum head(ScoredUrlDatum scoredUrl) throws BaseFetchException {
+            throw new RuntimeException("Unexpected HEAD request");
+        }
+        
+        @Override
         public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
             String url = scoredUrl.getUrl();
             if (url.contains("page-6")) {

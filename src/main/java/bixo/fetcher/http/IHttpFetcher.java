@@ -35,8 +35,12 @@ public interface IHttpFetcher extends Serializable {
     public int getMaxThreads();
     public UserAgent getUserAgent();
     
-    // TODO KKr - rename this to be fetch()
+    // Return results of HTTP GET request
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException;
+    
+    // Return results of HTTP HEAD request
+    public FetchedDatum head(ScoredUrlDatum scoredUrl) throws BaseFetchException;
+    
     
     /**
      * Raw version of fetcher, for use when getting robots.txt (for example).
