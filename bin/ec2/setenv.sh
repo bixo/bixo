@@ -5,11 +5,11 @@ echo "initializing environment"
 BASEDIR=`pwd`
 
 export HADOOP_AWS_HOME=$BASEDIR/hadoop-aws
-export AD_AWS_HOME=$BASEDIR/asterdata-aws
-export EC2_HOME=$BASEDIR/support/ec2-api-tools-1.3-30349
-export JETS3T_HOME=$BASEDIR/support/jets3t-0.7.0
+if [ -z "$EC2_HOME" ]; then
+	export EC2_HOME=$BASEDIR/support/ec2-api-tools-1.3-30349
+fi
 
-export PATH=$BASEDIR/bin:$EC2_HOME/bin:$HADOOP_AWS_HOME/bin:$AD_AWS_HOME:$JETS3T_HOME/bin:$PATH
+export PATH=$BASEDIR/bin:$EC2_HOME/bin:$HADOOP_AWS_HOME/bin:$PATH
 
 export AWS_KEYDIR=$BASEDIR/awskeys
 
