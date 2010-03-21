@@ -68,9 +68,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
-        IScoreGenerator scoring = new SimpleScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
+        ScoreGenerator scorer = new FixedScoreGenerator();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, 1, BaseDatum.EMPTY_METADATA_FIELDS);
         
         String outputPath = "build/test/FetchPipeTest-testHeadersInStatus/out";
         Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath, true);
@@ -90,62 +89,9 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertTrue(headers.getNames().size() > 0);
     }
     
-    @Test
-    public void testFetchPipeOriginal() throws Exception {
-        Lfs in = makeInputData(25, 4);
-
-        Pipe pipe = new Pipe("urlSource");
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
-        IScoreGenerator scoring = new RandomScoreGenerator(0.0, 1.0);
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
-        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
-        
-        String outputPath = "build/test/FetchPipeTest/testFetchPipe";
-        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
-        Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
-
-        // Finally we can run it.
-        FlowConnector flowConnector = new FlowConnector();
-        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
-        flow.complete();
-        
-        // Verify 100 fetched and 100 status entries were saved.
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
-        
-        Fields metaDataFields = new Fields();
-        int totalEntries = 0;
-        while (tupleEntryIterator.hasNext()) {
-            TupleEntry entry = tupleEntryIterator.next();
-            totalEntries += 1;
-
-            // Verify we can convert properly
-            FetchedDatum datum = new FetchedDatum(entry, metaDataFields);
-            Assert.assertNotNull(datum.getBaseUrl());
-            Assert.assertNotNull(datum.getFetchedUrl());
-        }
-                
-        Assert.assertEquals(100, totalEntries);
-        tupleEntryIterator.close();
-        
-        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
-        tupleEntryIterator = validate.openForRead(new JobConf());
-        totalEntries = 0;
-        while (tupleEntryIterator.hasNext()) {
-            TupleEntry entry = tupleEntryIterator.next();
-            totalEntries += 1;
-
-            // Verify we can convert properly
-            StatusDatum sd = new StatusDatum(entry, metaDataFields);
-            Assert.assertEquals(UrlStatus.FETCHED, sd.getStatus());
-        }
-        
-        Assert.assertEquals(100, totalEntries);
-    }
-    
     @SuppressWarnings("unchecked")
     @Test
-    public void testFetchPipeNew() throws Exception {
+    public void testFetchPipe() throws Exception {
         // System.setProperty("bixo.root.level", "TRACE");
         
         final int numPages = 10;
@@ -157,10 +103,9 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Lfs in = makeInputData("localhost:" + port, numPages, metadata);
 
         Pipe pipe = new Pipe("urlSource");
-        ScoreGenerator scorer = new FixedScoreGenerator(0.5);
+        ScoreGenerator scorer = new FixedScoreGenerator();
         IHttpFetcher fetcher = new SimpleHttpFetcher(ConfigUtils.BIXO_TEST_AGENT);
-        QueuePolicy queuePolicy = new QueuePolicy();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, queuePolicy, metaDataFields);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, 1, metaDataFields);
         
         String outputPath = "build/test/FetchPipeTest/testFetchPipe";
         Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS.append(metaDataFields)), outputPath + "/status", true);
@@ -225,9 +170,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
-        IScoreGenerator scoring = new SimpleScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher, new Fields("key"));
+        ScoreGenerator scorer = new FixedScoreGenerator();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, 1, new Fields("key"));
         
         String outputPath = "build/test/FetchPipeTest/dual";
         Fields contentFields = FetchedDatum.FIELDS.append(new Fields("key"));
@@ -261,9 +205,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
-        IScoreGenerator scoring = new SkippedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
+        ScoreGenerator scorer = new SkippedScoreGenerator();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, 1, BaseDatum.EMPTY_METADATA_FIELDS);
         
         String outputPath = "build/test/FetchPipeTest/out";
         Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
@@ -290,9 +233,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         FetcherPolicy defaultPolicy = new FetcherPolicy();
         defaultPolicy.setCrawlEndTime(0);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), true);
-        IScoreGenerator scoring = new SimpleScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
+        ScoreGenerator scorer = new FixedScoreGenerator();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 0, 1, BaseDatum.EMPTY_METADATA_FIELDS);
 
         // Create the output
         String outputPath = "build/test/FetchPipeTest/out";
@@ -322,60 +264,9 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertEquals(10, numEntries);
     }
     
-    @Test
-    public void testOrderingQueuesByCounts() throws Exception {
-        Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), "build/test/FetchPipeLRTest/in", true);
-        TupleEntryCollector write = in.openForWrite(new JobConf());
-        final int numDomains = 10;
-        
-        for (int i = 0; i < numDomains; i++) {
-            int numPages = numDomains - i;
-            for (int j = 0; j < numPages; j++) {
-                // Use special domain name pattern so code deep inside of operations "knows" not
-                // to try to resolve host names to IP addresses.
-                UrlDatum url = new UrlDatum("http://bixo-test-domain-" + i + ".com/page-" + j + ".html?size=10", 0, 0, UrlStatus.UNFETCHED, BaseDatum.EMPTY_METADATA_MAP);
-                Tuple tuple = url.toTuple();
-                write.add(tuple);
-            }
-        }
-
-        write.close();
-
-        Pipe pipe = new Pipe("urlSource");
-        ScoreGenerator scorer = new FixedScoreGenerator(0.5);
-        
-        // Only one thread, so we'll fetch domains sequentially
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
-        QueuePolicy queuePolicy = new QueuePolicy();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, queuePolicy, BaseDatum.EMPTY_METADATA_FIELDS);
-
-        String outputPath = "build/test/FetchPipeTest/testFetchPipe";
-        Tap out = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
-
-        // Finally we can run it.
-        FlowConnector flowConnector = new FlowConnector();
-        Flow flow = flowConnector.connect(in, out, fetchPipe.getContentTailPipe());
-        flow.complete();
-
-        // Verify that URLs from domain 1 were fetched first (since there were more of them)
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
-        int curHostId = -1;
-        
-        while (tupleEntryIterator.hasNext()) {
-            TupleEntry entry = tupleEntryIterator.next();
-            FetchedDatum datum = new FetchedDatum(entry, BaseDatum.EMPTY_METADATA_FIELDS);
-            URL url = new URL(datum.getBaseUrl());
-            String host = url.getHost();
-            int hostLength = host.length();
-            int hostId = Integer.parseInt(host.substring(hostLength - 5, hostLength - 4));
-            Assert.assertTrue(hostId >= curHostId);
-            curHostId = hostId;
-        }
-        
-        tupleEntryIterator.close();
-    }
-    
+    // TODO KKr- re-enable this test when we know how to make it work for
+    // the new fetcher architecture.
+    /**
     @Test
     public void testPassingAllStatus() throws Exception {
         // Pretend like we have 10 URLs from one domain, to match the
@@ -435,12 +326,13 @@ public class FetchPipeLRTest extends CascadingTestCase {
         
         Assert.assertEquals(10, numEntries);
     }
-
+    */
+    
     @SuppressWarnings("serial")
-    private static class SkippedScoreGenerator implements IScoreGenerator {
+    private static class SkippedScoreGenerator extends ScoreGenerator {
 
         @Override
-        public double generateScore(GroupedUrlDatum urlTuple) {
+        public double generateScore(String domain, String pld, String url) {
             return IScoreGenerator.SKIP_URL_SCORE;
         }
     }

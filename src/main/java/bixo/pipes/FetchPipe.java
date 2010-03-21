@@ -228,11 +228,23 @@ public class FetchPipe extends SubAssembly {
      * @param metaDataFields
      */
     public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, long crawlEndTime, int numReducers, Fields metaDataFields) {
+        this(urlProvider, scorer, fetcher, null, crawlEndTime, numReducers, metaDataFields);
+    }
+    
+    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, IHttpFetcher robotsFetcher, long crawlEndTime, int numReducers, Fields metaDataFields) {
         Pipe robotsPipe = new Pipe("robots pipe", urlProvider);
         Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
         robotsPipe = new Each(robotsPipe, new GroupFunction(metaDataFields, new GroupByDomain()), groupedFields);
         robotsPipe = new GroupBy(robotsPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
-        robotsPipe = new Every(robotsPipe, new FilterAndScoreByUrlAndRobots(fetcher, scorer, metaDataFields), Fields.RESULTS);
+        
+        FilterAndScoreByUrlAndRobots filter;
+        if (robotsFetcher != null) {
+            filter = new FilterAndScoreByUrlAndRobots(robotsFetcher, scorer, metaDataFields);
+        } else {
+            filter = new FilterAndScoreByUrlAndRobots(fetcher.getUserAgent(), fetcher.getMaxThreads(), scorer, metaDataFields);
+        }
+        
+        robotsPipe = new Every(robotsPipe, filter, Fields.RESULTS);
         
         // Split into records for URLs that are special (not fetchable) and regular
         SplitterAssembly splitter = new SplitterAssembly(robotsPipe, new SplitIntoSpecialAndRegularKeys());
@@ -269,7 +281,8 @@ public class FetchPipe extends SubAssembly {
         Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
         fetchPipe = new Each(fetchPipe, new GroupFunction(metaDataFields, new GroupByDomain()), groupedFields);
         fetchPipe = new GroupBy(fetchPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
-        fetchPipe = new Every(fetchPipe, new FilterAndScoreByUrlAndRobots(fetcher, scorer, metaDataFields), Fields.RESULTS);
+        fetchPipe = new Every(fetchPipe, new FilterAndScoreByUrlAndRobots(fetcher.getUserAgent(), fetcher.getMaxThreads(), 
+                        scorer, metaDataFields), Fields.RESULTS);
         
         createFetchBuffer(fetchPipe, fetcher, queuePolicy, metaDataFields);
     }
@@ -281,8 +294,8 @@ public class FetchPipe extends SubAssembly {
 
     private void createFetchBuffer(Pipe fetchPipe, IHttpFetcher fetcher, QueuePolicy queuePolicy, Fields metaDataFields) {
         // Group by the key (which will be <count>-<unique ip>-<crawl delay>), and sort from high to low score.
-    	fetchPipe = new GroupBy(fetchPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD), new Fields(ScoredUrlDatum.SCORE_FIELD), true);
-    	fetchPipe = new Every(fetchPipe, new FetcherBuffer(metaDataFields, fetcher, queuePolicy), Fields.RESULTS);
+        fetchPipe = new GroupBy(fetchPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD), new Fields(ScoredUrlDatum.SCORE_FIELD), true);
+        fetchPipe = new Every(fetchPipe, new FetcherBuffer(metaDataFields, fetcher, queuePolicy), Fields.RESULTS);
 
         Fields fetchedFields = FetchedDatum.FIELDS.append(metaDataFields);
         Pipe fetched = new Pipe(CONTENT_PIPE_NAME, new Each(fetchPipe, new FilterErrorsFunction(fetchedFields)));
@@ -292,11 +305,11 @@ public class FetchPipe extends SubAssembly {
     }
     
     public Pipe getContentTailPipe() {
-    	return getTailPipe(CONTENT_PIPE_NAME);
+        return getTailPipe(CONTENT_PIPE_NAME);
     }
     
     public Pipe getStatusTailPipe() {
-    	return getTailPipe(STATUS_PIPE_NAME);
+        return getTailPipe(STATUS_PIPE_NAME);
     }
     
     private Pipe getTailPipe(String pipeName) {

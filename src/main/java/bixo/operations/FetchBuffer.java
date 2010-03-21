@@ -112,6 +112,11 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             }
             
             // Next see if we're still fetching from the same server. If so, then abort these URLs
+            // TODO KKr - this isn't always the right thing to do - if we have sequential requests
+            // coming in for the same site (e.g. because we're limiting URLs/request) then we
+            // shouldn't just bail out. Maybe we should check to see if the target time for this
+            // datum that we just got is within bounds for how long this active request should
+            // be taking.
             Long nextFetchTime = _activeRefs.get(ref);
             if (nextFetchTime != null) {
                 skipUrls(urls, GroupingKey.DEFERRED_GROUPING_KEY);

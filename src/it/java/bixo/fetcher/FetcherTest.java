@@ -29,10 +29,13 @@ import junit.framework.Assert;
 
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import bixo.config.FakeUserFetcherPolicy;
+import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
+import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
@@ -40,8 +43,8 @@ import bixo.datum.UrlStatus;
 import bixo.exceptions.BaseFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
-import bixo.fetcher.util.LastFetchScoreGenerator;
-import bixo.fetcher.util.SimpleGroupingKeyGenerator;
+import bixo.fetcher.util.FixedScoreGenerator;
+import bixo.fetcher.util.ScoreGenerator;
 import bixo.pipes.FetchPipe;
 import bixo.urldb.UrlImporter;
 import cascading.flow.Flow;
@@ -55,21 +58,21 @@ import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 
 public class FetcherTest {
-    private static final long TEN_DAYS = 1000 * 60 * 60 * 24 * 10;
-
-	@SuppressWarnings("serial")
-	private static class FirefoxUserAgent extends UserAgent {
-		public FirefoxUserAgent() {
-			super("Firefox", "", "");
-		}
-		
-		@Override
-		public String getUserAgentString() {
-	    	// Use standard Firefox agent name, as some sites won't work w/non-standard names.
-			return "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.0.8) Gecko/2009032608 Firefox/3.0.8";
-		}
-	}
-	    
+    private static final Logger LOGGER = Logger.getLogger(FetcherTest.class);
+    
+    @SuppressWarnings("serial")
+    private static class FirefoxUserAgent extends UserAgent {
+        public FirefoxUserAgent() {
+            super("Firefox", "", "");
+        }
+        
+        @Override
+        public String getUserAgentString() {
+            // Use standard Firefox agent name, as some sites won't work w/non-standard names.
+            return "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.0.8) Gecko/2009032608 Firefox/3.0.8";
+        }
+    }
+        
     private String makeUrlDB(String workingFolder, String inputPath) throws IOException {
 
         // We don't want to regenerate this DB all the time.
@@ -84,6 +87,8 @@ public class FetcherTest {
     
     @Test
     public void testStaleConnection() throws Exception {
+        System.setProperty("bixo.root.level", "TRACE");
+
         String workingFolder = "build/it/FetcherTest-testStaleConnection/working";
         String inputPath = makeUrlDB(workingFolder, "src/it/resources/facebook-artists.txt");
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
@@ -93,12 +98,16 @@ public class FetcherTest {
         
         Pipe pipe = new Pipe("urlSource");
 
+        // TODO KKr - to test this, we need to limit requests to one per batch (e.g. use the
+        // FakeUserFetcherPolicy). But that currently fails in FetchBuffer.operate(), because
+        // the next request comes in for the same domain (facebook) as the active rquest, so
+        // it immediately aborts it.
         UserAgent userAgent = new FirefoxUserAgent();
-        IHttpFetcher fetcher = new SimpleHttpFetcher(10, new FakeUserFetcherPolicy(5), userAgent);
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(fetcher, true);
-        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
-        
-        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
+        FetcherPolicy fetcherPolicy = new FetcherPolicy();
+        fetcherPolicy.setCrawlDelay(5 * 1000L);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(2, fetcherPolicy, userAgent);
+        ScoreGenerator scorer = new FixedScoreGenerator();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, 1, BaseDatum.EMPTY_METADATA_FIELDS);
 
         FlowConnector flowConnector = new FlowConnector();
 
@@ -113,12 +122,13 @@ public class FetcherTest {
             TupleEntry entry = tupleEntryIterator.next();
             StatusDatum sd = new StatusDatum(entry, metaDataFields);
             if (sd.getStatus() != UrlStatus.FETCHED) {
-            	System.out.println("Fetch failed for " + sd.getUrl());
-            	BaseFetchException e = sd.getException();
-            	if (e != null) {
-            		System.out.println("Exception in status: " + e.getMessage());
-            	}
-            	Assert.fail("Status not equal to FETCHED");
+                LOGGER.error(String.format("Fetched failed! Status is %s for %s", sd.getStatus(), sd.getUrl()));
+                BaseFetchException e = sd.getException();
+                if (e != null) {
+                    LOGGER.error("Fetched failed due to exception", e);
+                }
+                
+                Assert.fail("Status not equal to FETCHED");
             }
         }
     }
@@ -137,9 +147,8 @@ public class FetcherTest {
 
         UserAgent userAgent = new FirefoxUserAgent();
         IHttpFetcher fetcher = new SimpleHttpFetcher(10, userAgent);
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(fetcher, true);
-        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
-        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher);
+        ScoreGenerator scorer = new FixedScoreGenerator();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, 1, BaseDatum.EMPTY_METADATA_FIELDS);
 
         FlowConnector flowConnector = new FlowConnector();
 

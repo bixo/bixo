@@ -84,7 +84,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
 
         _scorer = scorer;
         _metadataFields = metadataFields;
-        _fetcher = createFetcher(fetcher.getUserAgent(), fetcher.getMaxThreads());
+        _fetcher = fetcher;
     }
 
     public static IHttpFetcher createFetcher(UserAgent userAgent, int maxThreads) {

@@ -18,16 +18,17 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TopDocs;
 import org.junit.Test;
 
+import bixo.config.FetcherPolicy;
 import bixo.datum.ParsedDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
-import bixo.fetcher.simulation.NullHttpFetcher;
-import bixo.fetcher.util.LastFetchScoreGenerator;
-import bixo.fetcher.util.SimpleGroupingKeyGenerator;
+import bixo.fetcher.util.FixedScoreGenerator;
+import bixo.fetcher.util.ScoreGenerator;
 import bixo.indexing.IndexScheme;
 import bixo.parser.FakeParser;
+import bixo.utils.DomainInfo;
 import bixo.utils.FieldUtils;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -42,7 +43,6 @@ import cascading.tuple.Fields;
 import cascading.tuple.TupleEntryCollector;
 
 public class IndexingMetaDataTest {
-    private static final long TEN_DAYS = 1000L * 60 * 60 * 24 * 10;
     private static final int DATA_COUNT = 100;
 
     @SuppressWarnings("unchecked")
@@ -56,19 +56,18 @@ public class IndexingMetaDataTest {
         for (int i = 0; i < DATA_COUNT; i++) {
             HashMap<String, Comparable> map = new HashMap<String, Comparable>();
             map.put("metaData", "metaData" + i);
-            UrlDatum url = new UrlDatum("http://" + i, 0, 0, UrlStatus.UNFETCHED, map);
+            UrlDatum url = new UrlDatum("http://" + DomainInfo.makeTestDomain(i), 0, 0, UrlStatus.UNFETCHED, map);
             write.add(url.toTuple());
         }
         write.close();
 
         Pipe pipe = new Pipe("urlSource");
-        SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(new NullHttpFetcher(), false);
-        LastFetchScoreGenerator scoring = new LastFetchScoreGenerator(System.currentTimeMillis(), TEN_DAYS);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, DATA_COUNT);
 
         Fields metaDataField = new Fields("metaData");
 
-        FetchPipe fetchPipe = new FetchPipe(pipe, grouping, scoring, fetcher, metaDataField);
+        ScoreGenerator scorer = new FixedScoreGenerator();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, 1, metaDataField);
         ParsePipe parserPipe = new ParsePipe(fetchPipe.getContentTailPipe(), new FakeParser(), metaDataField);
 
         Fields indexedFields = new Fields("text", "metaData");
