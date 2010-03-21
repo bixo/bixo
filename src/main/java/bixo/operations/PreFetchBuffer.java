@@ -31,7 +31,9 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
     private final Fields _metaDataFields;
 
     public PreFetchBuffer(FetcherPolicy fetcherPolicy, int numReduceTasks, Fields metaDataFields) {
-        super(PreFetchedDatum.FIELDS.append(metaDataFields));
+        // There is no metadata that gets output from this, since a PreFetchedDatum has a list of
+        // ScoredUrlDatums, and these are what have meta-data.
+        super(PreFetchedDatum.FIELDS);
 
         _fetcherPolicy = fetcherPolicy;
         _numReduceTasks = numReduceTasks;
