@@ -15,6 +15,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.io.BytesWritable;
 import org.junit.Test;
+import org.xml.sax.Attributes;
+import org.xml.sax.Locator;
+import org.xml.sax.SAXException;
 
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
@@ -196,6 +199,41 @@ public class SimpleParserTest {
         Assert.assertEquals("TransPac Software", parse.getTitle());
     }
 
+    @Test
+    public void testCustomContentExtractor() throws Exception {
+        String html = readFromFile("parser-files/simple-content.html");
+        
+        String url = "http://domain.com/simple-content.html";
+        String contentType = "text/html; charset=utf-8";
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
+        headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+        BytesWritable content = new BytesWritable(html.getBytes("utf-8"));
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+        
+        SimpleParser parser = new SimpleParser(new BaseContentExtractor() {
+
+            @Override
+            public String getContent() {
+                return "Custom";
+            }
+        }, 
+        new BaseLinkExtractor() {
+            
+            @Override
+            public Outlink[] getLinks() {
+                return new Outlink[0];
+            }
+        });
+        
+        ParsedDatum parsedDatum = parser.parse(fetchedDatum);
+        
+        // Verify content is correct
+        Assert.assertEquals("Simple", parsedDatum.getTitle());
+        
+        compareTermsInStrings("Custom", parsedDatum.getParsedText());
+    }
+    
     @Test
     public void testLanguageDetectionHttpHeader() throws Exception {
 		// Read in test data from test/resources

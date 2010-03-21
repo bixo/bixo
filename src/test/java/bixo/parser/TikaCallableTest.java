@@ -55,7 +55,10 @@ public class TikaCallableTest {
         InputStream is = Mockito.mock(InputStream.class);
         Metadata md = Mockito.mock(Metadata.class);
         
-        Callable<ParsedDatum> c = new TikaCallable(parser, is, md);
+        BaseContentExtractor contentExtractor = Mockito.mock(BaseContentExtractor.class);
+        BaseLinkExtractor linkExtractor = Mockito.mock(BaseLinkExtractor.class);
+        
+        Callable<ParsedDatum> c = new TikaCallable(parser, contentExtractor, linkExtractor, is, md);
         FutureTask<ParsedDatum> task = new FutureTask<ParsedDatum>(c);
         Thread t = new Thread(task);
         t.start();
@@ -74,7 +77,10 @@ public class TikaCallableTest {
         InputStream is = Mockito.mock(InputStream.class);
         Metadata md = new Metadata();
         
-        Callable<ParsedDatum> c = new TikaCallable(parser, is, md);
+        BaseContentExtractor contentExtractor = Mockito.mock(BaseContentExtractor.class);
+        BaseLinkExtractor linkExtractor = Mockito.mock(BaseLinkExtractor.class);
+        
+        Callable<ParsedDatum> c = new TikaCallable(parser, contentExtractor, linkExtractor, is, md);
         FutureTask<ParsedDatum> task = new FutureTask<ParsedDatum>(c);
         Thread t = new Thread(task);
         t.start();

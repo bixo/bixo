@@ -34,88 +34,16 @@ class TikaCallable implements Callable<ParsedDatum> {
     // FUTURE KKr - improve this to handle en-US, and "eng" for those using old-style language codes.
     private static final Pattern LANGUAGE_CODE_PATTERN = Pattern.compile("([a-z]{2})([,;-]).*");
 
-    private static class LinkBodyHandler extends DefaultHandler {
-        private StringBuilder _content = new StringBuilder();
-        private List<Outlink> _outlinks = new ArrayList<Outlink>();
-        private boolean _inHead = false;
-        private boolean _inBody = false;
-        private boolean _inAnchor = false;
-        private boolean _inTitle = false;
-        
-        private String _curUrl;
-        private StringBuilder _curAnchor = new StringBuilder();
-        
-        public String getContent() {
-            return _content.toString();
-        }
-        
-        public Outlink[] getLinks() {
-            return _outlinks.toArray(new Outlink[_outlinks.size()]);
-        }
-        
-        @Override
-        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-            super.startElement(uri, localName, qName, attributes);
-            
-            if (_inHead) {
-                if (localName.equalsIgnoreCase("title")) {
-                    _inTitle = true;
-                }
-            } else if (_inBody) {
-                if (localName.equalsIgnoreCase("a")) {
-                    String hrefAttr = attributes.getValue("href");
-                    if (hrefAttr != null) {
-                        _curUrl = hrefAttr;
-                        _inAnchor = true;
-                        _curAnchor.setLength(0);
-                    }
-                }
-            } else if (localName.equalsIgnoreCase("head")) {
-                _inHead = true;
-            } else if (localName.equalsIgnoreCase("body")) {
-                _inBody = true;
-            }
-        }
-
-        @Override
-        public void endElement(String uri, String localName, String name) throws SAXException {
-            super.endElement(uri, localName, name);
-            
-            if (_inHead && localName.equalsIgnoreCase("head")) {
-                _inHead = false;
-            } else if (_inTitle && localName.equalsIgnoreCase("title")) {
-                _inTitle = false;
-            } else if (_inBody && localName.equalsIgnoreCase("body")) {
-                _inBody = false;
-            } else if (_inAnchor && localName.equalsIgnoreCase("a")) {
-                _outlinks.add(new Outlink(_curUrl, _curAnchor.toString()));
-                _inAnchor = false;
-            }
-        }
-
-        @Override
-        public void characters(char[] ch, int start, int length) throws SAXException {
-            super.characters(ch, start, length);
-            
-            if (_inAnchor) {
-                _curAnchor.append(ch, start, length);
-                _content.append(ch, start, length);
-            } else if (_inTitle) {
-                _content.append(ch, start, length);
-                _content.append(' ');
-            } else if (_inBody) {
-                _content.append(ch, start, length);
-            }
-        }
-    };
-
-
     private Parser _parser;
+    private BaseContentExtractor _contentExtractor;
+    private BaseLinkExtractor _linkExtractor;
     private InputStream _input;
     private Metadata _metadata;
     
-    public TikaCallable(Parser parser, InputStream input, Metadata metadata) {
+    public TikaCallable(Parser parser, BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, InputStream input, Metadata metadata) {
         _parser = parser;
+        _contentExtractor = contentExtractor;
+        _linkExtractor = linkExtractor;
         _input = input;
         _metadata = metadata;
     }
@@ -123,16 +51,15 @@ class TikaCallable implements Callable<ParsedDatum> {
     @Override
     public ParsedDatum call() throws Exception {
         try {
-            LinkBodyHandler handler = new LinkBodyHandler();
             ProfilingHandler profilingHandler = new ProfilingHandler();  
-            TeeContentHandler teeContentHandler = new TeeContentHandler(handler, profilingHandler);
+            TeeContentHandler teeContentHandler = new TeeContentHandler(_contentExtractor, _linkExtractor, profilingHandler);
 
             _parser.parse(_input, teeContentHandler, _metadata, new ParseContext());
             
             String lang = detectLanguage(_metadata, profilingHandler);
-            return new ParsedDatum(_metadata.get(Metadata.RESOURCE_NAME_KEY), handler.getContent(), lang,
+            return new ParsedDatum(_metadata.get(Metadata.RESOURCE_NAME_KEY), _contentExtractor.getContent(), lang,
                             _metadata.get(Metadata.TITLE),
-                            handler.getLinks(), makeMap(_metadata), BaseDatum.EMPTY_METADATA_MAP);
+                            _linkExtractor.getLinks(), makeMap(_metadata), BaseDatum.EMPTY_METADATA_MAP);
         } catch (Exception e) {
             // Generic exception that's OK to re-throw
             throw e;
