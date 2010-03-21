@@ -21,12 +21,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -201,6 +204,14 @@ public class MboxParser implements Parser {
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
     	parse(stream, handler, metadata, new ParseContext());
+    }
+
+    @Override
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        Set<MediaType> result = new HashSet<MediaType>();
+        MediaType mt = new MediaType("application", "mbox");
+        result.add(mt);
+        return result;
     }
 
 
