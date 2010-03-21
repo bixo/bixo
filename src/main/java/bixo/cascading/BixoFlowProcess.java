@@ -22,6 +22,28 @@ import cascading.tuple.TupleEntryIterator;
 public class BixoFlowProcess extends FlowProcess {
     private static final Logger LOGGER = Logger.getLogger(BixoFlowProcess.class);
 
+    public static enum LoggingLevels {
+        TRACE,
+        DEBUG,
+        INFO,
+        WARN,
+        ERROR,
+        FATAL,
+        EXCEPTION;
+        
+        public static LoggingLevels fromLevel(Level level) {
+            switch (level.toInt()) {
+                case Level.TRACE_INT: return TRACE;
+                case Level.DEBUG_INT: return DEBUG;
+                case Level.ERROR_INT: return ERROR;
+                case Level.FATAL_INT: return FATAL;
+                case Level.INFO_INT: return INFO;
+                case Level.WARN_INT: return WARN;
+                default: throw new RuntimeException("Unknown level: " + level);
+            }
+        }
+    }
+    
     // TODO KKr - extend HadoopFlowProces, use Reporter.NULL for reporter, etc.
     // would
     // be safer than relying on never casting this to a HadoopFlowProcess when
@@ -132,12 +154,16 @@ public class BixoFlowProcess extends FlowProcess {
         for (IFlowReporter reporter : _reporters) {
             reporter.setStatus(msg, t);
         }
+        
+        increment(LoggingLevels.EXCEPTION, 1);
     }
 
     public void setStatus(Level level, String msg) {
         for (IFlowReporter reporter : _reporters) {
             reporter.setStatus(level, msg);
         }
+        
+        increment(LoggingLevels.fromLevel(level), 1);
     }
 
     @Override
