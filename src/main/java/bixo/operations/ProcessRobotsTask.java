@@ -85,7 +85,10 @@ public class ProcessRobotsTask implements Runnable {
             String pld = DomainNames.getPLD(domain);
             if (!_scorer.isGoodDomain(domain, pld)) {
                 _flowProcess.increment(FetchCounters.DOMAINS_SKIPPED, 1);
+                _flowProcess.increment(FetchCounters.URLS_SKIPPED, _urls.size());
+                
                 LOGGER.debug("Skipping URLs from not-good domain: " + domain);
+                
                 emptyQueue(_urls, GroupingKey.SKIPPED_GROUPING_KEY, _collector);
             } else {
                 String robotsUrl = new URL(domainInfo.getProtocolAndDomain() + "/robots.txt").toExternalForm();
@@ -100,6 +103,7 @@ public class ProcessRobotsTask implements Runnable {
                     LOGGER.debug("Deferring visits to URLs from " + domainInfo.getDomain());
                     key = GroupingKey.DEFERRED_GROUPING_KEY;
                     _flowProcess.increment(FetchCounters.DOMAINS_DEFERRED, 1);
+                    _flowProcess.increment(FetchCounters.URLS_DEFERRED, _urls.size());
                 } else {
                     // TODO KKr - stop passing count in, since that's not workable for keys (multiple domains
                     // map to the same IP address, so count-<ip> throws off downstream processing.
@@ -121,14 +125,17 @@ public class ProcessRobotsTask implements Runnable {
         } catch (UnknownHostException e) {
             LOGGER.debug("Unknown host", e);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
+            _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
             emptyQueue(_urls, GroupingKey.UNKNOWN_HOST_GROUPING_KEY, _collector);
         } catch (MalformedURLException e) {
             LOGGER.debug("Invalid URL: " + _protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
+            _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
             emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector);
         } catch (Exception e) {
             LOGGER.warn("Exception processing " + _protocolAndDomain, e);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
+            _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
             emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector);
         } finally {
             _flowProcess.decrement(FetchCounters.DOMAINS_PROCESSING, 1);

@@ -4,7 +4,7 @@ package bixo.hadoop;
 
 public enum FetchCounters {
     DOMAINS_QUEUED,     // Added a new domain queue
-    DOMAINS_FINISHED,   // Domains where we've fetched all of the URLs
+    DOMAINS_FINISHED,   // Domains where we've processed all of the robots.txt
     DOMAINS_REMAINING,  // Domains left to process
     DOMAINS_PROCESSING, // Domains that are in the process of being fetched/robots.txt
     
@@ -12,6 +12,10 @@ public enum FetchCounters {
     DOMAINS_REJECTED,   // Domains we rejected
     DOMAINS_SKIPPED,    // Domains we ignored
     DOMAINS_DEFERRED,   // Domains we deferred
+    URLS_DEFERRED,      // URLs we deferred, because domain was deferred
+    URLS_REJECTED,      // URLS we rejected, because domain was rejected
+    
+    // During URL fetching
     
     URLS_QUEUED,
     URLS_SKIPPED,
