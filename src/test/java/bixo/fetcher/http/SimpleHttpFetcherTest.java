@@ -7,6 +7,7 @@ import java.util.Set;
 import static org.junit.Assert.*;
 
 import org.apache.http.HttpStatus;
+import org.apache.http.conn.HttpHostConnectException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mortbay.http.HttpException;
@@ -21,6 +22,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.AbortedFetchException;
 import bixo.exceptions.AbortedFetchReason;
+import bixo.exceptions.IOFetchException;
 import bixo.fetcher.RandomResponseHandler;
 import bixo.fetcher.ResourcesResponseHandler;
 import bixo.fetcher.simulation.SimulationWebServer;
@@ -115,6 +117,22 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         }
     }
 
+    @Test
+    public final void testConnectionTimeout() throws Exception {
+        HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, ConfigUtils.BIXO_TEST_AGENT);
+        String url = "http://localhost:8088/simple-page.html";
+        
+        try {
+            fetcher.get(new ScoredUrlDatum(url));
+            Assert.fail("Exception not thrown");
+        } catch (IOFetchException e) {
+            Assert.assertTrue(e.getCause() instanceof HttpHostConnectException);
+        } finally {
+            server.stop();
+        }
+    }
+    
     @Test
     public final void testStaleConnection() throws Exception {
         HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
