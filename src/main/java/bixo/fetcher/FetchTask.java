@@ -40,6 +40,10 @@ import bixo.hadoop.FetchCounters;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
+/**
+ * Runnable instance for fetching a set of URLs from the same server, using keep-alive.
+ *
+ */
 public class FetchTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(FetchTask.class);
     
