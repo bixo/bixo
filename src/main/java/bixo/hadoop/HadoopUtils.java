@@ -8,6 +8,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.ClusterStatus;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.JobTracker.State;
 import org.apache.log4j.Level;
 
 import cascading.flow.FlowConnector;
@@ -15,6 +16,8 @@ import cascading.flow.MultiMapReducePlanner;
 
 public class HadoopUtils {
 	public static final int DEFAULT_STACKSIZE = 512;
+	
+    private static final long STATUS_CHECK_INTERVAL = 1000;
 	
     public static void safeRemove(FileSystem fs, Path path) {
     	if ((fs != null) && (path != null)) {
@@ -30,10 +33,17 @@ public class HadoopUtils {
     	return getDefaultJobConf(DEFAULT_STACKSIZE);
     }
     
-    public static int getTaskTrackers(JobConf conf) throws IOException {
+    public static int getTaskTrackers(JobConf conf) throws IOException, InterruptedException {
         JobClient jobClient = new JobClient(conf);
-        ClusterStatus status = jobClient.getClusterStatus();
-        return status.getTaskTrackers();
+        
+        while (true) {
+            ClusterStatus status = jobClient.getClusterStatus();
+            if (status.getJobTrackerState() == State.RUNNING) {
+                status.getTaskTrackers();
+            } else {
+                Thread.sleep(STATUS_CHECK_INTERVAL);
+            }
+        }
     }
     
     public static JobConf getDefaultJobConf(int stackSizeInKB) throws IOException {
