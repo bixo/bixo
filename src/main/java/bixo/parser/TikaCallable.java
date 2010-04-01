@@ -4,9 +4,7 @@
 package bixo.parser;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
@@ -19,12 +17,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.TeeContentHandler;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 import bixo.datum.BaseDatum;
-import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 
 class TikaCallable implements Callable<ParsedDatum> {
