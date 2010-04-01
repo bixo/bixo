@@ -19,7 +19,6 @@ import bixo.fetcher.FetchTask;
 import bixo.fetcher.IFetchMgr;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.hadoop.FetchCounters;
-import bixo.utils.GroupingKey;
 import bixo.utils.ThreadedExecutor;
 import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.HadoopFlowProcess;
@@ -42,8 +41,9 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     // TODO KKr - calculate this based on the fetcher policy's max URLs/request
     private static final long REQUEST_TIMEOUT = 100 * 1000L;
     
-    // How long to wait before doing a hard termination.
-    private static final long TERMINATION_TIMEOUT = 100 * 1000L;
+    // How long to wait before doing a hard termination. Wait twice as long
+    // as the longest request.
+    private static final long TERMINATION_TIMEOUT = REQUEST_TIMEOUT * 2;
 
     private IHttpFetcher _fetcher;
     private long _crawlEndTime;
@@ -98,60 +98,35 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         Iterator<TupleEntry> values = buffCall.getArgumentsIterator();
         _collector = buffCall.getOutputCollector();
 
-        // Each value is a PreFetchedDatum that contains a set of URLs, plus other values
-        // needed to set state properly.
-        while (values.hasNext()) {
+        // Each value is a PreFetchedDatum that contains a set of URLs to fetch in one request from
+        // a single server, plus other values needed to set state properly.
+        while (!Thread.interrupted() && (System.currentTimeMillis() < _crawlEndTime) && values.hasNext()) {
             PreFetchedDatum datum = new PreFetchedDatum(values.next().getTuple(), _metaDataFields);
             List<ScoredUrlDatum> urls = datum.getUrls();
             String ref = datum.getGroupingKey().getRef();
-
-            // First see if we're past the target crawl end time. If so, skip these URLs
-            if (System.currentTimeMillis() > _crawlEndTime) {
-                skipUrls(urls, UrlStatus.SKIPPED_TIME_LIMIT, "Time limit skipped %d URLs");
-                continue;
-            }
+            trace("Processing %d URLs for %s", urls.size(), ref);
             
-            // Next see if we're still fetching from the same server. If so, then abort these URLs
-            // TODO KKr - this isn't always the right thing to do - if we have sequential requests
-            // coming in for the same site (e.g. because we're limiting URLs/request) then we
-            // shouldn't just bail out. Maybe we should check to see if the target time for this
-            // datum that we just got is within bounds for how long this active request should
-            // be taking.
-            Long nextFetchTime = _activeRefs.get(ref);
-            if (nextFetchTime != null) {
-                skipUrls(urls, GroupingKey.DEFERRED_GROUPING_KEY);
-                continue;
-            }
-
-            // See if we already have fetched URLs from this ref (IP-crawl delay). If so, then we
-            // need to figure out how long we should wait.
-            nextFetchTime = _pendingRefs.get(ref);
-            if ((nextFetchTime != null) && (nextFetchTime > System.currentTimeMillis())) {
-                // We have to wait until it's time to fetch.
-                long delta = nextFetchTime - System.currentTimeMillis();
-                LOGGER.trace(String.format("Waiting %dms until we can fetch from %s", delta, ref));
-
-                try {
-                    Thread.sleep(delta);
-                } catch (InterruptedException e) {
-                    LOGGER.warn("FetchBuffer interrupted!");
-                    Thread.currentThread().interrupt();
-                    continue;
-                }
-            }
-
-            // Figure out the correct time for the fetch after this one.
-            if (datum.isLastList()) {
-                nextFetchTime = 0L;
-            } else {
-                nextFetchTime = System.currentTimeMillis() + datum.getFetchDelay();
-            }
-            
-            // Now we can finally do the fetch
             try {
+                checkFetchTime(ref, _activeRefs.get(ref));
+                checkFetchTime(ref, _pendingRefs.get(ref));
+
+                Long nextFetchTime;
+                
+                // Figure out the correct time for the fetch after this one.
+                if (datum.isLastList()) {
+                    nextFetchTime = 0L;
+                } else {
+                    nextFetchTime = System.currentTimeMillis() + datum.getFetchDelay();
+                }
+
                 Runnable doFetch = new FetchTask(this, _fetcher, urls, ref);
                 makeActive(ref, nextFetchTime);
+                trace("Executing batch fetch %s to %d", ref, nextFetchTime);
+                long startTime = System.currentTimeMillis();
                 _executor.execute(doFetch);
+                
+                // Adjust for how long it took to get the request queued.
+                adjustActive(ref, System.currentTimeMillis() - startTime);
                 
                 _flowProcess.increment(FetchCounters.URLS_QUEUED, urls.size());
                 _flowProcess.increment(FetchCounters.URLS_REMAINING, urls.size());
@@ -163,7 +138,29 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 
                 _flowProcess.increment(FetchCounters.URLS_SKIPPED, urls.size());
                 _flowProcess.decrement(FetchCounters.URLS_REMAINING, urls.size());
-                skipUrls(urls, GroupingKey.DEFERRED_GROUPING_KEY);
+                
+                skipUrls(urls, UrlStatus.SKIPPED_DEFERRED, String.format("Execution rejection skipped %d URLs", urls.size()));
+            } catch (InterruptedException e) {
+                LOGGER.warn("FetchBuffer interrupted!");
+                Thread.currentThread().interrupt();
+                
+                // TODO KKr - use different key for interrupted case
+                skipUrls(urls, UrlStatus.SKIPPED_DEFERRED, null);
+            }
+        }
+        
+        // Skip all URLs that we've got left.
+        if (values.hasNext()) {
+            trace("Found unprocessed URLs");
+            
+            // TODO KKr - use different key for interrupted case
+            UrlStatus status = Thread.interrupted() ? UrlStatus.SKIPPED_DEFERRED : UrlStatus.SKIPPED_TIME_LIMIT;
+            
+            while (values.hasNext()) {
+                PreFetchedDatum datum = new PreFetchedDatum(values.next().getTuple(), _metaDataFields);
+                List<ScoredUrlDatum> urls = datum.getUrls();
+                trace("Skipping %d urls from %s", urls.size(), datum.getGroupingKey().getRef());
+                skipUrls(datum.getUrls(), status, null);
             }
         }
     }
@@ -183,55 +180,6 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         _flowProcess.dumpCounters();
     }
 
-    private void skipUrls(List<ScoredUrlDatum> urls, String key) {
-        String traceMsg = null;
-
-        // TODO KKr - move to GroupingKey as static methods that return a trace msg (with %d param)
-        // E.g. makeTraceMsg(key) => String
-        if (key.equals(GroupingKey.BLOCKED_GROUPING_KEY)) {
-            traceMsg = "Blocked %d URLs";
-        } else if (key.equals(GroupingKey.UNKNOWN_HOST_GROUPING_KEY)) {
-            traceMsg = "Host not found for %d URLs";
-        } else if (key.equals(GroupingKey.INVALID_URL_GROUPING_KEY)) {
-            traceMsg = "Invalid format for %d URLs";
-        } else if (key.equals(GroupingKey.DEFERRED_GROUPING_KEY)) {
-            traceMsg = "Robots.txt problems deferred processing of %d URLs";
-        } else if (key.equals(GroupingKey.SKIPPED_GROUPING_KEY)) {
-            traceMsg = "Scoring explicitly skipping %d URLs";
-        } else {
-            throw new RuntimeException("Unknown value for special grouping key: " + key);
-        }
-
-        UrlStatus status = GroupingKey.makeUrlStatusFromKey(key);
-        skipUrls(urls, status, traceMsg);
-    }
-
-    private void skipUrls(List<ScoredUrlDatum> urls, UrlStatus status, String traceMsg) {
-        for (ScoredUrlDatum datum : urls) {
-            FetchedDatum result = new FetchedDatum(datum);
-            Tuple tuple = result.toTuple();
-            tuple.add(status.toString());
-            _collector.add(tuple);
-        }
-
-        if (LOGGER.isTraceEnabled()) {
-            LOGGER.trace(String.format(traceMsg, urls.size()));
-        }
-    }
-    
-    /**
-     * Make <ref> active, removing from pending if necessary.
-     * 
-     * @param ref
-     * @param nextFetchTime
-     */
-    private void makeActive(String ref, Long nextFetchTime) {
-        synchronized (_refLock) {
-            _pendingRefs.remove(ref);
-            _activeRefs.put(ref, nextFetchTime);
-        }
-    }
-
     @Override
     public void finished(String ref) {
         synchronized (_refLock) {
@@ -242,7 +190,10 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             
             // If there's going to be more to fetch, put it back in the pending pool.
             if (nextFetchTime != 0) {
+                trace("Finished batch fetch for %s, with next batch at %d", ref, nextFetchTime);
                 _pendingRefs.put(ref, nextFetchTime);
+            } else {
+                trace("Finished last batch fetch for %s", ref);
             }
         }
     }
@@ -256,4 +207,57 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     public BixoFlowProcess getProcess() {
         return _flowProcess;
     }
+    
+    private void skipUrls(List<ScoredUrlDatum> urls, UrlStatus status, String traceMsg) {
+        for (ScoredUrlDatum datum : urls) {
+            FetchedDatum result = new FetchedDatum(datum);
+            Tuple tuple = result.toTuple();
+            tuple.add(status.toString());
+            _collector.add(tuple);
+        }
+
+        if ((traceMsg != null) && LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format(traceMsg, urls.size()));
+        }
+    }
+    
+    /**
+     * Make <ref> active, removing from pending if necessary.
+     * 
+     * @param ref
+     * @param nextFetchTime
+     */
+    private void makeActive(String ref, Long nextFetchTime) {
+        synchronized (_refLock) {
+            trace("Making %s active", ref);
+            _pendingRefs.remove(ref);
+            _activeRefs.put(ref, nextFetchTime);
+        }
+    }
+
+    private void adjustActive(String ref, long deltaTime) {
+        synchronized (_refLock) {
+            Long nextFetchTime = _activeRefs.get(ref);
+            if ((nextFetchTime != null) && (nextFetchTime != 0) && (deltaTime != 0)) {
+                _activeRefs.put(ref, nextFetchTime + deltaTime);
+            }
+        }
+    }
+
+    private void trace(String template, Object... params) {
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(String.format(template, params));
+        }
+    }
+
+    private void checkFetchTime(String ref, Long nextFetchTime) throws InterruptedException {
+        if ((nextFetchTime != null) && (nextFetchTime > System.currentTimeMillis())) {
+            // We have to wait until it's time to fetch.
+            long delta = nextFetchTime - System.currentTimeMillis();
+            trace("Waiting %dms until we can fetch from %s", delta, ref);
+            Thread.sleep(delta);
+        }
+    }
+    
+
 }

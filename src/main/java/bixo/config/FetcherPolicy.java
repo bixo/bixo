@@ -65,6 +65,7 @@ public class FetcherPolicy implements Serializable {
     private String _acceptLanguage;    // What to pass for the Accept-Language request header
     private Set<String> _validMimeTypes;    // Set of mime-types that we'll accept, or null
     private int _maxRequestsPerConnection;  // Max # of URLs to request in any one connection
+    private boolean _skipBlockedUrls;       // Should we skip URLs when they back up for a domain?
     
     public FetcherPolicy() {
         this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME, DEFAULT_CRAWL_DELAY, DEFAULT_MAX_REDIRECTS);
@@ -92,6 +93,7 @@ public class FetcherPolicy implements Serializable {
         _validMimeTypes = null;
         _maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
         _maxRequestsPerConnection = DEFAULT_MAX_REQUESTS_PER_CONNECTION;
+        _skipBlockedUrls = false;
     }
 
     /**
@@ -229,6 +231,14 @@ public class FetcherPolicy implements Serializable {
     
     public void setValidMimeTypes(Set<String> validMimeTypes) {
         _validMimeTypes = validMimeTypes;
+    }
+    
+    public boolean isSkipBlockedUrls() {
+        return _skipBlockedUrls;
+    }
+    
+    public void setSkipBlockedUrls(boolean skipBlockedUrls) {
+        _skipBlockedUrls = skipBlockedUrls;
     }
     
     public FetchRequest getFetchRequest(long now, long crawlDelay, int maxUrls) {
