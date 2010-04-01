@@ -336,8 +336,14 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             }
             
             throw e;
+        } catch (AbortedFetchException e) {
+            // Don't bother reporting that we bailed because the mime-type wasn't one that we wanted.
+            if (e.getAbortReason() != AbortedFetchReason.INVALID_MIMETYPE) {
+                LOGGER.debug(String.format("Exception fetching %s (%s)", scoredUrl.getUrl(), e.getMessage()));
+            }
+            throw e;
         } catch (BaseFetchException e) {
-            LOGGER.debug(String.format("Exception fetching %s (%s)", scoredUrl.getUrl(), e.getMessage()), e);
+            LOGGER.debug(String.format("Exception fetching %s (%s)", scoredUrl.getUrl(), e.getMessage()));
             throw e;
         }
     }
