@@ -56,6 +56,18 @@
         </dependency>
         
 		<dependency>
+            <groupId>cascading</groupId>
+            <artifactId>cascading-jdbc</artifactId>
+            <version>0.0.4</version>
+        </dependency>
+
+		<dependency>
+            <groupId>hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <version>1.8.0.7</version>
+        </dependency>
+
+		<dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
             <version>4.0.1</version>

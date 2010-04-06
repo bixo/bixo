@@ -19,8 +19,7 @@ import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
-import bixo.fetcher.util.IScoreGenerator;
-import bixo.fetcher.util.SimpleGroupingKeyGenerator;
+import bixo.fetcher.util.ScoreGenerator;
 import bixo.hadoop.HadoopUtils;
 import bixo.operations.NormalizeUrlFunction;
 import bixo.operations.UrlFilter;
@@ -42,26 +41,33 @@ import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.scheme.SequenceFile;
-import cascading.scheme.TextLine;
 import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
 public class SiteCrawler {
-	private static final Logger LOGGER = Logger.getLogger(SiteCrawler.class);
-	private static final int CRAWL_STACKSIZE_KB = 128;
+    private static final Logger LOGGER = Logger.getLogger(SiteCrawler.class);
+    private static final int CRAWL_STACKSIZE_KB = 128;
 	
     @SuppressWarnings("serial")
-	private static class SkipFetchedScoreGenerator implements IScoreGenerator {
-
-		@Override
-		public double generateScore(GroupedUrlDatum datum) {
-			if (datum.getLastFetched() != 0) {
-				return IScoreGenerator.SKIP_URL_SCORE;
-			} else {
-				return 1.0;
-			}
-		}
+    private static class SkipFetchedScoreGenerator extends ScoreGenerator {
+        private transient long _lastFetchedTime;
+        
+        @Override
+        public double generateScore(String domain, String pld, GroupedUrlDatum urlDatum) {
+            _lastFetchedTime = urlDatum.getLastFetched() ;
+            return generateScore(domain, pld, urlDatum.getUrl());
+        }
+        
+        @Override
+        public double generateScore(String domain, String pld, String url) {
+            if (_lastFetchedTime != 0) {
+                return ScoreGenerator.SKIP_SCORE;
+            } else {
+                return 1.0;
+            }
+        }
+        
     }
 
     @SuppressWarnings("serial")
@@ -125,45 +131,50 @@ public class SiteCrawler {
 	private FetcherPolicy _fetcherPolicy;
 	private int _maxThreads;
 	private IUrlFilter _urlFilter;
+    private long _crawlEndTime;
 	
-	public SiteCrawler(Path inputDir, Path outputDir, UserAgent userAgent, FetcherPolicy fetcherPolicy, int maxThreads, IUrlFilter urlFilter) {
+	public SiteCrawler(Path inputDir, Path outputDir, UserAgent userAgent, FetcherPolicy fetcherPolicy, int maxThreads, IUrlFilter urlFilter, long crawlEndTime) {
 		_inputDir = inputDir;
 		_outputDir = outputDir;
 		_userAgent = userAgent;
 		_fetcherPolicy = fetcherPolicy;
 		_maxThreads = maxThreads;
 		_urlFilter = urlFilter;
+		_crawlEndTime = crawlEndTime;
 	}
 	
 	public void crawl(Boolean debug) throws Throwable {
 		JobConf conf = HadoopUtils.getDefaultJobConf(CRAWL_STACKSIZE_KB);
+		int numReducers = conf.getNumReduceTasks();
 		FileSystem fs = _outputDir.getFileSystem(conf);
 
 		if (!fs.exists(_inputDir)) {
         	throw new IllegalStateException(String.format("Input directory %s doesn't exist", _inputDir));
 		}
 
-		Path urlPath = new Path(_inputDir, "urls");
-        if (!fs.exists(urlPath)) {
-        	throw new IllegalStateException(String.format("Input directory %s doesn't contain a \"urls\" sub-directory", _inputDir));
-        }
-        
-        Tap inputSource = new Hfs(new SequenceFile(UrlDatum.FIELDS.append(MetaData.FIELDS)), urlPath.toString());
+		Tap inputSource = BixoJDBCTapFactory.createUrlsSourceJDBCTap();
+
+		// Read _everything_ in initially
+        // Split that pipe into URLs we want to fetch for the fetch pipe
         Pipe importPipe = new Each("url importer", new Identity());
+        Pipe fetchUrlsImportPipe = new GroupBy(importPipe, new Fields(UrlDatum.URL_FIELD));
+        fetchUrlsImportPipe = new Every(fetchUrlsImportPipe, new BestUrlToFetchBuffer(), Fields.RESULTS);
 
 		try {
 			String curCrawlDirName = _outputDir.toUri().toString();
 
-			Tap statusSink = new Hfs(new TextLine(StatusDatum.FIELDS.size()), curCrawlDirName + "/status");
             Tap contentSink = new Hfs(new SequenceFile(FetchedDatum.FIELDS.append(MetaData.FIELDS)), curCrawlDirName + "/content");
             Tap parseSink = new Hfs(new SequenceFile(ParsedDatum.FIELDS.append(MetaData.FIELDS)), curCrawlDirName + "/parse");
-			Tap urlSink = new Hfs(new SequenceFile(UrlDatum.FIELDS.append(MetaData.FIELDS)), curCrawlDirName + "/urls");
+
+            // VMa : The source and sink for urls is essentially the same database - since cascading 
+            // doesn't allow you to use the same tap for source and sink we fake it by creating 
+            // two separate taps.
+            Tap urlSink = BixoJDBCTapFactory.createUrlsSinkJDBCTap();
 
 			// Create the sub-assembly that runs the fetch job
-			SimpleGroupingKeyGenerator grouper = new SimpleGroupingKeyGenerator(_userAgent);
-			IScoreGenerator scorer = new SkipFetchedScoreGenerator();
+            SkipFetchedScoreGenerator scorer = new SkipFetchedScoreGenerator();
 			IHttpFetcher fetcher = new SimpleHttpFetcher(_maxThreads, _fetcherPolicy, _userAgent);
-			FetchPipe fetchPipe = new FetchPipe(importPipe, grouper, scorer, fetcher, MetaData.FIELDS);
+            FetchPipe fetchPipe = new FetchPipe(fetchUrlsImportPipe, scorer, fetcher, _crawlEndTime, numReducers, MetaData.FIELDS);
 
 			// Take content and split it into content output plus parse to extract URLs.
 			ParsePipe parsePipe = new ParsePipe(fetchPipe.getContentTailPipe(), new SimpleParser(), MetaData.FIELDS);
@@ -172,32 +183,33 @@ public class SiteCrawler {
 			urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new UrlFilter(_urlFilter, MetaData.FIELDS));
 			urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new NormalizeUrlFunction(new SimpleUrlNormalizer(), MetaData.FIELDS));
 			
-			// Take status and split it into status output plus updated UrlDatum's in the /urls sub-dir.
+			// Take status and output updated UrlDatum's. Again, since we are using the same database 
+			// we need to create a new tap.
 			Pipe urlFromFetchPipe = new Pipe("url from fetch", fetchPipe.getStatusTailPipe());
 			urlFromFetchPipe = new Each(urlFromFetchPipe, new CreateUrlFromStatusFunction());
 
-			// Now we need to join the URLs we get from parsing content with the URLs we got
-			// from the status output, so we have a unified stream of all known URLs.
-			Pipe urlPipe = new GroupBy("url pipe", Pipe.pipes(urlFromFetchPipe, urlFromOutlinksPipe), new Fields(UrlDatum.URL_FIELD));
-			urlPipe = new Every(urlPipe, new LatestUrlBuffer(), Fields.RESULTS);
+		    // Now we need to join the URLs we get from parsing content with the URLs we got
+		    // from the status output, so we have a unified stream of all known URLs.
+		    Pipe urlPipe = new GroupBy("url pipe", Pipe.pipes(urlFromFetchPipe, urlFromOutlinksPipe), new Fields(UrlDatum.URL_FIELD));
+		    urlPipe = new Every(urlPipe, new LatestUrlBuffer(), Fields.RESULTS);
+
 
 			// Create the output map that connects each tail pipe to the appropriate sink.
 			Map<String, Tap> sinkMap = new HashMap<String, Tap>();
 			sinkMap.put(FetchPipe.CONTENT_PIPE_NAME, contentSink);
 			sinkMap.put(ParsePipe.PARSE_PIPE_NAME, parseSink);
-			sinkMap.put(FetchPipe.STATUS_PIPE_NAME, statusSink);
-			sinkMap.put(urlPipe.getName(), urlSink);
-
+            sinkMap.put(urlPipe.getName(), urlSink);
 			// Finally we can run it.
 			FlowConnector flowConnector = new FlowConnector(HadoopUtils.getDefaultProperties(SiteCrawler.class, debug, conf));
-			Flow flow = flowConnector.connect(inputSource, sinkMap, fetchPipe, urlPipe);
+            Flow flow = flowConnector.connect(inputSource, sinkMap, fetchPipe.getContentTailPipe(), parsePipe.getTailPipe(), urlPipe);
 			flow.complete();
 			
-			// flow.writeDOT("build/valid-flow.dot");
+//			 flow.writeDOT("build/valid-flow.dot");
 		} catch (Throwable t) {
 			HadoopUtils.safeRemove(fs, _outputDir);
 			throw t;
 		}
 	}
-	
+
+
 }

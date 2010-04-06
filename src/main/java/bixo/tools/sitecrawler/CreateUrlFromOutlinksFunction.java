@@ -42,8 +42,8 @@ public class CreateUrlFromOutlinksFunction extends BaseOperation<NullContext> im
     	
     	// Bump the crawl depth metadata value
     	Map<String, Comparable> metaData = datum.getMetaDataMap();
-    	int crawlDepth = Integer.parseInt((String)metaData.get("crawl-depth"));
-    	metaData.put("crawl-depth", Integer.toString(crawlDepth + 1));
+    	int crawlDepth = (Integer)metaData.get("crawl-depth");
+    	metaData.put("crawl-depth", crawlDepth + 1);
     	
         TupleEntryCollector collector = funcCall.getOutputCollector();
 
@@ -51,7 +51,7 @@ public class CreateUrlFromOutlinksFunction extends BaseOperation<NullContext> im
     	    String url = outlink.getToUrl();
     	    url = url.replaceAll("[\n\r]", "");
     	    
-            UrlDatum urlDatum = new UrlDatum(url, 0, System.currentTimeMillis(), UrlStatus.UNFETCHED, metaData);
+            UrlDatum urlDatum = new UrlDatum(url, 0, 0, UrlStatus.UNFETCHED, metaData);
             collector.add(urlDatum.toTuple());
     	}
     }

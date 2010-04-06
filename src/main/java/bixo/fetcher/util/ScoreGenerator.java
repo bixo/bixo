@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import bixo.datum.GroupedUrlDatum;
 import bixo.utils.DomainNames;
 
 @SuppressWarnings("serial")
@@ -18,7 +19,8 @@ public abstract class ScoreGenerator implements Serializable {
      * @return true if the domain should be crawled.
      */
     public boolean isGoodDomain(String domain, String pld) {
-        return generateScore(domain, pld, null) != SKIP_SCORE;
+        String url = null;
+        return generateScore(domain, pld, url) != SKIP_SCORE;
     }
     
     
@@ -31,7 +33,11 @@ public abstract class ScoreGenerator implements Serializable {
             return SKIP_SCORE;
         }
     }
-    
+
+    public double generateScore(String domain, String pld, GroupedUrlDatum url) {
+        return generateScore(domain, pld, url.getUrl());
+    }
+
     /**
      * Return score for URL, based on domain & URL path
      * 

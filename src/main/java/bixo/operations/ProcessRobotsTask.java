@@ -114,7 +114,7 @@ public class ProcessRobotsTask implements Runnable {
                 // Use the same key for every URL from this domain
                 GroupedUrlDatum datum;
                 while ((datum = _urls.poll()) != null) {
-                    double score = _scorer.generateScore(domain, pld, datum.getUrl());
+                    double score = _scorer.generateScore(domain, pld, datum);
                     ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), 0, 0, UrlStatus.UNFETCHED, key, score, datum.getMetaDataMap());
                     synchronized (_collector) {
                         // collectors aren't thread safe

@@ -18,6 +18,7 @@ import bixo.config.UserAgent;
 import bixo.datum.UrlDatum;
 import bixo.tools.sitecrawler.SiteCrawler;
 import bixo.tools.sitecrawler.UrlImporter;
+import bixo.tools.sitecrawler.BixoJDBCTapFactory;
 import bixo.urldb.IUrlFilter;
 import bixo.utils.FsUtils;
 import cascading.flow.PlannerException;
@@ -152,7 +153,7 @@ public class SimpleCrawlTool {
                 setLoopLoggerFile(curLoopDirName, 0);
 
                 UrlImporter importer = new UrlImporter(curLoopDir);
-                importer.importOneDomain(domain, options.isDebugLogging());
+                importer.importOneDomain(domain, BixoJDBCTapFactory.createUrlsSinkJDBCTap());
             }
             
             Path inputPath = FsUtils.findLatestLoopDir(fs, outputPath);
@@ -194,7 +195,7 @@ public class SimpleCrawlTool {
                 setLoopLoggerFile(curLoopDirName, curLoop);
 
                 SiteCrawler crawler = new SiteCrawler(inputPath, curLoopDir, userAgent,
-                                defaultPolicy, options.getMaxThreads(), urlFilter);
+                                defaultPolicy, options.getMaxThreads(), urlFilter, targetEndTime);
                 crawler.crawl(options.isDebugLogging());
 
                 // Input for the next round is our current output

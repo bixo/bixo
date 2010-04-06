@@ -70,8 +70,9 @@ public class LatestUrlBuffer extends BaseOperation<NullContext> implements Buffe
 			LOGGER.info(String.format("Ignored %d duplicate URL(s) with earlier (or no) fetch time: %s", ignoredUrls, bestDatum.getUrl()));
 		}
 		
-		// TODO VMa - what should happen if bestDatum is null ?
-		bufferCall.getOutputCollector().add(bestDatum.toTuple());
+		if (bestDatum != null) {
+		    bufferCall.getOutputCollector().add(bestDatum.toTuple());
+		}
 	}
 
 }

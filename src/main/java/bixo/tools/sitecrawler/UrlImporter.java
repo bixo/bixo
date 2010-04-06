@@ -1,5 +1,6 @@
 package bixo.tools.sitecrawler;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -45,7 +46,7 @@ public class UrlImporter {
                     new URL(urlAsString);
                     
                     UrlDatum urlDatum = new UrlDatum(urlAsString);
-                    urlDatum.addMetaDataValue("crawl-depth", "0");
+                    urlDatum.addMetaDataValue("crawl-depth", new Integer(0));
 
                     funcCall.getOutputCollector().add(urlDatum.toTuple());
                 } catch (MalformedURLException e) {
@@ -78,7 +79,7 @@ public class UrlImporter {
             TupleEntryCollector writer = urlSink.openForWrite(conf);
 
             UrlDatum datum = new UrlDatum("http://" + targetDomain);
-            datum.addMetaDataValue("crawl-depth", "0");
+            datum.addMetaDataValue("crawl-depth", new Integer(0));
 
             writer.add(datum.toTuple());
             writer.close();
@@ -108,4 +109,23 @@ public class UrlImporter {
 			throw e;
 		}
 	}
+	
+
+	    public void importOneDomain(String targetDomain, Tap urlSink) throws IOException {
+	        JobConf conf = HadoopUtils.getDefaultJobConf();
+
+	        TupleEntryCollector writer;
+            try {
+                writer = urlSink.openForWrite(conf);
+                UrlDatum datum = new UrlDatum("http://" + targetDomain);
+                datum.addMetaDataValue("crawl-depth", new Integer(0));
+                
+                writer.add(datum.toTuple());
+                writer.close();
+            } catch (IOException e) {
+                throw e;
+            }
+
+	    }
+
 }
