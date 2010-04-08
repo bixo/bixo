@@ -9,8 +9,8 @@ import bixo.cascading.ISplitter;
 import bixo.cascading.NullContext;
 import bixo.cascading.NullSinkTap;
 import bixo.cascading.SplitterAssembly;
-import bixo.config.QueuePolicy;
-import bixo.config.UserAgent;
+import bixo.config.FetcherPolicy;
+import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.PreFetchedDatum;
@@ -20,17 +20,12 @@ import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.exceptions.BaseFetchException;
 import bixo.fetcher.http.IHttpFetcher;
-import bixo.fetcher.http.SimpleHttpFetcher;
-import bixo.fetcher.util.FixedScoreGenerator;
 import bixo.fetcher.util.IGroupingKeyGenerator;
-import bixo.fetcher.util.IScoreGenerator;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.operations.FetchBuffer;
-import bixo.operations.FetcherBuffer;
 import bixo.operations.FilterAndScoreByUrlAndRobots;
 import bixo.operations.GroupFunction;
 import bixo.operations.PreFetchBuffer;
-import bixo.operations.ScoreFunction;
 import bixo.utils.GroupingKey;
 import bixo.utils.UrlUtils;
 import cascading.flow.FlowProcess;
@@ -191,33 +186,6 @@ public class FetchPipe extends SubAssembly {
     }
 
     /**
-     * Create FetchPipe with default SimpleXXX classes and default parameters.
-     * 
-     * @param urlProvider Source for URLs - must output UrlDatum tuples
-     * @param userAgent name to use during fetching
-     */
-    public FetchPipe(Pipe urlProvider, UserAgent userAgent) {
-        this(urlProvider, new FixedScoreGenerator(), new SimpleHttpFetcher(userAgent), 
-                          new QueuePolicy(), new Fields());
-    }
-    
-    public FetchPipe(Pipe urlProvider, IGroupingKeyGenerator keyGenerator, IScoreGenerator scoreGenerator, IHttpFetcher fetcher) {
-        this(urlProvider, keyGenerator, scoreGenerator, fetcher, new Fields());
-    }
-
-    public FetchPipe(Pipe urlProvider, IGroupingKeyGenerator keyGenerator, IScoreGenerator scoreGenerator, IHttpFetcher fetcher, Fields metaDataFields) {
-        Pipe fetchPipe = new Pipe("fetch_pipe", urlProvider);
-
-        Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
-        fetchPipe = new Each(fetchPipe, new GroupFunction(metaDataFields, keyGenerator), groupedFields);
-
-        Fields scoredFields = ScoredUrlDatum.FIELDS.append(metaDataFields);
-        fetchPipe = new Each(fetchPipe, new ScoreFunction(scoreGenerator, metaDataFields), scoredFields);
-
-        createFetchBuffer(fetchPipe, fetcher, new QueuePolicy(), metaDataFields);
-    }
-    
-    /**
      * Generate an assembly that will fetch all of the UrlDatum tuples coming out of urlProvider.
      * 
      * We assume that these UrlDatums have been validated, and thus we'll only have valid URLs.
@@ -227,6 +195,12 @@ public class FetchPipe extends SubAssembly {
      * @param fetcher
      * @param metaDataFields
      */
+    
+    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher) {
+        this(urlProvider, scorer, fetcher, null, FetcherPolicy.NO_CRAWL_END_TIME, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+    }
+    
+
     public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, long crawlEndTime, int numReducers, Fields metaDataFields) {
         this(urlProvider, scorer, fetcher, null, crawlEndTime, numReducers, metaDataFields);
     }
@@ -276,34 +250,6 @@ public class FetchPipe extends SubAssembly {
     }
     
 
-    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, QueuePolicy queuePolicy, Fields metaDataFields) {
-        Pipe fetchPipe = new Pipe("fetch_pipe", urlProvider);
-        Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
-        fetchPipe = new Each(fetchPipe, new GroupFunction(metaDataFields, new GroupByDomain()), groupedFields);
-        fetchPipe = new GroupBy(fetchPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
-        fetchPipe = new Every(fetchPipe, new FilterAndScoreByUrlAndRobots(fetcher.getUserAgent(), fetcher.getMaxThreads(), 
-                        scorer, metaDataFields), Fields.RESULTS);
-        
-        createFetchBuffer(fetchPipe, fetcher, queuePolicy, metaDataFields);
-    }
-    
-    public FetchPipe(Pipe scoredUrlProvider, IHttpFetcher fetcher, QueuePolicy queuePolicy, Fields metaDataFields) {
-        Pipe fetchPipe = new Pipe("fetch_pipe", scoredUrlProvider);
-        createFetchBuffer(fetchPipe, fetcher, queuePolicy, metaDataFields);
-    }
-
-    private void createFetchBuffer(Pipe fetchPipe, IHttpFetcher fetcher, QueuePolicy queuePolicy, Fields metaDataFields) {
-        // Group by the key (which will be <count>-<unique ip>-<crawl delay>), and sort from high to low score.
-        fetchPipe = new GroupBy(fetchPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD), new Fields(ScoredUrlDatum.SCORE_FIELD), true);
-        fetchPipe = new Every(fetchPipe, new FetcherBuffer(metaDataFields, fetcher, queuePolicy), Fields.RESULTS);
-
-        Fields fetchedFields = FetchedDatum.FIELDS.append(metaDataFields);
-        Pipe fetched = new Pipe(CONTENT_PIPE_NAME, new Each(fetchPipe, new FilterErrorsFunction(fetchedFields)));
-        Pipe status = new Pipe(STATUS_PIPE_NAME, new Each(fetchPipe, new MakeStatusFunction(metaDataFields)));
-        
-        setTails(fetched, status);
-    }
-    
     public Pipe getContentTailPipe() {
         return getTailPipe(CONTENT_PIPE_NAME);
     }

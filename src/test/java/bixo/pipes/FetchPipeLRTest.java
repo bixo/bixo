@@ -1,10 +1,8 @@
 package bixo.pipes;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.http.HttpStatus;
@@ -15,11 +13,9 @@ import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 
 import bixo.config.FetcherPolicy;
-import bixo.config.QueuePolicy;
 import bixo.config.UserAgent;
 import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
-import bixo.datum.GroupedUrlDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.StatusDatum;
@@ -35,14 +31,10 @@ import bixo.fetcher.RandomResponseHandler;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
-import bixo.fetcher.simulation.NullHttpFetcher;
 import bixo.fetcher.simulation.TestWebServer;
 import bixo.fetcher.util.FixedScoreGenerator;
 import bixo.fetcher.util.IGroupingKeyGenerator;
-import bixo.fetcher.util.IScoreGenerator;
 import bixo.fetcher.util.ScoreGenerator;
-import bixo.fetcher.util.SimpleGroupingKeyGenerator;
-import bixo.fetcher.util.SimpleScoreGenerator;
 import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
 import cascading.CascadingTestCase;
@@ -333,10 +325,11 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
         @Override
         public double generateScore(String domain, String pld, String url) {
-            return IScoreGenerator.SKIP_URL_SCORE;
+            return ScoreGenerator.SKIP_SCORE;
         }
     }
     
+    /**
     @SuppressWarnings("serial")
     private static class RandomScoreGenerator implements IScoreGenerator {
 
@@ -357,6 +350,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
             return _minScore + (_rand.nextDouble() * range);
         }
     }
+    **/
     
     private Lfs makeInputData(int numDomains, int numPages) throws IOException {
         return makeInputData(numDomains, numPages, null);
@@ -443,6 +437,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
     };
     
+    /**
     @SuppressWarnings("serial")
     private static class CustomScorer implements IScoreGenerator {
 
@@ -456,6 +451,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
             }
         }
     };
+    **/
     
     @SuppressWarnings("serial")
     private static class MaxUrlFetcherPolicy extends FetcherPolicy {

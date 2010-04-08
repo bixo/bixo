@@ -12,13 +12,13 @@ import bixo.cascading.NullContext;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
-import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ParsedDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
+import bixo.fetcher.util.FixedScoreGenerator;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.hadoop.HadoopUtils;
 import bixo.operations.NormalizeUrlFunction;
@@ -172,9 +172,9 @@ public class SiteCrawler {
             Tap urlSink = BixoJDBCTapFactory.createUrlsSinkJDBCTap();
 
 			// Create the sub-assembly that runs the fetch job
-            SkipFetchedScoreGenerator scorer = new SkipFetchedScoreGenerator();
 			IHttpFetcher fetcher = new SimpleHttpFetcher(_maxThreads, _fetcherPolicy, _userAgent);
-            FetchPipe fetchPipe = new FetchPipe(fetchUrlsImportPipe, scorer, fetcher, _crawlEndTime, numReducers, MetaData.FIELDS);
+			ScoreGenerator scorer = new FixedScoreGenerator();
+			FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, numReducers, MetaData.FIELDS);
 
 			// Take content and split it into content output plus parse to extract URLs.
 			ParsePipe parsePipe = new ParsePipe(fetchPipe.getContentTailPipe(), new SimpleParser(), MetaData.FIELDS);
