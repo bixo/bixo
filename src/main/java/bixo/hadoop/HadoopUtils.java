@@ -39,7 +39,7 @@ public class HadoopUtils {
         while (true) {
             ClusterStatus status = jobClient.getClusterStatus();
             if (status.getJobTrackerState() == State.RUNNING) {
-                status.getTaskTrackers();
+                return status.getTaskTrackers();
             } else {
                 Thread.sleep(STATUS_CHECK_INTERVAL);
             }
