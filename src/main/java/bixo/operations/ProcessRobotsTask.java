@@ -1,6 +1,7 @@
 package bixo.operations;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Queue;
@@ -24,7 +25,6 @@ import cascading.tuple.TupleEntryCollector;
 public class ProcessRobotsTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ProcessRobotsTask.class);
 
-    
     private String _protocolAndDomain;
     private ScoreGenerator _scorer;
     private Queue<GroupedUrlDatum> _urls;
@@ -105,10 +105,9 @@ public class ProcessRobotsTask implements Runnable {
                     _flowProcess.increment(FetchCounters.DOMAINS_DEFERRED, 1);
                     _flowProcess.increment(FetchCounters.URLS_DEFERRED, _urls.size());
                 } else {
-                    // TODO KKr - stop passing count in, since that's not workable for keys (multiple domains
-                    // map to the same IP address, so count-<ip> throws off downstream processing.
-                    key = GroupingKey.makeGroupingKey(0, domainInfo.getHostAddress(), robotRules.getCrawlDelay());
+                    key = GroupingKey.makeGroupingKey(domainInfo.getHostAddress(), robotRules.getCrawlDelay());
                     _flowProcess.increment(FetchCounters.DOMAINS_FINISHED, 1);
+                    _flowProcess.increment(FetchCounters.URLS_ACCEPTED, _urls.size());
                 }
 
                 // Use the same key for every URL from this domain
@@ -123,12 +122,17 @@ public class ProcessRobotsTask implements Runnable {
                 }
             }
         } catch (UnknownHostException e) {
-            LOGGER.debug("Unknown host", e);
+            LOGGER.debug("Unknown host: " + _protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
             emptyQueue(_urls, GroupingKey.UNKNOWN_HOST_GROUPING_KEY, _collector);
         } catch (MalformedURLException e) {
             LOGGER.debug("Invalid URL: " + _protocolAndDomain);
+            _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
+            _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
+            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector);
+        } catch (URISyntaxException e) {
+            LOGGER.debug("Invalid URI: " + _protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
             emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector);
@@ -139,7 +143,6 @@ public class ProcessRobotsTask implements Runnable {
             emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector);
         } finally {
             _flowProcess.decrement(FetchCounters.DOMAINS_PROCESSING, 1);
-            _flowProcess.decrement(FetchCounters.DOMAINS_REMAINING, 1);
         }
     }
 }

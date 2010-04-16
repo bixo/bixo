@@ -248,7 +248,6 @@ public class FetchPipe extends SubAssembly {
 
         setTails(fetchedContent, joinedStatus);
     }
-    
 
     public Pipe getContentTailPipe() {
         return getTailPipe(CONTENT_PIPE_NAME);

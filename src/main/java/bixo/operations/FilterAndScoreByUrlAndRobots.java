@@ -143,8 +143,6 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         try {
             Runnable doRobots = new ProcessRobotsTask(protocolAndDomain, _scorer, urls, _fetcher, bufferCall.getOutputCollector(), _flowProcess);
             _executor.execute(doRobots);
-            _flowProcess.increment(FetchCounters.DOMAINS_QUEUED, 1);
-            _flowProcess.increment(FetchCounters.DOMAINS_REMAINING, 1);
         } catch (RejectedExecutionException e) {
             // should never happen.
             LOGGER.error("Robots handling pool rejected our request for " + protocolAndDomain);

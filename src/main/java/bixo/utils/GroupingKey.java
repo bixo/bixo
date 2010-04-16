@@ -29,7 +29,7 @@ public class GroupingKey {
 
     // Pattern for grouping key. This must be kept in sync with the
     // UNSET_DURATION constant and the makeGroupingKey code.
-    private static final Pattern GROUPING_KEY_PATTERN = Pattern.compile("(\\d{6})-(.+)-(\\d+|unset)");
+    private static final Pattern GROUPING_KEY_PATTERN = Pattern.compile("(.+)-(\\d+|unset)");
     
     private static final String UNSET_DURATION = "unset";
     
@@ -37,11 +37,11 @@ public class GroupingKey {
         return key.startsWith(KEY_PREFIX);
     }
     
-    public static String makeGroupingKey(int count, String domain, long crawlDelay) {
+    public static String makeGroupingKey(String domain, long crawlDelay) {
         if (crawlDelay == IRobotRules.UNSET_CRAWL_DELAY) {
-            return String.format("%06d-%s-%s", count, domain, UNSET_DURATION);
+            return String.format("%s-%s", domain, UNSET_DURATION);
         } else {
-            return String.format("%06d-%s-%d", count, domain, crawlDelay);
+            return String.format("%s-%d", domain, crawlDelay);
         }
     }
     
@@ -51,7 +51,7 @@ public class GroupingKey {
             throw new RuntimeException("Invalid grouping key: " + key);
         }
 
-        return m.group(2);
+        return m.group(1);
     }
     
     public static long getCrawlDelayFromKey(String key) {
@@ -60,7 +60,7 @@ public class GroupingKey {
             throw new RuntimeException("Invalid grouping key: " + key);
         }
         
-        String durationString = m.group(3);
+        String durationString = m.group(2);
         // If we have <domain>-unset, then the crawl delay wasn't set.
         if (durationString.equals(UNSET_DURATION)) {
             return IRobotRules.UNSET_CRAWL_DELAY;
@@ -68,20 +68,6 @@ public class GroupingKey {
 
         try {
             return Long.parseLong(durationString);
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("Invalid crawl delay in grouping key: " + key);
-        }
-    }
-    
-    public static int getCountFromKey(String key) {
-        Matcher m = GROUPING_KEY_PATTERN.matcher(key);
-        if (!m.matches()) {
-            throw new RuntimeException("Invalid grouping key: " + key);
-        }
-
-        try {
-            String countAsString = m.group(1);
-            return Integer.parseInt(countAsString);
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid crawl delay in grouping key: " + key);
         }

@@ -100,7 +100,6 @@ public class FetchTask implements Runnable {
                     status = new IOFetchException(item.getUrl(), new IOException(e));
                 } finally {
                     process.decrement(FetchCounters.URLS_FETCHING, 1);
-                    process.decrement(FetchCounters.URLS_REMAINING, 1);
 
                     // Cascading _collectors aren't thread-safe.
                     synchronized (collector) {
@@ -110,6 +109,8 @@ public class FetchTask implements Runnable {
                     }
                 }
             }
+        } catch (Throwable t) {
+            LOGGER.error("Exception while fetching", t);
         } finally {
             process.decrement(FetchCounters.DOMAINS_PROCESSING, 1);
             _fetchMgr.finished(_ref);

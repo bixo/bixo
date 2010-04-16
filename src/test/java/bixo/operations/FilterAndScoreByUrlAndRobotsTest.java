@@ -60,7 +60,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
                 op.operate(fp, bc);
             }
             
-            Mockito.verify(fp, Mockito.times(maxThreads)).increment(FetchCounters.DOMAINS_QUEUED, 1);
+            Mockito.verify(fp, Mockito.times(maxThreads)).increment(FetchCounters.DOMAINS_PROCESSING, 1);
         } finally {
             server.stop();
         }

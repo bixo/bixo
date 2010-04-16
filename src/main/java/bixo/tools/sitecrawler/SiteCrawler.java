@@ -145,7 +145,7 @@ public class SiteCrawler {
 	
 	public void crawl(Boolean debug) throws Throwable {
 		JobConf conf = HadoopUtils.getDefaultJobConf(CRAWL_STACKSIZE_KB);
-		int numReducers = conf.getNumReduceTasks();
+		int numReducers = conf.getNumReduceTasks() * HadoopUtils.getTaskTrackers(conf);
 		FileSystem fs = _outputDir.getFileSystem(conf);
 
 		if (!fs.exists(_inputDir)) {

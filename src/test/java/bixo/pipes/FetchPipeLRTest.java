@@ -432,7 +432,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
             } else if (url.contains("page-4")) {
                 return GroupingKey.SKIPPED_GROUPING_KEY;
             } else {
-                return GroupingKey.makeGroupingKey(1, "domain-0.com", 30000);
+                return GroupingKey.makeGroupingKey("domain-0.com", 30000);
             }
         }
     };

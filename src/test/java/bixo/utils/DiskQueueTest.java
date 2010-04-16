@@ -199,4 +199,32 @@ public class DiskQueueTest {
         }
     }
     
+    @Test
+    public void testPeekingAndGetting() throws Exception {
+        DiskQueue<Integer> queue = new DiskQueue<Integer>(2);
+        
+        assertTrue(queue.offer(new Integer(666)));
+        assertTrue(queue.offer(new Integer(999)));
+        assertTrue(queue.offer(new Integer(333)));
+        assertEquals(666, queue.peek().intValue());
+        assertEquals(666, queue.peek(0).intValue());
+        assertEquals(999, queue.peek(1).intValue());
+        
+        // We only have space for two items in memory, so
+        // indexes past that will throw exceptions.
+        try {
+            queue.peek(2);
+            fail("Should have throw exception");
+        } catch (IndexOutOfBoundsException e) {
+            // valid
+        }
+        
+        assertEquals(999, queue.remove(1).intValue());
+        assertEquals(2, queue.size());
+        assertNull(queue.peek(1));
+
+        assertEquals(666, queue.remove(0).intValue());
+        assertEquals(1, queue.size());
+    }
+    
 }

@@ -14,16 +14,18 @@ public class PreFetchedDatum extends BaseDatum {
     private List<ScoredUrlDatum> _urls;
     private long _fetchTime;
     private long _fetchDelay;
-    private PartitioningKey _groupingKey;
+    private int _groupingKey;
+    private String _groupingRef;
     private boolean _lastList;
     
-    public PreFetchedDatum(List<ScoredUrlDatum> urls, long fetchTime, long fetchDelay, PartitioningKey groupingKey, boolean lastList) {
+    public PreFetchedDatum(List<ScoredUrlDatum> urls, long fetchTime, long fetchDelay, int groupingKey, String groupingRef, boolean lastList) {
         super(BaseDatum.EMPTY_METADATA_MAP);
         
         _urls = urls;
         _fetchTime = fetchTime;
         _fetchDelay = fetchDelay;
         _groupingKey = groupingKey;
+        _groupingRef = groupingRef;
         _lastList = lastList;
     }
 
@@ -51,14 +53,22 @@ public class PreFetchedDatum extends BaseDatum {
         _fetchDelay = fetchDelay;
     }
 
-    public PartitioningKey getGroupingKey() {
+    public int getGroupingKey() {
         return _groupingKey;
     }
 
-    public void setGroupingKey(PartitioningKey groupingKey) {
+    public void setGroupingKey(int groupingKey) {
         _groupingKey = groupingKey;
     }
 
+    public String getGroupingRef() {
+        return _groupingRef;
+    }
+    
+    public void setGroupignRef(String groupingRef) {
+        _groupingRef = groupingRef;
+    }
+    
     public boolean isLastList() {
         return _lastList;
     }
@@ -67,14 +77,16 @@ public class PreFetchedDatum extends BaseDatum {
         _lastList = lastList;
     }
 
+    
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + (int) (_fetchTime ^ (_fetchTime >>> 32));
-        result = prime * result + ((_groupingKey == null) ? 0 : _groupingKey.hashCode());
-        result = prime * result + (_lastList ? 1231 : 1237);
         result = prime * result + (int) (_fetchDelay ^ (_fetchDelay >>> 32));
+        result = prime * result + (int) (_fetchTime ^ (_fetchTime >>> 32));
+        result = prime * result + _groupingKey;
+        result = prime * result + ((_groupingRef == null) ? 0 : _groupingRef.hashCode());
+        result = prime * result + (_lastList ? 1231 : 1237);
         result = prime * result + ((_urls == null) ? 0 : _urls.hashCode());
         return result;
     }
@@ -88,16 +100,18 @@ public class PreFetchedDatum extends BaseDatum {
         if (getClass() != obj.getClass())
             return false;
         PreFetchedDatum other = (PreFetchedDatum) obj;
+        if (_fetchDelay != other._fetchDelay)
+            return false;
         if (_fetchTime != other._fetchTime)
             return false;
-        if (_groupingKey == null) {
-            if (other._groupingKey != null)
+        if (_groupingKey != other._groupingKey)
+            return false;
+        if (_groupingRef == null) {
+            if (other._groupingRef != null)
                 return false;
-        } else if (!_groupingKey.equals(other._groupingKey))
+        } else if (!_groupingRef.equals(other._groupingRef))
             return false;
         if (_lastList != other._lastList)
-            return false;
-        if (_fetchDelay != other._fetchDelay)
             return false;
         if (_urls == null) {
             if (other._urls != null)
@@ -106,7 +120,7 @@ public class PreFetchedDatum extends BaseDatum {
             return false;
         return true;
     }
-    
+
     // ======================================================================================
     // Below here is all Cascading-specific implementation
     // ======================================================================================
@@ -116,9 +130,10 @@ public class PreFetchedDatum extends BaseDatum {
     public static final String FETCH_TIME_FN = fieldName(PreFetchedDatum.class, "fetchTime");
     public static final String FETCH_DELAY_FN = fieldName(PreFetchedDatum.class, "fetchDelay");
     public static final String GROUPING_KEY_FN = fieldName(PreFetchedDatum.class, "groupingKey");
+    public static final String GROUPING_REF_FN = fieldName(PreFetchedDatum.class, "groupingRef");
     public static final String LAST_LIST_FN = fieldName(PreFetchedDatum.class, "lastList");
     
-    public static final Fields FIELDS = new Fields(URLS_FN, FETCH_TIME_FN, FETCH_DELAY_FN, GROUPING_KEY_FN, LAST_LIST_FN);
+    public static final Fields FIELDS = new Fields(URLS_FN, FETCH_TIME_FN, FETCH_DELAY_FN, GROUPING_KEY_FN, GROUPING_REF_FN, LAST_LIST_FN);
     
     public PreFetchedDatum(Tuple tuple, Fields metaDataFields) {
         super(tuple, BaseDatum.EMPTY_METADATA_FIELDS);
@@ -127,7 +142,8 @@ public class PreFetchedDatum extends BaseDatum {
         _urls = tupleToList((Tuple)entry.get(URLS_FN), metaDataFields);
         _fetchTime = entry.getLong(FETCH_TIME_FN);
         _fetchDelay = entry.getLong(FETCH_DELAY_FN);
-        _groupingKey = new PartitioningKey(entry.getString(GROUPING_KEY_FN));
+        _groupingKey = entry.getInteger(GROUPING_KEY_FN);
+        _groupingRef = entry.getString(GROUPING_REF_FN);
         _lastList = entry.getBoolean(LAST_LIST_FN);
     }
     
@@ -140,7 +156,7 @@ public class PreFetchedDatum extends BaseDatum {
     @SuppressWarnings("unchecked")
     @Override
     protected Comparable[] getStandardValues() {
-        return BaseDatum.makeStandardValues(listToTuple(_urls), _fetchTime, _fetchDelay, _groupingKey.toString(), _lastList);
+        return BaseDatum.makeStandardValues(listToTuple(_urls), _fetchTime, _fetchDelay, _groupingKey, _groupingRef, _lastList);
     }
 
     @SuppressWarnings("unchecked")

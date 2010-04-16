@@ -79,8 +79,8 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
             urls.add(scoredDatum);
 
             if (urls.size() >= targetSize) {
-                LOGGER.debug(String.format("Added %d urls for key %s at %d", urls.size(), key, curRequestTime));
-                PreFetchedDatum datum = new PreFetchedDatum(urls, curRequestTime, nextRequestTime - curRequestTime, newKey, !values.hasNext());
+                LOGGER.trace(String.format("Added %d urls for ref %s in group %d at %d", urls.size(), newKey.getRef(), newKey.getValue(), curRequestTime));
+                PreFetchedDatum datum = new PreFetchedDatum(urls, curRequestTime, nextRequestTime - curRequestTime, newKey.getValue(), newKey.getRef(), !values.hasNext());
                 collector.add(datum.toTuple());
 
                 curRequestTime = nextRequestTime;
@@ -91,8 +91,8 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
         
         // See if we have another partially built datum to add.
         if (urls.size() > 0) {
-            LOGGER.debug(String.format("Added %d urls for key %s at %d", urls.size(), key, curRequestTime));
-            PreFetchedDatum datum = new PreFetchedDatum(urls, curRequestTime, 0, newKey, true);
+            LOGGER.trace(String.format("Added %d urls for ref %s in group %d at %d", urls.size(), newKey.getRef(), newKey.getValue(), curRequestTime));
+            PreFetchedDatum datum = new PreFetchedDatum(urls, curRequestTime, 0, newKey.getValue(), newKey.getRef(), true);
             collector.add(datum.toTuple());
         }
     }
