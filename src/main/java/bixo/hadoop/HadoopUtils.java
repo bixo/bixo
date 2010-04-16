@@ -10,14 +10,17 @@ import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobTracker.State;
 import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import cascading.flow.FlowConnector;
 import cascading.flow.MultiMapReducePlanner;
 
 public class HadoopUtils {
+    private static final Logger LOGGER = Logger.getLogger(HadoopUtils.class);
+    
 	public static final int DEFAULT_STACKSIZE = 512;
 	
-    private static final long STATUS_CHECK_INTERVAL = 1000;
+    private static final long STATUS_CHECK_INTERVAL = 10000;
 	
     public static void safeRemove(FileSystem fs, Path path) {
     	if ((fs != null) && (path != null)) {
@@ -34,22 +37,39 @@ public class HadoopUtils {
     }
     
     public static int getTaskTrackers(JobConf conf) throws IOException, InterruptedException {
+        // Don't go into painful delay loop if we're running locally.
+        if (isJobLocal(conf)) {
+            return 1;
+        }
+        
         JobClient jobClient = new JobClient(conf);
+        int numTaskTrackers = -1;
         
         while (true) {
             ClusterStatus status = jobClient.getClusterStatus();
             if (status.getJobTrackerState() == State.RUNNING) {
-                return status.getTaskTrackers();
-            } else {
-                Thread.sleep(STATUS_CHECK_INTERVAL);
+                int curTaskTrackers = status.getTaskTrackers();
+                if (curTaskTrackers == numTaskTrackers) {
+                    return numTaskTrackers;
+                } else {
+                    // Things are still settling down, so keep looping.
+                    if (numTaskTrackers != -1) {
+                        LOGGER.trace(String.format("Got incremental update to number of task trackers (%d to %d)", numTaskTrackers, curTaskTrackers));
+                    }
+                    
+                    numTaskTrackers = curTaskTrackers;
+                }
             }
+            
+            LOGGER.trace("Sleeping during status check");
+            Thread.sleep(STATUS_CHECK_INTERVAL);
         }
     }
     
     public static JobConf getDefaultJobConf(int stackSizeInKB) throws IOException {
         JobConf conf = new JobConf();
         
-        // We explicitly set task counts to 1 for local so that code which dependes on
+        // We explicitly set task counts to 1 for local so that code which depends on
         // things like the reducer count runs properly.
         if (isJobLocal(conf)) {
             conf.setNumMapTasks(1);
