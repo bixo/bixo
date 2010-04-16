@@ -127,17 +127,18 @@ public class ParsedDatum extends BaseDatum {
         for (Outlink outlink : outLinks) {
             tuple.add(outlink.getToUrl());
             tuple.add(outlink.getAnchor());
+            tuple.add(outlink.getRelAttributes());
         }
         return tuple;
     }
 
     private Outlink[] convertTupleToOutlinks(Tuple tuple) {
-        int numOutlinks = tuple.size() / 2;
+        int numOutlinks = tuple.size() / 3;
         Outlink[] result = new Outlink[numOutlinks];
         
         for (int i = 0; i < numOutlinks; i++) {
-            int tupleOffset = i * 2;
-            result[i] = new Outlink(tuple.getString(tupleOffset), tuple.getString(tupleOffset + 1));
+            int tupleOffset = i * 3;
+            result[i] = new Outlink(tuple.getString(tupleOffset), tuple.getString(tupleOffset + 1), tuple.getString(tupleOffset + 2));
         }
         return result;
     }
