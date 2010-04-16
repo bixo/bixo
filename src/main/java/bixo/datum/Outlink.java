@@ -21,16 +21,22 @@ package bixo.datum;
 public class Outlink {
 
     private String toUrl;
-    private String anchor;
+    private String _anchorText;
+    private String _relAttributes;
 
     public Outlink() {
     }
 
-    public Outlink(String toUrl, String anchor) {
+    public Outlink(String toUrl, String anchorText, String relAttributes) {
         this.toUrl = toUrl;
-        if (anchor == null)
-            anchor = "";
-        this.anchor = anchor;
+        if (anchorText == null)
+            anchorText = "";
+        _anchorText = anchorText;
+        _relAttributes = relAttributes;
+    }
+    
+    public Outlink(String toUrl, String anchorText) {
+        this(toUrl, anchorText, null);
     }
 
     public String getToUrl() {
@@ -38,12 +44,16 @@ public class Outlink {
     }
 
     public String getAnchor() {
-        return anchor;
+        return _anchorText;
     }
 
+    public String getRelAttributes() {
+        return _relAttributes;
+    }
+    
     @Override
 	public String toString() {
-        return "toUrl: " + toUrl + " anchor: " + anchor; // removed "\n".
+        return "toUrl: " + toUrl + " anchor: " + _anchorText; // removed "\n".
         // toString, not
         // printLine... WD.
     }
@@ -52,7 +62,7 @@ public class Outlink {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((anchor == null) ? 0 : anchor.hashCode());
+		result = prime * result + ((_anchorText == null) ? 0 : _anchorText.hashCode());
 		result = prime * result + ((toUrl == null) ? 0 : toUrl.hashCode());
 		return result;
 	}
@@ -66,10 +76,10 @@ public class Outlink {
 		if (getClass() != obj.getClass())
 			return false;
 		Outlink other = (Outlink) obj;
-		if (anchor == null) {
-			if (other.anchor != null)
+		if (_anchorText == null) {
+			if (other._anchorText != null)
 				return false;
-		} else if (!anchor.equals(other.anchor))
+		} else if (!_anchorText.equals(other._anchorText))
 			return false;
 		if (toUrl == null) {
 			if (other.toUrl != null)

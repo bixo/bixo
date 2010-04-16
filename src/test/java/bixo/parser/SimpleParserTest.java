@@ -15,9 +15,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.io.BytesWritable;
 import org.junit.Test;
-import org.xml.sax.Attributes;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
 
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
@@ -85,6 +82,8 @@ public class SimpleParserTest {
 		
 		Assert.assertEquals("http://newdomain.com/link1", outlinks[0].getToUrl());
 		Assert.assertEquals("link1", outlinks[0].getAnchor());
+		// TODO Reenable when Tika passes attributes through to handlers
+		// Assert.assertEquals("nofollow", outlinks[0].getRelAttributes());
 		Assert.assertEquals("http://domain.com/link2", outlinks[1].getToUrl());
 		Assert.assertEquals("link2", outlinks[1].getAnchor());
 	}
@@ -199,6 +198,7 @@ public class SimpleParserTest {
         Assert.assertEquals("TransPac Software", parse.getTitle());
     }
 
+    @SuppressWarnings("serial")
     @Test
     public void testCustomContentExtractor() throws Exception {
         String html = readFromFile("parser-files/simple-content.html");

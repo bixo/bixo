@@ -13,6 +13,7 @@ public abstract class BaseLinkExtractor extends DefaultHandler implements Serial
 
     protected boolean _inAnchor;        
     protected String _curUrl;
+    protected String _curRelAttributes;
     protected StringBuilder _curAnchor = new StringBuilder();
 
     public void reset() {
@@ -31,6 +32,7 @@ public abstract class BaseLinkExtractor extends DefaultHandler implements Serial
             String hrefAttr = attributes.getValue("href");
             if (hrefAttr != null) {
                 _curUrl = hrefAttr;
+                _curRelAttributes = attributes.getValue("rel");
                 _inAnchor = true;
                 _curAnchor.setLength(0);
             }
@@ -51,7 +53,7 @@ public abstract class BaseLinkExtractor extends DefaultHandler implements Serial
         super.endElement(uri, localName, name);
 
         if (_inAnchor && localName.equalsIgnoreCase("a")) {
-            addLink(new Outlink(_curUrl, _curAnchor.toString()));
+            addLink(new Outlink(_curUrl, _curAnchor.toString(), _curRelAttributes));
             _inAnchor = false;
         }
     }
