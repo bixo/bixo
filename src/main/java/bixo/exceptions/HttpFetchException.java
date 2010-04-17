@@ -93,14 +93,15 @@ public class HttpFetchException extends BaseFetchException implements WritableCo
         readBaseFields(input);
         
         _httpStatus = input.readInt();
-        _httpHeaders = new HttpHeaders(input.readUTF());
+        _httpHeaders = new HttpHeaders();
+        _httpHeaders.readFields(input);
     }
 
     @Override
     public void write(DataOutput output) throws IOException {
         writeBaseFields(output);
         output.writeInt(_httpStatus);
-        output.writeUTF(_httpHeaders.toString());
+        _httpHeaders.write(output);
     }
 
     @Override

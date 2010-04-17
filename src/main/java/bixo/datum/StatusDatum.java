@@ -113,7 +113,7 @@ public class StatusDatum extends BaseDatum {
     private void initFromTupleEntry(TupleEntry entry) {
         _url = entry.getString(URL_FIELD);
         _status = UrlStatus.valueOf(entry.getString(STATUS_FIELD));
-        _headers = new HttpHeaders(entry.getString(HEADERS_FIELD));
+        _headers = new HttpHeaders((Tuple)entry.get(HEADERS_FIELD));
         _exception = (BaseFetchException)entry.get(EXCEPTION_FIELD);
         _statusTime = entry.getLong(STATUS_TIME_FIELD);
     }
@@ -125,7 +125,7 @@ public class StatusDatum extends BaseDatum {
     
     @Override
     protected Comparable[] getStandardValues() {
-        return new Comparable[] { _url, _status.name(), _headers == null ? null : _headers.toString(), (Comparable)_exception, _statusTime };
+        return new Comparable[] { _url, _status.name(), _headers == null ? null : _headers.toTuple(), (Comparable)_exception, _statusTime };
     }
 
 

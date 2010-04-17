@@ -230,7 +230,7 @@ public class FetchedDatum extends BaseDatum {
         _contentType = entry.getString(CONTENT_TYPE_FIELD);
         _responseRate = entry.getInteger(RESPONSE_RATE_FIELD);
         _numRedirects = entry.getInteger(NUM_REDIRECTS_FIELD);
-        _headers = new HttpHeaders(entry.getString(HTTP_HEADERS_FIELD));
+        _headers = new HttpHeaders((Tuple)entry.get(HTTP_HEADERS_FIELD));
     }
 
     @Override
@@ -242,15 +242,7 @@ public class FetchedDatum extends BaseDatum {
     @Override
     protected Comparable[] getStandardValues() {
         return new Comparable[] { _baseUrl, _newBaseUrl, _fetchedUrl, _fetchTime, _content,
-                        _contentType, _responseRate, _numRedirects, flattenHeaders() };
-    }
-
-    private String flattenHeaders() {
-        if (_headers == null) {
-            return null;
-        } else {
-            return _headers.toString();
-        }
+                        _contentType, _responseRate, _numRedirects, _headers.toTuple() };
     }
 
 }
