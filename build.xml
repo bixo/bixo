@@ -1,5 +1,5 @@
 <!--
-Copyright (c) 2009 Bixo Labs.
+Copyright (c) 2009-2010 Bixo Labs.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy 
 of this software and associated documentation files (the "Software"), to deal
@@ -365,10 +365,10 @@ SOFTWARE.
 		<!-- create target directory -->
 		<mkdir dir="${build.dir.dist}" />
 		<mkdir dir="${build.dir.dist}/bin" />
-		<mkdir dir="${build.dir.dist}/docs" />
-		<mkdir dir="${build.dir.dist}/docs/licenses" />
-		<mkdir dir="${build.dir.dist}/docs/javadoc" />
-		<mkdir dir="${build.dir.dist}/docs/reports" />
+		<mkdir dir="${build.dir.dist}/doc" />
+		<mkdir dir="${build.dir.dist}/doc/licenses" />
+		<mkdir dir="${build.dir.dist}/doc/javadoc" />
+		<mkdir dir="${build.dir.dist}/doc/reports" />
 		<mkdir dir="${build.dir.dist}/lib" />
 		<mkdir dir="${build.dir.dist}/src" />
 
@@ -378,7 +378,7 @@ SOFTWARE.
 		</copy>
 		
 		<!-- copy  javadoc to target dir  -->
-		<copy todir="${build.dir.dist}/docs/javadoc">
+		<copy todir="${build.dir.dist}/doc/javadoc">
 			<fileset dir="${build.javadoc}" />
 		</copy>
 		
@@ -403,10 +403,10 @@ SOFTWARE.
 		<copy todir="${build.dir.dist}">
 			<fileset file="${basedir}/README" />
 		</copy>
-		<copy todir="${build.dir.dist}/docs">
+		<copy todir="${build.dir.dist}/doc">
 			<fileset file="${basedir}/doc/eclipse-formatter.properties" />
 		</copy>
-		<copy todir="${build.dir.dist}/docs/licenses">
+		<copy todir="${build.dir.dist}/doc/licenses">
 			<fileset dir="${basedir}/doc/licenses" />
 		</copy>
 
