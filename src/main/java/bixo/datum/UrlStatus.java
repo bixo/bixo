@@ -10,12 +10,14 @@ public enum UrlStatus {
     SKIPPED_DEFERRED,           // Deferred because robots.txt couldn't be processed.
     SKIPPED_BY_SCORER,          // Skipped explicitly by scorer or grouper
     SKIPPED_BY_SCORE,           // Skipped because score wasn't high enough
-    SKIPPED_TIME_LIMIT,         // Ran out of time
+    SKIPPED_TIME_LIMIT,         // Ran out of time (also during fetch)
     SKIPPED_FILTERED,           // Filtered out during processing
     
-    // Not fetched due to mid-fetch abort
-    ABORTED_SLOW_RESPONSE,
-    ABORTED_INVALID_MIMETYPE,
+    // Not fetched due to mid-fetch issues
+    SKIPPED_INTERRUPTED,        // Fetch process was interrupted.
+    SKIPPED_INEFFICIENT,        // Skipped because we were blocked on domain (running with skip-blocked fetch policy)
+    ABORTED_SLOW_RESPONSE,      // Response rate < min set in fetch policy
+    ABORTED_INVALID_MIMETYPE,   // Response type != valid types set in fetch policy
     
     // Not fetched during fetch operation, due to HTTP status code error
     HTTP_REDIRECTION_ERROR,
