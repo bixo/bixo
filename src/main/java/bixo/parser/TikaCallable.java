@@ -33,24 +33,36 @@ class TikaCallable implements Callable<ParsedDatum> {
     private BaseLinkExtractor _linkExtractor;
     private InputStream _input;
     private Metadata _metadata;
+    private boolean _extractLanguage;
     
     public TikaCallable(Parser parser, BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, InputStream input, Metadata metadata) {
+        this(parser, contentExtractor, linkExtractor, input, metadata, true);
+    }
+    
+    public TikaCallable(Parser parser, BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, InputStream input, Metadata metadata, boolean extractLanguage) {
         _parser = parser;
         _contentExtractor = contentExtractor;
         _linkExtractor = linkExtractor;
         _input = input;
         _metadata = metadata;
+        _extractLanguage = extractLanguage;
     }
     
     @Override
     public ParsedDatum call() throws Exception {
         try {
-            ProfilingHandler profilingHandler = new ProfilingHandler();  
-            TeeContentHandler teeContentHandler = new TeeContentHandler(_contentExtractor, _linkExtractor, profilingHandler);
-
+            TeeContentHandler teeContentHandler;
+            ProfilingHandler profilingHandler = null;
+            
+            if (_extractLanguage) {
+                profilingHandler = new ProfilingHandler();
+                teeContentHandler = new TeeContentHandler(_contentExtractor, _linkExtractor, profilingHandler);
+            } else {
+                teeContentHandler = new TeeContentHandler(_contentExtractor, _linkExtractor);
+            }
             _parser.parse(_input, teeContentHandler, _metadata, new ParseContext());
             
-            String lang = detectLanguage(_metadata, profilingHandler);
+            String lang = _extractLanguage ? detectLanguage(_metadata, profilingHandler) : "";
             return new ParsedDatum(_metadata.get(Metadata.RESOURCE_NAME_KEY), _contentExtractor.getContent(), lang,
                             _metadata.get(Metadata.TITLE),
                             _linkExtractor.getLinks(), makeMap(_metadata), BaseDatum.EMPTY_METADATA_MAP);

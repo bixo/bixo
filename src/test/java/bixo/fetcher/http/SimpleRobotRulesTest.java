@@ -1,6 +1,5 @@
 package bixo.fetcher.http;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -17,7 +16,6 @@ import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.BaseFetchException;
-
 
 public class SimpleRobotRulesTest {
     private static final String LF = "\n";
@@ -624,13 +622,8 @@ public class SimpleRobotRulesTest {
     }
     
     @Test
-    public void testRobotsWithBOM() throws IOException {
-        byte[] bigBuffer = new byte[8096];
-        InputStream is = SimpleRobotRulesTest.class.getResourceAsStream("/robots-with-bom.txt");
-        int len = is.read(bigBuffer);
-        byte[] robotsData = Arrays.copyOf(bigBuffer, len);
-        
-        SimpleRobotRules rules = createRobotRules("foobot", robotsData);
+    public void testRobotsWithBOM() throws Exception {
+        SimpleRobotRules rules = createRobotRules("foobot", readFile("/robots/robots-with-bom.txt"));
         Assert.assertFalse("Disallow match against *", rules.isAllowed("http://www.domain.com/profile"));
     }
     
@@ -642,5 +635,19 @@ public class SimpleRobotRulesTest {
 
         SimpleRobotRules rules = createRobotRules("bixo", robotsTxt.getBytes());
         Assert.assertEquals(500, rules.getCrawlDelay());
+    }
+    
+    @Test
+    public void testIgnoringHost() throws Exception {
+        System.setProperty("bixo.root.level", "TRACE");
+        SimpleRobotRules rules = createRobotRules("foobot", readFile("/robots/www.flot.com-robots.txt"));
+        Assert.assertFalse("Disallow img directory", rules.isAllowed("http://www.flot.com/img/"));
+    }
+    
+    private byte[] readFile(String filename) throws Exception {
+        byte[] bigBuffer = new byte[100000];
+        InputStream is = SimpleRobotRulesTest.class.getResourceAsStream(filename);
+        int len = is.read(bigBuffer);
+        return Arrays.copyOf(bigBuffer, len);
     }
 }

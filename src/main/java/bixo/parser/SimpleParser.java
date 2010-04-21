@@ -75,6 +75,7 @@ public class SimpleParser implements IParser {
     // Number of seconds we'll give Tika to parse the document before timing out.
     private static final long MAX_PARSE_DURATION = 30;
     
+    private boolean _extractLanguage = true;
     private BaseContentExtractor _contentExtractor;
     private BaseLinkExtractor _linkExtractor;
     private transient AutoDetectParser _parser;
@@ -97,6 +98,14 @@ public class SimpleParser implements IParser {
         _linkExtractor.reset();
     }
 
+    public void setExtractLanguage(boolean extractLanguage) {
+        _extractLanguage = extractLanguage;
+    }
+    
+    public boolean isExtractLanguage() {
+        return _extractLanguage;
+    }
+    
     @Override
     public ParsedDatum parse(FetchedDatum fetchedDatum) throws Exception {
         init();
@@ -119,7 +128,7 @@ public class SimpleParser implements IParser {
         	URL baseUrl = getContentLocation(fetchedDatum);
         	metadata.add(Metadata.CONTENT_LOCATION, baseUrl.toExternalForm());
 
-            Callable<ParsedDatum> c = new TikaCallable(_parser, _contentExtractor, _linkExtractor, is, metadata);
+            Callable<ParsedDatum> c = new TikaCallable(_parser, _contentExtractor, _linkExtractor, is, metadata, isExtractLanguage());
             FutureTask<ParsedDatum> task = new FutureTask<ParsedDatum>(c);
             Thread t = new Thread(task);
             t.start();
