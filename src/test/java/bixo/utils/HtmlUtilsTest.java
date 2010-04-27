@@ -45,5 +45,38 @@ public class HtmlUtilsTest {
         assertTrue(HtmlUtils.hasNoArchiveMetaTags(htmlText6));
     }
     
-    
+    @Test
+    public void testOnlyNonEnglishMetaTags() {
+
+        // <META HTTP-EQUIV="PRAGMA" CONTENT="NO-CACHE">
+        final String htmlText1 = "<html><head><meta HTTP-EQUIV=\"PRAGMA\" content=\"no-cache\" /></head><body></body></html>";
+        
+        // <META HTTP-EQUIV="CONTENT-LANGUAGE" CONTENT="XXX">
+        final String htmlText11 = "<html><head><meta http-equiv=\"CONTENT-LANGUAGE\" content=\"en-US\" /></head><body></body></html>";
+        final String htmlText12 = "<html><head><meta http-equiv=\"CONTENT-LANGUAGE\" content=\"en\" /></head><body></body></html>";
+        final String htmlText13 = "<html><head><meta http-equiv=\"CONTENT-LANGUAGE\" content=\"en-BR,fr\" /></head><body></body></html>";
+        final String htmlText14 = "<html><head><meta http-equiv=\"CONTENT-LANGUAGE\" content=\"fr,ru\" /></head><body></body></html>";
+        final String htmlText15 = "<html><head><meta http-equiv=\"CONTENT-LANGUAGE\" content=\"RU,en,fr\" /></head><body></body></html>";
+
+        // <META NAME="DC.LANGUAGE" CONTENT="XXX">
+        final String htmlText21 = "<html><head><meta name=\"DC.LANGUAGE\" content=\"en-US\" /></head><body></body></html>";
+        final String htmlText22 = "<html><head><meta name=\"DC.LANGUAGE\" content=\"en\" /></head><body></body></html>";
+        final String htmlText23 = "<html><head><meta name=\"DC.LANGUAGE\" content=\"en-BR;fr\" /></head><body></body></html>";
+        final String htmlText24 = "<html><head><meta name=\"DC.LANGUAGE\" content=\"fr;ru\" /></head><body></body></html>";
+        final String htmlText25 = "<html><head><meta name=\"DC.LANGUAGE\" content=\"RU;en;fr\" /></head><body></body></html>";
+        
+        assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText1));
+        
+        assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText11));
+        assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText12));
+        assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText13));
+        assertTrue(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText14));
+        assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText15));
+        
+        assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText21));
+        assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText22));
+        assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText23));
+        assertTrue(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText24));
+        assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText25));
+    }
 }

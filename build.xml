@@ -223,6 +223,7 @@ SOFTWARE.
 	</target>
 
 	<target name="test-it"
+        	unless="skip.it"
 	        depends="jar, compile-integration-test"
 	        description="--> run integration tests">
 		<delete dir="${build.dir.it-reports}" />

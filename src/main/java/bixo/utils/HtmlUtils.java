@@ -17,6 +17,14 @@ public class HtmlUtils {
     private static final Pattern META_CACHE_CONTROL_PATTERN = Pattern
     .compile("(?is)<meta\\s+http-equiv\\s*=\\s*['\\\"]\\s*cache-control['\\\"]\\s+content\\s*=\\s*['\\\"]([^'\"]+)['\\\"]");
 
+    // <META HTTP-EQUIV="CONTENT-LANGUAGE" CONTENT="XXX">
+    private static final Pattern META_CONTENT_LANGUAGE_PATTERN = Pattern
+    .compile("(?is)<meta\\s+http-equiv\\s*=\\s*['\\\"]\\s*content-language['\\\"]\\s+content\\s*=\\s*['\\\"]([^'\"]+)['\\\"]");
+
+    // <META NAME="DC.LANGUAGE" CONTENT="XXX">
+    private static final Pattern META_DC_LANGUAGE_PATTERN = Pattern
+    .compile("(?is)<meta\\s+name\\s*=\\s*['\\\"]\\s*dc.language['\\\"]\\s+content\\s*=\\s*['\\\"]([^'\"]+)['\\\"]");
+
     public static boolean hasNoArchiveMetaTags(String htmlText) {
         Matcher m = META_ROBOTS_PATTERN.matcher(htmlText);
         if (m.find()) {
@@ -57,6 +65,30 @@ public class HtmlUtils {
             }
         }
         
+        return false;
+    }
+    
+    public static boolean hasOnlyNonEnglishMetaTags(String htmlText) {
+        Matcher m = META_CONTENT_LANGUAGE_PATTERN.matcher(htmlText);
+        if (m.find()) {
+            String[] directives = m.group(1).toLowerCase().split(",");
+            for (String directive : directives) {
+                if (directive.startsWith("en")) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        m = META_DC_LANGUAGE_PATTERN.matcher(htmlText);
+        if (m.find()) {
+            String[] directives = m.group(1).toLowerCase().split(";");
+            for (String directive : directives) {
+                if (directive.startsWith("en")) {
+                    return false;
+                }
+            }
+            return true;
+        }
         return false;
     }
 }
