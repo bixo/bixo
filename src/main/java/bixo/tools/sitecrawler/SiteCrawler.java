@@ -50,27 +50,6 @@ public class SiteCrawler {
     private static final int CRAWL_STACKSIZE_KB = 128;
 	
     @SuppressWarnings("serial")
-    private static class SkipFetchedScoreGenerator extends ScoreGenerator {
-        private transient long _lastFetchedTime;
-        
-        @Override
-        public double generateScore(String domain, String pld, GroupedUrlDatum urlDatum) {
-            _lastFetchedTime = urlDatum.getLastFetched() ;
-            return generateScore(domain, pld, urlDatum.getUrl());
-        }
-        
-        @Override
-        public double generateScore(String domain, String pld, String url) {
-            if (_lastFetchedTime != 0) {
-                return ScoreGenerator.SKIP_SCORE;
-            } else {
-                return 1.0;
-            }
-        }
-        
-    }
-
-    @SuppressWarnings("serial")
     private static class CreateUrlFromStatusFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
         private int _numCreated;
@@ -174,7 +153,7 @@ public class SiteCrawler {
 			// Create the sub-assembly that runs the fetch job
 			IHttpFetcher fetcher = new SimpleHttpFetcher(_maxThreads, _fetcherPolicy, _userAgent);
 			ScoreGenerator scorer = new FixedScoreGenerator();
-			FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, numReducers, MetaData.FIELDS);
+			FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, _crawlEndTime, numReducers, MetaData.FIELDS);
 
 			// Take content and split it into content output plus parse to extract URLs.
 			ParsePipe parsePipe = new ParsePipe(fetchPipe.getContentTailPipe(), new SimpleParser(), MetaData.FIELDS);
