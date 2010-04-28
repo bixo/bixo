@@ -34,7 +34,6 @@ import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
-import cascading.operation.Identity;
 import cascading.operation.OperationCall;
 import cascading.pipe.Each;
 import cascading.pipe.Every;
@@ -135,9 +134,9 @@ public class SiteCrawler {
 
 		// Read _everything_ in initially
         // Split that pipe into URLs we want to fetch for the fetch pipe
-        Pipe importPipe = new Each("url importer", new Identity());
-        Pipe fetchUrlsImportPipe = new GroupBy(importPipe, new Fields(UrlDatum.URL_FIELD));
-        fetchUrlsImportPipe = new Every(fetchUrlsImportPipe, new BestUrlToFetchBuffer(), Fields.RESULTS);
+        Pipe importPipe = new Pipe("url importer");
+        importPipe = new GroupBy(importPipe, new Fields(UrlDatum.URL_FIELD));
+        importPipe = new Every(importPipe, new BestUrlToFetchBuffer(), Fields.RESULTS);
 
 		try {
 			String curCrawlDirName = _outputDir.toUri().toString();
