@@ -173,8 +173,9 @@ public class SimpleCrawlTool {
             defaultPolicy.setMaxContentSize(MAX_CONTENT_SIZE);
             
             int crawlDurationInMinutes = options.getCrawlDuration();
-            long targetEndTime = System.currentTimeMillis()
-                            + (crawlDurationInMinutes * MILLISECONDS_PER_MINUTE);
+            boolean hasEndTime = crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION;
+            long targetEndTime = hasEndTime ? System.currentTimeMillis()
+                            + (crawlDurationInMinutes * MILLISECONDS_PER_MINUTE) : FetcherPolicy.NO_CRAWL_END_TIME;
 
             IUrlFilter urlFilter = new DomainUrlFilter(domain);
 
@@ -183,7 +184,7 @@ public class SimpleCrawlTool {
             for (int curLoop = startLoop + 1; curLoop <= endLoop; curLoop++) {
 
                 // Adjust target end time, if appropriate.
-                if (crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION) {
+                if (hasEndTime) {
                     int remainingLoops = (endLoop - curLoop) + 1;
                     long now = System.currentTimeMillis();
                     long perLoopTime = (targetEndTime - now) / remainingLoops;
@@ -195,7 +196,7 @@ public class SimpleCrawlTool {
                 setLoopLoggerFile(curLoopDirName, curLoop);
 
                 SiteCrawler crawler = new SiteCrawler(inputPath, curLoopDir, userAgent,
-                                defaultPolicy, options.getMaxThreads(), urlFilter, targetEndTime);
+                                defaultPolicy, options.getMaxThreads(), urlFilter);
                 crawler.crawl(options.isDebugLogging());
 
                 // Input for the next round is our current output

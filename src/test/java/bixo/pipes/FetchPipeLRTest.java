@@ -61,7 +61,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
         ScoreGenerator scorer = new FixedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
         
         String outputPath = "build/test/FetchPipeTest-testHeadersInStatus/out";
         Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath, true);
@@ -97,7 +97,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Pipe pipe = new Pipe("urlSource");
         ScoreGenerator scorer = new FixedScoreGenerator();
         IHttpFetcher fetcher = new SimpleHttpFetcher(ConfigUtils.BIXO_TEST_AGENT);
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, 1, metaDataFields);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1, metaDataFields);
         
         String outputPath = "build/test/FetchPipeTest/testFetchPipe";
         Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS.append(metaDataFields)), outputPath + "/status", true);
@@ -163,7 +163,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
         ScoreGenerator scorer = new FixedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, 1, new Fields("key"));
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 1, new Fields("key"));
         
         String outputPath = "build/test/FetchPipeTest/dual";
         Fields contentFields = FetchedDatum.FIELDS.append(new Fields("key"));
@@ -198,7 +198,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
         ScoreGenerator scorer = new SkippedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
         
         String outputPath = "build/test/FetchPipeTest/out";
         Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
@@ -226,7 +226,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         defaultPolicy.setCrawlEndTime(0);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
         ScoreGenerator scorer = new FixedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 0, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
 
         // Create the output
         String outputPath = "build/test/FetchPipeTest/out";

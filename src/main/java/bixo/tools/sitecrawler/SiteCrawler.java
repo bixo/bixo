@@ -110,16 +110,14 @@ public class SiteCrawler {
 	private FetcherPolicy _fetcherPolicy;
 	private int _maxThreads;
 	private IUrlFilter _urlFilter;
-    private long _crawlEndTime;
 	
-	public SiteCrawler(Path inputDir, Path outputDir, UserAgent userAgent, FetcherPolicy fetcherPolicy, int maxThreads, IUrlFilter urlFilter, long crawlEndTime) {
+	public SiteCrawler(Path inputDir, Path outputDir, UserAgent userAgent, FetcherPolicy fetcherPolicy, int maxThreads, IUrlFilter urlFilter) {
 		_inputDir = inputDir;
 		_outputDir = outputDir;
 		_userAgent = userAgent;
 		_fetcherPolicy = fetcherPolicy;
 		_maxThreads = maxThreads;
 		_urlFilter = urlFilter;
-		_crawlEndTime = crawlEndTime;
 	}
 	
 	public void crawl(Boolean debug) throws Throwable {
@@ -153,7 +151,7 @@ public class SiteCrawler {
 			// Create the sub-assembly that runs the fetch job
 			IHttpFetcher fetcher = new SimpleHttpFetcher(_maxThreads, _fetcherPolicy, _userAgent);
 			ScoreGenerator scorer = new FixedScoreGenerator();
-			FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, _crawlEndTime, numReducers, MetaData.FIELDS);
+			FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, numReducers, MetaData.FIELDS);
 
 			// Take content and split it into content output plus parse to extract URLs.
 			ParsePipe parsePipe = new ParsePipe(fetchPipe.getContentTailPipe(), new SimpleParser(), MetaData.FIELDS);

@@ -32,7 +32,6 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import bixo.config.FakeUserFetcherPolicy;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.BaseDatum;
@@ -107,7 +106,7 @@ public class FetcherTest {
         fetcherPolicy.setCrawlDelay(5 * 1000L);
         IHttpFetcher fetcher = new SimpleHttpFetcher(2, fetcherPolicy, userAgent);
         ScoreGenerator scorer = new FixedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
 
         FlowConnector flowConnector = new FlowConnector();
 
@@ -148,7 +147,7 @@ public class FetcherTest {
         UserAgent userAgent = new FirefoxUserAgent();
         IHttpFetcher fetcher = new SimpleHttpFetcher(10, userAgent);
         ScoreGenerator scorer = new FixedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, FetcherPolicy.NO_CRAWL_END_TIME, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
 
         FlowConnector flowConnector = new FlowConnector();
 

@@ -197,15 +197,15 @@ public class FetchPipe extends SubAssembly {
      */
     
     public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher) {
-        this(urlProvider, scorer, fetcher, null, FetcherPolicy.NO_CRAWL_END_TIME, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        this(urlProvider, scorer, fetcher, null, 1, BaseDatum.EMPTY_METADATA_FIELDS);
     }
     
 
-    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, long crawlEndTime, int numReducers, Fields metaDataFields) {
-        this(urlProvider, scorer, fetcher, null, crawlEndTime, numReducers, metaDataFields);
+    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, int numReducers, Fields metaDataFields) {
+        this(urlProvider, scorer, fetcher, null, numReducers, metaDataFields);
     }
     
-    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, IHttpFetcher robotsFetcher, long crawlEndTime, int numReducers, Fields metaDataFields) {
+    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, IHttpFetcher robotsFetcher, int numReducers, Fields metaDataFields) {
         Pipe robotsPipe = new Pipe("robots pipe", urlProvider);
         Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
         robotsPipe = new Each(robotsPipe, new GroupFunction(metaDataFields, new GroupByDomain()), groupedFields);
@@ -232,7 +232,8 @@ public class FetchPipe extends SubAssembly {
         fetchPipe = new Every(fetchPipe, new PreFetchBuffer(fetcher.getFetcherPolicy(), numReducers, metaDataFields), Fields.RESULTS);
         
         fetchPipe = new GroupBy(fetchPipe, new Fields(PreFetchedDatum.GROUPING_KEY_FN), new Fields(PreFetchedDatum.FETCH_TIME_FN));
-        fetchPipe = new Every(fetchPipe, new FetchBuffer(fetcher, crawlEndTime, metaDataFields), Fields.RESULTS);
+        fetchPipe = new Every(fetchPipe, new FetchBuffer(fetcher, fetcher.getFetcherPolicy().getCrawlEndTime(), metaDataFields),
+                        Fields.RESULTS);
 
         Fields fetchedFields = FetchedDatum.FIELDS.append(metaDataFields);
         Pipe fetchedContent = new Pipe(CONTENT_PIPE_NAME, new Each(fetchPipe, new FilterErrorsFunction(fetchedFields)));
