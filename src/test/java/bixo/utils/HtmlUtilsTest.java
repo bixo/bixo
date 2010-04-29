@@ -65,6 +65,10 @@ public class HtmlUtilsTest {
         final String htmlText24 = "<html><head><meta name=\"DC.LANGUAGE\" content=\"fr;ru\" /></head><body></body></html>";
         final String htmlText25 = "<html><head><meta name=\"DC.LANGUAGE\" content=\"RU;en;fr\" /></head><body></body></html>";
         
+        // <META HTTP-EQUIV="CONTENT-TYPE" CONTENT="XXX">
+        final String htmlText31 = "<html><head><meta http-equiv=\"CONTENT-TYPE\" content=\"text/html; charset=windows-1251\" /></head><body></body></html>";
+        final String htmlText32 = "<html><head><meta http-equiv=\"CONTENT-TYPE\" content=\"text/html; charset=iso-8859-1\" /></head><body></body></html>";
+        
         assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText1));
         
         assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText11));
@@ -78,5 +82,8 @@ public class HtmlUtilsTest {
         assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText23));
         assertTrue(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText24));
         assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText25));
+        
+        assertTrue(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText31));
+        assertFalse(HtmlUtils.hasOnlyNonEnglishMetaTags(htmlText32));
     }
 }

@@ -17,6 +17,10 @@ public class HtmlUtils {
     private static final Pattern META_CACHE_CONTROL_PATTERN = Pattern
     .compile("(?is)<meta\\s+http-equiv\\s*=\\s*['\\\"]\\s*cache-control['\\\"]\\s+content\\s*=\\s*['\\\"]([^'\"]+)['\\\"]");
 
+    // <META HTTP-EQUIV="CONTENT-TYPE" CONTENT="XXX">
+    private static final Pattern META_CONTENT_TYPE_PATTERN = Pattern
+    .compile("(?is)<meta\\s+http-equiv\\s*=\\s*['\\\"]\\s*content-type['\\\"]\\s+content\\s*=\\s*['\\\"]([^'\"]+)['\\\"]");
+
     // <META HTTP-EQUIV="CONTENT-LANGUAGE" CONTENT="XXX">
     private static final Pattern META_CONTENT_LANGUAGE_PATTERN = Pattern
     .compile("(?is)<meta\\s+http-equiv\\s*=\\s*['\\\"]\\s*content-language['\\\"]\\s+content\\s*=\\s*['\\\"]([^'\"]+)['\\\"]");
@@ -69,11 +73,27 @@ public class HtmlUtils {
     }
     
     public static boolean hasOnlyNonEnglishMetaTags(String htmlText) {
-        Matcher m = META_CONTENT_LANGUAGE_PATTERN.matcher(htmlText);
+        Matcher m = META_CONTENT_TYPE_PATTERN.matcher(htmlText);
+        if (m.find()) {
+            String[] directives = m.group(1).toLowerCase().split(";");
+            for (String directive : directives) {
+                directive = directive.trim();
+                if  (   (directive.equals("charset=gb2312"))
+                    ||  (directive.equals("charset=gbk"))
+                    ||  (directive.equals("charset=gb18030"))
+                    ||  (directive.equals("charset=windows-1251"))
+                    ||  (directive.equals("charset=iso-2022-jp"))
+                    ||  (directive.equals("charset=euc-jp"))
+                    ||  (directive.equals("charset=euc-kr"))) {
+                    return true;
+                }
+            }
+        }
+        m = META_CONTENT_LANGUAGE_PATTERN.matcher(htmlText);
         if (m.find()) {
             String[] directives = m.group(1).toLowerCase().split(",");
             for (String directive : directives) {
-                if (directive.startsWith("en")) {
+                if (directive.trim().startsWith("en")) {
                     return false;
                 }
             }
@@ -83,7 +103,7 @@ public class HtmlUtils {
         if (m.find()) {
             String[] directives = m.group(1).toLowerCase().split(";");
             for (String directive : directives) {
-                if (directive.startsWith("en")) {
+                if (directive.trim().startsWith("en")) {
                     return false;
                 }
             }
