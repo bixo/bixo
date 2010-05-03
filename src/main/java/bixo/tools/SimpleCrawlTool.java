@@ -212,7 +212,7 @@ public class SimpleCrawlTool {
             t.printStackTrace(System.err);
             System.exit(-1);
         }
-
+        BixoJDBCTapFactory.shutdown();
     }
 
 }
