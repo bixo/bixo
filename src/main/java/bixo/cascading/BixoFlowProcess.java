@@ -7,11 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.Counters.Counter;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import bixo.hadoop.HadoopUtils;
 import cascading.flow.FlowProcess;
 import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.tap.Tap;
@@ -144,6 +146,13 @@ public class BixoFlowProcess extends FlowProcess {
 
     public void addReporter(IFlowReporter reporter) {
         _reporters.add(reporter);
+    }
+    
+    public JobConf getJobConf() throws IOException {
+        if (_baseProcess instanceof HadoopFlowProcess) {
+            return ((HadoopFlowProcess)_baseProcess).getJobConf();
+        }
+        return HadoopUtils.getDefaultJobConf();
     }
 
     public void setStatus(String msg) {
