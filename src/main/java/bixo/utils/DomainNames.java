@@ -151,4 +151,43 @@ public class DomainNames {
             return "<invalid URL>";
         }
     }
+    
+    /**
+     * Extract the domain immediately containing this subdomain.
+     * 
+     * @param hostname 
+     * @return immediate super domain of hostname, or null if hostname
+     * is already a paid-level domain (i.e., not really a subdomain).
+     */
+    public static String getSuperDomain(String hostname) {
+        String pld = getPLD(hostname);
+        if (hostname.equalsIgnoreCase(pld)) {
+            return null;
+        }
+        return hostname.substring(hostname.indexOf(".")+1);
+    }
+    
+    /**
+     * Check whether the domain of the URL is the given domain or a subdomain
+     * of the given domain.
+     * 
+     * @param url
+     * @param domain
+     * @return true iff url is "within" domain
+     */
+    public static boolean isUrlWithinDomain(String url, String domain) {
+        try {
+            for (   String urlDomain = new URL(url).getHost();
+                    urlDomain != null;
+                    urlDomain = DomainNames.getSuperDomain(urlDomain)) {
+                if (urlDomain.equalsIgnoreCase(domain)) {
+                    return true;
+                }
+            }
+        } catch (MalformedURLException e) {
+            return false;
+        }
+        return false;
+    }
+    
 } // DomainNames

@@ -85,4 +85,20 @@ public class DomainNamesTest extends TestCase {
         assertTrue(!DomainNames.safeGetHost("mailto:ken@domain.com").equals("domain.com"));
     }
 
+    public final void testGetSuperDomain() {
+        assertEquals("domain.com", DomainNames.getSuperDomain("www.domain.com"));
+        assertEquals("subdomain.domain.com", DomainNames.getSuperDomain("subsubdomain.subdomain.domain.com"));
+        assertNull(DomainNames.getSuperDomain("domain.com"));
+        assertEquals("xxx.de.com", DomainNames.getSuperDomain("www.xxx.de.com"));
+        assertNull(DomainNames.getSuperDomain("xxx.com.it"));
+    }
+    
+    public final void testIsUrlWithinSubdomain() {
+        assertTrue(DomainNames.isUrlWithinDomain("http://domain.com", "domain.com"));
+        assertFalse(DomainNames.isUrlWithinDomain("http://domain.ru", "domain.com"));
+        assertTrue(DomainNames.isUrlWithinDomain("http://www.domain.com", "domain.com"));
+        assertFalse(DomainNames.isUrlWithinDomain("http://subdomain.domain.com", "www.domain.com"));
+        assertTrue(DomainNames.isUrlWithinDomain("http://subsubdomain.subdomain.domain.com", "subdomain.domain.com"));
+        assertTrue(DomainNames.isUrlWithinDomain("http://subsubdomain.subdomain.domain.com", "domain.com"));
+    }
 }
