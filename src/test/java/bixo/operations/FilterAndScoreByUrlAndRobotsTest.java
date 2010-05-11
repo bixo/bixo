@@ -60,6 +60,10 @@ public class FilterAndScoreByUrlAndRobotsTest {
                 op.operate(fp, bc);
             }
             
+            // Give threads a chance to run, as otherwise we might call verify() before one of the ProcessRobotsTask
+            // threads has been started.
+            op.cleanup(fp, oc);
+            
             Mockito.verify(fp, Mockito.times(maxThreads)).increment(FetchCounters.DOMAINS_PROCESSING, 1);
         } finally {
             server.stop();
