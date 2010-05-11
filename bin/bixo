@@ -77,10 +77,17 @@ CLASSPATH=$JAVA_HOME/lib/tools.jar
 IFS=
 
 BIXO_CORE=`find "$BIXO_HOME" -name "bixo-core-*.jar"`
+if [ -z BIXO_CORE ]; then
+	echo "Unable to find the bixo-core jar"
+	exit 1
+else 
+	BIXO_LIB_HOME=${BIXO_CORE%/bixo-core-*.jar}/lib
+fi
+
 CLASSPATH=${CLASSPATH}:$BIXO_CORE
 
 # add libs to CLASSPATH
-for f in $BIXO_HOME/lib/*.jar; do
+for f in $BIXO_LIB_HOME/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 
