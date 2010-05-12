@@ -13,6 +13,7 @@ public enum FetchCounters {
     URLS_ACCEPTED,      // URLs we accepted
     URLS_DEFERRED,      // URLs we deferred, because domain was deferred
     URLS_REJECTED,      // URLS we rejected, because domain was rejected
+    URLS_BLOCKED,       // URLS we blocked, because of robots.txt
     
     // During URL fetching
     URLS_FETCHING,
