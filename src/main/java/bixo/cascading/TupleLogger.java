@@ -37,8 +37,25 @@ public class TupleLogger extends BaseOperation<Long> implements Filter<Long> {
     private int _printTupleEvery = 1;
     private int _maxPrintLength = DEFAULT_MAX_ELEMENT_LENGTH;
     
+    public static Pipe makePipe(Pipe inPipe, boolean printFields) {
+        return makePipe(inPipe, printFields, DEFAULT_MAX_ELEMENT_LENGTH);
+    }
+    
     public static Pipe makePipe(Pipe inPipe, String prefix, boolean printFields) {
         return makePipe(inPipe, prefix, printFields, DEFAULT_MAX_ELEMENT_LENGTH);
+    }
+    
+    /**
+     * Uses inPipe.getName() for the logging prefix. Convenient, but may not be
+     * appropriate for pipes with long names.
+     * 
+     * @param inPipe input pipe
+     * @param printFields print field names
+     * @param maxLength max length of any element string.
+     * @return pipe to use
+     */
+    public static Pipe makePipe(Pipe inPipe, boolean printFields, int maxLength) {
+        return makePipe(inPipe, inPipe.getName(), printFields, maxLength);
     }
     
     /**
