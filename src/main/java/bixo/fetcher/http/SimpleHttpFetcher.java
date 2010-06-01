@@ -313,18 +313,25 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     public void setMaxRetryCount(int maxRetryCount) {
         _maxRetryCount = maxRetryCount;
     }
+    
+    private static FetchedDatum convert(FetchedResult result){
+    	FetchedDatum datum = new FetchedDatum(result.getBaseUrl(),result.getFetchedUrl(),result.getFetchTime(),result.getHeaders(), new BytesWritable(result.getContent()),result.getContentType(),result.getResponseRate(),result.getMetaDataMap());
+    	datum.setNewBaseUrl(result.getNewBaseUrl());
+    	datum.setNumRedirects(result.getNumRedirects());
+    	return datum;
+    }
 
     @Override
     public FetchedDatum head(ScoredUrlDatum scoredUrl) throws BaseFetchException {
-        return request(new HttpHead(), scoredUrl);
+        return convert(request(new HttpHead(), scoredUrl));
     }
     
     @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
-        return request(new HttpGet(), scoredUrl);
+        return convert(request(new HttpGet(), scoredUrl));
     }
 
-    private FetchedDatum request(HttpRequestBase request, ScoredUrlDatum scoredUrl) throws BaseFetchException {
+    private FetchedResult request(HttpRequestBase request, ScoredUrlDatum scoredUrl) throws BaseFetchException {
         init();
 
         try {
@@ -354,7 +361,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         init();
         
         try {
-            FetchedDatum result = doRequest(new HttpGet(), url, new HashMap<String, Comparable>());
+            FetchedDatum result = convert(doRequest(new HttpGet(), url, new HashMap<String, Comparable>()));
             return result.getContentBytes();
         } catch (HttpFetchException e) {
             if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
@@ -364,9 +371,26 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             }
         }
     }
+    
+    public FetchedResult fetch(String url) throws BaseFetchException{
+    	return fetch(new HttpGet(),url,new HashMap<String,Comparable>());
+    }
+    
+    public FetchedResult fetch(HttpRequestBase request,String url,Map<String,Comparable> metaData) throws BaseFetchException{
+        init();
+        
+        try {
+        	return doRequest(request,url,metaData);
+        } catch (BaseFetchException e) {
+        	if (LOGGER.isTraceEnabled()) {
+        		LOGGER.trace(String.format("Exception fetching %s", url), e);
+        	}
+        	throw e;
+        }
+    }
 
     @SuppressWarnings("unchecked")
-    private FetchedDatum doRequest(HttpRequestBase request, String url, Map<String, Comparable> metaData) throws BaseFetchException {
+    private FetchedResult doRequest(HttpRequestBase request, String url, Map<String, Comparable> metaData) throws BaseFetchException {
         LOGGER.trace("Fetching " + url);
 
         HttpResponse response;
@@ -540,10 +564,8 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             }
         }
 
-        FetchedDatum result = new FetchedDatum(url, redirectedUrl, System.currentTimeMillis(), headerMap, new BytesWritable(content), contentType, (int)readRate, metaData);
-        result.setNewBaseUrl(newBaseUrl);
-        result.setNumRedirects(numRedirects);
-        return result;
+        return new FetchedResult(url, redirectedUrl, System.currentTimeMillis(), 
+        		                                 headerMap, content, contentType, (int)readRate, metaData,newBaseUrl,numRedirects);
     }
     
     private String extractRedirectedUrl(String url, HttpContext localContext) {

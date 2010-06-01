@@ -9,7 +9,6 @@ import bixo.cascading.ISplitter;
 import bixo.cascading.NullContext;
 import bixo.cascading.NullSinkTap;
 import bixo.cascading.SplitterAssembly;
-import bixo.config.FetcherPolicy;
 import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;

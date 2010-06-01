@@ -259,7 +259,7 @@ SOFTWARE.
 
 
 	<!-- ================================================================== -->
-	<!-- Build jar of sources                                               -->
+	<!-- Build jar with all dependent libraries                             -->
 	<!-- ================================================================== -->
 
 	<target name="jar" depends="compile">
@@ -268,12 +268,22 @@ SOFTWARE.
 			<format property="timestamp" pattern="MMM dd yyyy, HH:mm:ss" />
 		</tstamp>
 
+		<!-- copy any 3rd party libs -->
+		<delete dir="${build.dir}/lib" />
+		<copy todir="${build.dir}/lib" flatten="true">
+			<path refId="compile.classpath" />
+			<path refId="runtime.classpath" />
+		</copy>
+
 		<jar jarfile="${build.dir}/${jar.name}"
 		     basedir="${build.dir.main-classes}">
+			
+			<fileset dir="${build.dir}" includes="lib/" />
+
 			<manifest>
 				<section name="bixo">
 					<attribute name="Implementation-Vendor"
-					           value="101tec inc" />
+					           value="openbixo.org" />
 					<attribute name="Implementation-Title"
 					           value="${ant.project.name}" />
 					<attribute name="Implementation-Version"
@@ -285,6 +295,8 @@ SOFTWARE.
 				</section>
 			</manifest>
 		</jar>
+		
+
 	</target>
 
 
@@ -320,6 +332,8 @@ SOFTWARE.
 	        depends="compile"
 	        description="--> create a Hadoop ready jar with all dependencies">
 
+		<!-- Always clear out lib, since we have a different set of libraries for the job jar -->
+		<delete dir="${build.dir}/lib" />
 		<copy todir="${build.dir}/lib" flatten="true">
 			<path refid="runtime.classpath" />
 		</copy>
@@ -383,11 +397,10 @@ SOFTWARE.
 			<fileset dir="${build.javadoc}" />
 		</copy>
 		
-		<!-- copy any raw libs -->
+		<!-- copy libs -->
 		<copy todir="${build.dir.dist}/lib" flatten="true">
 			<fileset dir="${lib.dir}" />
-			<path refId="compile.classpath" />
-			<path refId="runtime.classpath" />
+			<fileset dir="${build.dir}/lib" />
 		</copy>
 		
 		<!-- copy src -->

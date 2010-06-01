@@ -94,29 +94,39 @@ public class ProcessRobotsTask implements Runnable {
                 String robotsUrl = new URL(domainInfo.getProtocolAndDomain() + "/robots.txt").toExternalForm();
                 IRobotRules robotRules = new SimpleRobotRules(_fetcher, robotsUrl);
 
-                String key;
-                if (robotRules.getDeferVisits()) {
-                    // We don't want to toss these URLs just because the server is
-                    // acting up, so use the special
-                    // key so that the FetchBuffer will emit status, and we can try
-                    // again later.
+                String validKey = null;
+                boolean isDeferred = robotRules.getDeferVisits();
+                if (isDeferred) {
                     LOGGER.debug("Deferring visits to URLs from " + domainInfo.getDomain());
-                    key = GroupingKey.DEFERRED_GROUPING_KEY;
                     _flowProcess.increment(FetchCounters.DOMAINS_DEFERRED, 1);
-                    _flowProcess.increment(FetchCounters.URLS_DEFERRED, _urls.size());
                 } else {
-                    key = GroupingKey.makeGroupingKey(domainInfo.getHostAddress(), robotRules.getCrawlDelay());
+                    validKey = GroupingKey.makeGroupingKey(domainInfo.getHostAddress(), robotRules.getCrawlDelay());
                     _flowProcess.increment(FetchCounters.DOMAINS_FINISHED, 1);
-                    _flowProcess.increment(FetchCounters.URLS_ACCEPTED, _urls.size());
                 }
 
                 // Use the same key for every URL from this domain
                 GroupedUrlDatum datum;
                 while ((datum = _urls.poll()) != null) {
-                    double score = _scorer.generateScore(domain, pld, datum);
-                    ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), 0, 0, UrlStatus.UNFETCHED, key, score, datum.getMetaDataMap());
+                    ScoredUrlDatum scoreUrl;
+                    FetchCounters counter;
+                    String url = datum.getUrl();
+
+                    if (isDeferred) {
+                        counter = FetchCounters.URLS_DEFERRED;
+                        scoreUrl = new ScoredUrlDatum(url, 0, 0, UrlStatus.SKIPPED_DEFERRED, GroupingKey.DEFERRED_GROUPING_KEY, 0.0, datum.getMetaDataMap());
+                    } else if (!robotRules.isAllowed(url)) {
+                        counter = FetchCounters.URLS_BLOCKED;
+                        scoreUrl = new ScoredUrlDatum(url, 0, 0, UrlStatus.SKIPPED_BLOCKED, GroupingKey.BLOCKED_GROUPING_KEY, 0.0, datum.getMetaDataMap());
+                    } else {
+                        counter = FetchCounters.URLS_ACCEPTED;
+                        double score = _scorer.generateScore(domain, pld, datum);
+                        scoreUrl = new ScoredUrlDatum(url, 0, 0, UrlStatus.UNFETCHED, validKey, score, datum.getMetaDataMap());
+                    }
+                    
+                    _flowProcess.increment(counter, 1);
+
+                    // collectors aren't thread safe
                     synchronized (_collector) {
-                        // collectors aren't thread safe
                         _collector.add(scoreUrl.toTuple());
                     }
                 }

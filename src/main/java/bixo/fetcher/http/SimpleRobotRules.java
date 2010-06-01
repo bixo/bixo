@@ -375,7 +375,12 @@ public class SimpleRobotRules implements IRobotRules {
                 return;
         	} else {
         		// We'll try to strip out HTML tags below.
-                LOGGER.debug("Found HTML in robots.txt file: " + _url);
+        	    if (_isHtmlType) {
+                    LOGGER.debug("HTML content type returned for robots.txt file: " + _url);
+        	    } else {
+                    LOGGER.debug("Found HTML in robots.txt file: " + _url);
+        	    }
+        	    
                 hasHTML = true;
         	}
         }
