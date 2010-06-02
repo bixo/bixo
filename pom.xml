@@ -35,6 +35,11 @@
 			<name>Apache snapshot repository</name>
 			<url>https://repository.apache.org/content/groups/snapshots-group/</url>
 		</repository>
+		<repository>
+			<id>Apache Releases</id>
+			<name>Apache release repository</name>
+			<url>https://repository.apache.org/content/repositories/releases/</url>
+		</repository>
 		
 	</repositories>
 	
@@ -86,7 +91,7 @@
 		<dependency>
 			<groupId>org.apache.tika</groupId>
 			<artifactId>tika-parsers</artifactId>
-			<version>0.7-SNAPSHOT</version>
+			<version>0.7</version>
 		</dependency>
 	
 		<dependency>
