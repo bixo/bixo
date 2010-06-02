@@ -10,15 +10,9 @@
 	<version>1.0-SNAPSHOT</version>
 	<repositories>
 		<repository>
-			<id>101tec Public</id>
-			<name>101tec Nexus public repository</name>
-			<url>http://oss.101tec.com/nexus/content/groups/public/</url>
-		</repository>
-
-		<repository>
-			<id>101tec Snapshots</id>
-			<name>101tec Nexus snapshot repository</name>
-			<url>http://oss.101tec.com/nexus/content/repositories/snapshots/</url>
+			<id>Bixo</id>
+			<name>Bixo GitHub repository</name>
+			<url>http://bixo.github.com/repo/</url>
 		</repository>
 	</repositories>
 	
@@ -28,37 +22,15 @@
 			<artifactId>bixo-core</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
-		
 		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-core</artifactId>
-			<version>0.18.3</version>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-core</artifactId>
+            <version>0.19.2</version>
+		<scope>provided</scope>
 		</dependency>
+	
+		<!-- Test dependencies -->
 
-		<dependency>
-            <groupId>cascading</groupId>
-            <artifactId>cascading-core</artifactId>
-            <version>1.1-WIP-84</version>
-        </dependency>
-                
-		<dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.14</version>
-        </dependency>
-
-		<dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
-            <version>2.4</version>
-        </dependency>
-
-		<dependency>
-            <groupId>org.kohsuke</groupId>
-            <artifactId>args4j</artifactId>
-            <version>2.0.10</version>
-        </dependency>
-        
 		<dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -72,6 +44,15 @@
             <version>1.8.0</version>
             <scope>test</scope>
         </dependency>
+
+		<dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-test</artifactId>
+            <version>0.19.2</version>
+            <scope>test</scope>
+        </dependency>
+
+		<!-- Eclipse project generation dependencies -->
 
 		<dependency>
             <groupId>ant-eclipse</groupId>

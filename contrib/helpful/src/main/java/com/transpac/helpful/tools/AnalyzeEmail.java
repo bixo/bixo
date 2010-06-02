@@ -17,13 +17,12 @@ import bixo.cascading.NullContext;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
-import bixo.datum.GroupedUrlDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
-import bixo.fetcher.util.IScoreGenerator;
-import bixo.fetcher.util.SimpleGroupingKeyGenerator;
+import bixo.fetcher.util.FixedScoreGenerator;
+import bixo.fetcher.util.ScoreGenerator;
 import bixo.pipes.FetchPipe;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -172,14 +171,11 @@ public class AnalyzeEmail {
             // Create the sub-assembly that runs the fetch job
             UserAgent userAgent = new UserAgent(options.getAgentName(), EMAIL_ADDRESS, WEB_ADDRESS);
             Pipe importPipe = new Each("url importer", new Fields("line"), new LoadUrlFunction());
-            SimpleGroupingKeyGenerator grouping = new SimpleGroupingKeyGenerator(userAgent);
             
-            IScoreGenerator scorer = new IScoreGenerator() {
-				public double generateScore(GroupedUrlDatum arg0) { return 1.0; }
-            };
+            ScoreGenerator scorer = new FixedScoreGenerator();
             
             IHttpFetcher fetcher = new SimpleHttpFetcher(MAX_THREADS, userAgent);
-            FetchPipe fetchPagePipe = new FetchPipe(importPipe, grouping, scorer, fetcher);
+            FetchPipe fetchPagePipe = new FetchPipe(importPipe, scorer, fetcher);
             
             // Here's the pipe that will output UrlDatum tuples, by extracting URLs from the mod_mbox-generated page.
     		Pipe mboxPagePipe = new Each(fetchPagePipe.getContentTailPipe(), new ParseModMboxPageFunction(new Fields()), Fields.RESULTS);
@@ -194,7 +190,7 @@ public class AnalyzeEmail {
             fetcher = new SimpleHttpFetcher(MAX_THREADS, defaultPolicy, userAgent);
             
             // We can create the fetch pipe, and set up our Mbox splitter to run on content.
-            FetchPipe fetchMboxPipe = new FetchPipe(mboxPagePipe, grouping, scorer, fetcher);
+            FetchPipe fetchMboxPipe = new FetchPipe(mboxPagePipe, scorer, fetcher);
             SplitEmails splitterPipe = new SplitEmails(fetchMboxPipe);
             
             // Now create the pipe that's going to analyze the emails we get after splitting them up.

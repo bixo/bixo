@@ -188,10 +188,11 @@ SOFTWARE.
 	</target>
 
 	<target name="test-lr"
-			description="--> run unit tests that take a long time">
-			<antcall target="test">
-				<param name="longrunning" value="true" />
-			</antcall>
+        unless="skip.lr"
+		description="--> run unit tests that take a long time">
+		<antcall target="test">
+			<param name="longrunning" value="true" />
+		</antcall>
 	</target>
 
 	<!-- ================================================================== -->
@@ -363,7 +364,7 @@ SOFTWARE.
 	<!-- ================================================================== -->
 
 	<target name="install"
-			depends="test-all, mvn-install"
+			depends="test, test-lr, test-it, mvn-install"
 			description="--> install SNAPSHOT jar to local repository">
 	</target>
 	
