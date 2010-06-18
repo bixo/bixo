@@ -256,7 +256,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             while (!values.isEmpty()) {
                 PreFetchedDatum datum = values.nextOrNull(StatusCheck.RUDE);
                 List<ScoredUrlDatum> urls = datum.getUrls();
-                trace("Skipping %d urls from %s", urls.size(), datum.getGroupingRef());
+                trace("Skipping %d urls from %s (e.g. %s) ", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
                 skipUrls(datum.getUrls(), status, null);
             }
         }
