@@ -89,7 +89,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                         case EFFICIENT:
                             _queue.remove();
                             List<ScoredUrlDatum> urls = datum.getUrls();
-                            trace("Skipping %d urls from %s", urls.size(), datum.getGroupingRef());
+                            trace("Skipping %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
                             skipUrls(urls, UrlStatus.SKIPPED_INEFFICIENT, null);
                             break;
                     }
@@ -119,7 +119,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                             // In efficient fetching, we punt on items that aren't ready.
                             case EFFICIENT:
                                 List<ScoredUrlDatum> urls = datum.getUrls();
-                                trace("Skipping %d urls from %s", urls.size(), datum.getGroupingRef());
+                                trace("Skipping %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
                                 skipUrls(urls, UrlStatus.SKIPPED_INEFFICIENT, null);
                                 break;
                         }
@@ -256,7 +256,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             while (!values.isEmpty()) {
                 PreFetchedDatum datum = values.nextOrNull(StatusCheck.RUDE);
                 List<ScoredUrlDatum> urls = datum.getUrls();
-                trace("Skipping %d urls from %s", urls.size(), datum.getGroupingRef());
+                trace("Skipping %d urls from %s (e.g. %s) ", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
                 skipUrls(datum.getUrls(), status, null);
             }
         }
