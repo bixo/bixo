@@ -120,7 +120,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                             case EFFICIENT:
                                 List<ScoredUrlDatum> urls = datum.getUrls();
                                 trace("Skipping %d urls from %s", urls.size(), datum.getGroupingRef());
-                                skipUrls(urls, UrlStatus.SKIPPED_TIME_LIMIT, null);
+                                skipUrls(urls, UrlStatus.SKIPPED_INEFFICIENT, null);
                                 break;
                         }
                     }
