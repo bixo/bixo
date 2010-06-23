@@ -37,6 +37,13 @@ import bixo.fetcher.FetchRequest;
  */
 @SuppressWarnings("serial")
 public class FetcherPolicy implements Serializable {
+    
+    public enum FetcherMode {
+        EFFICIENT,          // Check, and skip batch of URLs if blocked by domain still active or pending
+        COMPLETE,           // Check, and queue up batch of URLs if not ready.
+        IMPOLITE            // Don't check, just go ahead and process.
+    }
+
     public static final int NO_MIN_RESPONSE_RATE = Integer.MIN_VALUE;
     public static final long NO_CRAWL_END_TIME = Long.MAX_VALUE;
     public static final int NO_REDIRECTS = 0;
@@ -65,7 +72,7 @@ public class FetcherPolicy implements Serializable {
     private String _acceptLanguage;    // What to pass for the Accept-Language request header
     private Set<String> _validMimeTypes;    // Set of mime-types that we'll accept, or null
     private int _maxRequestsPerConnection;  // Max # of URLs to request in any one connection
-    private boolean _skipBlockedUrls;       // Should we skip URLs when they back up for a domain?
+    private FetcherMode _fetcherMode;       // Should we skip URLs when they back up for a domain?
     
     public FetcherPolicy() {
         this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME, DEFAULT_CRAWL_DELAY, DEFAULT_MAX_REDIRECTS);
@@ -93,7 +100,7 @@ public class FetcherPolicy implements Serializable {
         _validMimeTypes = null;
         _maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
         _maxRequestsPerConnection = DEFAULT_MAX_REQUESTS_PER_CONNECTION;
-        _skipBlockedUrls = false;
+        _fetcherMode = FetcherMode.COMPLETE;
     }
 
     /**
@@ -233,12 +240,12 @@ public class FetcherPolicy implements Serializable {
         _validMimeTypes = validMimeTypes;
     }
     
-    public boolean isSkipBlockedUrls() {
-        return _skipBlockedUrls;
+    public FetcherMode getFetcherMode() {
+        return _fetcherMode;
     }
     
-    public void setSkipBlockedUrls(boolean skipBlockedUrls) {
-        _skipBlockedUrls = skipBlockedUrls;
+    public void setFetcherMode(FetcherMode mode) {
+        _fetcherMode = mode;
     }
     
     public FetchRequest getFetchRequest(long now, long crawlDelay, int maxUrls) {
