@@ -89,7 +89,7 @@ public class FetcherTest {
         System.setProperty("bixo.root.level", "TRACE");
 
         String workingFolder = "build/it/FetcherTest-testStaleConnection/working";
-        String inputPath = makeUrlDB(workingFolder, "src/it/resources/facebook-artists.txt");
+        String inputPath = makeUrlDB(workingFolder, "src/it/resources/apple-pages.txt");
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
         String outPath = "build/it/FetcherTest-testStaleConnection/out";
         Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath + "/content", true);
@@ -97,12 +97,9 @@ public class FetcherTest {
         
         Pipe pipe = new Pipe("urlSource");
 
-        // TODO KKr - to test this, we need to limit requests to one per batch (e.g. use the
-        // FakeUserFetcherPolicy). But that currently fails in FetchBuffer.operate(), because
-        // the next request comes in for the same domain (facebook) as the active rquest, so
-        // it immediately aborts it.
         UserAgent userAgent = new FirefoxUserAgent();
         FetcherPolicy fetcherPolicy = new FetcherPolicy();
+        fetcherPolicy.setMaxRequestsPerConnection(1);
         fetcherPolicy.setCrawlDelay(5 * 1000L);
         IHttpFetcher fetcher = new SimpleHttpFetcher(2, fetcherPolicy, userAgent);
         ScoreGenerator scorer = new FixedScoreGenerator();
