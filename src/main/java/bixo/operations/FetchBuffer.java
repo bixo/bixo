@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 import bixo.cascading.BixoFlowProcess;
 import bixo.cascading.LoggingFlowReporter;
 import bixo.cascading.NullContext;
+import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.PreFetchedDatum;
@@ -36,12 +37,6 @@ import cascading.tuple.TupleEntryCollector;
 public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<NullContext>, IFetchMgr {
     private static Logger LOGGER = Logger.getLogger(FetchBuffer.class);
 
-    private enum StatusCheck {
-        EFFICIENT,          // Check, and skip batch of URLs if blocked by domain still active or pending
-        POLITE,             // Check, and queue up batch of URLs if not ready.
-        RUDE                // Don't check, just go ahead and process.
-    }
-
     private class QueuedValues {
         private static final int MAX_ELEMENTS_IN_MEMORY = 1000;
         
@@ -57,7 +52,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             return _queue.isEmpty() && !_values.hasNext();
         }
         
-        public PreFetchedDatum nextOrNull(StatusCheck mode) {
+        public PreFetchedDatum nextOrNull(FetcherMode mode) {
             
             // Loop until we have something to return, or there's nothing that we can return.
             while (true) {
@@ -77,11 +72,11 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 // We have a datum from the queue, but it's not ready to be returned.
                 if (datum != null) {
                     switch (mode) {
-                        case POLITE:
+                        case COMPLETE:
                             trace("Ignoring top queue item %s (domain still active or pending)", datum.getGroupingRef());
                             break;
 
-                        case RUDE:
+                        case IMPOLITE:
                             _queue.remove();
                             return datum;
                             
@@ -108,12 +103,12 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
 
                     if (datum != null) {
                         switch (mode) {
-                            case POLITE:
+                            case COMPLETE:
                                 trace("Queuing next iter item %s (domain still active or pending)", datum.getGroupingRef());
                                 _queue.add(datum);
                                 break;
 
-                            case RUDE:
+                            case IMPOLITE:
                                 return datum;
                                 
                             // In efficient fetching, we punt on items that aren't ready.
@@ -150,7 +145,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
 
     private IHttpFetcher _fetcher;
     private long _crawlEndTime;
-    private boolean _efficientFetching;
+    private FetcherMode _fetcherMode;
     private final Fields _metaDataFields;
 
     private transient ThreadedExecutor _executor;
@@ -168,7 +163,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
 
         _fetcher = fetcher;
         _crawlEndTime = crawlEndTime;
-        _efficientFetching = _fetcher.getFetcherPolicy().isSkipBlockedUrls();
+        _fetcherMode = _fetcher.getFetcherPolicy().getFetcherMode();
         _metaDataFields = metaDataFields;
     }
 
@@ -203,7 +198,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         // Each value is a PreFetchedDatum that contains a set of URLs to fetch in one request from
         // a single server, plus other values needed to set state properly.
         while (!Thread.interrupted() && (System.currentTimeMillis() < _crawlEndTime) && !values.isEmpty()) {
-            PreFetchedDatum datum = values.nextOrNull(_efficientFetching ? StatusCheck.EFFICIENT : StatusCheck.POLITE);
+            PreFetchedDatum datum = values.nextOrNull(_fetcherMode);
             
             try {
                 if (datum == null) {
@@ -254,7 +249,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             UrlStatus status = Thread.interrupted() ? UrlStatus.SKIPPED_INTERRUPTED : UrlStatus.SKIPPED_TIME_LIMIT;
             
             while (!values.isEmpty()) {
-                PreFetchedDatum datum = values.nextOrNull(StatusCheck.RUDE);
+                PreFetchedDatum datum = values.nextOrNull(FetcherMode.IMPOLITE);
                 List<ScoredUrlDatum> urls = datum.getUrls();
                 trace("Skipping %d urls from %s (e.g. %s) ", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
                 skipUrls(datum.getUrls(), status, null);
