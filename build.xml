@@ -225,7 +225,7 @@ SOFTWARE.
 
 	<target name="test-it"
         	unless="skip.it"
-	        depends="jar, compile-integration-test"
+	        depends="compile, compile-test, compile-integration-test"
 	        description="--> run integration tests">
 		<delete dir="${build.dir.it-reports}" />
 		<mkdir dir="${build.dir.it-reports}" />
@@ -260,26 +260,19 @@ SOFTWARE.
 
 
 	<!-- ================================================================== -->
-	<!-- Build jar with all dependent libraries                             -->
+	<!-- Build jar                                                          -->
 	<!-- ================================================================== -->
 
-	<target name="jar" depends="compile">
+	<target name="jar"
+	        depends="test-all"
+	        description="--> create the bixo-core jar with no dependencies">
 
 		<tstamp>
 			<format property="timestamp" pattern="MMM dd yyyy, HH:mm:ss" />
 		</tstamp>
 
-		<!-- copy any 3rd party libs -->
-		<delete dir="${build.dir}/lib" />
-		<copy todir="${build.dir}/lib" flatten="true">
-			<path refId="compile.classpath" />
-			<path refId="runtime.classpath" />
-		</copy>
-
 		<jar jarfile="${build.dir}/${jar.name}"
 		     basedir="${build.dir.main-classes}">
-			
-			<fileset dir="${build.dir}" includes="lib/" />
 
 			<manifest>
 				<section name="bixo">
@@ -296,7 +289,6 @@ SOFTWARE.
 				</section>
 			</manifest>
 		</jar>
-		
 
 	</target>
 
@@ -330,7 +322,7 @@ SOFTWARE.
 	<!-- ================================================================== -->
 
 	<target name="job"
-	        depends="compile"
+	        depends="test-all"
 	        description="--> create a Hadoop ready jar with all dependencies">
 
 		<!-- Always clear out lib, since we have a different set of libraries for the job jar -->
@@ -351,21 +343,21 @@ SOFTWARE.
 
 
 	<!-- ================================================================== -->
+	<!-- Install in local Maven repository									-->
+	<!-- ================================================================== -->
+
+	<target name="install"
+			depends="jar, test-all, mvn-install"
+			description="--> install SNAPSHOT jar to local repository">
+	</target>
+	
+	<!-- ================================================================== -->
 	<!-- Deploy to Maven repo                                               -->
 	<!-- ================================================================== -->
 
 	<target name="deploy"
 			depends="test-all, mvn-deploy"
 			description="--> deploy SNAPSHOT jar to 101tec Nexus repository">
-	</target>
-	
-	<!-- ================================================================== -->
-	<!-- Install in local Maven repository									-->
-	<!-- ================================================================== -->
-
-	<target name="install"
-			depends="test, test-lr, test-it, mvn-install"
-			description="--> install SNAPSHOT jar to local repository">
 	</target>
 	
 	<!-- ================================================================== -->
@@ -525,6 +517,7 @@ SOFTWARE.
 	<!-- ================================================================== -->
 	<!-- Contrib targets                                         			-->
 	<!-- ================================================================== -->
+	
 	<target name="compile-contrib"
 	        description="--> compile contrib examples">
 		<subant target="compile">
