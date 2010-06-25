@@ -279,8 +279,6 @@ SOFTWARE.
 		<jar jarfile="${build.dir}/${jar.name}"
 		     basedir="${build.dir.main-classes}">
 			
-			<fileset dir="${build.dir}" includes="lib/" />
-
 			<manifest>
 				<section name="bixo">
 					<attribute name="Implementation-Vendor"
@@ -331,7 +329,7 @@ SOFTWARE.
 
 	<target name="job"
 	        depends="compile"
-	        description="--> create a Hadoop ready jar with all dependencies">
+	        description="--> create a Hadoop ready jar including all libraries we depend on">
 
 		<!-- Always clear out lib, since we have a different set of libraries for the job jar -->
 		<delete dir="${build.dir}/lib" />
@@ -356,7 +354,7 @@ SOFTWARE.
 
 	<target name="deploy"
 			depends="test-all, mvn-deploy"
-			description="--> deploy SNAPSHOT jar to 101tec Nexus repository">
+			description="--> deploy SNAPSHOT jar to shared repository">
 	</target>
 	
 	<!-- ================================================================== -->
