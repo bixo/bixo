@@ -61,7 +61,7 @@
         
 		<dependency>
             <groupId>cascading</groupId>
-            <artifactId>cascading-jdbc</artifactId>
+            <artifactId>cascading-11-jdbc</artifactId>
             <version>0.0.4</version>
         </dependency>
 
@@ -169,7 +169,7 @@
             <groupId>commons-httpclient</groupId>
             <artifactId>commons-httpclient</artifactId>
             <version>3.1</version>
-            <scope>runtime</scope>
+            <scope>test</scope>
         </dependency>
  		 
 		<dependency>
@@ -225,16 +225,17 @@
 				<artifactId>lucene-core</artifactId>
 				<version>2.4.1</version>
 			</dependency>
+			
 			<dependency>
 				<groupId>cascading</groupId>
 				<artifactId>cascading-core</artifactId>
 				<version>1.1.1</version>
 			</dependency>
+			
 			<dependency>
 				<groupId>cascading</groupId>
 				<artifactId>cascading-test</artifactId>
 				<version>1.1.1</version>
-				<scope>test</scope>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

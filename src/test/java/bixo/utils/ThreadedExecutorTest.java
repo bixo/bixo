@@ -45,7 +45,10 @@ public class ThreadedExecutorTest {
                 Runnable cmd = new Runnable() {
                     public void run() {
                         try {
-                            Thread.sleep(timeoutInMS - 1);
+                            // Sleep for a bit less than the max timeout, which means the
+                            // first <numThreads> requests will queue up, and the third
+                            // one will wait until one of those two frees up.
+                            Thread.sleep(timeoutInMS - 2);
                         } catch (InterruptedException e) {
                             // Terminate the run
                         }

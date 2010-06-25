@@ -67,6 +67,14 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
         int targetSize = 0;
 
         List<ScoredUrlDatum> urls = new LinkedList<ScoredUrlDatum>();
+        
+        // TODO KKr - if we have a crawl duration, use it here to figure out how many URLs we
+        // could process. Read in up to that many URLs and put in a DiskQueue, so we have a count, then
+        // calculate a new crawlDelay that's (remaining time)/<num urls>, and use that in our loop.
+        // This will do a better job of spreading URLs out, because when we sort by target time
+        // the URLs from small domains will be better mingled with URLs from big domains. And this
+        // in turn will improve fetch efficiency or reduce the number of URLs we wind up skipping.
+        
         while (values.hasNext()) {
             if (targetSize == 0) {
                 // Figure out the max # of URLs that we would want to get.
