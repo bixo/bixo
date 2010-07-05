@@ -15,7 +15,8 @@ public class SimpleCrawlToolOptions {
     private String _outputDir;
     private String _agentName;
     private String _domain;
-
+    private String _dbLocation = null;
+    
     private int _crawlDuration = NO_CRAWL_DURATION;
     private int _maxThreads = DEFAULT_MAX_THREADS;
     private int _numLoops = DEFAULT_NUM_LOOPS;
@@ -61,6 +62,11 @@ public class SimpleCrawlToolOptions {
         _crawlDuration = crawlDuration;
     }
 
+    @Option(name = "-persist", usage = "location where the db will be persisted", required = false)
+    public void setDbLocation(String dbLocation) {
+        _dbLocation = dbLocation;
+    }
+
     public String getOutputDir() {
         return _outputDir;
     }
@@ -93,6 +99,10 @@ public class SimpleCrawlToolOptions {
         return _loggingAppender;
     }
 
+    public String getDbLocation() {
+        return _dbLocation;
+    }
+    
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
