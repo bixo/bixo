@@ -37,7 +37,7 @@ public class SimpleUrlNormalizer implements IUrlNormalizer {
     private static final Pattern DEFAULT_PAGE_PATTERN = Pattern.compile("/((?i)index|default)\\.((?i)js[pf]{1}?[afx]?|cgi|cfm|asp[x]?|[psx]?htm[l]?|php[3456]?)(\\?|&|#|$)");
     
     // Remove things that look like session ids from the query portion of a URL.
-    private static final Pattern SESSION_ID_PATTERN = Pattern.compile("([;_]?((?i)l|j|bv_)?((?i)sid|phpsessid|sessionid)=.*?)(\\?|&|#|$)");
+    private static final Pattern SESSION_ID_PATTERN = Pattern.compile("([;_]?((?i)l|j|bv_)?((?i)sid|phpsessid|sessionid|session_id)=.*?)(\\?|&|#|$)");
     
     private boolean _treatRefAsQuery;
     
@@ -132,28 +132,6 @@ public class SimpleUrlNormalizer implements IUrlNormalizer {
     }
     
     
-    @SuppressWarnings("unused")
-	private boolean isIPAddress(String paidLevelDomain) {
-        // FUTURE - Handle ipV6 addresses.
-        String[] pieces = paidLevelDomain.split("\\.");
-        if (pieces.length != 4) {
-            return false;
-        }
-        
-        for (String octet : pieces) {
-            try {
-                int value = Integer.parseInt(octet);
-                if ((value < 0) || (value > 255)) {
-                    return false;
-                }
-            } catch (NumberFormatException e) {
-                return false;
-            }
-        }
-        
-        return true;
-    }
-
     // Now we get to re-encode the path and query portions of the URL, but we have
     // to split up the path as otherwise '/' => %2F.
     public String normalizePath(String path) {

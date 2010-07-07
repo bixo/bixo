@@ -76,8 +76,8 @@ public class SimpleParser implements IParser {
     private static final long MAX_PARSE_DURATION = 30;
     
     private boolean _extractLanguage = true;
-    private BaseContentExtractor _contentExtractor;
-    private BaseLinkExtractor _linkExtractor;
+    protected BaseContentExtractor _contentExtractor;
+    protected BaseLinkExtractor _linkExtractor;
     private transient AutoDetectParser _parser;
     
     public SimpleParser() {
@@ -89,7 +89,7 @@ public class SimpleParser implements IParser {
         _linkExtractor = linkExtractor;
     }
     
-    private synchronized void init() {
+    protected synchronized void init() {
         if (_parser == null) {
             _parser = new AutoDetectParser();
         }
@@ -118,9 +118,9 @@ public class SimpleParser implements IParser {
         Metadata metadata = new Metadata();
         metadata.add(Metadata.RESOURCE_NAME_KEY, fetchedDatum.getBaseUrl());
         metadata.add(Metadata.CONTENT_TYPE, fetchedDatum.getContentType());
-        metadata.add(Metadata.CONTENT_ENCODING, getCharset(fetchedDatum));
-        String lang = fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_LANGUAGE);
-        metadata.add(Metadata.CONTENT_LANGUAGE, lang);
+        String charset = getCharset(fetchedDatum);
+        metadata.add(Metadata.CONTENT_ENCODING, charset);
+        metadata.add(Metadata.CONTENT_LANGUAGE, getLanguage(fetchedDatum, charset));
         
         InputStream is = new ByteArrayInputStream(fetchedDatum.getContentBytes());
 
@@ -141,7 +141,7 @@ public class SimpleParser implements IParser {
         }
     }
 
-    private URL getContentLocation(FetchedDatum fetchedDatum) throws MalformedURLException {
+    protected URL getContentLocation(FetchedDatum fetchedDatum) throws MalformedURLException {
 		URL baseUrl = new URL(fetchedDatum.getFetchedUrl());
 		
 		// See if we have a content location from the HTTP headers that we should use as
@@ -164,13 +164,24 @@ public class SimpleParser implements IParser {
      * @param datum
      * @return charset in response headers, or null
      */
-    private String getCharset(FetchedDatum datum) {
+    protected String getCharset(FetchedDatum datum) {
         String result = CharsetUtils.clean(datum.getHeaders().getFirst(IHttpHeaders.CONTENT_ENCODING));
         if (result == null) {
             result = CharsetUtils.clean(HttpUtils.getCharsetFromContentType(datum.getContentType()));
         }
         
         return result;
+    }
+
+    /**
+     * Extract language from (first) explicit header
+     * 
+     * @param fetchedDatum
+     * @param charset 
+     * @return first language in response headers, or null
+     */
+    protected String getLanguage(FetchedDatum fetchedDatum, String charset) {
+        return fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_LANGUAGE);
     }
 
 }
