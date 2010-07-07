@@ -57,6 +57,7 @@ public class DomainNames {
 
     private static final Pattern IPV4_ADDRESS_PATTERN = Pattern.compile("(?:\\d{1,3}\\.){3}\\d{1,3}");
 
+    // TODO CSc Rename this getDomainPld?
     /**
      * Extract the PLD (paid-level domain) from the hostname. If the format isn't recognized,
      * the original hostname is returned.
@@ -64,7 +65,6 @@ public class DomainNames {
      * @param hostname - hostname from URL, e.g. www.domain.com.it
      * @return - PLD, e.g. domain.com.it
      */
-
     public static String getPLD(String hostname) {
         // First, check for weird [HHHH:HH::H] IPv6 format.
         if (hostname.startsWith("[") && hostname.endsWith("]")) {
@@ -126,13 +126,13 @@ public class DomainNames {
     } // getPLD
 
 
+    // TODO CSc Rename this getUrlPld (or getURLPld)? Add a getUrlStringPld?
     /**
      * Extract the PLD (paid-level domain) from the URL.
      * 
      * @param url - Valid URL, e.g. http://www.domain.com.it
      * @return - PLD e.g. domain.com.it
      */
-
     public static String getPLD(URL url) {
         return getPLD(url.getHost());
     } // getPLD

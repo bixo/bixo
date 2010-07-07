@@ -264,7 +264,7 @@ SOFTWARE.
 	<!-- ================================================================== -->
 
 	<target name="jar"
-	        depends="test-all"
+	        depends="test, test-lr, test-it"
 	        description="--> create the bixo-core jar with no dependencies">
 
 		<tstamp>
@@ -273,7 +273,6 @@ SOFTWARE.
 
 		<jar jarfile="${build.dir}/${jar.name}"
 		     basedir="${build.dir.main-classes}">
-
 			<manifest>
 				<section name="bixo">
 					<attribute name="Implementation-Vendor"
@@ -322,8 +321,8 @@ SOFTWARE.
 	<!-- ================================================================== -->
 
 	<target name="job"
-	        depends="test-all"
-	        description="--> create a Hadoop ready jar with all dependencies">
+	        depends="test, test-lr, test-it"
+	        description="--> create a Hadoop ready jar including all libraries we depend on">
 
 		<!-- Always clear out lib, since we have a different set of libraries for the job jar -->
 		<delete dir="${build.dir}/lib" />
@@ -347,7 +346,7 @@ SOFTWARE.
 	<!-- ================================================================== -->
 
 	<target name="install"
-			depends="jar, test-all, mvn-install"
+			depends="jar, mvn-install"
 			description="--> install SNAPSHOT jar to local repository">
 	</target>
 	
@@ -356,8 +355,8 @@ SOFTWARE.
 	<!-- ================================================================== -->
 
 	<target name="deploy"
-			depends="test-all, mvn-deploy"
-			description="--> deploy SNAPSHOT jar to 101tec Nexus repository">
+			depends="install, test-contrib, mvn-deploy"
+			description="--> deploy SNAPSHOT jar to shared repository">
 	</target>
 	
 	<!-- ================================================================== -->
