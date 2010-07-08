@@ -101,4 +101,9 @@ public class DomainNamesTest extends TestCase {
         assertTrue(DomainNames.isUrlWithinDomain("http://subsubdomain.subdomain.domain.com", "subdomain.domain.com"));
         assertTrue(DomainNames.isUrlWithinDomain("http://subsubdomain.subdomain.domain.com", "domain.com"));
     }
+    
+    public final void testIsIpAddress() {
+        assertTrue(DomainNames.isIPAddress("222.177.24.54"));
+        assertFalse(DomainNames.isIPAddress("163.com"));
+    }
 }

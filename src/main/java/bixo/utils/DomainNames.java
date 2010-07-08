@@ -190,4 +190,31 @@ public class DomainNames {
         return false;
     }
     
+    /**
+     * Check whether this paid level domain is just a naked IP address.
+     * 
+     * @param paidLevelDomain
+     * @return true iff paidLevelDomain is a naked IP address
+     */
+    public static boolean isIPAddress(String paidLevelDomain) {
+        // FUTURE - Handle ipV6 addresses.
+        String[] pieces = paidLevelDomain.split("\\.");
+        if (pieces.length != 4) {
+            return false;
+        }
+        
+        for (String octet : pieces) {
+            try {
+                int value = Integer.parseInt(octet);
+                if ((value < 0) || (value > 255)) {
+                    return false;
+                }
+            } catch (NumberFormatException e) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
 } // DomainNames
