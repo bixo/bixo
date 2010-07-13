@@ -41,6 +41,7 @@ public class FetchedDatum extends BaseDatum {
     private String _contentType;
     private int _responseRate;
     private int _numRedirects;
+    private String _hostAddress;
     private HttpHeaders _headers;
 
     @SuppressWarnings("unchecked")
@@ -160,6 +161,14 @@ public class FetchedDatum extends BaseDatum {
 
     public void setNumRedirects(int numRedirects) {
         _numRedirects = numRedirects;
+    }
+
+    public String getHostAddress() {
+        return _hostAddress;
+    }
+
+    public void setHostAddress(String hostAddress) {
+        _hostAddress = hostAddress;
     }
 
     public HttpHeaders getHeaders() {

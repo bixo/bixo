@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -46,8 +47,11 @@ import org.apache.hadoop.io.BytesWritable;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpInetConnection;
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
@@ -133,6 +137,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     // Keys used to access data in the Http execution context.
 	private static final String PERM_REDIRECT_CONTEXT_KEY = "perm-redirect";
 	private static final String REDIRECT_COUNT_CONTEXT_KEY = "redirect-count";
+	private static final String HOST_ADDRESS = "host-address";
 
     private static final String SSL_CONTEXT_NAMES[] = {
         "TLS",
@@ -212,6 +217,25 @@ public class SimpleHttpFetcher implements IHttpFetcher {
 
     	    return result;
     	}
+    }
+    
+    /**
+     * Interceptor to record host address in context.
+     *
+     */
+    private static class MyRequestInterceptor implements HttpRequestInterceptor {
+
+        @Override
+        public void process(HttpRequest request,
+                            HttpContext context)
+            throws HttpException, IOException {
+            
+            HttpInetConnection connection
+                = (HttpInetConnection)(context.getAttribute(ExecutionContext.HTTP_CONNECTION));
+            
+            context.setAttribute(   HOST_ADDRESS,
+                                    connection.getLocalAddress().getHostAddress());
+        }
     }
     
     private static class DummyX509HostnameVerifier extends AbstractVerifier {
@@ -314,10 +338,11 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         _maxRetryCount = maxRetryCount;
     }
     
-    private static FetchedDatum convert(FetchedResult result){
+    private static FetchedDatum convert(FetchedResult result) {
     	FetchedDatum datum = new FetchedDatum(result.getBaseUrl(),result.getFetchedUrl(),result.getFetchTime(),result.getHeaders(), new BytesWritable(result.getContent()),result.getContentType(),result.getResponseRate(),result.getMetaDataMap());
     	datum.setNewBaseUrl(result.getNewBaseUrl());
     	datum.setNumRedirects(result.getNumRedirects());
+    	datum.setHostAddress(result.getHostAddress());
     	return datum;
     }
 
@@ -401,6 +426,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         int numRedirects = 0;
         boolean needAbort = true;
         String contentType = "";
+        String hostAddress = null;
         
         // Create a local instance of cookie store, and bind to local context
         // Without this we get killed w/lots of threads, due to sync() on single cookie store.
@@ -435,6 +461,11 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             Integer redirects = (Integer)localContext.getAttribute(REDIRECT_COUNT_CONTEXT_KEY);
             if (redirects != null) {
                 numRedirects = redirects.intValue();
+            }
+            
+            hostAddress = (String)(localContext.getAttribute(HOST_ADDRESS));
+            if (hostAddress == null) {
+                throw new UrlFetchException(url, "Host address not saved in context");
             }
 
             Header cth = response.getFirstHeader(IHttpHeaders.CONTENT_TYPE);
@@ -564,8 +595,17 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             }
         }
 
-        return new FetchedResult(url, redirectedUrl, System.currentTimeMillis(), 
-        		                                 headerMap, content, contentType, (int)readRate, metaData,newBaseUrl,numRedirects);
+        return new FetchedResult(   url,
+                                    redirectedUrl,
+                                    System.currentTimeMillis(), 
+                                    headerMap,
+                                    content,
+                                    contentType,
+                                    (int)readRate,
+                                    metaData,
+                                    newBaseUrl,
+                                    numRedirects,
+                                    hostAddress);
     }
     
     private String extractRedirectedUrl(String url, HttpContext localContext) {
@@ -673,6 +713,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             _httpClient = new DefaultHttpClient(cm, params);
             _httpClient.setHttpRequestRetryHandler(new MyRequestRetryHandler(_maxRetryCount));
             _httpClient.setRedirectHandler(new MyRedirectHandler());
+            _httpClient.addRequestInterceptor(new MyRequestInterceptor());
             
             params = _httpClient.getParams();
             // FUTURE KKr - support authentication
