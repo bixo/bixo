@@ -1,5 +1,7 @@
 package bixo.operations;
 
+import org.apache.log4j.Logger;
+
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.util.IGroupingKeyGenerator;
@@ -12,6 +14,7 @@ import cascading.tuple.Tuple;
 
 @SuppressWarnings({ "serial", "unchecked" })
 public class GroupFunction extends BaseOperation implements Function {
+    private static final Logger LOGGER = Logger.getLogger(GroupFunction.class);
 
     private final IGroupingKeyGenerator _generator;
     private final Fields _metaDataFieldNames;
@@ -25,8 +28,13 @@ public class GroupFunction extends BaseOperation implements Function {
 
     @Override
     public void operate(FlowProcess process, FunctionCall funCall) {
-        String key = _generator.getGroupingKey(new UrlDatum(funCall.getArguments().getTuple(), _metaDataFieldNames));
-        funCall.getOutputCollector().add(new Tuple(key));
+        String key;
+        try {
+            key = _generator.getGroupingKey(new UrlDatum(funCall.getArguments().getTuple(), _metaDataFieldNames));
+            funCall.getOutputCollector().add(new Tuple(key));
+        } catch (Exception e) {
+            LOGGER.error("Unexpected exception while grouping URL (probably badly formed)", e);
+        }
     }
 
 }

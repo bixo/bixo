@@ -61,7 +61,8 @@ public class SimpleUrlNormalizer implements IUrlNormalizer {
             
             return result.toString();
         } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Unexpected exception during URL encoding", e);
+            LOGGER.error("Unexpected exception during URL encoding: " + e);
+            return "";
         }
 
     }
@@ -110,7 +111,8 @@ public class SimpleUrlNormalizer implements IUrlNormalizer {
         try {
             return URLDecoder.decode(url, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Unexpected exception during URL decoding", e);
+            LOGGER.error("Unexpected exception during URL decoding: " + e);
+            return url;
         }
     }
 
@@ -238,7 +240,7 @@ public class SimpleUrlNormalizer implements IUrlNormalizer {
         } catch (MalformedURLException e) {
             // Not a valid URL we know about, so in this case we're just going to
             // return it as-is, other than the stripping we did.
-            LOGGER.trace("Malformed URL being returned without further processing: " + result);
+            LOGGER.debug("Malformed URL being returned without further processing: " + result);
             return result;
         }
         
@@ -284,7 +286,8 @@ public class SimpleUrlNormalizer implements IUrlNormalizer {
         try {
             testUrl = new URL(protocol, hostname, port, path + query + anchor);
         } catch (MalformedURLException e) {
-            throw new RuntimeException("Unexpected exception during normalization", e);
+            LOGGER.error("Unexpected exception during normalization: " + e);
+            return result;
         }
         
         return testUrl.toExternalForm();
