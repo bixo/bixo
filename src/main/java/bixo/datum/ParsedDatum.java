@@ -12,6 +12,7 @@ import cascading.tuple.TupleEntry;
 @SuppressWarnings("serial")
 public class ParsedDatum extends BaseDatum {
     private String _url;
+    private String _hostAddress;
     private String _parsedText;
     private String _language;
     private String _title;
@@ -26,10 +27,11 @@ public class ParsedDatum extends BaseDatum {
     }
     
     @SuppressWarnings("unchecked")
-    public ParsedDatum(String url, String parsedText, String language, String title, Outlink[] outlinks, Map<String, String> parsedMeta, Map<String, Comparable> metaData) {
+    public ParsedDatum(String url, String hostAddress, String parsedText, String language, String title, Outlink[] outlinks, Map<String, String> parsedMeta, Map<String, Comparable> metaData) {
         super(metaData);
         
         _url = url;
+        _hostAddress = hostAddress;
         _parsedText = parsedText;
         _language = language;
         _title = title;
@@ -43,6 +45,14 @@ public class ParsedDatum extends BaseDatum {
 
     public void setUrl(String url) {
         _url = url;
+    }
+
+    public String getHostAddress() {
+        return _hostAddress;
+    }
+
+    public void setHostAddress(String hostAddress) {
+        _hostAddress = hostAddress;
     }
 
     public String getParsedText() {
@@ -91,19 +101,21 @@ public class ParsedDatum extends BaseDatum {
 
     // Cascading field names that correspond to the datum fields.
     public static final String URL_FIELD = fieldName(ParsedDatum.class, "url");
+    public static final String HOST_ADDRESS_FIELD = fieldName(ParsedDatum.class, "hostAddress");
     public static final String PARSED_TEXT_FIELD = fieldName(ParsedDatum.class, "parsedText");
     public static final String LANGUAGE_FIELD = fieldName(ParsedDatum.class, "language");
     public static final String TITLE_FIELD = fieldName(ParsedDatum.class, "title");
     public static final String OUTLINKS_FIELD = fieldName(ParsedDatum.class, "outLinks");
     public static final String PARSED_META_FIELD = fieldName(ParsedDatum.class, "parsedMeta");
 
-    public static final Fields FIELDS = new Fields(URL_FIELD, PARSED_TEXT_FIELD, LANGUAGE_FIELD, TITLE_FIELD, OUTLINKS_FIELD, PARSED_META_FIELD);
+    public static final Fields FIELDS = new Fields(URL_FIELD, HOST_ADDRESS_FIELD, PARSED_TEXT_FIELD, LANGUAGE_FIELD, TITLE_FIELD, OUTLINKS_FIELD, PARSED_META_FIELD);
 
     public ParsedDatum(Tuple tuple, Fields metaDataFields) {
         super(tuple, metaDataFields);
         
         TupleEntry entry = new TupleEntry(getStandardFields(), tuple);
         _url = entry.getString(URL_FIELD);
+        _hostAddress = entry.getString(HOST_ADDRESS_FIELD);
         _parsedText = entry.getString(PARSED_TEXT_FIELD);
         _language = entry.getString(LANGUAGE_FIELD);
         _title = entry.getString(TITLE_FIELD);
@@ -119,7 +131,7 @@ public class ParsedDatum extends BaseDatum {
     @SuppressWarnings("unchecked")
     @Override
     protected Comparable[] getStandardValues() {
-        return new Comparable[] { _url, _parsedText, _language, _title, convertOutlinksToTuple(_outlinks), convertMapToTuple(_parsedMeta) };
+        return new Comparable[] { _url, _hostAddress, _parsedText, _language, _title, convertOutlinksToTuple(_outlinks), convertMapToTuple(_parsedMeta) };
     }
 
     private Tuple convertOutlinksToTuple(Outlink[] outLinks) {

@@ -143,7 +143,7 @@ public class FetchPipe extends SubAssembly {
             if (result instanceof String) {
                 UrlStatus urlStatus = UrlStatus.valueOf((String)result);
                 if (urlStatus == UrlStatus.FETCHED) {
-                    status = new StatusDatum(fd.getBaseUrl(), fd.getHeaders(), fd.getMetaDataMap());
+                    status = new StatusDatum(fd.getBaseUrl(), fd.getHeaders(), fd.getHostAddress(), fd.getMetaDataMap());
                 } else {
                     status = new StatusDatum(fd.getBaseUrl(), urlStatus, fd.getMetaDataMap());
                 }

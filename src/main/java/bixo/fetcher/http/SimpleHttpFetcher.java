@@ -26,7 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -234,7 +233,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
                 = (HttpInetConnection)(context.getAttribute(ExecutionContext.HTTP_CONNECTION));
             
             context.setAttribute(   HOST_ADDRESS,
-                                    connection.getLocalAddress().getHostAddress());
+                                    connection.getRemoteAddress().getHostAddress());
         }
     }
     
@@ -397,10 +396,12 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         }
     }
     
+    @SuppressWarnings("unchecked")
     public FetchedResult fetch(String url) throws BaseFetchException{
     	return fetch(new HttpGet(),url,new HashMap<String,Comparable>());
     }
     
+    @SuppressWarnings("unchecked")
     public FetchedResult fetch(HttpRequestBase request,String url,Map<String,Comparable> metaData) throws BaseFetchException{
         init();
         
