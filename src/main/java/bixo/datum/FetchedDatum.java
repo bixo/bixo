@@ -41,6 +41,7 @@ public class FetchedDatum extends BaseDatum {
     private String _contentType;
     private int _responseRate;
     private int _numRedirects;
+    private String _hostAddress;
     private HttpHeaders _headers;
 
     @SuppressWarnings("unchecked")
@@ -162,6 +163,14 @@ public class FetchedDatum extends BaseDatum {
         _numRedirects = numRedirects;
     }
 
+    public String getHostAddress() {
+        return _hostAddress;
+    }
+
+    public void setHostAddress(String hostAddress) {
+        _hostAddress = hostAddress;
+    }
+
     public HttpHeaders getHeaders() {
         return _headers;
     }
@@ -205,11 +214,13 @@ public class FetchedDatum extends BaseDatum {
     public static final String CONTENT_TYPE_FIELD = fieldName(FetchedDatum.class, "contentType");
     public static final String RESPONSE_RATE_FIELD = fieldName(FetchedDatum.class, "responseRate");
     public static final String NUM_REDIRECTS_FIELD = fieldName(FetchedDatum.class, "numRedirects");
+    public static final String HOST_ADDRESS_FIELD = fieldName(FetchedDatum.class, "hostAddress");
     public static final String HTTP_HEADERS_FIELD = fieldName(FetchedDatum.class, "httpHeaders");
 
     public static final Fields FIELDS = new Fields(BASE_URL_FIELD, NEW_BASE_URL_FIELD,
                     FETCHED_URL_FIELD, FETCH_TIME_FIELD, CONTENT_FIELD, CONTENT_TYPE_FIELD,
-                    RESPONSE_RATE_FIELD, NUM_REDIRECTS_FIELD, HTTP_HEADERS_FIELD);
+                    RESPONSE_RATE_FIELD, NUM_REDIRECTS_FIELD, HOST_ADDRESS_FIELD,
+                    HTTP_HEADERS_FIELD);
 
     public FetchedDatum(Tuple tuple, Fields metaDataFields) {
         super(tuple, metaDataFields);
@@ -230,6 +241,7 @@ public class FetchedDatum extends BaseDatum {
         _contentType = entry.getString(CONTENT_TYPE_FIELD);
         _responseRate = entry.getInteger(RESPONSE_RATE_FIELD);
         _numRedirects = entry.getInteger(NUM_REDIRECTS_FIELD);
+        _hostAddress = entry.getString(HOST_ADDRESS_FIELD);
         _headers = new HttpHeaders((Tuple)entry.get(HTTP_HEADERS_FIELD));
     }
 
@@ -242,7 +254,7 @@ public class FetchedDatum extends BaseDatum {
     @Override
     protected Comparable[] getStandardValues() {
         return new Comparable[] { _baseUrl, _newBaseUrl, _fetchedUrl, _fetchTime, _content,
-                        _contentType, _responseRate, _numRedirects, _headers.toTuple() };
+                        _contentType, _responseRate, _numRedirects, _hostAddress, _headers.toTuple() };
     }
 
 }

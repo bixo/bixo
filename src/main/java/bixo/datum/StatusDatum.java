@@ -37,27 +37,29 @@ public class StatusDatum extends BaseDatum {
     private HttpHeaders _headers;
     private BaseFetchException _exception;
     private long _statusTime;
+    private String _hostAddress;
     
     /**
      * Constructor for creating StatusDatum for a URL that was fetched successfully.
      * 
      * @param url URL that we fetched.
      * @param headers Headers returned by server.
+     * @param hostAddress Host IP address of server.
      * @param metaData User-provided meta-data.
      */
-    public StatusDatum(String url, HttpHeaders headers, Map<String, Comparable> metaData) {
-        this(url, UrlStatus.FETCHED, headers, null, System.currentTimeMillis(), metaData);
+    public StatusDatum(String url, HttpHeaders headers, String hostAddress, Map<String, Comparable> metaData) {
+        this(url, UrlStatus.FETCHED, headers, null, System.currentTimeMillis(), hostAddress, metaData);
     }
     
     public StatusDatum(String url, BaseFetchException e, Map<String, Comparable> metaData) {
-        this(url, e.mapToUrlStatus(), null, e, System.currentTimeMillis(), metaData);
+        this(url, e.mapToUrlStatus(), null, e, System.currentTimeMillis(), null, metaData);
     }
     
     public StatusDatum(String url, UrlStatus status, Map<String, Comparable> metaData) {
-        this(url, status, null, null, System.currentTimeMillis(), metaData);
+        this(url, status, null, null, System.currentTimeMillis(), null, metaData);
     }
     
-    public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BaseFetchException e, long statusTime, Map<String, Comparable> metaData) {
+    public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BaseFetchException e, long statusTime, String hostAddress, Map<String, Comparable> metaData) {
         super(metaData);
         
         _url = url;
@@ -65,6 +67,7 @@ public class StatusDatum extends BaseDatum {
         _headers = headers;
         _exception = e;
         _statusTime = statusTime;
+        _hostAddress = hostAddress;
     }
 
     public String getUrl() {
@@ -87,6 +90,10 @@ public class StatusDatum extends BaseDatum {
         return _statusTime;
     }
     
+    public String getHostAddress() {
+        return _hostAddress;
+    }
+
     // ======================================================================================
     // Below here is all Cascading-specific implementation
     // ======================================================================================
@@ -97,8 +104,9 @@ public class StatusDatum extends BaseDatum {
     public static final String HEADERS_FIELD = fieldName(StatusDatum.class, "headers");
     public static final String EXCEPTION_FIELD = fieldName(StatusDatum.class, "exception");
     public static final String STATUS_TIME_FIELD = fieldName(StatusDatum.class, "statusTime");
+    public static final String HOST_ADDRESS_FIELD = fieldName(StatusDatum.class, "hostAddress");
         
-    public static final Fields FIELDS = new Fields(URL_FIELD, STATUS_FIELD, HEADERS_FIELD, EXCEPTION_FIELD, STATUS_TIME_FIELD);
+    public static final Fields FIELDS = new Fields(URL_FIELD, STATUS_FIELD, HEADERS_FIELD, EXCEPTION_FIELD, STATUS_TIME_FIELD, HOST_ADDRESS_FIELD);
     
     public StatusDatum(Tuple tuple, Fields metaDataFields) {
         super(tuple, metaDataFields);
@@ -116,6 +124,7 @@ public class StatusDatum extends BaseDatum {
         _headers = new HttpHeaders((Tuple)entry.get(HEADERS_FIELD));
         _exception = (BaseFetchException)entry.get(EXCEPTION_FIELD);
         _statusTime = entry.getLong(STATUS_TIME_FIELD);
+        _hostAddress = entry.getString(HOST_ADDRESS_FIELD);
     }
     
     @Override
@@ -125,7 +134,7 @@ public class StatusDatum extends BaseDatum {
     
     @Override
     protected Comparable[] getStandardValues() {
-        return new Comparable[] { _url, _status.name(), _headers == null ? null : _headers.toTuple(), (Comparable)_exception, _statusTime };
+        return new Comparable[] { _url, _status.name(), _headers == null ? null : _headers.toTuple(), (Comparable)_exception, _statusTime, _hostAddress };
     }
 
 

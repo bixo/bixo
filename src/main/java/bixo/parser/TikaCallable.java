@@ -63,7 +63,7 @@ class TikaCallable implements Callable<ParsedDatum> {
             _parser.parse(_input, teeContentHandler, _metadata, new ParseContext());
             
             String lang = _extractLanguage ? detectLanguage(_metadata, profilingHandler) : "";
-            return new ParsedDatum(_metadata.get(Metadata.RESOURCE_NAME_KEY), _contentExtractor.getContent(), lang,
+            return new ParsedDatum(_metadata.get(Metadata.RESOURCE_NAME_KEY), null, _contentExtractor.getContent(), lang,
                             _metadata.get(Metadata.TITLE),
                             _linkExtractor.getLinks(), makeMap(_metadata), BaseDatum.EMPTY_METADATA_MAP);
         } catch (Exception e) {
