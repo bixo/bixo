@@ -15,6 +15,7 @@ import org.kohsuke.args4j.CmdLineParser;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
+import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.UrlDatum;
 import bixo.tools.sitecrawler.BixoJDBCTapFactory;
 import bixo.tools.sitecrawler.SiteCrawler;
@@ -185,6 +186,7 @@ public class SimpleCrawlTool {
             FetcherPolicy defaultPolicy = new FetcherPolicy();
             defaultPolicy.setCrawlDelay(DEFAULT_CRAWL_DELAY);
             defaultPolicy.setMaxContentSize(MAX_CONTENT_SIZE);
+            defaultPolicy.setFetcherMode(FetcherMode.EFFICIENT);
             
             int crawlDurationInMinutes = options.getCrawlDuration();
             boolean hasEndTime = crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION;
