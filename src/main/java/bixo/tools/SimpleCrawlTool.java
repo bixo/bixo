@@ -15,12 +15,14 @@ import org.kohsuke.args4j.CmdLineParser;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
+import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.UrlDatum;
+import bixo.tools.sitecrawler.BixoJDBCTapFactory;
 import bixo.tools.sitecrawler.SiteCrawler;
 import bixo.tools.sitecrawler.UrlImporter;
-import bixo.tools.sitecrawler.BixoJDBCTapFactory;
 import bixo.urldb.IUrlFilter;
 import bixo.utils.FsUtils;
+import cascading.flow.Flow;
 import cascading.flow.PlannerException;
 
 public class SimpleCrawlTool {
@@ -142,6 +144,19 @@ public class SimpleCrawlTool {
             FileSystem fs = outputPath.getFileSystem(conf);
 
             // See if the user is starting from scratch
+            if (options.getDbLocation() == null) {
+                if (fs.exists(outputPath)) {
+                    System.out.println("Previous cycle output dirs exist in " + outputDirName);
+                    System.out.println("Deleting the output dir before running");
+                    fs.delete(outputPath, true);
+                }
+            } else {
+                Path dbLocationPath = new Path(options.getDbLocation());
+                if (!fs.exists(dbLocationPath)) {
+                    fs.mkdirs(dbLocationPath);
+                }
+            }
+            
             if (!fs.exists(outputPath)) {
                 fs.mkdirs(outputPath);
 
@@ -153,8 +168,8 @@ public class SimpleCrawlTool {
                 setLoopLoggerFile(curLoopDirName, 0);
 
                 UrlImporter importer = new UrlImporter(curLoopDir);
-                importer.importOneDomain(domain, BixoJDBCTapFactory.createUrlsSinkJDBCTap());
-            }
+                importer.importOneDomain(domain, BixoJDBCTapFactory.createUrlsSinkJDBCTap(options.getDbLocation()));
+            } 
             
             Path inputPath = FsUtils.findLatestLoopDir(fs, outputPath);
 
@@ -171,6 +186,7 @@ public class SimpleCrawlTool {
             FetcherPolicy defaultPolicy = new FetcherPolicy();
             defaultPolicy.setCrawlDelay(DEFAULT_CRAWL_DELAY);
             defaultPolicy.setMaxContentSize(MAX_CONTENT_SIZE);
+            defaultPolicy.setFetcherMode(FetcherMode.EFFICIENT);
             
             int crawlDurationInMinutes = options.getCrawlDuration();
             boolean hasEndTime = crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION;
@@ -179,8 +195,8 @@ public class SimpleCrawlTool {
 
             IUrlFilter urlFilter = new DomainUrlFilter(domain);
 
-            // OK, now we're ready to start looping, since we've got our current
-            // settings.
+            // OK, now we're ready to start looping, since we've got our current settings
+
             for (int curLoop = startLoop + 1; curLoop <= endLoop; curLoop++) {
 
                 // Adjust target end time, if appropriate.
@@ -195,9 +211,10 @@ public class SimpleCrawlTool {
                 String curLoopDirName = curLoopDir.toUri().toString();
                 setLoopLoggerFile(curLoopDirName, curLoop);
 
-                SiteCrawler crawler = new SiteCrawler(inputPath, curLoopDir, userAgent,
-                                defaultPolicy, options.getMaxThreads(), urlFilter);
-                crawler.crawl(options.isDebugLogging());
+                Flow flow = SiteCrawler.createFlow(inputPath, curLoopDir, userAgent, defaultPolicy, urlFilter, 
+                               options.getMaxThreads(), options.isDebugLogging(), options.getDbLocation());
+                flow.complete();
+//              flow.writeDOT("build/valid-flow.dot");
 
                 // Input for the next round is our current output
                 inputPath = curLoopDir;
