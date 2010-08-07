@@ -12,6 +12,4 @@ public interface IFetchMgr {
     
     public void finished(String ref);
     
-    public boolean keepGoing();
-    
 }

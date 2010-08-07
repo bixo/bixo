@@ -151,7 +151,6 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     private transient ConcurrentHashMap<String, Long> _activeRefs;
     private transient ConcurrentHashMap<String, Long> _pendingRefs;
     
-    private transient AtomicBoolean _keepFetching;
     private transient AtomicBoolean _keepCollecting;
     
     public FetchBuffer(IHttpFetcher fetcher, long crawlEndTime, Fields metaDataFields) {
@@ -186,7 +185,6 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         _pendingRefs = new ConcurrentHashMap<String, Long>();
         _activeRefs = new ConcurrentHashMap<String, Long>();
         
-        _keepFetching = new AtomicBoolean(true);
         _keepCollecting = new AtomicBoolean(true);
     }
 
@@ -265,14 +263,9 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             // "sleep" waiting for a FetchTask to be queued up, but we'll add in a bit of
             // slop to represent that amount of time.
             long pollTime = ThreadedExecutor.MAX_POLL_TIME;
+            Thread.sleep(pollTime);
             
-            // Give everybody who's currently fetching time to process what they've got
             long requestTimeout = _fetcher.getFetcherPolicy().getRequestTimeout();
-            Thread.sleep(pollTime + requestTimeout);
-            
-            // Tell everybody to stop fetching, and skip all remaining URLs
-            _keepFetching.set(false);
-            
             if (!_executor.terminate(requestTimeout)) {
                 LOGGER.warn("Had to do a hard termination of general fetching");
                 
@@ -327,11 +320,6 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         }
     }
 
-    @Override
-    public boolean keepGoing() {
-        return _keepFetching.get();
-    }
-    
     @Override
     public BixoFlowProcess getProcess() {
         return _flowProcess;
