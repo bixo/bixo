@@ -12,6 +12,9 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
+/* TODO KKr Rename this something like CrawlDirUtils to distinguish it from
+ * com.bixolabs.cascading.FsUtils (in cascading.utils)?
+ */
 public class FsUtils {
 	private static final Pattern LOOP_DIRNAME_PATTERN = Pattern
 			.compile("(\\d+)-([^/]+)");

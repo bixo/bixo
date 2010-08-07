@@ -85,7 +85,10 @@ public class HadoopUtils {
         
         conf.setMapSpeculativeExecution(false);
         conf.setReduceSpeculativeExecution(false);
-        conf.set("mapred.child.java.opts", String.format("-server -Xmx512m -Xss%dk", stackSizeInKB));
+        
+        // Prevent the Hadoop Configuration from loading a random DocumentBuilderFactory
+        // from the classpath (important for Hadoop 0.20.x)
+        conf.set("mapred.child.java.opts", String.format("-server -Djavax.xml.parsers.DocumentBuilderFactory=com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl -Xmx512m -Xss%dk", stackSizeInKB));
 
         // Should match the value used for Xss above. Note no 'k' suffix for the ulimit command.
         // New support that one day will be in Hadoop.
@@ -112,6 +115,8 @@ public class HadoopUtils {
         FlowConnector.setApplicationJarClass(properties, appJarClass);
 
         // Propagate properties into the Hadoop JobConf
+        // TODO KKr This comment doesn't seem correct to me, as setJobConf
+        // actually copies conf *into* the cascading.hadoop.jobconf property.
         MultiMapReducePlanner.setJobConf(properties, conf);
 
         return properties;

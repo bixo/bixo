@@ -84,7 +84,10 @@ public class SimpleParser implements IParser {
             Thread t = new Thread(task);
             t.start();
             
+            // TODO KKr Should there be a BaseParser to take care of copying
+            // these two fields?
             ParsedDatum result = task.get(MAX_PARSE_DURATION, TimeUnit.SECONDS);
+            result.setHostAddress(fetchedDatum.getHostAddress());
             result.setMetaDataMap(fetchedDatum.getMetaDataMap());
             return result;
         } finally {

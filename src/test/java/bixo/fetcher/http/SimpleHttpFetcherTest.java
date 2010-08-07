@@ -354,4 +354,19 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
             server.stop();
         }
     }
+
+    @Test
+    public final void testHostAddress() throws Exception {
+        FetcherPolicy policy = new FetcherPolicy();
+        HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        String url = "http://localhost:8089/simple-page.html";
+        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
+        server.stop();
+        
+        String hostAddress = result.getHostAddress();
+        Assert.assertNotNull(hostAddress);
+        Assert.assertEquals("127.0.0.1", hostAddress);
+    }
+    
 }
