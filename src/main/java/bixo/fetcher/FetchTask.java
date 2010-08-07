@@ -33,12 +33,13 @@ import bixo.cascading.BixoFlowProcess;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
+import bixo.exceptions.AbortedFetchException;
+import bixo.exceptions.AbortedFetchReason;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.hadoop.FetchCounters;
 import cascading.tuple.Tuple;
-import cascading.tuple.TupleEntryCollector;
 
 /**
  * Runnable instance for fetching a set of URLs from the same server, using keep-alive.
@@ -63,14 +64,13 @@ public class FetchTask implements Runnable {
     @Override
     public void run() {
         BixoFlowProcess process = _fetchMgr.getProcess();
-        TupleEntryCollector collector = _fetchMgr.getCollector();
         process.increment(FetchCounters.DOMAINS_PROCESSING, 1);
 
         try {
             // TODO KKr - when fetching the last item, send a Connection: close
             // header to let the server know it doesn't need to keep the socket open.
             Iterator<ScoredUrlDatum> iter = _items.iterator();
-            while (iter.hasNext()) {
+            while (iter.hasNext() && _fetchMgr.keepGoing()) {
                 ScoredUrlDatum item = iter.next();
                 FetchedDatum result = new FetchedDatum(item);
                 Comparable status = null;
@@ -101,13 +101,22 @@ public class FetchTask implements Runnable {
                 } finally {
                     process.decrement(FetchCounters.URLS_FETCHING, 1);
 
-                    // Cascading _collectors aren't thread-safe.
-                    synchronized (collector) {
-                        Tuple tuple = result.toTuple();
-                        tuple.add(status);
-                        collector.add(tuple);
-                    }
+                    Tuple tuple = result.toTuple();
+                    tuple.add(status);
+                   _fetchMgr.collect(tuple);
                 }
+            }
+            
+            // While we still have entries, we need to write them out to avoid losing them.
+            while (iter.hasNext()) {
+                ScoredUrlDatum item = iter.next();
+                FetchedDatum result = new FetchedDatum(item);
+                process.increment(FetchCounters.URLS_SKIPPED, 1);
+                AbortedFetchException status = new AbortedFetchException(item.getUrl(), AbortedFetchReason.INTERRUPTED);
+                
+                Tuple tuple = result.toTuple();
+                tuple.add(status);
+               _fetchMgr.collect(tuple);
             }
         } catch (Throwable t) {
             LOGGER.error("Exception while fetching", t);

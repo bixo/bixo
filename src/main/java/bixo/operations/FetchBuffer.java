@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
@@ -132,16 +133,10 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
 
     private static final Fields FETCH_RESULT_FIELD = new Fields(BaseDatum.fieldName(FetchBuffer.class, "fetch-exception"));
 
-    // How long to wait before a fetch request gets rejected.
-    // TODO KKr - calculate this based on the fetcher policy's max URLs/request
-    private static final long REQUEST_TIMEOUT = 100 * 1000L;
-    
-    // How long to wait before doing a hard termination. Wait twice as long
-    // as the longest request.
-    private static final long TERMINATION_TIMEOUT = REQUEST_TIMEOUT * 2;
-
     // Time to sleep when we don't have any URLs that can be fetched.
     private static final long NOTHING_TO_FETCH_SLEEP_TIME = 1000;
+
+    private static final long HARD_TERMINATION_CLEANUP_DURATION = 10 * 1000L;
 
     private IHttpFetcher _fetcher;
     private long _crawlEndTime;
@@ -155,6 +150,9 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     private transient Object _refLock;
     private transient ConcurrentHashMap<String, Long> _activeRefs;
     private transient ConcurrentHashMap<String, Long> _pendingRefs;
+    
+    private transient AtomicBoolean _keepFetching;
+    private transient AtomicBoolean _keepCollecting;
     
     public FetchBuffer(IHttpFetcher fetcher, long crawlEndTime, Fields metaDataFields) {
         // We're going to output a tuple that contains a FetchedDatum, plus meta-data,
@@ -182,11 +180,14 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         _flowProcess = new BixoFlowProcess((HadoopFlowProcess) flowProcess);
         _flowProcess.addReporter(new LoggingFlowReporter());
 
-        _executor = new ThreadedExecutor(_fetcher.getMaxThreads(), REQUEST_TIMEOUT);
+        _executor = new ThreadedExecutor(_fetcher.getMaxThreads(), _fetcher.getFetcherPolicy().getRequestTimeout());
 
         _refLock = new Object();
         _pendingRefs = new ConcurrentHashMap<String, Long>();
         _activeRefs = new ConcurrentHashMap<String, Long>();
+        
+        _keepFetching = new AtomicBoolean(true);
+        _keepCollecting = new AtomicBoolean(true);
     }
 
     @Override
@@ -260,9 +261,30 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     @Override
     public void cleanup(FlowProcess process, OperationCall operationCall) {
         try {
-            if (!_executor.terminate(TERMINATION_TIMEOUT)) {
+            // We don't know worst-case for amount of time a worker thread will effectively
+            // "sleep" waiting for a FetchTask to be queued up, but we'll add in a bit of
+            // slop to represent that amount of time.
+            long pollTime = ThreadedExecutor.MAX_POLL_TIME;
+            
+            // Give everybody who's currently fetching time to process what they've got
+            long requestTimeout = _fetcher.getFetcherPolicy().getRequestTimeout();
+            Thread.sleep(pollTime + requestTimeout);
+            
+            // Tell everybody to stop fetching, and skip all remaining URLs
+            _keepFetching.set(false);
+            
+            if (!_executor.terminate(requestTimeout)) {
                 LOGGER.warn("Had to do a hard termination of general fetching");
-                // TODO KKr - I think we lose entries in this case.
+                
+                // Now give everybody who had to be interrupted some time to
+                // actually write out their remainiing URLs.
+                Thread.sleep(HARD_TERMINATION_CLEANUP_DURATION);
+            }
+            
+            // Now stop collecting results. If somebody is in the middle of the collect() call,
+            // we want them to finish before we set it to false and drop out of this method.
+            synchronized (_keepCollecting) {
+                _keepCollecting.set(false);
             }
         } catch (InterruptedException e) {
             // FUTURE What's the right thing to do here? E.g. do I need to worry about
@@ -292,10 +314,24 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     }
 
     @Override
-    public TupleEntryCollector getCollector() {
-        return _collector;
+    public void collect(Tuple tuple) {
+        // Prevent two bad things from happening:
+        // 1. Somebody changes _keepCollecting after we've tested that it's true
+        // 2. Two people calling collector.add() at the same time (it's not thread safe)
+        synchronized (_keepCollecting) {
+            if (_keepCollecting.get()) {
+                _collector.add(tuple);
+            } else {
+                LOGGER.warn("Losing an entry: " + tuple);
+            }
+        }
     }
 
+    @Override
+    public boolean keepGoing() {
+        return _keepFetching.get();
+    }
+    
     @Override
     public BixoFlowProcess getProcess() {
         return _flowProcess;

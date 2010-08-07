@@ -551,6 +551,11 @@ public class SimpleHttpFetcher implements IHttpFetcher {
                     if ((readRequests > 1) && (totalRead < targetLength) && (readRate < minResponseRate)) {
                         throw new AbortedFetchException(url, "Slow response rate of " + readRate + " bytes/sec", AbortedFetchReason.SLOW_RESPONSE_RATE);
                     }
+                    
+                    // Check to see if we got interrupted.
+                    if (Thread.interrupted()) {
+                        throw new AbortedFetchException(url, AbortedFetchReason.INTERRUPTED);
+                    }
                 }
 
                 content = out.toByteArray();

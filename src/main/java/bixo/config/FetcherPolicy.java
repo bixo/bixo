@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009 101tec Inc.
+ * Copyright (c) 2009 - 2010 TransPac Software, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy 
  * of this software and associated documentation files (the "Software"), to deal
@@ -55,6 +55,10 @@ public class FetcherPolicy implements Serializable {
     public static final int DEFAULT_MAX_REDIRECTS = 20;
     public static final String DEFAULT_ACCEPT_LANGUAGE = "en-us,en-gb,en;q=0.7,*;q=0.3";
     
+    // How long to wait before a fetch request gets rejected.
+    // TODO KKr - calculate this based on the fetcher policy's max URLs/request
+    private static final long DEFAULT_REQUEST_TIMEOUT = 100 * 1000L;
+    
     // Interval between batched fetch requests, in milliseconds.
     protected static final long DEFAULT_FETCH_INTERVAL = 5 * 60 * 1000L;
     
@@ -73,6 +77,7 @@ public class FetcherPolicy implements Serializable {
     private Set<String> _validMimeTypes;    // Set of mime-types that we'll accept, or null
     private int _maxRequestsPerConnection;  // Max # of URLs to request in any one connection
     private FetcherMode _fetcherMode;       // Should we skip URLs when they back up for a domain?
+    private long _requestTimeout;           // Max time for any given set of URLs (termination timeout is based on this)
     
     public FetcherPolicy() {
         this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME, DEFAULT_CRAWL_DELAY, DEFAULT_MAX_REDIRECTS);
@@ -101,6 +106,8 @@ public class FetcherPolicy implements Serializable {
         _maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
         _maxRequestsPerConnection = DEFAULT_MAX_REQUESTS_PER_CONNECTION;
         _fetcherMode = FetcherMode.COMPLETE;
+        
+        _requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     }
 
     /**
@@ -262,6 +269,15 @@ public class FetcherPolicy implements Serializable {
         return new FetchRequest(numUrls, nextFetchTime);
     }
     
+    public long getRequestTimeout() {
+        return _requestTimeout;
+    }
+    
+    public void setRequestTimeout(long requestTimeout) {
+        _requestTimeout = requestTimeout;
+    }
+    
+    
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -269,11 +285,13 @@ public class FetcherPolicy implements Serializable {
         result = prime * result + ((_acceptLanguage == null) ? 0 : _acceptLanguage.hashCode());
         result = prime * result + (int) (_crawlDelay ^ (_crawlDelay >>> 32));
         result = prime * result + (int) (_crawlEndTime ^ (_crawlEndTime >>> 32));
+        result = prime * result + ((_fetcherMode == null) ? 0 : _fetcherMode.hashCode());
         result = prime * result + _maxConnectionsPerHost;
         result = prime * result + _maxContentSize;
         result = prime * result + _maxRedirects;
         result = prime * result + _maxRequestsPerConnection;
         result = prime * result + _minResponseRate;
+        result = prime * result + (int) (_requestTimeout ^ (_requestTimeout >>> 32));
         result = prime * result + ((_validMimeTypes == null) ? 0 : _validMimeTypes.hashCode());
         return result;
     }
@@ -296,6 +314,11 @@ public class FetcherPolicy implements Serializable {
             return false;
         if (_crawlEndTime != other._crawlEndTime)
             return false;
+        if (_fetcherMode == null) {
+            if (other._fetcherMode != null)
+                return false;
+        } else if (!_fetcherMode.equals(other._fetcherMode))
+            return false;
         if (_maxConnectionsPerHost != other._maxConnectionsPerHost)
             return false;
         if (_maxContentSize != other._maxContentSize)
@@ -305,6 +328,8 @@ public class FetcherPolicy implements Serializable {
         if (_maxRequestsPerConnection != other._maxRequestsPerConnection)
             return false;
         if (_minResponseRate != other._minResponseRate)
+            return false;
+        if (_requestTimeout != other._requestTimeout)
             return false;
         if (_validMimeTypes == null) {
             if (other._validMimeTypes != null)

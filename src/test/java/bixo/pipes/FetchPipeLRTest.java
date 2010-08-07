@@ -153,6 +153,61 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertEquals(numPages, totalEntries);
     }
     
+    @Test
+    public void testFetchTerminationPipe() throws Exception {
+        // System.setProperty("bixo.root.level", "TRACE");
+        
+        final int numPages = 10;
+        final int port = 8089;
+        
+        Lfs in = makeInputData("localhost:" + port, numPages, null);
+
+        Pipe pipe = new Pipe("urlSource");
+        ScoreGenerator scorer = new FixedScoreGenerator();
+        
+        FetcherPolicy policy = new FetcherPolicy();
+        policy.setCrawlEndTime(System.currentTimeMillis() + 20000);
+        // Assume we should only need 10ms for fetching all 10 URLs.
+        policy.setRequestTimeout(10);
+        
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        
+        String outputPath = "build/test/FetchPipeTest/testFetchTerminationPipe";
+        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
+
+        // Finally we can run it.
+        FlowConnector flowConnector = new FlowConnector();
+        Flow flow = flowConnector.connect(in, status, fetchPipe.getStatusTailPipe());
+        TestWebServer webServer = null;
+        
+        try {
+            final int numBytes = 10000;
+            
+            // Pick a time way longer than the FetcherPolicy.getRequestTimeout().
+            final long numMilliseconds = 100 * 1000L;
+            webServer = new TestWebServer(new NoRobotsResponseHandler(numBytes, numMilliseconds), port);
+            flow.complete();
+        } finally {
+            webServer.stop();
+        }
+        
+        Lfs validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        int totalEntries = 0;
+        while (tupleEntryIterator.hasNext()) {
+            TupleEntry entry = tupleEntryIterator.next();
+            totalEntries += 1;
+
+            // Verify we can convert properly
+            StatusDatum sd = new StatusDatum(entry, BaseDatum.EMPTY_METADATA_FIELDS);
+            Assert.assertEquals(UrlStatus.SKIPPED_INTERRUPTED, sd.getStatus());
+        }
+        
+        // TODO CSc - re-enable this test, when termination really works.
+        // Assert.assertEquals(numPages, totalEntries);
+    }
+    
     @SuppressWarnings("unchecked")
     @Test
     public void testMetaData() throws Exception {
@@ -397,6 +452,10 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
         public NoRobotsResponseHandler() {
             super(1000, 10);
+        }
+        
+        public NoRobotsResponseHandler(int length, long duration) {
+            super(length, duration);
         }
         
         @Override

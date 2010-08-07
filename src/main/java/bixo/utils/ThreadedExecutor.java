@@ -15,6 +15,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class ThreadedExecutor {
     
+    public static final long MAX_POLL_TIME = 1000L;
+    
     /**
      * Always wait for some time when offer() is called. This gives any
      * active threads that much time to complete, before a RejectedExectionException
@@ -51,10 +53,12 @@ public class ThreadedExecutor {
         // be set to the same as the corePoolSize, as otherwise things get very inefficient
         // since each execute() call will will delay by <timeout> even if we could add more
         // threads. And since these two values are the same, the keepAliveTime value has
-        // no meaning (especially since we no longer incorrectly set allowCoreThreadTimeOut to true,
-        // as if that's true then the timeout value still does apply).
+        // little meaning (especially since we no longer incorrectly set allowCoreThreadTimeOut to true,
+        // as if that's true then the timeout value still does apply). It's only the max latency
+        // between when a task is accepted by this executor, and when a thread starts working
+        // on it.
         BlockingQueue<Runnable> queue = new MyBlockingQueue<Runnable>();
-        _pool = new ThreadPoolExecutor(maxThreads, maxThreads, 1, TimeUnit.SECONDS, queue);
+        _pool = new ThreadPoolExecutor(maxThreads, maxThreads, MAX_POLL_TIME, TimeUnit.MILLISECONDS, queue);
     }
     
     /**

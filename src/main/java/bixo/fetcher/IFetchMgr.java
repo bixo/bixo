@@ -1,14 +1,17 @@
 package bixo.fetcher;
 
-import cascading.tuple.TupleEntryCollector;
 import bixo.cascading.BixoFlowProcess;
+import cascading.tuple.Tuple;
 
 
 public interface IFetchMgr {
     
     public BixoFlowProcess getProcess();
     
-    public TupleEntryCollector getCollector();
+    public void collect(Tuple tuple);
     
     public void finished(String ref);
+    
+    public boolean keepGoing();
+    
 }

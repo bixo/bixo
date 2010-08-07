@@ -41,6 +41,9 @@ public class AbortedFetchException extends BaseFetchException implements Writabl
         case INVALID_MIMETYPE:
             return UrlStatus.ABORTED_INVALID_MIMETYPE;
             
+        case INTERRUPTED:
+            return UrlStatus.SKIPPED_INTERRUPTED;
+            
         default:
             throw new RuntimeException("Unknown abort reason: " + _abortReason);
         }
