@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 
+import bixo.config.ParserPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.fetcher.http.IHttpHeaders;
@@ -23,21 +24,20 @@ import bixo.utils.IoUtils;
 public class SimpleParser implements IParser {
     private static final Logger LOGGER = Logger.getLogger(SimpleParser.class);
 
-    // Number of seconds we'll give Tika to parse the document before timing out.
-    private static final long MAX_PARSE_DURATION = 30;
-    
     private boolean _extractLanguage = true;
+    private ParserPolicy _parserPolicy;
     protected BaseContentExtractor _contentExtractor;
     protected BaseLinkExtractor _linkExtractor;
     private transient AutoDetectParser _parser;
     
     public SimpleParser() {
-        this(new SimpleContentExtractor(), new SimpleLinkExtractor());
+        this(new SimpleContentExtractor(), new SimpleLinkExtractor(), new ParserPolicy());
     }
     
-    public SimpleParser(BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor) {
+    public SimpleParser(BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, ParserPolicy parserPolicy) {
         _contentExtractor = contentExtractor;
         _linkExtractor = linkExtractor;
+        _parserPolicy = parserPolicy;
     }
     
     protected synchronized void init() {
@@ -55,6 +55,10 @@ public class SimpleParser implements IParser {
     
     public boolean isExtractLanguage() {
         return _extractLanguage;
+    }
+    
+    public ParserPolicy getParserPolicy() {
+        return _parserPolicy;
     }
     
     @Override
@@ -86,7 +90,7 @@ public class SimpleParser implements IParser {
             
             // TODO KKr Should there be a BaseParser to take care of copying
             // these two fields?
-            ParsedDatum result = task.get(MAX_PARSE_DURATION, TimeUnit.SECONDS);
+            ParsedDatum result = task.get(getParserPolicy().getMaxParseDuration(), TimeUnit.MILLISECONDS);
             result.setHostAddress(fetchedDatum.getHostAddress());
             result.setMetaDataMap(fetchedDatum.getMetaDataMap());
             return result;

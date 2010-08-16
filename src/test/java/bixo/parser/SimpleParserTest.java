@@ -16,6 +16,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.io.BytesWritable;
 import org.junit.Test;
 
+import bixo.config.ParserPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.Outlink;
@@ -224,7 +225,8 @@ public class SimpleParserTest {
             public Outlink[] getLinks() {
                 return new Outlink[0];
             }
-        });
+        },
+        new ParserPolicy());
         
         ParsedDatum parsedDatum = parser.parse(fetchedDatum);
         

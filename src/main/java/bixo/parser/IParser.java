@@ -7,6 +7,8 @@ import bixo.datum.ParsedDatum;
 
 public interface IParser extends Serializable {
 
-    ParsedDatum parse(FetchedDatum fetchedDatum) throws Exception;
+    // TODO - When this is an abstract class, add constructor/get/set for ParserPolicy
+    
+    public ParsedDatum parse(FetchedDatum fetchedDatum) throws Exception;
 
 }
