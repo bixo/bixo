@@ -269,8 +269,12 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             if (!_executor.terminate(requestTimeout)) {
                 LOGGER.warn("Had to do a hard termination of general fetching");
                 
+                // Abort any active connections, which should give the FetchTasks a chance
+                // to clean things up.
+                _fetcher.abort();
+                
                 // Now give everybody who had to be interrupted some time to
-                // actually write out their remainiing URLs.
+                // actually write out their remaining URLs.
                 Thread.sleep(HARD_TERMINATION_CLEANUP_DURATION);
             }
             

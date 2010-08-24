@@ -7,7 +7,6 @@ import java.util.Arrays;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.hadoop.io.BytesWritable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -43,7 +42,7 @@ public class SimpleRobotRulesTest {
 
         IHttpFetcher fetcher = Mockito.mock(IHttpFetcher.class);
         FetchedDatum datum = Mockito.mock(FetchedDatum.class);
-        Mockito.when(datum.getContent()).thenReturn(new BytesWritable(simpleRobotsTxt.getBytes()));
+        Mockito.when(datum.getContentBytes()).thenReturn(simpleRobotsTxt.getBytes());
         Mockito.when(fetcher.get(Mockito.any(ScoredUrlDatum.class))).thenReturn(datum);
         UserAgent userAgent = new UserAgent("testAgent", "crawler@domain.com", "http://www.domain.com");
         Mockito.when(fetcher.getUserAgent()).thenReturn(userAgent);

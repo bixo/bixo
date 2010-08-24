@@ -25,8 +25,6 @@ package bixo.datum;
 import java.security.InvalidParameterException;
 import java.util.Map;
 
-import org.apache.hadoop.io.BytesWritable;
-
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
@@ -37,7 +35,7 @@ public class FetchedDatum extends BaseDatum {
     private String _newBaseUrl;
     private String _fetchedUrl;
     private long _fetchTime;
-    private BytesWritable _content;
+    private ContentBytes _content;
     private String _contentType;
     private int _responseRate;
     private int _numRedirects;
@@ -46,7 +44,7 @@ public class FetchedDatum extends BaseDatum {
 
     @SuppressWarnings("unchecked")
     public FetchedDatum(String baseUrl, String redirectedUrl, long fetchTime, HttpHeaders headers,
-                    BytesWritable content, String contentType, int responseRate,
+                    ContentBytes content, String contentType, int responseRate,
                     Map<String, Comparable> metaData) {
         super(metaData);
 
@@ -91,7 +89,7 @@ public class FetchedDatum extends BaseDatum {
      */
     @SuppressWarnings("unchecked")
     public FetchedDatum(String url, Map<String, Comparable> metaData) {
-        this(url, url, 0, new HttpHeaders(), new BytesWritable(), "", 0, metaData);
+        this(url, url, 0, new HttpHeaders(), new ContentBytes(), "", 0, metaData);
     }
 
     /**
@@ -132,19 +130,12 @@ public class FetchedDatum extends BaseDatum {
         return _fetchTime;
     }
 
-    public BytesWritable getContent() {
-        return _content;
-    }
-
-    // Helper methods to mask Hadoop 0.18.3 and 0.19+ delta
-    @SuppressWarnings("deprecation")
     public byte[] getContentBytes() {
-        return _content.get();
+        return _content.getBytes();
     }
     
-    @SuppressWarnings("deprecation")
     public int getContentLength() {
-        return _content.getSize();
+        return _content.getLength();
     }
     
     public String getContentType() {
@@ -237,7 +228,7 @@ public class FetchedDatum extends BaseDatum {
         _newBaseUrl = entry.getString(NEW_BASE_URL_FIELD);
         _fetchedUrl = entry.getString(FETCHED_URL_FIELD);
         _fetchTime = entry.getLong(FETCH_TIME_FIELD);
-        _content = (BytesWritable) entry.get(CONTENT_FIELD);
+        _content = (ContentBytes) entry.get(CONTENT_FIELD);
         _contentType = entry.getString(CONTENT_TYPE_FIELD);
         _responseRate = entry.getInteger(RESPONSE_RATE_FIELD);
         _numRedirects = entry.getInteger(NUM_REDIRECTS_FIELD);

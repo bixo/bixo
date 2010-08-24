@@ -54,4 +54,5 @@ public interface IHttpFetcher extends Serializable {
      */
     public byte[] get(String url) throws BaseFetchException;
 
+    public void abort();
 }

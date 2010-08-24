@@ -6,9 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import org.apache.hadoop.io.BytesWritable;
 import org.junit.Test;
 
+import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 
@@ -157,7 +157,7 @@ public class DiskQueueTest {
             long fetchTime = System.currentTimeMillis();
             HttpHeaders headers = new HttpHeaders();
             headers.add("key", "value-" + i);
-            BytesWritable content = new BytesWritable(new String("content-" + i).getBytes());
+            ContentBytes content = new ContentBytes(new String("content-" + i).getBytes());
             String contentType = "text/plain";
             int responseRate = (i + 1) * 1000;
             Map<String, Comparable> metaData = new HashMap<String, Comparable>();

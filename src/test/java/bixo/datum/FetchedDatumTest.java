@@ -1,6 +1,5 @@
 package bixo.datum;
 
-import org.apache.hadoop.io.BytesWritable;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -23,7 +22,7 @@ public class FetchedDatumTest {
         
         String value3 = "value3\nwith\nreturns";
         headers.add("key3", value3);
-        FetchedDatum datum = new FetchedDatum(url, url, 0, headers, new BytesWritable(), "", 0, null);
+        FetchedDatum datum = new FetchedDatum(url, url, 0, headers, new ContentBytes(), "", 0, null);
         
         Tuple tuple = datum.toTuple();
         
@@ -47,7 +46,7 @@ public class FetchedDatumTest {
         
         HttpHeaders headers = new HttpHeaders();
         headers.add("status code", "200");
-        FetchedDatum datum = new FetchedDatum(url, url, 0, headers, new BytesWritable(), "", 0, null);
+        FetchedDatum datum = new FetchedDatum(url, url, 0, headers, new ContentBytes(), "", 0, null);
 
         String result = datum.toString();
         Assert.assertFalse(result.contains("FetchedDatum@"));

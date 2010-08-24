@@ -577,6 +577,11 @@ public class FetchPipeLRTest extends CascadingTestCase {
 			return ConfigUtils.BIXO_TEST_AGENT;
 		}
         
+	    @Override
+	    public void abort() {
+	        // Do nothing
+	    }
+
     };
 
 

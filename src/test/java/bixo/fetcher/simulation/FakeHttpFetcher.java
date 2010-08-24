@@ -28,12 +28,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
+import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
@@ -159,11 +159,17 @@ public class FakeHttpFetcher implements IHttpFetcher {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("x-responserate", "" + bytesPerSecond);
-        return new FetchedDatum(url, url, System.currentTimeMillis(), headers, new BytesWritable(new byte[contentSize]), "text/html", bytesPerSecond, metaData);
+        return new FetchedDatum(url, url, System.currentTimeMillis(), headers, new ContentBytes(new byte[contentSize]), "text/html", bytesPerSecond, metaData);
     }
 
 	@Override
 	public UserAgent getUserAgent() {
 		return ConfigUtils.BIXO_TEST_AGENT;
 	}
+	
+    @Override
+    public void abort() {
+        // Do nothing
+    }
+
 }

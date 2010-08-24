@@ -65,4 +65,10 @@ public class NullHttpFetcher implements IHttpFetcher {
 	public UserAgent getUserAgent() {
 		return ConfigUtils.BIXO_TEST_AGENT;
 	}
+	
+    @Override
+    public void abort() {
+        // Do nothing
+    }
+
 }

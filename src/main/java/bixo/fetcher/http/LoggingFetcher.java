@@ -5,12 +5,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
+import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
@@ -96,7 +96,7 @@ public class LoggingFetcher implements IHttpFetcher {
         // the URL DB that might have been set using fake content, we know to ignore the
         // refetch time if we're doing a real fetch.
         headers.add(IHttpHeaders.CONTENT_LOCATION, FAKE_CONTENT_LOCATION);
-        return new FetchedDatum(url, url, System.currentTimeMillis(), headers, new BytesWritable(content), "text/html", 100000, metaData);
+        return new FetchedDatum(url, url, System.currentTimeMillis(), headers, new ContentBytes(content), "text/html", 100000, metaData);
     }
 
 
@@ -146,5 +146,11 @@ public class LoggingFetcher implements IHttpFetcher {
 	public UserAgent getUserAgent() {
 		return _userAgent;
 	}
+
+
+    @Override
+    public void abort() {
+        // Do nothing
+    }
 
 }

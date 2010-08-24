@@ -218,7 +218,12 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         FetchedDatum result2 = fetcher.get(datumToFetch);
 
         // Verify that we got the same data from each fetch request.
-        Assert.assertEquals(result1.getContent(), result2.getContent());
+        Assert.assertEquals(result1.getContentLength(), result2.getContentLength());
+        byte[] bytes1 = result1.getContentBytes();
+        byte[] bytes2 = result2.getContentBytes();
+        for (int i = 0; i < bytes1.length; i++) {
+            Assert.assertEquals(bytes1[i], bytes2[i]);
+        }
 
         server.stop();
     }
