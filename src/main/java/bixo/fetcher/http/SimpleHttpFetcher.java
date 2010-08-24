@@ -42,7 +42,6 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.TrustManager;
 
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -93,6 +92,7 @@ import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
+import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
@@ -338,7 +338,9 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     }
     
     private static FetchedDatum convert(FetchedResult result) {
-    	FetchedDatum datum = new FetchedDatum(result.getBaseUrl(),result.getFetchedUrl(),result.getFetchTime(),result.getHeaders(), new BytesWritable(result.getContent()),result.getContentType(),result.getResponseRate(),result.getMetaDataMap());
+    	FetchedDatum datum = new FetchedDatum(result.getBaseUrl(), result.getFetchedUrl(), result.getFetchTime(),
+    	                result.getHeaders(), new ContentBytes(result.getContent()), result.getContentType(),
+    	                result.getResponseRate(), result.getMetaDataMap());
     	datum.setNewBaseUrl(result.getNewBaseUrl());
     	datum.setNumRedirects(result.getNumRedirects());
     	datum.setHostAddress(result.getHostAddress());
@@ -738,6 +740,11 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             
             clientParams.setDefaultHeaders(defaultHeaders);
         }
+    }
+
+    @Override
+    public void abort() {
+        // TODO Actually try to abort
     }
 
 
