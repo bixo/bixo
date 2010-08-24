@@ -289,8 +289,8 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         String url = "http://localhost:8089/";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
-
-        Assert.assertArrayEquals("Should be English content", englishContent.getBytes("UTF-8"), result.getContentBytes());
+        String contentStr = new String(result.getContentBytes(), 0, result.getContentLength());
+        Assert.assertTrue( englishContent.equals(contentStr));
     }
 
     @Test
