@@ -4,15 +4,20 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.ParserPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.http.SimpleHttpFetcher;
+import bixo.parser.SimpleContentExtractor;
+import bixo.parser.SimpleLinkExtractor;
 import bixo.parser.SimpleParser;
 
 public class FetchAndParseTool {
@@ -29,6 +34,8 @@ public class FetchAndParseTool {
 			return "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.0.8) Gecko/2009032608 Firefox/3.0.8";
 		}
 	}
+
+    private static final int MAX_PARSE_DURATION = 180 * 1000;
 	
     private static String readInputLine() throws IOException {
         InputStreamReader isr = new InputStreamReader(System.in);
@@ -69,6 +76,15 @@ public class FetchAndParseTool {
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, new FirefoxUserAgent());
         fetcher.setMaxRetryCount(options.getMaxRetries());
         
+        // Give a long timeout for parsing
+        ParserPolicy parserPolicy = new ParserPolicy(MAX_PARSE_DURATION);
+        SimpleParser parser = new SimpleParser(new SimpleContentExtractor(), new SimpleLinkExtractor(), parserPolicy);
+
+        if (options.isTraceLogging()) {
+            Logger.getRootLogger().setLevel(Level.TRACE);
+            System.setProperty("bixo.root.level", "TRACE");
+        }
+        
         String urls[] = options.getUrls() == null ? null : options.getUrls().split(",");
         boolean interactive = (urls == null);
         int index = 0;
@@ -93,7 +109,6 @@ public class FetchAndParseTool {
         		System.out.flush();
         		
         		// System.out.println("Result = " + result.toString());
-        		SimpleParser parser = new SimpleParser();
         		ParsedDatum parsed = parser.parse(result);
         		System.out.println(String.format("Parsed %s: lang = %s, size = %d", parsed.getUrl(),
         		                parsed.getLanguage(), parsed.getParsedText().length()));

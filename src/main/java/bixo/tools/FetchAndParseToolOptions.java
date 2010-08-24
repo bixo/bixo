@@ -10,6 +10,7 @@ public class FetchAndParseToolOptions {
     private int _maxRedirects = 100;
     private int _maxRetries = 100;
     private int _maxSize = FetcherPolicy.DEFAULT_MAX_CONTENT_SIZE;
+    private boolean _traceLogging = false;
     private String _urls;
     
     @Option(name = "-maxredirects", usage = "Maximum number of redirects", required = false)
@@ -48,6 +49,14 @@ public class FetchAndParseToolOptions {
         return _urls;
     }
     
+    @Option(name = "-trace", usage = "Set logging level to trace", required = false)
+    public void setTraceLogging(boolean traceLogging) {
+        _traceLogging = traceLogging;
+    }
+
+    public boolean isTraceLogging() {
+        return _traceLogging;
+    }
     
     @Override
     public String toString() {
