@@ -77,7 +77,7 @@ public class SimpleParser implements IParser {
         metadata.add(Metadata.CONTENT_ENCODING, charset);
         metadata.add(Metadata.CONTENT_LANGUAGE, getLanguage(fetchedDatum, charset));
         
-        InputStream is = new ByteArrayInputStream(fetchedDatum.getContentBytes());
+        InputStream is = new ByteArrayInputStream(fetchedDatum.getContentBytes(), 0, fetchedDatum.getContentLength());
 
         try {
         	URL baseUrl = getContentLocation(fetchedDatum);
