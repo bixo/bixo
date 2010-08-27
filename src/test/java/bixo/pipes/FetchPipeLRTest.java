@@ -54,6 +54,9 @@ import cascading.tuple.TupleEntryIterator;
 // Long-running test
 public class FetchPipeLRTest extends CascadingTestCase {
     
+    private static final String DEFAULT_INPUT_PATH = "build/test/FetchPipeLRTest/in";
+    private static final String DEFAULT_OUTPUT_PATH = "build/test/FetchPipeLRTest/out";
+
     @Test
     public void testHeadersInStatus() throws Exception {
         Lfs in = makeInputData(1, 1);
@@ -63,7 +66,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         ScoreGenerator scorer = new FixedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
         
-        String outputPath = "build/test/FetchPipeTest-testHeadersInStatus/out";
+        String outputPath = DEFAULT_OUTPUT_PATH;
         Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath, true);
         
         // Finally we can run it.
@@ -255,7 +258,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         ScoreGenerator scorer = new SkippedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
         
-        String outputPath = "build/test/FetchPipeTest/out";
+        String outputPath = DEFAULT_OUTPUT_PATH;
         Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
         
         // Finally we can run it.
@@ -284,7 +287,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
 
         // Create the output
-        String outputPath = "build/test/FetchPipeTest/out";
+        String outputPath = DEFAULT_OUTPUT_PATH;
         Tap statusSink = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
         Tap contentSink = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
 
@@ -311,6 +314,61 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertEquals(10, numEntries);
     }
     
+    @Test
+    public void testMaxUrlsPerServer() throws Exception {
+        // Pretend like we have 2 URLs from the same domain
+        final int sourceUrls = 2;
+        Lfs in = makeInputData(1, sourceUrls);
+
+        // Create the fetch pipe we'll use to process these fake URLs
+        Pipe pipe = new Pipe("urlSource");
+        
+        // This will limit us to one URL.
+        final int maxUrls = 1;
+        FetcherPolicy defaultPolicy = new FetcherPolicy();
+        defaultPolicy.setMaxUrlsPerServer(maxUrls);
+        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
+        ScoreGenerator scorer = new FixedScoreGenerator();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+
+        // Create the output
+        String outputPath = DEFAULT_OUTPUT_PATH;
+        Tap statusSink = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
+        Tap contentSink = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+
+        FlowConnector flowConnector = new FlowConnector();
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(statusSink, contentSink), fetchPipe);
+        flow.complete();
+        
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        Assert.assertTrue(tupleEntryIterator.hasNext());
+        tupleEntryIterator.next();
+        Assert.assertFalse(tupleEntryIterator.hasNext());
+
+        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
+        tupleEntryIterator = validate.openForRead(new JobConf());
+        
+        Fields metaDataFields = new Fields();
+        int numSkippedEntries = 0;
+        int numFetchedEntries = 0;
+        while (tupleEntryIterator.hasNext()) {
+            TupleEntry entry = tupleEntryIterator.next();
+            StatusDatum status = new StatusDatum(entry, metaDataFields);
+            if (status.getStatus() == UrlStatus.SKIPPED_PER_SERVER_LIMIT) {
+                numSkippedEntries += 1;
+            } else if (status.getStatus() == UrlStatus.FETCHED) {
+                numFetchedEntries += 1;
+            } else {
+                Assert.fail("Unexpected status: " + status.getStatus());
+            }
+        }
+        
+        Assert.assertEquals(numFetchedEntries, maxUrls);
+        Assert.assertEquals(numSkippedEntries, sourceUrls - maxUrls);
+    }
+    
+
     // TODO KKr- re-enable this test when we know how to make it work for
     // the new fetcher architecture.
     /**
@@ -342,7 +400,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         FetchPipe fetchPipe = new FetchPipe(pipe, new CustomGrouper(), new CustomScorer(), new CustomFetcher());
 
         // Create the output
-        String outputPath = "build/test/FetchPipeTest/out";
+        String outputPath = DEFAULT_OUTPUT_PATH;
         Tap statusSink = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
         Tap contentSink = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
 
@@ -414,7 +472,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
     @SuppressWarnings("unchecked")
     private Lfs makeInputData(int numDomains, int numPages, Map<String, Comparable> metaData) throws IOException {
         Fields sfFields = UrlDatum.FIELDS.append(BaseDatum.makeMetaDataFields(metaData));
-        Lfs in = new Lfs(new SequenceFile(sfFields), "build/test/FetchPipeLRTest/in", true);
+        Lfs in = new Lfs(new SequenceFile(sfFields), DEFAULT_INPUT_PATH, true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
         for (int i = 0; i < numDomains; i++) {
             for (int j = 0; j < numPages; j++) {
@@ -431,7 +489,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
     @SuppressWarnings("unchecked")
     private Lfs makeInputData(String domain, int numPages, Map<String, Comparable> metaData) throws IOException {
         Fields sfFields = UrlDatum.FIELDS.append(BaseDatum.makeMetaDataFields(metaData));
-        Lfs in = new Lfs(new SequenceFile(sfFields), "build/test/FetchPipeLRTest/in", true);
+        Lfs in = new Lfs(new SequenceFile(sfFields), DEFAULT_INPUT_PATH, true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
         for (int j = 0; j < numPages; j++) {
             write.add(makeTuple(domain, j, metaData));
@@ -520,11 +578,6 @@ public class FetchPipeLRTest extends CascadingTestCase {
             super();
 
             _maxUrls = maxUrls;
-        }
-        
-        @Override
-        public FetcherPolicy makeNewPolicy(long crawlDelay) {
-            return new MaxUrlFetcherPolicy(getMaxUrls());
         }
         
         @Override

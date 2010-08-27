@@ -12,6 +12,7 @@ public enum UrlStatus {
     SKIPPED_BY_SCORE,           // Skipped because score wasn't high enough
     SKIPPED_TIME_LIMIT,         // Ran out of time (also during fetch)
     SKIPPED_FILTERED,           // Filtered out during processing
+    SKIPPED_PER_SERVER_LIMIT,   // Too many URLs per server
     
     // Not fetched due to mid-fetch issues
     SKIPPED_INTERRUPTED,        // Fetch process was interrupted.

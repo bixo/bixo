@@ -31,9 +31,6 @@ import bixo.fetcher.FetchRequest;
 /**
  * Definition of policy for fetches.
  * 
- * WARNING - if you create a subclass of FetcherPolicy, you MUST override
- * the makeNewPolicy() method.
- *
  */
 @SuppressWarnings("serial")
 public class FetcherPolicy implements Serializable {
@@ -59,25 +56,32 @@ public class FetcherPolicy implements Serializable {
     // TODO KKr - calculate this based on the fetcher policy's max URLs/request
     private static final long DEFAULT_REQUEST_TIMEOUT = 100 * 1000L;
     
+    // TODO KKr - why use protected here?
     // Interval between batched fetch requests, in milliseconds.
     protected static final long DEFAULT_FETCH_INTERVAL = 5 * 60 * 1000L;
     
     protected static final int DEFAULT_MAX_REQUESTS_PER_CONNECTION = 50;
+    
+    public static final int NO_MAX_URLS_PER_SERVER = Integer.MAX_VALUE;
+    public static final int DEFAULT_MAX_URLS_PER_SERVER = NO_MAX_URLS_PER_SERVER;
     
     // Interval between requests, in milliseconds.
     protected static final long DEFAULT_CRAWL_DELAY = 30 * 1000L;
 
     private int _minResponseRate;        // lower bounds on bytes-per-second
     private int _maxContentSize;        // Max # of bytes to use.
-    private long _crawlEndTime;          // When we want the crawl to end
     protected long _crawlDelay;            // Delay (in milliseconds) between requests
     private int _maxRedirects;
     private int _maxConnectionsPerHost; // 
     private String _acceptLanguage;    // What to pass for the Accept-Language request header
     private Set<String> _validMimeTypes;    // Set of mime-types that we'll accept, or null
     private int _maxRequestsPerConnection;  // Max # of URLs to request in any one connection
-    private FetcherMode _fetcherMode;       // Should we skip URLs when they back up for a domain?
     private long _requestTimeout;           // Max time for any given set of URLs (termination timeout is based on this)
+
+    // TODO KKr - move these into a CrawlPolicy class, and call it CrawlMode
+    private FetcherMode _fetcherMode;       // Should we skip URLs when they back up for a domain?
+    private long _crawlEndTime;          // When we want the crawl to end
+    private int _maxUrlsPerServer;          // Max number of URLs to fetch per server
     
     public FetcherPolicy() {
         this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME, DEFAULT_CRAWL_DELAY, DEFAULT_MAX_REDIRECTS);
@@ -100,32 +104,16 @@ public class FetcherPolicy implements Serializable {
         _maxRedirects = maxRedirects;
         
         // For rarely used parameters, we'll set it to default values and then let callers set them  individually.
-        // WARNING - any fields added to this set need to be explicitly set in the makeNewPolicy method.
         _acceptLanguage = DEFAULT_ACCEPT_LANGUAGE;
         _validMimeTypes = null;
         _maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
         _maxRequestsPerConnection = DEFAULT_MAX_REQUESTS_PER_CONNECTION;
         _fetcherMode = FetcherMode.COMPLETE;
+        _maxUrlsPerServer = DEFAULT_MAX_URLS_PER_SERVER;
         
         _requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     }
 
-    /**
-     * Create a copy of the current policy, but with a different crawlDelay value.
-     * 
-     * @param crawlDelay
-     * @return
-     */
-    public FetcherPolicy makeNewPolicy(long crawlDelay) {
-        FetcherPolicy result = new FetcherPolicy(getMinResponseRate(), getMaxContentSize(), getCrawlEndTime(), crawlDelay, getMaxRedirects());
-        
-        result.setAcceptLanguage(getAcceptLanguage());
-        result.setValidMimeTypes(getValidMimeTypes());
-        result.setMaxConnectionsPerHost(getMaxConnectionsPerHost());
-        
-        return result;
-    }
-    
     /**
      * Calculate the maximum number of URLs that could be processed in the remaining time.
      * 
@@ -253,6 +241,14 @@ public class FetcherPolicy implements Serializable {
     
     public void setFetcherMode(FetcherMode mode) {
         _fetcherMode = mode;
+    }
+    
+    public int getMaxUrlsPerServer() {
+        return _maxUrlsPerServer;
+    }
+    
+    public void setMaxUrlsPerServer(int maxUrlsPerServer) {
+        _maxUrlsPerServer = maxUrlsPerServer;
     }
     
     public FetchRequest getFetchRequest(long now, long crawlDelay, int maxUrls) {

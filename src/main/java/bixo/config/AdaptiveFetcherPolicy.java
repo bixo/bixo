@@ -19,11 +19,6 @@ public class AdaptiveFetcherPolicy extends FetcherPolicy {
     }
     
     @Override
-    public FetcherPolicy makeNewPolicy(long crawlDelay) {
-        return new AdaptiveFetcherPolicy(getCrawlEndTime(), crawlDelay);
-    }
-    
-    @Override
     public int getMaxRequestsPerConnection() {
         return MAX_REQUESTS_PER_CONNECTION;
     }
