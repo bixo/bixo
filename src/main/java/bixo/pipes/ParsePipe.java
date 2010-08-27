@@ -24,6 +24,8 @@ package bixo.pipes;
 
 import org.apache.log4j.Logger;
 
+import bixo.cascading.BixoFlowProcess;
+import bixo.cascading.LoggingFlowReporter;
 import bixo.cascading.NullContext;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
@@ -31,9 +33,11 @@ import bixo.parser.IParser;
 import bixo.parser.ParserCounters;
 import bixo.parser.SimpleParser;
 import cascading.flow.FlowProcess;
+import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
+import cascading.operation.OperationCall;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
@@ -48,6 +52,7 @@ public class ParsePipe extends SubAssembly {
 
     private static class ParseFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
+        private transient BixoFlowProcess _flowProcess;
         private IParser _parser;
         private Fields _metaDataFields;
 
@@ -55,6 +60,14 @@ public class ParsePipe extends SubAssembly {
             super(ParsedDatum.FIELDS.append(outMetaDataFields));
             _metaDataFields = inMetaDataFields;
             _parser = parser;
+        }
+
+        @Override
+        public void prepare(FlowProcess flowProcess,
+                            OperationCall<NullContext> operationCall) {
+            super.prepare(flowProcess, operationCall);
+            _flowProcess = new BixoFlowProcess((HadoopFlowProcess)flowProcess);
+            _flowProcess.addReporter(new LoggingFlowReporter());
         }
 
         @Override
@@ -70,11 +83,11 @@ public class ParsePipe extends SubAssembly {
             
             try {
                 ParsedDatum parseResult = _parser.parse(fetchedDatum);
-                flowProcess.increment(ParserCounters.DOCUMENTS_PARSED, 1);
+                _flowProcess.increment(ParserCounters.DOCUMENTS_PARSED, 1);
                 functionCall.getOutputCollector().add(parseResult.toTuple());
             } catch (Exception e) {
                 LOGGER.warn("Error processing " + fetchedDatum.getBaseUrl(), e);
-                flowProcess.increment(ParserCounters.DOCUMENTS_FAILED, 1);
+                _flowProcess.increment(ParserCounters.DOCUMENTS_FAILED, 1);
                 // TODO KKr - don't lose datums for documents that couldn't be parsed
             }
         }
