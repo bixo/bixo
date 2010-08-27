@@ -25,6 +25,8 @@ import cascading.tuple.TupleEntryCollector;
 @SuppressWarnings( { "serial", "unchecked" })
 public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
     private static final Logger LOGGER = Logger.getLogger(PreFetchBuffer.class);
+
+    private static final int URLS_PER_SKIPPED_BATCH = 100;
     
     private FetcherPolicy _fetcherPolicy;
     private int _numReduceTasks;
@@ -58,6 +60,9 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
             crawlDelay = _fetcherPolicy.getCrawlDelay();
         }
         
+        int maxUrls = _fetcherPolicy.getMaxUrlsPerServer();
+        int totalUrls = 0;
+        
         TupleEntryCollector collector = buffCall.getOutputCollector();
 
         PartitioningKey newKey = new PartitioningKey(key, _numReduceTasks);
@@ -75,20 +80,31 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
         // the URLs from small domains will be better mingled with URLs from big domains. And this
         // in turn will improve fetch efficiency or reduce the number of URLs we wind up skipping.
         
+        boolean skipping = false;
         while (values.hasNext()) {
             if (targetSize == 0) {
+                skipping = totalUrls >= maxUrls;
                 // Figure out the max # of URLs that we would want to get.
-                FetchRequest request = _fetcherPolicy.getFetchRequest(curRequestTime, crawlDelay, Integer.MAX_VALUE);
-                targetSize = request.getNumUrls();
-                nextRequestTime = request.getNextRequestTime();
+                if (skipping) {
+                    // We need to be skipping URLs. Do them in big chunks, and set the time to be
+                    // the same for each (don't care, FetchBuffer has to handle skipping them).
+                    targetSize = URLS_PER_SKIPPED_BATCH;
+                    nextRequestTime = curRequestTime;
+                } else {
+                    FetchRequest request = _fetcherPolicy.getFetchRequest(curRequestTime, crawlDelay, Integer.MAX_VALUE);
+                    targetSize = Math.min(request.getNumUrls(), maxUrls - totalUrls);
+                    nextRequestTime = request.getNextRequestTime();
+                }
             }
 
             ScoredUrlDatum scoredDatum = new ScoredUrlDatum(values.next().getTuple(), _metaDataFields);
             urls.add(scoredDatum);
+            totalUrls += 1;
 
             if (urls.size() >= targetSize) {
                 LOGGER.trace(String.format("Added %d urls for ref %s in group %d at %d", urls.size(), newKey.getRef(), newKey.getValue(), curRequestTime));
                 PreFetchedDatum datum = new PreFetchedDatum(urls, curRequestTime, nextRequestTime - curRequestTime, newKey.getValue(), newKey.getRef(), !values.hasNext());
+                datum.setSkipped(skipping);
                 collector.add(datum.toTuple());
 
                 curRequestTime = nextRequestTime;
@@ -101,6 +117,7 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
         if (urls.size() > 0) {
             LOGGER.trace(String.format("Added %d urls for ref %s in group %d at %d", urls.size(), newKey.getRef(), newKey.getValue(), curRequestTime));
             PreFetchedDatum datum = new PreFetchedDatum(urls, curRequestTime, 0, newKey.getValue(), newKey.getRef(), true);
+            datum.setSkipped(skipping);
             collector.add(datum.toTuple());
         }
     }

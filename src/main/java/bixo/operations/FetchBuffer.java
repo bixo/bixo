@@ -94,6 +94,13 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 // Nothing ready in the queue, let's see about the iterator.
                 if (_values.hasNext()) {
                     datum = new PreFetchedDatum(_values.next().getTuple(), _metaDataFields);
+                    if (datum.isSkipped()) {
+                        List<ScoredUrlDatum> urls = datum.getUrls();
+                        trace("Skipping %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
+                        skipUrls(urls, UrlStatus.SKIPPED_PER_SERVER_LIMIT, null);
+                        continue;
+                    }
+                    
                     String ref = datum.getGroupingRef();
                     if (_activeRefs.get(ref) == null) {
                         Long nextFetchTime = _pendingRefs.get(ref);
@@ -124,7 +131,9 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                     // TODO KKr - have a peek(index) and a remove(index) call for the DiskQueue,
                     // where index < number of elements in memory. That way we don't get stuck on having
                     // a top-most element that's taking a long time, but there are following elements that
-                    // would be ready to go.
+                    // would be ready to go. Or we could just make sure that the DiskQueue orders
+                    // elements by a comparator (for the in memory set), so top-most is always the
+                    // one that's closest to being ready (or biggest, if more than one is ready)
                     return null;
                 }
             }
