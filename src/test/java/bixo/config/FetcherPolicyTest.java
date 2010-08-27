@@ -8,13 +8,6 @@ import bixo.fetcher.FetchRequest;
 
 public class FetcherPolicyTest {
 
-    @SuppressWarnings("serial")
-    private static class MyFetcherPolicy extends FetcherPolicy {
-        public MyFetcherPolicy() {
-            super();
-        }
-    }
-    
     @Test
     public void testZeroCrawlDelay() {
         FetcherPolicy policy = new FetcherPolicy(FetcherPolicy.NO_MIN_RESPONSE_RATE,
@@ -43,18 +36,4 @@ public class FetcherPolicyTest {
         }
     }
     
-    @Test
-    public void testMakingNewPolicy() {
-        FetcherPolicy policy = new FetcherPolicy();
-        
-        FetcherPolicy newPolicy = policy.makeNewPolicy(policy.getCrawlDelay());
-        Assert.assertTrue(newPolicy.equals(policy));
-    }
-    
-    @Test
-    public void testNotOverridingMakeNewPolicy() {
-        FetcherPolicy policy = new MyFetcherPolicy();
-        FetcherPolicy newPolicy = policy.makeNewPolicy(policy.getCrawlDelay());
-        Assert.assertNotSame(newPolicy.getClass(), policy.getClass());
-    }
 }

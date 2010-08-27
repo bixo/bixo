@@ -32,11 +32,6 @@ public class FakeUserFetcherPolicy extends FetcherPolicy {
     }
     
     @Override
-    public FetcherPolicy makeNewPolicy(long crawlDelay) {
-        return new FakeUserFetcherPolicy(crawlDelay);
-    }
-    
-    @Override
     public FetchRequest getFetchRequest(long now, long crawlDelay, int maxUrls) {
         // Ignore crawlDelay, and always use our delay.
         long nextRequestTime = now + getCrawlDelay();
