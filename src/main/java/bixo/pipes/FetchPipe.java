@@ -205,10 +205,9 @@ public class FetchPipe extends SubAssembly {
     }
     
     public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, IHttpFetcher robotsFetcher, int numReducers, Fields metaDataFields) {
-        Pipe robotsPipe = new Pipe("robots pipe", urlProvider);
         Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
-        robotsPipe = new Each(robotsPipe, new GroupFunction(metaDataFields, new GroupByDomain()), groupedFields);
-        robotsPipe = new GroupBy(robotsPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
+        Pipe robotsPipe = new Each(urlProvider, new GroupFunction(metaDataFields, new GroupByDomain()), groupedFields);
+        robotsPipe = new GroupBy("Grouping URLs by IP/delay", robotsPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
         
         FilterAndScoreByUrlAndRobots filter;
         if (robotsFetcher != null) {
@@ -226,11 +225,10 @@ public class FetchPipe extends SubAssembly {
         // ordered by score, getting passed per list to the PreFetchBuffer. This will generate PreFetchDatums that contain a key
         // based on the hash of the IP address (with a range of values == number of reducers), plus a list of URLs and a target
         // crawl time.
-        Pipe fetchPipe = new Pipe("fetch pipe", splitter.getRHSPipe());
-        fetchPipe  = new GroupBy(fetchPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD), new Fields(ScoredUrlDatum.SCORE_FIELD), true);
-        fetchPipe = new Every(fetchPipe, new PreFetchBuffer(fetcher.getFetcherPolicy(), numReducers, metaDataFields), Fields.RESULTS);
+        Pipe prefetchPipe = new GroupBy("Distributing URL sets", splitter.getRHSPipe(), new Fields(GroupedUrlDatum.GROUP_KEY_FIELD), new Fields(ScoredUrlDatum.SCORE_FIELD), true);
+        prefetchPipe = new Every(prefetchPipe, new PreFetchBuffer(fetcher.getFetcherPolicy(), numReducers, metaDataFields), Fields.RESULTS);
         
-        fetchPipe = new GroupBy(fetchPipe, new Fields(PreFetchedDatum.GROUPING_KEY_FN), new Fields(PreFetchedDatum.FETCH_TIME_FN));
+        Pipe fetchPipe = new GroupBy("Fetching URL sets", prefetchPipe, new Fields(PreFetchedDatum.GROUPING_KEY_FN), new Fields(PreFetchedDatum.FETCH_TIME_FN));
         fetchPipe = new Every(fetchPipe, new FetchBuffer(fetcher, fetcher.getFetcherPolicy().getCrawlEndTime(), metaDataFields),
                         Fields.RESULTS);
 
@@ -243,6 +241,9 @@ public class FetchPipe extends SubAssembly {
         // gets status for every URL we put into this sub-assembly.
         Pipe skippedStatus = new Pipe("skipped status", new Each(splitter.getLHSPipe(), new MakeSkippedStatus(metaDataFields)));
         
+        // TODO KKr You're already setting the group name here (so that the
+        // tail pipe gets the same name), so I wasn't able to pass in a
+        // group name here for BaseTool.nameFlowSteps to use for the job name.
         Pipe joinedStatus = new GroupBy(STATUS_PIPE_NAME, Pipe.pipes(skippedStatus, fetchedStatus),
                         new Fields(StatusDatum.URL_FIELD));
 
