@@ -368,7 +368,6 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertEquals(numSkippedEntries, sourceUrls - maxUrls);
     }
     
-
     // TODO KKr- re-enable this test when we know how to make it work for
     // the new fetcher architecture.
     /**

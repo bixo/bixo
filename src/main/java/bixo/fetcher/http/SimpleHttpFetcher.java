@@ -92,6 +92,7 @@ import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
+import bixo.config.FetcherPolicy.RedirectMode;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
@@ -103,6 +104,7 @@ import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.RedirectFetchException;
 import bixo.exceptions.UrlFetchException;
+import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
 import bixo.utils.HttpUtils;
 
 @SuppressWarnings("serial")
@@ -134,7 +136,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     private static final String DEFAULT_ACCEPT_CHARSET = "utf-8,ISO-8859-1;q=0.7,*;q=0.7";
     
     // Keys used to access data in the Http execution context.
-	private static final String PERM_REDIRECT_CONTEXT_KEY = "perm-redirect";
+    private static final String PERM_REDIRECT_CONTEXT_KEY = "perm-redirect";
 	private static final String REDIRECT_COUNT_CONTEXT_KEY = "redirect-count";
 	private static final String HOST_ADDRESS = "host-address";
 
@@ -186,34 +188,67 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         }
     }
     
+    private static class MyRedirectException extends RedirectException {
+
+        private URI _uri;
+        private RedirectExceptionReason _reason;
+        
+        public MyRedirectException(String message, URI uri, RedirectExceptionReason reason) {
+            super(message);
+            _uri = uri;
+            _reason = reason;
+        }
+        
+        public URI getUri() {
+            return _uri;
+        }
+        
+        public RedirectExceptionReason getReason() {
+            return _reason;
+        }
+    }
+    
     /**
      * Handler to record last permanent redirect (if any) in context.
      *
      */
     private static class MyRedirectHandler extends DefaultRedirectHandler {
     	
-		public MyRedirectHandler() {
+        private RedirectMode _redirectMode;
+        
+		public MyRedirectHandler(RedirectMode redirectMode) {
     		super();
+    		
+    		_redirectMode = redirectMode;
     	}
     	
     	@Override
     	public URI getLocationURI(HttpResponse response, HttpContext context) throws ProtocolException {
     	    URI result = super.getLocationURI(response, context);
+    	    
+            // Keep track of the number of redirects.
+            Integer count = (Integer)context.getAttribute(REDIRECT_COUNT_CONTEXT_KEY);
+            if (count == null) {
+                count = new Integer(0);
+            }
 
-    	    int statusCode = response.getStatusLine().getStatusCode();
-    	    if (statusCode == HttpStatus.SC_MOVED_PERMANENTLY) {
-    	        context.setAttribute(PERM_REDIRECT_CONTEXT_KEY, result);
+            context.setAttribute(REDIRECT_COUNT_CONTEXT_KEY, count + 1);
+
+            // Record the last permanent redirect
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode == HttpStatus.SC_MOVED_PERMANENTLY) {
+                context.setAttribute(PERM_REDIRECT_CONTEXT_KEY, result);
+            }
+
+    	    // Based on the redirect mode, decide how we want to handle this.
+            boolean isPermRedirect = statusCode == HttpStatus.SC_MOVED_PERMANENTLY;
+    	    if ((_redirectMode == RedirectMode.FOLLOW_NONE) ||
+    	        ((_redirectMode == RedirectMode.FOLLOW_TEMP) && isPermRedirect)) {
+    	        RedirectExceptionReason reason = isPermRedirect ? RedirectExceptionReason.PERM_REDIRECT_DISALLOWED : 
+    	            RedirectExceptionReason.TEMP_REDIRECT_DISALLOWED;
+    	        throw new MyRedirectException("RedirectMode disallowed redirect: " + _redirectMode, result, reason);
     	    }
-
-    	    // Keep track of the number of redirects.
-    	    Integer count = (Integer)context.getAttribute(REDIRECT_COUNT_CONTEXT_KEY);
-    	    if (count == null) {
-    	        count = new Integer(0);
-    	    }
-
-    	    count += 1;
-    	    context.setAttribute(REDIRECT_COUNT_CONTEXT_KEY, count);
-
+    	    
     	    return result;
     	}
     }
@@ -496,8 +531,19 @@ public class SimpleHttpFetcher implements IHttpFetcher {
 
             // If the root case was a "too many redirects" error, we want to map this to a specific
             // exception that contains the final redirect.
-            if (e.getCause() instanceof RedirectException) {
-                throw new RedirectFetchException(url, extractRedirectedUrl(url, localContext));
+            if (e.getCause() instanceof MyRedirectException) {
+                MyRedirectException mre = (MyRedirectException)e.getCause();
+                String redirectUrl = url;
+
+                try {
+                    redirectUrl = mre.getUri().toURL().toExternalForm();
+                } catch (MalformedURLException e2) {
+                    LOGGER.warn("Invalid URI saved during redirect handling: " + mre.getUri());
+                }
+
+                throw new RedirectFetchException(url, redirectUrl, mre.getReason());
+            } else if (e.getCause() instanceof RedirectException) {
+                throw new RedirectFetchException(url, extractRedirectedUrl(url, localContext), RedirectExceptionReason.TOO_MANY_REDIRECTS);
             } else {
                 throw new IOFetchException(url, e);
             }
@@ -617,6 +663,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     }
     
     private String extractRedirectedUrl(String url, HttpContext localContext) {
+        // This was triggered by HttpClient with the redirect count was exceeded.
         HttpHost host = (HttpHost)localContext.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
         HttpUriRequest finalRequest = (HttpUriRequest)localContext.getAttribute(ExecutionContext.HTTP_REQUEST);
 
@@ -720,7 +767,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             ThreadSafeClientConnManager cm = new ThreadSafeClientConnManager(params, schemeRegistry);
             _httpClient = new DefaultHttpClient(cm, params);
             _httpClient.setHttpRequestRetryHandler(new MyRequestRetryHandler(_maxRetryCount));
-            _httpClient.setRedirectHandler(new MyRedirectHandler());
+            _httpClient.setRedirectHandler(new MyRedirectHandler(_fetcherPolicy.getRedirectMode()));
             _httpClient.addRequestInterceptor(new MyRequestInterceptor());
             
             params = _httpClient.getParams();
@@ -729,8 +776,12 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             HttpClientParams.setCookiePolicy(params, CookiePolicy.BEST_MATCH);
             
             ClientParamBean clientParams = new ClientParamBean(params);
-            clientParams.setHandleRedirects(_fetcherPolicy.getMaxRedirects() != FetcherPolicy.NO_REDIRECTS);
-            clientParams.setMaxRedirects(_fetcherPolicy.getMaxRedirects());
+            if (_fetcherPolicy.getMaxRedirects() == 0) {
+                clientParams.setHandleRedirects(false);
+            } else {
+                clientParams.setHandleRedirects(true);
+                clientParams.setMaxRedirects(_fetcherPolicy.getMaxRedirects());
+            }
             
             // Set up default headers. This helps us get back from servers what we want.
             HashSet<Header> defaultHeaders = new HashSet<Header>();

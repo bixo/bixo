@@ -8,7 +8,6 @@ import static org.junit.Assert.*;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.conn.HttpHostConnectException;
-import org.junit.Assert;
 import org.junit.Test;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
@@ -18,11 +17,14 @@ import org.mortbay.http.SocketListener;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.FetcherPolicy.RedirectMode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.AbortedFetchException;
 import bixo.exceptions.AbortedFetchReason;
 import bixo.exceptions.IOFetchException;
+import bixo.exceptions.RedirectFetchException;
+import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
 import bixo.fetcher.RandomResponseHandler;
 import bixo.fetcher.ResourcesResponseHandler;
 import bixo.fetcher.simulation.SimulationWebServer;
@@ -125,9 +127,9 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         
         try {
             fetcher.get(new ScoredUrlDatum(url));
-            Assert.fail("Exception not thrown");
+            fail("Exception not thrown");
         } catch (IOFetchException e) {
-            Assert.assertTrue(e.getCause() instanceof HttpHostConnectException);
+            assertTrue(e.getCause() instanceof HttpHostConnectException);
         } finally {
             server.stop();
         }
@@ -168,9 +170,9 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         String url = "http://localhost:8089/test.html";
         try {
             fetcher.get(new ScoredUrlDatum(url));
-            Assert.fail("Aborted fetch exception not thrown");
+            fail("Aborted fetch exception not thrown");
         } catch (AbortedFetchException e) {
-            Assert.assertEquals(AbortedFetchReason.SLOW_RESPONSE_RATE, e.getAbortReason());
+            assertEquals(AbortedFetchReason.SLOW_RESPONSE_RATE, e.getAbortReason());
         }
         server.stop();
     }
@@ -201,7 +203,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
 
-        Assert.assertTrue("Content size should be truncated", result.getContentLength() <= policy.getMaxContentSize());
+        assertTrue("Content size should be truncated", result.getContentLength() <= policy.getMaxContentSize());
     }
     
     @Test
@@ -218,11 +220,11 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         FetchedDatum result2 = fetcher.get(datumToFetch);
 
         // Verify that we got the same data from each fetch request.
-        Assert.assertEquals(result1.getContentLength(), result2.getContentLength());
+        assertEquals(result1.getContentLength(), result2.getContentLength());
         byte[] bytes1 = result1.getContentBytes();
         byte[] bytes2 = result2.getContentBytes();
         for (int i = 0; i < bytes1.length; i++) {
-            Assert.assertEquals(bytes1[i], bytes2[i]);
+            assertEquals(bytes1[i], bytes2[i]);
         }
 
         server.stop();
@@ -237,7 +239,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
 
-        Assert.assertTrue("Content size should be truncated", result.getContentLength() <= policy.getMaxContentSize());
+        assertTrue("Content size should be truncated", result.getContentLength() <= policy.getMaxContentSize());
 
     }
     
@@ -251,8 +253,8 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         server.stop();
         
         String contentType = result.getHeaders().getFirst(IHttpHeaders.CONTENT_TYPE);
-        Assert.assertNotNull(contentType);
-        Assert.assertEquals("text/html", contentType);
+        assertNotNull(contentType);
+        assertEquals("text/html", contentType);
     }
     
     @Test
@@ -264,9 +266,9 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
 
-        Assert.assertEquals("Redirected URL", "http://localhost:8089/redirect", result.getFetchedUrl());
-        Assert.assertNull(result.getNewBaseUrl());
-        Assert.assertEquals(1, result.getNumRedirects());
+        assertEquals("Redirected URL", "http://localhost:8089/redirect", result.getFetchedUrl());
+        assertNull(result.getNewBaseUrl());
+        assertEquals(1, result.getNumRedirects());
     }
     
     @Test
@@ -278,9 +280,44 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
 
-        Assert.assertEquals("Redirected URL", "http://localhost:8089/redirect", result.getFetchedUrl());
-        Assert.assertEquals("New base URL", "http://localhost:8089/redirect", result.getNewBaseUrl());
-        Assert.assertEquals(1, result.getNumRedirects());
+        assertEquals("Redirected URL", "http://localhost:8089/redirect", result.getFetchedUrl());
+        assertEquals("New base URL", "http://localhost:8089/redirect", result.getNewBaseUrl());
+        assertEquals(1, result.getNumRedirects());
+    }
+    
+    @Test
+    public final void testRedirectPolicy() throws Exception {
+        FetcherPolicy policy = new FetcherPolicy();
+        policy.setRedirectMode(RedirectMode.FOLLOW_TEMP);
+        HttpServer server = startServer(new RedirectResponseHandler(true), 8089);
+        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        String url = "http://localhost:8089/base";
+        
+        try {
+            fetcher.get(new ScoredUrlDatum(url));
+            fail("Exception should have been thrown");
+        } catch (RedirectFetchException e) {
+            assertEquals("Redirected URL", "http://localhost:8089/redirect", e.getRedirectedUrl());
+            assertEquals(RedirectExceptionReason.PERM_REDIRECT_DISALLOWED, e.getReason());
+        } finally {
+            server.stop();
+        }
+        
+        // Now try setting the mode to follow none
+        policy.setRedirectMode(RedirectMode.FOLLOW_NONE);
+        server = startServer(new RedirectResponseHandler(false), 8089);
+        fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        
+        try {
+            fetcher.get(new ScoredUrlDatum(url));
+            fail("Exception should have been thrown");
+        } catch (RedirectFetchException e) {
+            assertEquals("Redirected URL", "http://localhost:8089/redirect", e.getRedirectedUrl());
+            assertEquals(RedirectExceptionReason.TEMP_REDIRECT_DISALLOWED, e.getReason());
+        } finally {
+            server.stop();
+        }
+
     }
     
     @Test
@@ -295,7 +332,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
         String contentStr = new String(result.getContentBytes(), 0, result.getContentLength());
-        Assert.assertTrue( englishContent.equals(contentStr));
+        assertTrue( englishContent.equals(contentStr));
     }
 
     @Test
@@ -370,8 +407,8 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         server.stop();
         
         String hostAddress = result.getHostAddress();
-        Assert.assertNotNull(hostAddress);
-        Assert.assertEquals("127.0.0.1", hostAddress);
+        assertNotNull(hostAddress);
+        assertEquals("127.0.0.1", hostAddress);
     }
     
 }

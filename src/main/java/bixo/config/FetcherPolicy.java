@@ -35,6 +35,19 @@ import bixo.fetcher.FetchRequest;
 @SuppressWarnings("serial")
 public class FetcherPolicy implements Serializable {
     
+    // Possible redirect handling modes. If a redirect is NOT followed because of this
+    // setting, then the fetcher will return a synthetic page with the redirected URL
+    // as the href attribute of a single <a> element. Note that if the "too many redirects"
+    // limit is exceeded, then an HttpFetchException will still be thrown, and no such
+    // special handling will be done.
+    
+    public enum RedirectMode {
+        FOLLOW_ALL,         // Fetcher will try to follow all redirects
+        FOLLOW_TEMP,        // Temp redirects are automatically followed, but not pemanent.
+        FOLLOW_NONE         // No redirects are followed.
+    }
+    
+    
     public enum FetcherMode {
         EFFICIENT,          // Check, and skip batch of URLs if blocked by domain still active or pending
         COMPLETE,           // Check, and queue up batch of URLs if not ready.
@@ -82,6 +95,7 @@ public class FetcherPolicy implements Serializable {
     private FetcherMode _fetcherMode;       // Should we skip URLs when they back up for a domain?
     private long _crawlEndTime;          // When we want the crawl to end
     private int _maxUrlsPerServer;          // Max number of URLs to fetch per server
+    private RedirectMode _redirectMode;     // What to do about redirects?
     
     public FetcherPolicy() {
         this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME, DEFAULT_CRAWL_DELAY, DEFAULT_MAX_REDIRECTS);
@@ -110,6 +124,7 @@ public class FetcherPolicy implements Serializable {
         _maxRequestsPerConnection = DEFAULT_MAX_REQUESTS_PER_CONNECTION;
         _fetcherMode = FetcherMode.COMPLETE;
         _maxUrlsPerServer = DEFAULT_MAX_URLS_PER_SERVER;
+        _redirectMode = _maxRedirects > 0 ? RedirectMode.FOLLOW_ALL : RedirectMode.FOLLOW_NONE;
         
         _requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     }
@@ -214,9 +229,9 @@ public class FetcherPolicy implements Serializable {
     public int getMaxRedirects() {
         return _maxRedirects;
     }
-
+    
     public void setMaxRedirects(int maxRedirects) {
-    	_maxRedirects = maxRedirects;
+        _maxRedirects = maxRedirects;
     }
     
     public String getAcceptLanguage() {
@@ -251,6 +266,14 @@ public class FetcherPolicy implements Serializable {
         _maxUrlsPerServer = maxUrlsPerServer;
     }
     
+    public RedirectMode getRedirectMode() {
+        return _redirectMode;
+    }
+    
+    public void setRedirectMode(RedirectMode mode) {
+        _redirectMode = mode;
+    }
+
     public FetchRequest getFetchRequest(long now, long crawlDelay, int maxUrls) {
         int numUrls;
         
