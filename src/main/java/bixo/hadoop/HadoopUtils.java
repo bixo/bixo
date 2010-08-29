@@ -114,9 +114,9 @@ public class HadoopUtils {
 
         FlowConnector.setApplicationJarClass(properties, appJarClass);
 
-        // Propagate properties into the Hadoop JobConf
-        // TODO KKr This comment doesn't seem correct to me, as setJobConf
-        // actually copies conf *into* the cascading.hadoop.jobconf property.
+        // Put the JobConf into the properties, so that when this properties file
+        // is used to create the cascading Flow, values in the JobConf are used to
+        // set up Hadoop.
         MultiMapReducePlanner.setJobConf(properties, conf);
 
         return properties;

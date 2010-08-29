@@ -296,7 +296,6 @@ public class FetcherPolicy implements Serializable {
         _requestTimeout = requestTimeout;
     }
     
-    
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -309,7 +308,9 @@ public class FetcherPolicy implements Serializable {
         result = prime * result + _maxContentSize;
         result = prime * result + _maxRedirects;
         result = prime * result + _maxRequestsPerConnection;
+        result = prime * result + _maxUrlsPerServer;
         result = prime * result + _minResponseRate;
+        result = prime * result + ((_redirectMode == null) ? 0 : _redirectMode.hashCode());
         result = prime * result + (int) (_requestTimeout ^ (_requestTimeout >>> 32));
         result = prime * result + ((_validMimeTypes == null) ? 0 : _validMimeTypes.hashCode());
         return result;
@@ -346,7 +347,14 @@ public class FetcherPolicy implements Serializable {
             return false;
         if (_maxRequestsPerConnection != other._maxRequestsPerConnection)
             return false;
+        if (_maxUrlsPerServer != other._maxUrlsPerServer)
+            return false;
         if (_minResponseRate != other._minResponseRate)
+            return false;
+        if (_redirectMode == null) {
+            if (other._redirectMode != null)
+                return false;
+        } else if (!_redirectMode.equals(other._redirectMode))
             return false;
         if (_requestTimeout != other._requestTimeout)
             return false;
