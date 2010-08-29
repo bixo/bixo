@@ -36,17 +36,15 @@ import bixo.fetcher.FetchRequest;
 public class FetcherPolicy implements Serializable {
     
     // Possible redirect handling modes. If a redirect is NOT followed because of this
-    // setting, then the fetcher will return a synthetic page with the redirected URL
-    // as the href attribute of a single <a> element. Note that if the "too many redirects"
-    // limit is exceeded, then an HttpFetchException will still be thrown, and no such
-    // special handling will be done.
+    // setting, then a RedirectFetchException is thrown, which is the same as what happens if
+    // too many redirects occur. But RedirectFetchException now has a reason field, which
+    // can be set to TOO_MANY_REDIRECTS, PERM_REDIRECT_DISALLOWED, or TEMP_REDIRECT_DISALLOWED.
     
     public enum RedirectMode {
         FOLLOW_ALL,         // Fetcher will try to follow all redirects
         FOLLOW_TEMP,        // Temp redirects are automatically followed, but not pemanent.
         FOLLOW_NONE         // No redirects are followed.
     }
-    
     
     public enum FetcherMode {
         EFFICIENT,          // Check, and skip batch of URLs if blocked by domain still active or pending
