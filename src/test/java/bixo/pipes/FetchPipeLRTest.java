@@ -35,6 +35,8 @@ import bixo.fetcher.simulation.TestWebServer;
 import bixo.fetcher.util.FixedScoreGenerator;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.ScoreGenerator;
+import bixo.robots.RobotRulesParser;
+import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
 import cascading.CascadingTestCase;
@@ -64,7 +66,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
         ScoreGenerator scorer = new FixedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        RobotRulesParser parser = new SimpleRobotRulesParser();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1, BaseDatum.EMPTY_METADATA_FIELDS);
         
         String outputPath = DEFAULT_OUTPUT_PATH;
         Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath, true);
@@ -221,7 +224,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
         ScoreGenerator scorer = new FixedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 1, new Fields("key"));
+        RobotRulesParser parser = new SimpleRobotRulesParser();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1, new Fields("key"));
         
         String outputPath = "build/test/FetchPipeTest/dual";
         Fields contentFields = FetchedDatum.FIELDS.append(new Fields("key"));
@@ -256,7 +260,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Pipe pipe = new Pipe("urlSource");
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
         ScoreGenerator scorer = new SkippedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        RobotRulesParser parser = new SimpleRobotRulesParser();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1, BaseDatum.EMPTY_METADATA_FIELDS);
         
         String outputPath = DEFAULT_OUTPUT_PATH;
         Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
@@ -284,7 +289,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         defaultPolicy.setCrawlEndTime(0);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
         ScoreGenerator scorer = new FixedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        RobotRulesParser parser = new SimpleRobotRulesParser();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1, BaseDatum.EMPTY_METADATA_FIELDS);
 
         // Create the output
         String outputPath = DEFAULT_OUTPUT_PATH;
@@ -329,7 +335,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         defaultPolicy.setMaxUrlsPerServer(maxUrls);
         IHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
         ScoreGenerator scorer = new FixedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        RobotRulesParser parser = new SimpleRobotRulesParser();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1, BaseDatum.EMPTY_METADATA_FIELDS);
 
         // Create the output
         String outputPath = DEFAULT_OUTPUT_PATH;

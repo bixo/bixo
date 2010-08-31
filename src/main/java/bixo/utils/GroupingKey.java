@@ -4,7 +4,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import bixo.datum.UrlStatus;
-import bixo.fetcher.http.IRobotRules;
+import bixo.robots.RobotRules;
 
 
 public class GroupingKey {
@@ -38,7 +38,7 @@ public class GroupingKey {
     }
     
     public static String makeGroupingKey(String domain, long crawlDelay) {
-        if (crawlDelay == IRobotRules.UNSET_CRAWL_DELAY) {
+        if (crawlDelay == RobotRules.UNSET_CRAWL_DELAY) {
             return String.format("%s-%s", domain, UNSET_DURATION);
         } else {
             return String.format("%s-%d", domain, crawlDelay);
@@ -63,7 +63,7 @@ public class GroupingKey {
         String durationString = m.group(2);
         // If we have <domain>-unset, then the crawl delay wasn't set.
         if (durationString.equals(UNSET_DURATION)) {
-            return IRobotRules.UNSET_CRAWL_DELAY;
+            return RobotRules.UNSET_CRAWL_DELAY;
         }
 
         try {

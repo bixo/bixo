@@ -16,6 +16,7 @@ import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.hadoop.FetchCounters;
+import bixo.robots.RobotRulesParser;
 import bixo.utils.DiskQueue;
 import bixo.utils.GroupingKey;
 import bixo.utils.ThreadedExecutor;
@@ -65,24 +66,27 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     private ScoreGenerator _scorer;
     private Fields _metadataFields;
 	private IHttpFetcher _fetcher;
+	private RobotRulesParser _parser;
 	
     private transient ThreadedExecutor _executor;
     private transient BixoFlowProcess _flowProcess;
 
-    public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, ScoreGenerator scorer, Fields metadataFields) {
+    public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, RobotRulesParser parser, ScoreGenerator scorer, Fields metadataFields) {
         // We're going to output a ScoredUrlDatum (what FetcherBuffer expects).
         super(ScoredUrlDatum.FIELDS.append(metadataFields));
 
         _scorer = scorer;
+        _parser = parser;
         _metadataFields = metadataFields;
         _fetcher = createFetcher(userAgent, maxThreads);
     }
 
-    public FilterAndScoreByUrlAndRobots(IHttpFetcher fetcher, ScoreGenerator scorer, Fields metadataFields) {
+    public FilterAndScoreByUrlAndRobots(IHttpFetcher fetcher, RobotRulesParser parser, ScoreGenerator scorer, Fields metadataFields) {
         // We're going to output a ScoredUrlDatum (what FetcherBuffer expects).
         super(ScoredUrlDatum.FIELDS.append(metadataFields));
 
         _scorer = scorer;
+        _parser = parser;
         _metadataFields = metadataFields;
         _fetcher = fetcher;
     }
@@ -141,7 +145,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         }
         
         try {
-            Runnable doRobots = new ProcessRobotsTask(protocolAndDomain, _scorer, urls, _fetcher, bufferCall.getOutputCollector(), _flowProcess);
+            Runnable doRobots = new ProcessRobotsTask(protocolAndDomain, _scorer, urls, _fetcher, _parser, bufferCall.getOutputCollector(), _flowProcess);
             _executor.execute(doRobots);
         } catch (RejectedExecutionException e) {
             // should never happen.

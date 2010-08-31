@@ -1,15 +1,17 @@
 package bixo.utils;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import org.junit.Test;
 
-import bixo.fetcher.http.IRobotRules;
-import static org.junit.Assert.*;
+import bixo.robots.RobotRules;
 
 public class GroupingKeyTest {
 
     @Test
     public void testFormattingKey() {
-        assertEquals("domain.com-unset", GroupingKey.makeGroupingKey("domain.com", IRobotRules.UNSET_CRAWL_DELAY));
+        assertEquals("domain.com-unset", GroupingKey.makeGroupingKey("domain.com", RobotRules.UNSET_CRAWL_DELAY));
         assertEquals("domain.com-30000", GroupingKey.makeGroupingKey("domain.com", 30000));
     }
     
@@ -21,7 +23,7 @@ public class GroupingKeyTest {
     
     @Test
     public void testExtractingCrawlDelay() {
-        assertEquals(IRobotRules.UNSET_CRAWL_DELAY, GroupingKey.getCrawlDelayFromKey("000001-domain.com-unset"));
+        assertEquals(RobotRules.UNSET_CRAWL_DELAY, GroupingKey.getCrawlDelayFromKey("000001-domain.com-unset"));
         assertEquals(30000, GroupingKey.getCrawlDelayFromKey("domain.com-30000"));
     }
     

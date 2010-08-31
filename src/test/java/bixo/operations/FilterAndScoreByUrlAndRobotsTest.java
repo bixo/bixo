@@ -19,6 +19,8 @@ import bixo.fetcher.simulation.TestWebServer;
 import bixo.fetcher.util.FixedScoreGenerator;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.hadoop.FetchCounters;
+import bixo.robots.RobotRulesParser;
+import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
 import cascading.flow.hadoop.HadoopFlowProcess;
@@ -47,7 +49,8 @@ public class FilterAndScoreByUrlAndRobotsTest {
         
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, ConfigUtils.BIXO_TEST_AGENT);
         ScoreGenerator scorer = new FixedScoreGenerator(1.0);
-        FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, scorer, BaseDatum.EMPTY_METADATA_FIELDS);
+        RobotRulesParser parser = new SimpleRobotRulesParser();
+        FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, parser, scorer, BaseDatum.EMPTY_METADATA_FIELDS);
         
         HadoopFlowProcess fp = Mockito.mock(HadoopFlowProcess.class);
         Mockito.when(fp.getJobConf()).thenReturn(new JobConf());
@@ -91,7 +94,8 @@ public class FilterAndScoreByUrlAndRobotsTest {
         
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, ConfigUtils.BIXO_TEST_AGENT);
         ScoreGenerator scorer = new FixedScoreGenerator(1.0);
-        FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, scorer, BaseDatum.EMPTY_METADATA_FIELDS);
+        RobotRulesParser parser = new SimpleRobotRulesParser();
+        FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, parser, scorer, BaseDatum.EMPTY_METADATA_FIELDS);
         
         HadoopFlowProcess fp = Mockito.mock(HadoopFlowProcess.class);
         Mockito.when(fp.getJobConf()).thenReturn(new JobConf());

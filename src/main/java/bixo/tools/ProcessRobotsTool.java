@@ -3,10 +3,13 @@ package bixo.tools;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URL;
 
 import bixo.fetcher.http.IHttpFetcher;
-import bixo.fetcher.http.SimpleRobotRules;
 import bixo.operations.FilterAndScoreByUrlAndRobots;
+import bixo.operations.ProcessRobotsTask;
+import bixo.robots.RobotRules;
+import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
 import bixo.utils.UrlUtils;
 
@@ -50,10 +53,15 @@ public class ProcessRobotsTool {
             		url = args[index++];
             	}
 
-            	System.out.println("Processing " + url);
-            	SimpleRobotRules rules = new SimpleRobotRules(fetcher, url);
-                System.out.println(String.format("Deferred visits = %s, top-level allowed = %s, is HTML = %s",
-                                rules.getDeferVisits(), rules.isAllowed(UrlUtils.makeProtocolAndDomain(url)), rules.isHtmlType()));
+            	URL robotsUrl = new URL(url);
+            	if (!robotsUrl.getPath().toLowerCase().endsWith("/robots.txt")) {
+            	    robotsUrl = new URL(robotsUrl, "/robots.txt");
+            	}
+            	
+            	System.out.println("Processing " + robotsUrl.toExternalForm());
+            	RobotRules rules = ProcessRobotsTask.getRobotRules(fetcher, new SimpleRobotRulesParser(), robotsUrl);
+                System.out.println(String.format("Deferred visits = %s, top-level allowed = %s",
+                                rules.isDeferVisits(), rules.isAllowed(UrlUtils.makeProtocolAndDomain(url))));
                 System.out.println();
         	} catch (Exception e) {
         		e.printStackTrace(System.out);

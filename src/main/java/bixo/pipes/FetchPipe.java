@@ -25,6 +25,8 @@ import bixo.operations.FetchBuffer;
 import bixo.operations.FilterAndScoreByUrlAndRobots;
 import bixo.operations.GroupFunction;
 import bixo.operations.PreFetchBuffer;
+import bixo.robots.RobotRulesParser;
+import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.GroupingKey;
 import bixo.utils.UrlUtils;
 import cascading.flow.FlowProcess;
@@ -196,24 +198,29 @@ public class FetchPipe extends SubAssembly {
      */
     
     public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher) {
-        this(urlProvider, scorer, fetcher, null, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        this(urlProvider, scorer, fetcher, null, null, 1, BaseDatum.EMPTY_METADATA_FIELDS);
     }
     
 
     public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, int numReducers, Fields metaDataFields) {
-        this(urlProvider, scorer, fetcher, null, numReducers, metaDataFields);
+        this(urlProvider, scorer, fetcher, null, null, numReducers, metaDataFields);
     }
     
-    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, IHttpFetcher robotsFetcher, int numReducers, Fields metaDataFields) {
+    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, IHttpFetcher robotsFetcher, RobotRulesParser parser,
+                    int numReducers, Fields metaDataFields) {
         Fields groupedFields = GroupedUrlDatum.FIELDS.append(metaDataFields);
         Pipe robotsPipe = new Each(urlProvider, new GroupFunction(metaDataFields, new GroupByDomain()), groupedFields);
         robotsPipe = new GroupBy("Grouping URLs by IP/delay", robotsPipe, new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
         
+        if (parser == null) {
+            parser = new SimpleRobotRulesParser();
+        }
+        
         FilterAndScoreByUrlAndRobots filter;
         if (robotsFetcher != null) {
-            filter = new FilterAndScoreByUrlAndRobots(robotsFetcher, scorer, metaDataFields);
+            filter = new FilterAndScoreByUrlAndRobots(robotsFetcher, parser, scorer, metaDataFields);
         } else {
-            filter = new FilterAndScoreByUrlAndRobots(fetcher.getUserAgent(), fetcher.getMaxThreads(), scorer, metaDataFields);
+            filter = new FilterAndScoreByUrlAndRobots(fetcher.getUserAgent(), fetcher.getMaxThreads(), parser, scorer, metaDataFields);
         }
         
         robotsPipe = new Every(robotsPipe, filter, Fields.RESULTS);
