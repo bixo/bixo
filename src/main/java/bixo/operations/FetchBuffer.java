@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 import bixo.cascading.BixoFlowProcess;
 import bixo.cascading.LoggingFlowReporter;
 import bixo.cascading.NullContext;
+import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
@@ -148,7 +149,6 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     private static final long HARD_TERMINATION_CLEANUP_DURATION = 10 * 1000L;
 
     private IHttpFetcher _fetcher;
-    private long _crawlEndTime;
     private FetcherMode _fetcherMode;
     private final Fields _metaDataFields;
 
@@ -162,13 +162,12 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     
     private transient AtomicBoolean _keepCollecting;
     
-    public FetchBuffer(IHttpFetcher fetcher, long crawlEndTime, Fields metaDataFields) {
+    public FetchBuffer(IHttpFetcher fetcher, Fields metaDataFields) {
         // We're going to output a tuple that contains a FetchedDatum, plus meta-data,
         // plus a result that could be a string, a status, or an exception
         super(FetchedDatum.FIELDS.append(metaDataFields).append(FETCH_RESULT_FIELD));
 
         _fetcher = fetcher;
-        _crawlEndTime = crawlEndTime;
         _fetcherMode = _fetcher.getFetcherPolicy().getFetcherMode();
         _metaDataFields = metaDataFields;
     }
@@ -202,10 +201,11 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         QueuedValues values = new QueuedValues(buffCall.getArgumentsIterator());
 
         _collector = buffCall.getOutputCollector();
-
+        FetcherPolicy fetcherPolicy = _fetcher.getFetcherPolicy();
+        
         // Each value is a PreFetchedDatum that contains a set of URLs to fetch in one request from
         // a single server, plus other values needed to set state properly.
-        while (!Thread.interrupted() && (System.currentTimeMillis() < _crawlEndTime) && !values.isEmpty()) {
+        while (!Thread.interrupted() && !fetcherPolicy.isTerminateFetch() && !values.isEmpty()) {
             PreFetchedDatum datum = values.nextOrNull(_fetcherMode);
             
             try {

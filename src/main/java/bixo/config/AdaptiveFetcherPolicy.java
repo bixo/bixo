@@ -37,7 +37,7 @@ public class AdaptiveFetcherPolicy extends FetcherPolicy {
         // aborted.
         long fetchInterval = Math.max(DEFAULT_FETCH_INTERVAL, getCrawlEndTime() - now);
         
-        // Crawl delay must be between _minCrawlDelay and default crawl delay.
+        // Crawl delay must be between the min crawl delay and the default crawl delay.
         long customCrawlDelay = Math.max(getCrawlDelay(), Math.min(DEFAULT_CRAWL_DELAY, fetchInterval / maxUrls));
         
         // Figure out how many URLs we can get in 5 minutes,or the remaining time (whatever is less).

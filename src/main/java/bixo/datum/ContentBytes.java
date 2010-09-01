@@ -52,9 +52,11 @@ public class ContentBytes extends BinaryComparable implements WritableComparable
        * Are the two byte sequences equal?
        */
       public boolean equals(Object right_obj) {
-        if (right_obj instanceof ContentBytes)
-          return super.equals(right_obj);
-        return false;
+          if (right_obj instanceof ContentBytes) {
+              return super.equals(right_obj);
+          } else {
+              return false;
+          }
       }
 
       /**
@@ -94,7 +96,8 @@ public class ContentBytes extends BinaryComparable implements WritableComparable
         }
       }
       
-      static {                                        // register this comparator
+      static {
+       // register this comparator
         WritableComparator.define(ContentBytes.class, new Comparator());
       }
       

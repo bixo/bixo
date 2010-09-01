@@ -127,48 +127,12 @@ public class FetcherPolicy implements Serializable {
         _requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     }
 
-    /**
-     * Calculate the maximum number of URLs that could be processed in the remaining time.
-     * 
-     * @return Number of URLs
-     */
-    public int getMaxUrls() {
-        if (getCrawlEndTime() == NO_CRAWL_END_TIME) {
-            return Integer.MAX_VALUE;
-        } else {
-            return calcMaxUrls();
-        }
-    }
-    
     public long getDefaultFetchInterval() {
         return DEFAULT_FETCH_INTERVAL;
     }
     
-    public int getDefaultUrlsPerRequest() {
-        long crawlDelay = getDefaultCrawlDelay();
-        if (crawlDelay > 0) {
-            return (int)(getDefaultFetchInterval() / crawlDelay);
-        } else {
-            return Integer.MAX_VALUE;
-        }
-    }
-    
     public long getDefaultCrawlDelay() {
         return DEFAULT_CRAWL_DELAY;
-    }
-    
-    protected int calcMaxUrls() {
-        if (_crawlDelay == 0) {
-            return Integer.MAX_VALUE;
-        } else {
-            long crawlDuration = getCrawlEndTime() - System.currentTimeMillis();
-            
-            if (crawlDuration <= 0) {
-                return 0;
-            } else {
-                return 1 + (int)Math.max(0, crawlDuration / _crawlDelay);
-            }
-        }
     }
     
     public long getCrawlEndTime() {
@@ -248,6 +212,23 @@ public class FetcherPolicy implements Serializable {
         _validMimeTypes = validMimeTypes;
     }
     
+    public RedirectMode getRedirectMode() {
+        return _redirectMode;
+    }
+    
+    public void setRedirectMode(RedirectMode mode) {
+        _redirectMode = mode;
+    }
+
+    public long getRequestTimeout() {
+        return _requestTimeout;
+    }
+    
+    public void setRequestTimeout(long requestTimeout) {
+        _requestTimeout = requestTimeout;
+    }
+    
+    // TODO Move these into a CrawlPolicy
     public FetcherMode getFetcherMode() {
         return _fetcherMode;
     }
@@ -264,14 +245,42 @@ public class FetcherPolicy implements Serializable {
         _maxUrlsPerServer = maxUrlsPerServer;
     }
     
-    public RedirectMode getRedirectMode() {
-        return _redirectMode;
+    /**
+     * Calculate the maximum number of URLs that could be fetched in the remaining time.
+     * 
+     * @return Number of URLs
+     */
+    public int getMaxUrls() {
+        if (getCrawlEndTime() == NO_CRAWL_END_TIME) {
+            return Integer.MAX_VALUE;
+        } else {
+            return calcMaxUrls();
+        }
     }
     
-    public void setRedirectMode(RedirectMode mode) {
-        _redirectMode = mode;
+    public int getDefaultUrlsPerRequest() {
+        long crawlDelay = getDefaultCrawlDelay();
+        if (crawlDelay > 0) {
+            return (int)(getDefaultFetchInterval() / crawlDelay);
+        } else {
+            return Integer.MAX_VALUE;
+        }
     }
-
+    
+    protected int calcMaxUrls() {
+        if (_crawlDelay == 0) {
+            return Integer.MAX_VALUE;
+        } else {
+            long crawlDuration = getCrawlEndTime() - System.currentTimeMillis();
+            
+            if (crawlDuration <= 0) {
+                return 0;
+            } else {
+                return 1 + (int)Math.max(0, crawlDuration / _crawlDelay);
+            }
+        }
+    }
+    
     public FetchRequest getFetchRequest(long now, long crawlDelay, int maxUrls) {
         int numUrls;
         
@@ -286,12 +295,13 @@ public class FetcherPolicy implements Serializable {
         return new FetchRequest(numUrls, nextFetchTime);
     }
     
-    public long getRequestTimeout() {
-        return _requestTimeout;
-    }
-    
-    public void setRequestTimeout(long requestTimeout) {
-        _requestTimeout = requestTimeout;
+    public boolean isTerminateFetch() {
+        if (getCrawlEndTime() == NO_CRAWL_END_TIME) {
+            return false;
+        } else {
+            // We're done if the current time is past the limit.
+            return System.currentTimeMillis() >= getCrawlEndTime();
+        }
     }
     
     @Override
