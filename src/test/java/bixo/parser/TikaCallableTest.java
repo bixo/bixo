@@ -26,6 +26,7 @@ public class TikaCallableTest {
 
     private static class DelayParser implements Parser {
         private boolean _delay;
+        private boolean _active;
         
         DelayParser(boolean delay) {
             _delay = delay;
@@ -38,8 +39,17 @@ public class TikaCallableTest {
 
         @Override
         public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+            _active = true;
             while (_delay) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
             }
+            
+            _active = false;
         }
 
         @Override
@@ -47,11 +57,15 @@ public class TikaCallableTest {
             // TODO Auto-generated method stub
             return null;
         }
+        
+        public boolean isActive() {
+            return _active;
+        }
     }
     
     @Test
     public void testNotTerminating() throws Exception {
-        Parser parser = new DelayParser(true);
+        DelayParser parser = new DelayParser(true);
         InputStream is = Mockito.mock(InputStream.class);
         Metadata md = Mockito.mock(Metadata.class);
         
@@ -67,8 +81,16 @@ public class TikaCallableTest {
             task.get(1000, TimeUnit.MILLISECONDS);
             Assert.fail("Should have gotten a timeout");
         } catch (TimeoutException e) {
-            // Valid
+            task.cancel(true);
+            t.interrupt();
+        } finally {
+            t = null;
         }
+        
+        // Verify that the thread is no longer active. We have to delay a bit so that
+        // the thread can actually process the interrupt.
+        Thread.sleep(200);
+        Assert.assertFalse(parser.isActive());
     }
     
     @Test

@@ -7,6 +7,7 @@ import java.net.URL;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.log4j.Logger;
 import org.apache.tika.metadata.Metadata;
@@ -88,9 +89,19 @@ public class SimpleParser implements IParser {
             Thread t = new Thread(task);
             t.start();
             
+            ParsedDatum result;
+            try {
+                result = task.get(getParserPolicy().getMaxParseDuration(), TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                task.cancel(true);
+                t.interrupt();
+                throw e;
+            } finally {
+                t = null;
+            }
+            
             // TODO KKr Should there be a BaseParser to take care of copying
             // these two fields?
-            ParsedDatum result = task.get(getParserPolicy().getMaxParseDuration(), TimeUnit.MILLISECONDS);
             result.setHostAddress(fetchedDatum.getHostAddress());
             result.setMetaDataMap(fetchedDatum.getMetaDataMap());
             return result;
