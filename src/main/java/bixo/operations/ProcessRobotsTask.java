@@ -6,21 +6,18 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Queue;
 
-import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.exceptions.HttpFetchException;
-import bixo.exceptions.IOFetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.hadoop.FetchCounters;
 import bixo.robots.RobotRules;
 import bixo.robots.RobotRulesParser;
+import bixo.robots.RobotUtils;
 import bixo.utils.DomainInfo;
 import bixo.utils.DomainNames;
 import bixo.utils.GroupingKey;
@@ -99,7 +96,7 @@ public class ProcessRobotsTask implements Runnable {
                 
                 emptyQueue(_urls, GroupingKey.SKIPPED_GROUPING_KEY, _collector);
             } else {
-                RobotRules robotRules = getRobotRules(_fetcher, _parser, new URL(domainInfo.getProtocolAndDomain() + "/robots.txt"));
+                RobotRules robotRules = RobotUtils.getRobotRules(_fetcher, _parser, new URL(domainInfo.getProtocolAndDomain() + "/robots.txt"));
 
                 String validKey = null;
                 boolean isDeferred = robotRules.isDeferVisits();
@@ -163,36 +160,4 @@ public class ProcessRobotsTask implements Runnable {
         }
     }
 
-    /**
-     * Externally visible, static method for use in tools and for testing.
-     * Fetch the indicated robots.txt file, parse it, and generate rules.
-     * 
-     * @param fetcher Fetcher for downloading robots.txt file
-     * @param robotsUrl URL to robots.txt file
-     * @return Robot rules
-     */
-    public static RobotRules getRobotRules(IHttpFetcher fetcher, RobotRulesParser parser, URL robotsUrl) {
-        
-        try {
-            String urlToFetch = robotsUrl.toExternalForm();
-            ScoredUrlDatum scoredUrl = new ScoredUrlDatum(urlToFetch);
-            FetchedDatum result = fetcher.get(scoredUrl);
-
-            // HACK! DANGER! Some sites will redirect the request to the top-level domain
-            // page, without returning a 404. So if we have a redirect, and the normalized
-            // redirect URL is the same as the domain, then treat it like a 404...otherwise
-            // our robots.txt parser will barf, and we treat that as a "deferred" case.
-            // TODO KKr - make it so.
-
-            return parser.parseContent(urlToFetch, result.getContentBytes(), result.getContentType(), 
-                            fetcher.getUserAgent().getAgentName());
-        } catch (HttpFetchException e) {
-            return parser.failedFetch(e.getHttpStatus());
-        } catch (IOFetchException e) {
-            return parser.failedFetch(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        } catch (Exception e) {
-            LOGGER.error("Unexpected exception fetching robots.txt: " + robotsUrl, e);
-            return parser.failedFetch(HttpStatus.SC_INTERNAL_SERVER_ERROR);
-        }
-    }
 }

@@ -226,6 +226,19 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     	public URI getLocationURI(HttpResponse response, HttpContext context) throws ProtocolException {
     	    URI result = super.getLocationURI(response, context);
     	    
+    	    // HACK - some sites return a redirect with an explicit port number that's the same as
+    	    // the default port (e.g. 80 for http), and then when you use this to make the next
+    	    // request, the presence of the port in the domain triggers another redirect, so you
+    	    // fail with a circular redirect error. Avoid that by converting the port number to
+    	    // -1 in that case.
+    	    if (result.getScheme().equalsIgnoreCase("http") && (result.getPort() == 80)) {
+    	        try {
+                    result = new URI(result.getScheme(), result.getUserInfo(), result.getHost(), -1, result.getPath(), result.getQuery(), result.getFragment());
+                } catch (URISyntaxException e) {
+                    LOGGER.warn("Unexpected exception removing port from URI", e);
+                }
+    	    }
+    	    
             // Keep track of the number of redirects.
             Integer count = (Integer)context.getAttribute(REDIRECT_COUNT_CONTEXT_KEY);
             if (count == null) {

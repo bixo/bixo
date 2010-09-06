@@ -8,15 +8,14 @@ import org.apache.log4j.Logger;
 import bixo.cascading.BixoFlowProcess;
 import bixo.cascading.LoggingFlowReporter;
 import bixo.cascading.NullContext;
-import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.http.IHttpFetcher;
-import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.hadoop.FetchCounters;
 import bixo.robots.RobotRulesParser;
+import bixo.robots.RobotUtils;
 import bixo.utils.DiskQueue;
 import bixo.utils.GroupingKey;
 import bixo.utils.ThreadedExecutor;
@@ -37,28 +36,7 @@ import cascading.tuple.TupleEntry;
 public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> implements Buffer<NullContext> {
 	private static final Logger LOGGER = Logger.getLogger(FilterAndScoreByUrlAndRobots.class);
 	
-    // Some robots.txt files are > 64K, amazingly enough.
-    private static final int MAX_ROBOTS_SIZE = 128 * 1024;
-
-    // subdomain.domain.com can direct to domain.com, so if we're simultaneously fetching
-    // a bunch of robots from subdomains that redirect, we'll exceed the default limit.
-    private static final int MAX_CONNECTIONS_PER_HOST = 20;
-    
-    // Crank down default values when fetching robots.txt, as this should be super
-    // fast to get back.
-    private static final int ROBOTS_CONNECTION_TIMEOUT = 10 * 1000;
-    private static final int ROBOTS_SOCKET_TIMEOUT = 10 * 1000;
-    private static final int ROBOTS_RETRY_COUNT = 2;
-
-    // TODO KKr - set up min response rate, use it with max size to calc max
-    // time for valid download, use it for COMMAND_TIMEOUT
-    
-    // Amount of time we'll wait for pending tasks to finish up. This is roughly equal
-    // to the max amount of time it might take to fetch a robots.txt file (excluding
-    // download time, which we could add).
-    // FUTURE KKr - add in time to do the download.
-    private static final long COMMAND_TIMEOUT = (ROBOTS_CONNECTION_TIMEOUT + ROBOTS_SOCKET_TIMEOUT) * ROBOTS_RETRY_COUNT;
-
+    private static final long COMMAND_TIMEOUT = RobotUtils.getMaxFetchTime();
     private static final long TERMINATE_TIMEOUT = COMMAND_TIMEOUT;
 
     private static final int MAX_URLS_IN_MEMORY = 100;
@@ -78,7 +56,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         _scorer = scorer;
         _parser = parser;
         _metadataFields = metadataFields;
-        _fetcher = createFetcher(userAgent, maxThreads);
+        _fetcher = RobotUtils.createFetcher(userAgent, maxThreads);
     }
 
     public FilterAndScoreByUrlAndRobots(IHttpFetcher fetcher, RobotRulesParser parser, ScoreGenerator scorer, Fields metadataFields) {
@@ -91,20 +69,6 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         _fetcher = fetcher;
     }
 
-    public static IHttpFetcher createFetcher(UserAgent userAgent, int maxThreads) {
-        // TODO KKr - add static createRobotsFetcher method somewhere that
-        // I can use here, and also in SimpleGroupingKeyGenerator
-        FetcherPolicy policy = new FetcherPolicy();
-        policy.setMaxContentSize(MAX_ROBOTS_SIZE);
-        policy.setMaxConnectionsPerHost(MAX_CONNECTIONS_PER_HOST);
-        SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, policy, userAgent);
-        fetcher.setMaxRetryCount(ROBOTS_RETRY_COUNT);
-        fetcher.setConnectionTimeout(ROBOTS_CONNECTION_TIMEOUT);
-        fetcher.setSocketTimeout(ROBOTS_SOCKET_TIMEOUT);
-        
-        return fetcher;
-    }
-    
     @Override
     public void prepare(FlowProcess flowProcess, cascading.operation.OperationCall<NullContext> operationCall) {
         _executor = new ThreadedExecutor(_fetcher.getMaxThreads(), COMMAND_TIMEOUT);

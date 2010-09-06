@@ -6,9 +6,8 @@ import java.io.InputStreamReader;
 import java.net.URL;
 
 import bixo.fetcher.http.IHttpFetcher;
-import bixo.operations.FilterAndScoreByUrlAndRobots;
-import bixo.operations.ProcessRobotsTask;
 import bixo.robots.RobotRules;
+import bixo.robots.RobotUtils;
 import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
 import bixo.utils.UrlUtils;
@@ -33,8 +32,10 @@ public class ProcessRobotsTool {
      */
     public static void main(String[] args) {
         System.setProperty("bixo.root.level", "TRACE");
-
-        IHttpFetcher fetcher = FilterAndScoreByUrlAndRobots.createFetcher(ConfigUtils.BIXO_TOOL_AGENT, 1);
+        // Uncomment this to see the wire log for HttpClient
+        // System.setProperty("bixo.http.level", "DEBUG");
+        
+        IHttpFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TOOL_AGENT, 1);
         
         boolean interactive = args.length == 0;
         int index = 0;
@@ -59,9 +60,12 @@ public class ProcessRobotsTool {
             	}
             	
             	System.out.println("Processing " + robotsUrl.toExternalForm());
-            	RobotRules rules = ProcessRobotsTask.getRobotRules(fetcher, new SimpleRobotRulesParser(), robotsUrl);
-                System.out.println(String.format("Deferred visits = %s, top-level allowed = %s",
-                                rules.isDeferVisits(), rules.isAllowed(UrlUtils.makeProtocolAndDomain(url))));
+            	RobotRules rules = RobotUtils.getRobotRules(fetcher, new SimpleRobotRulesParser(), robotsUrl);
+                System.out.println(String.format("Deferred visits = %s, allow all = %s, allow none = %s, top-level allowed = %s",
+                                rules.isDeferVisits(),
+                                rules.isAllowAll(),
+                                rules.isAllowNone(),
+                                rules.isAllowed(UrlUtils.makeProtocolAndDomain(url))));
                 System.out.println();
         	} catch (Exception e) {
         		e.printStackTrace(System.out);
