@@ -9,6 +9,7 @@ import java.io.IOException;
 import org.junit.Test;
 
 import junit.framework.Assert;
+import bixo.datum.UrlStatus;
 import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
 
 
@@ -31,5 +32,14 @@ public class RedirectFetchExceptionTest {
         Assert.assertEquals("url", e2.getUrl());
         Assert.assertEquals("redirectedUrl", e2.getRedirectedUrl());
         Assert.assertEquals(RedirectExceptionReason.TEMP_REDIRECT_DISALLOWED, e2.getReason());
+    }
+    
+    @Test
+    public void testMappingToUrlStatus() throws Exception {
+        RedirectFetchException e = new RedirectFetchException("url", "redirectedUrl", RedirectExceptionReason.TEMP_REDIRECT_DISALLOWED);
+        Assert.assertEquals(UrlStatus.HTTP_REDIRECTION_ERROR, e.mapToUrlStatus());
+        
+        e = new RedirectFetchException("url", "redirectedUrl", RedirectExceptionReason.PERM_REDIRECT_DISALLOWED);
+        Assert.assertEquals(UrlStatus.HTTP_MOVED_PERMANENTLY, e.mapToUrlStatus());
     }
 }

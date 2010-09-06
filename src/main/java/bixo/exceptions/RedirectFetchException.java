@@ -42,7 +42,15 @@ public class RedirectFetchException extends BaseFetchException implements Writab
     
     @Override
     public UrlStatus mapToUrlStatus() {
-        return UrlStatus.ERROR_IOEXCEPTION;
+        if (_reason == RedirectExceptionReason.TOO_MANY_REDIRECTS) {
+            return UrlStatus.HTTP_TOO_MANY_REDIRECTS;
+        } else if (_reason == RedirectExceptionReason.TEMP_REDIRECT_DISALLOWED) {
+            return UrlStatus.HTTP_REDIRECTION_ERROR;
+        } else if (_reason == RedirectExceptionReason.PERM_REDIRECT_DISALLOWED) {
+            return UrlStatus.HTTP_MOVED_PERMANENTLY;
+        } else {
+            throw new RuntimeException("Unknown redirection exception reason: " + _reason);
+        }
     }
 
     @Override
