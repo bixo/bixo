@@ -24,6 +24,7 @@ package bixo.config;
 
 import java.io.Serializable;
 import java.security.InvalidParameterException;
+import java.util.HashSet;
 import java.util.Set;
 
 import bixo.fetcher.FetchRequest;
@@ -85,7 +86,7 @@ public class FetcherPolicy implements Serializable {
     private int _maxRedirects;
     private int _maxConnectionsPerHost; // 
     private String _acceptLanguage;    // What to pass for the Accept-Language request header
-    private Set<String> _validMimeTypes;    // Set of mime-types that we'll accept, or null
+    private Set<String> _validMimeTypes;    // Set of mime-types that we'll accept.
     private int _maxRequestsPerConnection;  // Max # of URLs to request in any one connection
     private long _requestTimeout;           // Max time for any given set of URLs (termination timeout is based on this)
 
@@ -117,7 +118,7 @@ public class FetcherPolicy implements Serializable {
         
         // For rarely used parameters, we'll set it to default values and then let callers set them  individually.
         _acceptLanguage = DEFAULT_ACCEPT_LANGUAGE;
-        _validMimeTypes = null;
+        _validMimeTypes = new HashSet<String>();
         _maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
         _maxRequestsPerConnection = DEFAULT_MAX_REQUESTS_PER_CONNECTION;
         _fetcherMode = FetcherMode.COMPLETE;
@@ -209,7 +210,15 @@ public class FetcherPolicy implements Serializable {
     }
     
     public void setValidMimeTypes(Set<String> validMimeTypes) {
-        _validMimeTypes = validMimeTypes;
+        _validMimeTypes = new HashSet<String>(validMimeTypes);
+    }
+    
+    public void addValidMimeTypes(Set<String> validMimeTypes) {
+        _validMimeTypes.addAll(validMimeTypes);
+    }
+    
+    public void addValidMimeType(String validMimeType) {
+        _validMimeTypes.add(validMimeType);
     }
     
     public RedirectMode getRedirectMode() {
