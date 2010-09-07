@@ -86,9 +86,12 @@ AMI_IMAGE=`ec2-describe-images -a | grep $S3_BUCKET | grep $HADOOP_VERSION | gre
 # Start a master
 [ -f "$bin"/../etc/$USER_DATA_FILE ] && USER_DATA_FILE=../etc/$USER_DATA_FILE
 
+# 2010-08-31 CSc Need access to $INSTANCE_TYPE in hadoop-ec2-init-remote.sh.
+#
 echo "Starting master with AMI $AMI_IMAGE"
 sed -e "s|%AWS_ACCESS_KEY_ID%|$AWS_ACCESS_KEY_ID|" \
     -e "s|%AWS_SECRET_ACCESS_KEY%|$AWS_SECRET_ACCESS_KEY|" \
+    -e "s|%INSTANCE_TYPE%|$INSTANCE_TYPE|" \
        "$bin"/$USER_DATA_FILE > .user_data_file.master
 
 INSTANCE=`ec2-run-instances $AMI_IMAGE -n 1 -g $CLUSTER_MASTER -k $KEY_NAME -f .user_data_file.master -t $INSTANCE_TYPE $KERNEL_ARG | grep INSTANCE | awk '{print $2}'`

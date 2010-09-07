@@ -29,6 +29,7 @@ fi
 
 CLUSTER=$1
 NO_INSTANCES=$2
+PRICE=$3
 
 # Import variables
 bin=`dirname "$0"`
@@ -48,13 +49,33 @@ MASTER_ZONE=`cat $MASTER_ZONE_PATH`
 # Substituting master hostname
 [ -f "$bin"/../etc/$USER_DATA_FILE ] && USER_DATA_FILE=../etc/$USER_DATA_FILE
 
+# 2010-08-31 CSc Need access to $INSTANCE_TYPE in hadoop-ec2-init-remote.sh.
+#
 sed -e "s|%MASTER_HOST%|$MASTER_HOST|" \
     -e "s|%AWS_ACCESS_KEY_ID%|$AWS_ACCESS_KEY_ID|" \
     -e "s|%AWS_SECRET_ACCESS_KEY%|$AWS_SECRET_ACCESS_KEY|" \
+    -e "s|%INSTANCE_TYPE%|$INSTANCE_TYPE|" \
        "$bin"/$USER_DATA_FILE > .user_data_file.slave
 
 # Start slaves
-echo "Adding $1 node(s) to cluster group $CLUSTER with AMI $AMI_IMAGE"
-ec2-run-instances $AMI_IMAGE -n "$NO_INSTANCES" -g "$CLUSTER" -k "$KEY_NAME" -f .user_data_file.slave -t "$INSTANCE_TYPE" -z "$MASTER_ZONE" $KERNEL_ARG | grep INSTANCE | awk '{print $2}'
-
+#
+# 2010-08-30 CSc Add support for spot instances (also fixed bugs in echo statements).
+#
+if [ -z $PRICE ]; then
+    echo "Adding $NO_INSTANCES node(s) to cluster group $CLUSTER with AMI $AMI_IMAGE"
+    ec2-run-instances $AMI_IMAGE -n "$NO_INSTANCES" -g "$CLUSTER" -k "$KEY_NAME" -f .user_data_file.slave -t "$INSTANCE_TYPE" -z "$MASTER_ZONE" $KERNEL_ARG | grep INSTANCE | awk '{print $2}'
+else
+    echo "Requesting $NO_INSTANCES (max price $PRICE) spot instance node(s) for cluster group $CLUSTER with AMI $AMI_IMAGE"
+    ec2-request-spot-instances $AMI_IMAGE \
+        --price "$PRICE" \
+        --instance-count "$NO_INSTANCES" \
+        --launch-group "$CLUSTER" \
+        --group "$CLUSTER" \
+        -k "$KEY_NAME" \
+        --user-data-file .user_data_file.slave \
+        --instance-type "$INSTANCE_TYPE" \
+        --availability-zone-group "$MASTER_ZONE" \
+        $KERNEL_ARG \
+        | grep SPOTINSTANCEREQUEST | awk '{print $2}'
+fi
 rm .user_data_file.slave
