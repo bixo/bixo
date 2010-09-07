@@ -176,7 +176,7 @@ public class SimpleParserTest {
 	
     @Test
     public void testHtlmParsing() throws Exception {
-        URL path = SimpleParserTest.class.getResource("/" + "simple-page.html");
+        URL path = SimpleParserTest.class.getResource("/simple-page.html");
 
         IParser parser = new SimpleParser();
         FetchedDatum content = makeFetchedDatum(path);
@@ -234,6 +234,26 @@ public class SimpleParserTest {
         Assert.assertEquals("Simple", parsedDatum.getTitle());
         
         compareTermsInStrings("Custom", parsedDatum.getParsedText());
+    }
+    
+    @Test
+    public void testLinkExtractorWithMetaTags() throws Exception {
+        String html = readFromFile("parser-files/meta-nofollow.html");
+        
+        String url = "http://domain.com/meta-nofollow.html";
+        String contentType = "text/html; charset=utf-8";
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
+        headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+        ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+        
+        ParserPolicy policy = new ParserPolicy(Integer.MAX_VALUE);
+        SimpleParser parser = new SimpleParser(new SimpleContentExtractor(), new SimpleLinkExtractor(), policy);
+        ParsedDatum parsedDatum = parser.parse(fetchedDatum);
+        
+        // Verify we got no URLs
+        Assert.assertEquals(0, parsedDatum.getOutlinks().length);
     }
     
     @Test
