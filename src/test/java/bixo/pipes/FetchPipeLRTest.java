@@ -538,7 +538,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
      * or at least I couldn't see an easy way to make this work.
      */
 
-    @SuppressWarnings("serial")
+    @SuppressWarnings({ "serial", "unused" })
     private static class CustomGrouper implements IGroupingKeyGenerator {
 
         @Override
@@ -592,7 +592,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
     }
     
-    @SuppressWarnings("serial")
+    @SuppressWarnings({ "serial", "unused" })
     private static class CustomFetcher implements IHttpFetcher {
 
         @Override

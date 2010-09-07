@@ -24,6 +24,7 @@ import bixo.datum.ParsedDatum;
 
 public class TikaCallableTest {
 
+    @SuppressWarnings("serial")
     private static class DelayParser implements Parser {
         private boolean _delay;
         private boolean _active;

@@ -44,6 +44,7 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
             return _queue.iterator();
         }
 
+        @SuppressWarnings("unused")
         public int getCapacity() {
             return _capacity;
         }
