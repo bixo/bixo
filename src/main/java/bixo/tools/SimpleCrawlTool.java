@@ -20,6 +20,7 @@ import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.hadoop.HadoopUtils;
 import bixo.urldb.IUrlFilter;
+import bixo.urldb.SimpleUrlNormalizer;
 import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
 import cascading.flow.PlannerException;
@@ -97,14 +98,14 @@ public class SimpleCrawlTool {
         }
     }
     
-    private static void importOneDomain(String targetDomain, Path crawlDbPath, boolean debug) throws Exception {
-        JobConf conf = HadoopUtils.getDefaultJobConf();
+    private static void importOneDomain(String targetDomain, Path crawlDbPath, JobConf conf) throws Exception {
         
         try {
             Tap urlSink = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), crawlDbPath.toUri().toString(), true);
             TupleEntryCollector writer = urlSink.openForWrite(conf);
+            SimpleUrlNormalizer normalizer = new SimpleUrlNormalizer();
 
-            CrawlDbDatum datum = new CrawlDbDatum("http://" + targetDomain, 0, 0, UrlStatus.UNFETCHED, 0);
+            CrawlDbDatum datum = new CrawlDbDatum(normalizer.normalize("http://" + targetDomain), 0, 0, UrlStatus.UNFETCHED, 0);
 
             writer.add(datum.toTuple());
             writer.close();
@@ -168,7 +169,7 @@ public class SimpleCrawlTool {
                 setLoopLoggerFile(curLoopDirName, 0);
 
                 Path crawlDbPath = new Path(curLoopDir, SimpleCrawlConfig.CRAWLDB_SUBDIR_NAME);
-                importOneDomain(domain, crawlDbPath, true);
+                importOneDomain(domain, crawlDbPath, conf);
             }
             
             Path latestDirPath = CrawlDirUtils.findLatestLoopDir(fs, outputPath);
