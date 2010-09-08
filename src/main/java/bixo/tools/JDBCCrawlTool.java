@@ -1,5 +1,6 @@
 package bixo.tools;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
@@ -17,27 +18,20 @@ import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.UrlDatum;
+import bixo.datum.UrlStatus;
 import bixo.tools.sitecrawler.BixoJDBCTapFactory;
 import bixo.tools.sitecrawler.SiteCrawler;
-import bixo.tools.sitecrawler.UrlImporter;
 import bixo.urldb.IUrlFilter;
+import bixo.urldb.SimpleUrlNormalizer;
 import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
 import cascading.flow.PlannerException;
+import cascading.tap.Tap;
+import cascading.tuple.TupleEntryCollector;
 
 public class JDBCCrawlTool {
     private static final Logger LOGGER = Logger.getLogger(JDBCCrawlTool.class);
 
-    private static final long MILLISECONDS_PER_MINUTE = 60 * 1000L;
-
-    private static final int MAX_CONTENT_SIZE = 128 * 1024;
-
-    private static final long DEFAULT_CRAWL_DELAY = 5 * 1000L;
-
-	private static final String WEB_ADDRESS = "http://wiki.github.com/bixo/bixo/bixocrawler";
-
-	private static final String EMAIL_ADDRESS = "bixo-dev@yahoogroups.com";
-    
     // Filter URLs that fall outside of the target domain
     @SuppressWarnings("serial")
     private static class DomainUrlFilter implements IUrlFilter {
@@ -86,7 +80,7 @@ public class JDBCCrawlTool {
     private static void setLoopLoggerFile(String outputDirName, int loopNumber) {
         Logger rootLogger = Logger.getRootLogger();
 
-        String filename = String.format("%s/%d-SiteCrawlTool.log", outputDirName, loopNumber);
+        String filename = String.format("%s/%d-JDBCCrawlTool.log", outputDirName, loopNumber);
         FileAppender appender = (FileAppender)rootLogger.getAppender("loop-logger");
         if (appender == null) {
             appender = new FileAppender();
@@ -102,6 +96,23 @@ public class JDBCCrawlTool {
             appender.activateOptions();
         }
     }
+    
+    private static void importOneDomain(String targetDomain, Tap urlSink, JobConf conf) throws IOException {
+
+        TupleEntryCollector writer;
+        try {
+            writer = urlSink.openForWrite(conf);
+            SimpleUrlNormalizer normalizer = new SimpleUrlNormalizer();
+            CrawlDbDatum datum = new CrawlDbDatum(normalizer.normalize("http://" + targetDomain), 0, 0, UrlStatus.UNFETCHED, 0);
+
+            writer.add(datum.toTuple());
+            writer.close();
+        } catch (IOException e) {
+            throw e;
+        }
+
+    }
+
 
     public static void main(String[] args) {
         JDBCCrawlToolOptions options = new JDBCCrawlToolOptions();
@@ -167,8 +178,7 @@ public class JDBCCrawlTool {
                 String curLoopDirName = curLoopDir.toUri().toString();
                 setLoopLoggerFile(curLoopDirName, 0);
 
-                UrlImporter importer = new UrlImporter(curLoopDir);
-                importer.importOneDomain(domain, BixoJDBCTapFactory.createUrlsSinkJDBCTap(options.getDbLocation()));
+                importOneDomain(domain, BixoJDBCTapFactory.createUrlsSinkJDBCTap(options.getDbLocation()), conf);
             } 
             
             Path inputPath = CrawlDirUtils.findLatestLoopDir(fs, outputPath);
@@ -181,17 +191,17 @@ public class JDBCCrawlTool {
             int startLoop = CrawlDirUtils.extractLoopNumber(inputPath);
             int endLoop = startLoop + options.getNumLoops();
 
-            UserAgent userAgent = new UserAgent(options.getAgentName(), EMAIL_ADDRESS, WEB_ADDRESS);
+            UserAgent userAgent = new UserAgent(options.getAgentName(), SimpleCrawlConfig.EMAIL_ADDRESS, SimpleCrawlConfig.WEB_ADDRESS);
 
             FetcherPolicy defaultPolicy = new FetcherPolicy();
-            defaultPolicy.setCrawlDelay(DEFAULT_CRAWL_DELAY);
-            defaultPolicy.setMaxContentSize(MAX_CONTENT_SIZE);
+            defaultPolicy.setCrawlDelay(SimpleCrawlConfig.DEFAULT_CRAWL_DELAY);
+            defaultPolicy.setMaxContentSize(SimpleCrawlConfig.MAX_CONTENT_SIZE);
             defaultPolicy.setFetcherMode(FetcherMode.EFFICIENT);
             
             int crawlDurationInMinutes = options.getCrawlDuration();
             boolean hasEndTime = crawlDurationInMinutes != JDBCCrawlToolOptions.NO_CRAWL_DURATION;
             long targetEndTime = hasEndTime ? System.currentTimeMillis()
-                            + (crawlDurationInMinutes * MILLISECONDS_PER_MINUTE) : FetcherPolicy.NO_CRAWL_END_TIME;
+                            + (crawlDurationInMinutes * SimpleCrawlConfig.MILLISECONDS_PER_MINUTE) : FetcherPolicy.NO_CRAWL_END_TIME;
 
             IUrlFilter urlFilter = new DomainUrlFilter(domain);
 
