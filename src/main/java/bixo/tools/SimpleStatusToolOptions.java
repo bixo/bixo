@@ -19,12 +19,19 @@ public class SimpleStatusToolOptions {
     	_crawlDir = crawlDir;
     }
 
+    @Option(name = "-exportdb", usage = "only export the crawldb", required = false)
+    private boolean _exportDb = false;
+
     public String getCrawlDir() {
         return _crawlDir;
     }
 
     public boolean isDebugLogging() {
         return _debugLogging;
+    }
+    
+    public boolean isExportDb() {
+        return _exportDb;
     }
     
     @Override

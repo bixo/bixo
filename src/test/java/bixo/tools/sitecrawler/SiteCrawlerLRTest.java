@@ -5,28 +5,12 @@ import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import junit.framework.Assert;
-
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 import org.mortbay.http.handler.AbstractHttpHandler;
-
-import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
-import bixo.datum.UrlDatum;
-import bixo.datum.UrlStatus;
-import bixo.hadoop.HadoopUtils;
-import bixo.url.IUrlFilter;
-import bixo.utils.FsUtils;
-import cascading.scheme.SequenceFile;
-import cascading.tap.Hfs;
-import cascading.tuple.TupleEntryIterator;
 
 
 @SuppressWarnings("serial")

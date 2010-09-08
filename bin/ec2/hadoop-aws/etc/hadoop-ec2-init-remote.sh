@@ -25,6 +25,15 @@ AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
 
 HADOOP_HOME=`ls -d /usr/local/hadoop-*`
 
+# 2010-08-31 CSc For m1.small slaves, we only get one virtual core (1 EC2 Compute Unit)
+#
+INSTANCE_TYPE=%INSTANCE_TYPE%
+if [ "$INSTANCE_TYPE" == "m1.small" ]; then
+ NUM_SLAVE_CORES=1
+else
+ NUM_SLAVE_CORES=2
+fi
+
 ################################################################################
 # Hadoop configuration
 # Modify this section to customize your Hadoop cluster.
@@ -56,15 +65,31 @@ cat > $HADOOP_HOME/conf/hadoop-site.xml <<EOF
   <value>80</value>
 </property>
 
+
+<!-- 2010-08-25 CSc I changed the following properties in the (generic?) set from
+     Bixo's hadoop-ec2-init-remote.sh:
+  -->
 <property>
   <name>mapred.tasktracker.map.tasks.maximum</name>
-  <value>2</value>
+  <value>$NUM_SLAVE_CORES</value>
+  <description>The maximum number of map tasks that will be run
+  simultaneously by a task tracker.
+  
+  For m1.small slaves, we only get one virtual core (1 EC2 Compute Unit),
+  so we shouldn't be running two map tasks on the same slave simultaneously.
+  </description>
 </property>
-
 <property>
   <name>mapred.tasktracker.reduce.tasks.maximum</name>
-  <value>2</value>
+  <value>$NUM_SLAVE_CORES</value>
+  <description>The maximum number of reduce tasks that will be run
+  simultaneously by a task tracker.
+  
+  For m1.small slaves, we only get one virtual core (1 EC2 Compute Unit),
+  so we shouldn't be running two reduce tasks on the same slave simultaneously.
+  </description>
 </property>
+
 
 <property>
   <name>mapred.output.compress</name>

@@ -16,8 +16,6 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.http.SimpleHttpFetcher;
-import bixo.parser.SimpleContentExtractor;
-import bixo.parser.SimpleLinkExtractor;
 import bixo.parser.SimpleParser;
 
 public class FetchAndParseTool {
@@ -78,7 +76,7 @@ public class FetchAndParseTool {
         
         // Give a long timeout for parsing
         ParserPolicy parserPolicy = new ParserPolicy(MAX_PARSE_DURATION);
-        SimpleParser parser = new SimpleParser(new SimpleContentExtractor(), new SimpleLinkExtractor(), parserPolicy);
+        SimpleParser parser = new SimpleParser(parserPolicy);
 
         if (options.isTraceLogging()) {
             Logger.getRootLogger().setLevel(Level.TRACE);

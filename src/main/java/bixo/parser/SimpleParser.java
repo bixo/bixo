@@ -32,7 +32,11 @@ public class SimpleParser implements IParser {
     private transient AutoDetectParser _parser;
     
     public SimpleParser() {
-        this(new SimpleContentExtractor(), new SimpleLinkExtractor(), new ParserPolicy());
+        this(new ParserPolicy());
+    }
+    
+    public SimpleParser(ParserPolicy parserPolicy) {
+        this(new SimpleContentExtractor(), new SimpleLinkExtractor(), parserPolicy);
     }
     
     public SimpleParser(BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, ParserPolicy parserPolicy) {
@@ -47,6 +51,8 @@ public class SimpleParser implements IParser {
         }
         
         _contentExtractor.reset();
+        _linkExtractor.setLinkTags(_parserPolicy.getLinkTags());
+        _linkExtractor.setLinkAttributeTypes(_parserPolicy.getLinkAttributeTypes());
         _linkExtractor.reset();
     }
 
