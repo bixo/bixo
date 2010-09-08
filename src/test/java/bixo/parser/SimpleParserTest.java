@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import junit.framework.Assert;
 
@@ -150,6 +152,122 @@ public class SimpleParserTest {
 		Assert.assertEquals("link2", outlinks[1].getAnchor());
 	}
 	
+    @Test
+    public void testDefaultLinkTypes() throws Exception {
+        // Read in test data from test/resources
+        String html = readFromFile("parser-files/all-link-types.html");
+        
+        // Create FetchedDatum using data
+        String url = "http://domain.com/all-link-types.html";
+        
+        String contentType = "text/html; charset=utf-8";
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
+        headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+        ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+        
+        // Call parser.parse
+        SimpleParser parser = new SimpleParser();
+        ParsedDatum parsedDatum = parser.parse(fetchedDatum);
+        
+        // Verify outlinks are correct (and we only get the a href ones).
+        Outlink[] outlinks = parsedDatum.getOutlinks();
+        Assert.assertEquals(2, outlinks.length);
+        
+        Assert.assertEquals("http://newdomain.com/link1", outlinks[0].getToUrl());
+        Assert.assertEquals("link1", outlinks[0].getAnchor());
+        Assert.assertEquals("http://domain.com/link2", outlinks[1].getToUrl());
+        Assert.assertEquals("link2", outlinks[1].getAnchor());
+    }
+    
+    @Test
+    public void testAllLinkTypes() throws Exception {
+        // Read in test data from test/resources
+        String html = readFromFile("parser-files/all-link-types.html");
+        
+        // Create FetchedDatum using data
+        String url = "http://domain.com/all-link-types.html";
+        
+        String contentType = "text/html; charset=utf-8";
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
+        headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+        ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+        
+        // Call parser.parse
+        ParserPolicy policy = new ParserPolicy( ParserPolicy.DEFAULT_MAX_PARSE_DURATION,
+                                                BaseLinkExtractor.ALL_LINK_TAGS,
+                                                BaseLinkExtractor.ALL_LINK_ATTRIBUTE_TYPES);
+        SimpleParser parser = new SimpleParser(new SimpleContentExtractor(), new SimpleLinkExtractor(), policy);
+        ParsedDatum parsedDatum = parser.parse(fetchedDatum);
+        
+        // Verify outlinks are correct (and we only get the a href ones).
+        Outlink[] outlinks = parsedDatum.getOutlinks();
+        Assert.assertEquals(7, outlinks.length);
+        
+        Assert.assertEquals("http://newdomain.com/favicon.ico", outlinks[0].getToUrl());
+        Assert.assertEquals("http://newdomain.com/link1", outlinks[1].getToUrl());
+        Assert.assertEquals("link1", outlinks[1].getAnchor());
+        Assert.assertEquals("http://domain.com/link2", outlinks[2].getToUrl());
+        Assert.assertEquals("link2", outlinks[2].getAnchor());
+        Assert.assertEquals("http://newdomain.com/giant-prawn.jpg", outlinks[3].getToUrl());
+        Assert.assertEquals("http://en.wikipedia.org/wiki/Australia's_Big_Things",
+                            outlinks[4].getToUrl());
+        Assert.assertEquals("http://newdomain.com/giant-dog.jpg", outlinks[5].getToUrl());
+        Assert.assertEquals("http://www.brucelawson.co.uk/index.php/2005/stupid-stock-photography/",
+                            outlinks[6].getToUrl());
+    }
+    
+    @SuppressWarnings("serial")
+    @Test
+    public void testSomeLinkTypes() throws Exception {
+        // Read in test data from test/resources
+        String html = readFromFile("parser-files/all-link-types.html");
+        
+        // Create FetchedDatum using data
+        String url = "http://domain.com/all-link-types.html";
+        
+        String contentType = "text/html; charset=utf-8";
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
+        headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+        ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+        
+        // Call parser.parse
+        Set<String> linkTags =
+            new HashSet<String>() {{
+                add("a");
+                add("img");
+                add("link");
+            }};
+            
+        Set<String> linkAttributeTypes =
+            new HashSet<String>() {{
+                add("href");
+                add("src");
+            }};
+
+        ParserPolicy policy = new ParserPolicy( ParserPolicy.DEFAULT_MAX_PARSE_DURATION,
+                                                linkTags,
+                                                linkAttributeTypes);
+        SimpleParser parser = new SimpleParser(new SimpleContentExtractor(), new SimpleLinkExtractor(), policy);
+        ParsedDatum parsedDatum = parser.parse(fetchedDatum);
+        
+        // Verify outlinks are correct (and we only get the a href ones).
+        Outlink[] outlinks = parsedDatum.getOutlinks();
+        Assert.assertEquals(4, outlinks.length);
+        
+        Assert.assertEquals("http://newdomain.com/favicon.ico", outlinks[0].getToUrl());
+        Assert.assertEquals("http://newdomain.com/link1", outlinks[1].getToUrl());
+        Assert.assertEquals("link1", outlinks[1].getAnchor());
+        Assert.assertEquals("http://domain.com/link2", outlinks[2].getToUrl());
+        Assert.assertEquals("link2", outlinks[2].getAnchor());
+        Assert.assertEquals("http://newdomain.com/giant-prawn.jpg", outlinks[3].getToUrl());
+    }
+    
 	@Test
 	public void testContentExtraction() throws Exception {
 		// Read in test data from test/resources
@@ -175,7 +293,7 @@ public class SimpleParserTest {
 	}
 	
     @Test
-    public void testHtlmParsing() throws Exception {
+    public void testHtmlParsing() throws Exception {
         URL path = SimpleParserTest.class.getResource("/simple-page.html");
 
         IParser parser = new SimpleParser();

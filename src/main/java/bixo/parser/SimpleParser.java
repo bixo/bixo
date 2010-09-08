@@ -47,6 +47,8 @@ public class SimpleParser implements IParser {
         }
         
         _contentExtractor.reset();
+        _linkExtractor.setLinkTags(_parserPolicy.getLinkTags());
+        _linkExtractor.setLinkAttributeTypes(_parserPolicy.getLinkAttributeTypes());
         _linkExtractor.reset();
     }
 
