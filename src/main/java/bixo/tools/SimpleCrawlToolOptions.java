@@ -10,7 +10,6 @@ public class SimpleCrawlToolOptions {
     public static final int DEFAULT_MAX_THREADS = 10;
     private static final int DEFAULT_NUM_LOOPS = 1;
 
-    private boolean _debugLogging = false;
     private String _loggingAppender = null;
 
     private String _outputDir;
@@ -28,9 +27,8 @@ public class SimpleCrawlToolOptions {
     }
 
     @Option(name = "-d", usage = "debug logging", required = false)
-    public void setDebugLogging(boolean debugLogging) {
-        _debugLogging = debugLogging;
-    }
+    private boolean _debugLogging = false;
+
 
     @Option(name = "-logger", usage = "set logging appender (console, DRFA)", required = false)
     public void setLoggingAppender(String loggingAppender) {
