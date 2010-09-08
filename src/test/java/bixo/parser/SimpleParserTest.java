@@ -200,7 +200,7 @@ public class SimpleParserTest {
         ParserPolicy policy = new ParserPolicy( ParserPolicy.DEFAULT_MAX_PARSE_DURATION,
                                                 BaseLinkExtractor.ALL_LINK_TAGS,
                                                 BaseLinkExtractor.ALL_LINK_ATTRIBUTE_TYPES);
-        SimpleParser parser = new SimpleParser(new SimpleContentExtractor(), new SimpleLinkExtractor(), policy);
+        SimpleParser parser = new SimpleParser(policy);
         ParsedDatum parsedDatum = parser.parse(fetchedDatum);
         
         // Verify outlinks are correct (and we only get the a href ones).
@@ -253,7 +253,7 @@ public class SimpleParserTest {
         ParserPolicy policy = new ParserPolicy( ParserPolicy.DEFAULT_MAX_PARSE_DURATION,
                                                 linkTags,
                                                 linkAttributeTypes);
-        SimpleParser parser = new SimpleParser(new SimpleContentExtractor(), new SimpleLinkExtractor(), policy);
+        SimpleParser parser = new SimpleParser(policy);
         ParsedDatum parsedDatum = parser.parse(fetchedDatum);
         
         // Verify outlinks are correct (and we only get the a href ones).
@@ -367,7 +367,7 @@ public class SimpleParserTest {
         FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
         
         ParserPolicy policy = new ParserPolicy(Integer.MAX_VALUE);
-        SimpleParser parser = new SimpleParser(new SimpleContentExtractor(), new SimpleLinkExtractor(), policy);
+        SimpleParser parser = new SimpleParser(policy);
         ParsedDatum parsedDatum = parser.parse(fetchedDatum);
         
         // Verify we got no URLs
