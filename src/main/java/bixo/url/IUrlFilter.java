@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 1997-2009 101tec Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy 
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,20 +20,22 @@
  * SOFTWARE.
  *
  */
-package bixo.urldb;
+package bixo.url;
 
 import java.io.Serializable;
 
+import bixo.datum.UrlDatum;
+
 /**
- * Validate urls
+ * Filter urls
  * 
  */
 
-public interface IUrlValidator extends Serializable {
+public interface IUrlFilter extends Serializable {
 
     /**
-     * Return true if the url is valid
+     * Return true if we should filter out (remove) the datum
      */
-    public boolean validate(String url);
+    public boolean isRemove(UrlDatum datum);
 
 }

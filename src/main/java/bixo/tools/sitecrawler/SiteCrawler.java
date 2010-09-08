@@ -26,8 +26,8 @@ import bixo.operations.UrlFilter;
 import bixo.parser.SimpleParser;
 import bixo.pipes.FetchPipe;
 import bixo.pipes.ParsePipe;
-import bixo.urldb.IUrlFilter;
-import bixo.urldb.SimpleUrlNormalizer;
+import bixo.url.IUrlFilter;
+import bixo.url.SimpleUrlNormalizer;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -98,7 +98,7 @@ public class SiteCrawler {
             }
 
             _numCreated += 1;
-            UrlDatum urlDatum = new UrlDatum(url, fetchTime, statusTime, status, datum.getMetaDataMap());
+            UrlDatum urlDatum = new UrlDatum(url, fetchTime, statusTime, status, datum.getPayload());
             funcCall.getOutputCollector().add(urlDatum.toTuple());
         }
     }

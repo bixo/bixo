@@ -38,10 +38,6 @@ public interface IHttpFetcher extends Serializable {
     // Return results of HTTP GET request
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException;
     
-    // Return results of HTTP HEAD request
-    public FetchedDatum head(ScoredUrlDatum scoredUrl) throws BaseFetchException;
-    
-    
     /**
      * Raw version of fetcher, for use when getting robots.txt (for example).
      * The one significant difference is that if the resource doesn't exist, what

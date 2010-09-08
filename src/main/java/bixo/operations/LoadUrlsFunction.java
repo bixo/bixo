@@ -6,15 +6,12 @@ import java.net.URL;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.NullContext;
-import bixo.datum.BaseDatum;
 import bixo.datum.UrlDatum;
-import bixo.datum.UrlStatus;
 import bixo.hadoop.ImportCounters;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
-import cascading.tuple.Fields;
 
 // TODO KKr - combine/resolve delta with UrlImporter
 @SuppressWarnings("serial")
@@ -24,15 +21,15 @@ public class LoadUrlsFunction extends BaseOperation<NullContext> implements Func
     private int _maxUrls;
     private int _numUrls;
 
-    public LoadUrlsFunction(int maxUrls, Fields metadataFields) {
-        super(UrlDatum.FIELDS.append(metadataFields));
+    public LoadUrlsFunction(int maxUrls) {
+        super(UrlDatum.FIELDS);
 
         _maxUrls = maxUrls;
         _numUrls = 0;
     }
 
-    public LoadUrlsFunction(Fields metadataFields) {
-        this(Integer.MAX_VALUE, metadataFields);
+    public LoadUrlsFunction() {
+        this(Integer.MAX_VALUE);
     }
 
     @Override
@@ -47,23 +44,19 @@ public class LoadUrlsFunction extends BaseOperation<NullContext> implements Func
             return;
         }
         
-        UrlStatus status;
-        
         try {
             // Validate the URL
             new URL(url);
-            status = UrlStatus.UNFETCHED;
+            
+            UrlDatum urlDatum = new UrlDatum(url);
+            funcCall.getOutputCollector().add(urlDatum.getTuple());
+            
+            _numUrls += 1;
+            process.increment(ImportCounters.URLS_ACCEPTED, 1);
         } catch (MalformedURLException e) {
             LOGGER.warn("Invalid URL in input data file: " + url);
-            status = UrlStatus.SKIPPED_INVALID_URL;
             process.increment(ImportCounters.URLS_REJECTED, 1);
         }
-        
-        // TODO KKr - do we need to worry about creating a map from the metadata fields?
-        UrlDatum urlDatum = new UrlDatum(url, 0, System.currentTimeMillis(), status, BaseDatum.EMPTY_METADATA_MAP);
-        funcCall.getOutputCollector().add(urlDatum.toTuple());
-        _numUrls += 1;
-        process.increment(ImportCounters.URLS_ACCEPTED, 1);
     }
 }
 

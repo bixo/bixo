@@ -27,14 +27,12 @@ import java.io.IOException;
 
 import junit.framework.Assert;
 
-import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
-import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
@@ -44,21 +42,24 @@ import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.FixedScoreGenerator;
 import bixo.fetcher.util.ScoreGenerator;
+import bixo.operations.LoadUrlsFunction;
 import bixo.pipes.FetchPipe;
-import bixo.urldb.UrlImporter;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
+import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.scheme.SequenceFile;
 import cascading.scheme.TextLine;
 import cascading.tap.Lfs;
-import cascading.tuple.Fields;
+import cascading.tap.Tap;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 
 public class FetcherTest {
     private static final Logger LOGGER = Logger.getLogger(FetcherTest.class);
     
+    private static final String URL_DB_NAME = "url_db";
+
     @SuppressWarnings("serial")
     private static class FirefoxUserAgent extends UserAgent {
         public FirefoxUserAgent() {
@@ -72,26 +73,32 @@ public class FetcherTest {
         }
     }
         
-    private String makeUrlDB(String workingFolder, String inputPath) throws IOException {
+    private String makeCrawlDb(String workingFolder, String inputPath) throws IOException {
 
         // We don't want to regenerate this DB all the time.
-        if (!new File(workingFolder, UrlImporter.URL_DB_NAME).exists()) {
-            UrlImporter urlImporter = new UrlImporter();
-            FileUtil.fullyDelete(new File(workingFolder));
-            urlImporter.importUrls(inputPath, workingFolder);
+        if (!new File(workingFolder, URL_DB_NAME).exists()) {
+            Pipe importPipe = new Pipe("import URLs");
+            importPipe = new Each(importPipe, new LoadUrlsFunction());
+            
+            Tap sourceTap = new Lfs(new TextLine(), inputPath);
+            Tap sinkTap = new Lfs(new SequenceFile(UrlDatum.FIELDS), workingFolder, true);
+            
+            FlowConnector flowConnector = new FlowConnector();
+            Flow flow = flowConnector.connect(sourceTap, sinkTap, importPipe);
+            flow.complete();
         }
 
-        return workingFolder + "/" + UrlImporter.URL_DB_NAME;
+        return workingFolder + "/" + URL_DB_NAME;
     }
     
     @Test
     public void testStaleConnection() throws Exception {
         System.setProperty("bixo.root.level", "TRACE");
 
-        String workingFolder = "build/it/FetcherTest-testStaleConnection/working";
-        String inputPath = makeUrlDB(workingFolder, "src/it/resources/apple-pages.txt");
+        String workingFolder = "build/it/FetcherTest/testStaleConnection/working";
+        String inputPath = makeCrawlDb(workingFolder, "src/it/resources/apple-pages.txt");
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
-        String outPath = "build/it/FetcherTest-testStaleConnection/out";
+        String outPath = "build/it/FetcherTest/testStaleConnection/out";
         Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath + "/content", true);
         Lfs status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outPath + "/status", true);
         
@@ -103,7 +110,7 @@ public class FetcherTest {
         fetcherPolicy.setCrawlDelay(5 * 1000L);
         IHttpFetcher fetcher = new SimpleHttpFetcher(2, fetcherPolicy, userAgent);
         ScoreGenerator scorer = new FixedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
 
         FlowConnector flowConnector = new FlowConnector();
 
@@ -113,10 +120,9 @@ public class FetcherTest {
         // Test for all valid fetches.
         Lfs validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outPath + "/status");
         TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
-        Fields metaDataFields = new Fields();
         while (tupleEntryIterator.hasNext()) {
             TupleEntry entry = tupleEntryIterator.next();
-            StatusDatum sd = new StatusDatum(entry, metaDataFields);
+            StatusDatum sd = new StatusDatum(entry);
             if (sd.getStatus() != UrlStatus.FETCHED) {
                 LOGGER.error(String.format("Fetched failed! Status is %s for %s", sd.getStatus(), sd.getUrl()));
                 BaseFetchException e = sd.getException();
@@ -133,8 +139,8 @@ public class FetcherTest {
     public void testRunFetcher() throws Exception {
         System.setProperty("bixo.root.level", "TRACE");
         
-        String workingFolder = "build/test-it/FetcherTest-testRunFetcher";
-        String inputPath = makeUrlDB(workingFolder, "src/it/resources/top10urls.txt");
+        String workingFolder = "build/test-it/FetcherTest/testRunFetcher";
+        String inputPath = makeCrawlDb(workingFolder, "src/it/resources/top10urls.txt");
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
         Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), workingFolder + "/content", true);
         Lfs status = new Lfs(new TextLine(), workingFolder + "/status", true);
@@ -144,7 +150,7 @@ public class FetcherTest {
         UserAgent userAgent = new FirefoxUserAgent();
         IHttpFetcher fetcher = new SimpleHttpFetcher(10, userAgent);
         ScoreGenerator scorer = new FixedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
 
         FlowConnector flowConnector = new FlowConnector();
 
@@ -154,11 +160,10 @@ public class FetcherTest {
         // Test for 10 good fetches.
         Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), workingFolder + "/content");
         TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
-        Fields metaDataFields = new Fields();
         int fetchedPages = 0;
         while (tupleEntryIterator.hasNext()) {
             TupleEntry entry = tupleEntryIterator.next();
-            new FetchedDatum(entry, metaDataFields);
+            new FetchedDatum(entry);
             fetchedPages += 1;
         }
 

@@ -103,7 +103,7 @@ public class SimpleParser implements IParser {
             // TODO KKr Should there be a BaseParser to take care of copying
             // these two fields?
             result.setHostAddress(fetchedDatum.getHostAddress());
-            result.setMetaDataMap(fetchedDatum.getMetaDataMap());
+            result.setPayload(fetchedDatum.getPayload());
             return result;
         } finally {
             IoUtils.safeClose(is);

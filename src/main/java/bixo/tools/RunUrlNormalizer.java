@@ -5,8 +5,8 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
-import bixo.urldb.IUrlNormalizer;
-import bixo.urldb.SimpleUrlNormalizer;
+import bixo.url.IUrlNormalizer;
+import bixo.url.SimpleUrlNormalizer;
 
 public class RunUrlNormalizer {
 

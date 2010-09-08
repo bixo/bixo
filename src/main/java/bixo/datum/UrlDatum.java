@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997-2009 101tec Inc.
+ * Copyright (c) 2010 TransPac Software, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy 
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,103 +22,57 @@
  */
 package bixo.datum;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import bixo.cascading.PayloadDatum;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
-public class UrlDatum extends BaseDatum {
-    private String _url;
-    private long _lastFetched;
-    private long _lastUpdated;
-    private UrlStatus _lastStatus;
+public class UrlDatum extends PayloadDatum {
+    
+    protected static final String URL_FN = fieldName(UrlDatum.class, "url");
+    public static final Fields FIELDS = new Fields(URL_FN).append(getSuperFields(UrlDatum.class));
+    
+    public UrlDatum() {
+        super(FIELDS);
+    }
 
-    /**
-     * Constructor for creating UrlDatum for a URL that's never been fetched, and has no metaData.
-     * 
-     * @param url - URL to fetch.
-     */
-    @SuppressWarnings("unchecked")
-	public UrlDatum(String url) {
-        this(url, 0, System.currentTimeMillis(), UrlStatus.UNFETCHED, new HashMap<String, Comparable>());
+    public UrlDatum(UrlDatum datum) {
+        super(new TupleEntry(datum.getTupleEntry()));
     }
     
-    @SuppressWarnings("unchecked")
-    public UrlDatum(String url, long lastFetched, long lastUpdated, UrlStatus lastStatus, Map<String, Comparable> metaData) {
-        super(metaData);
-        
-        _url = url;
-        _lastFetched = lastFetched;
-        _lastUpdated = lastUpdated;
-        _lastStatus = lastStatus;
+    public UrlDatum(Fields fields) {
+        super(fields);
+        validateFields(fields, FIELDS);
+    }
+
+    public UrlDatum(Fields fields, Tuple tuple) {
+        super(fields, tuple);
+        validateFields(fields, FIELDS);
+    }
+
+    public UrlDatum(TupleEntry tupleEntry) {
+        super(tupleEntry);
+        validateFields(tupleEntry.getFields(), FIELDS);
+    }
+    
+    public UrlDatum(Fields fields, String url) {
+        super(fields);
+        validateFields(fields, FIELDS);
+        setUrl(url);
+    }
+    
+    public UrlDatum(String url) {
+        this(FIELDS, url);
+        setUrl(url);
     }
 
     public String getUrl() {
-        return _url;
+        return _tupleEntry.getString(URL_FN);
     }
 
     public void setUrl(String url) {
-        _url = url;
-    }
-
-    public long getLastFetched() {
-        return _lastFetched;
-    }
-
-    public void setLastFetched(long lastFetched) {
-        _lastFetched = lastFetched;
-    }
-
-    public long getLastUpdated() {
-        return _lastUpdated;
-    }
-
-    public void setLastUpdated(long lastUpdated) {
-        _lastUpdated = lastUpdated;
-    }
-
-    public UrlStatus getLastStatus() {
-        return _lastStatus;
-    }
-
-    public void setLastStatus(UrlStatus lastStatus) {
-        _lastStatus = lastStatus;
-    }
-
-    // ======================================================================================
-    // Below here is all Cascading-specific implementation
-    // ======================================================================================
-    
-    // Cascading field names that correspond to the datum fields.
-    public static final String URL_FIELD = fieldName(UrlDatum.class, "url");
-    public static final String LAST_FETCHED_FIELD = fieldName(UrlDatum.class, "lastFetched");
-    public static final String LAST_UPDATED_FIELD = fieldName(UrlDatum.class, "lastUpdated");
-    public static final String LAST_STATUS_FIELD = fieldName(UrlDatum.class, "lastStatus");
-        
-    public static final Fields FIELDS = new Fields(URL_FIELD, LAST_FETCHED_FIELD, LAST_UPDATED_FIELD, LAST_STATUS_FIELD);
-    
-    public UrlDatum(Tuple tuple, Fields metaDataFields) {
-        super(tuple, metaDataFields);
-        
-        TupleEntry entry = new TupleEntry(getStandardFields(), tuple);
-        _url = entry.getString(URL_FIELD);
-        _lastFetched = entry.getLong(LAST_FETCHED_FIELD);
-        _lastUpdated = entry.getLong(LAST_UPDATED_FIELD);
-        _lastStatus = UrlStatus.valueOf(entry.getString(LAST_STATUS_FIELD));
-    }
-    
-    @Override
-    public Fields getStandardFields() {
-        return FIELDS;
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Override
-    protected Comparable[] getStandardValues() {
-        return new Comparable[] { _url, _lastFetched, _lastUpdated, _lastStatus.name() };
+        _tupleEntry.set(URL_FN, url);
     }
 
 }

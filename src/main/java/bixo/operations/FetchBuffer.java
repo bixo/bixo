@@ -94,7 +94,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 
                 // Nothing ready in the queue, let's see about the iterator.
                 if (_values.hasNext()) {
-                    datum = new PreFetchedDatum(_values.next().getTuple(), _metaDataFields);
+                    datum = new PreFetchedDatum(_values.next());
                     if (datum.isSkipped()) {
                         List<ScoredUrlDatum> urls = datum.getUrls();
                         trace("Skipping %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
@@ -150,7 +150,6 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
 
     private IHttpFetcher _fetcher;
     private FetcherMode _fetcherMode;
-    private final Fields _metaDataFields;
 
     private transient ThreadedExecutor _executor;
     private transient BixoFlowProcess _flowProcess;
@@ -162,14 +161,13 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     
     private transient AtomicBoolean _keepCollecting;
     
-    public FetchBuffer(IHttpFetcher fetcher, Fields metaDataFields) {
+    public FetchBuffer(IHttpFetcher fetcher) {
         // We're going to output a tuple that contains a FetchedDatum, plus meta-data,
         // plus a result that could be a string, a status, or an exception
-        super(FetchedDatum.FIELDS.append(metaDataFields).append(FETCH_RESULT_FIELD));
+        super(FetchedDatum.FIELDS.append(FETCH_RESULT_FIELD));
 
         _fetcher = fetcher;
         _fetcherMode = _fetcher.getFetcherPolicy().getFetcherMode();
-        _metaDataFields = metaDataFields;
     }
 
     @Override
@@ -341,7 +339,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     private void skipUrls(List<ScoredUrlDatum> urls, UrlStatus status, String traceMsg) {
         for (ScoredUrlDatum datum : urls) {
             FetchedDatum result = new FetchedDatum(datum);
-            Tuple tuple = result.toTuple();
+            Tuple tuple = result.getTuple();
             tuple.add(status.toString());
             _collector.add(tuple);
         }

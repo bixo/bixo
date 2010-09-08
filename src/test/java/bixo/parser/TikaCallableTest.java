@@ -19,11 +19,13 @@ import org.mockito.Mockito;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 
 
 public class TikaCallableTest {
 
+    @SuppressWarnings("serial")
     private static class DelayParser implements Parser {
         private boolean _delay;
         private boolean _active;
@@ -101,6 +103,7 @@ public class TikaCallableTest {
         
         BaseContentExtractor contentExtractor = Mockito.mock(BaseContentExtractor.class);
         BaseLinkExtractor linkExtractor = Mockito.mock(BaseLinkExtractor.class);
+        Mockito.when(linkExtractor.getLinks()).thenReturn(new Outlink[0]);
         
         Callable<ParsedDatum> c = new TikaCallable(parser, contentExtractor, linkExtractor, is, md);
         FutureTask<ParsedDatum> task = new FutureTask<ParsedDatum>(c);
@@ -108,7 +111,7 @@ public class TikaCallableTest {
         t.start();
 
         try {
-            task.get(1000, TimeUnit.MILLISECONDS);
+            task.get(100000, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             Assert.fail("Should have worked without a timeout");
         }

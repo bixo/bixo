@@ -24,13 +24,12 @@ package bixo.fetcher.simulation;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
+import bixo.cascading.Payload;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.ContentBytes;
@@ -78,20 +77,14 @@ public class FakeHttpFetcher implements IHttpFetcher {
     }
 
     @Override
-    public FetchedDatum head(ScoredUrlDatum scoredUrl) throws BaseFetchException {
-        return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap(), false);
-    }
-    
-    @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
-        return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap(), true);
+        return doGet(scoredUrl.getUrl(), scoredUrl.getPayload(), true);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public byte[] get(String url) throws BaseFetchException {
         try {
-            FetchedDatum result = doGet(url, new HashMap<String, Comparable>(), true);
+            FetchedDatum result = doGet(url, new Payload(), true);
             return result.getContentBytes();
         } catch (HttpFetchException e) {
             if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
@@ -102,8 +95,7 @@ public class FakeHttpFetcher implements IHttpFetcher {
         }
     }
     
-    @SuppressWarnings("unchecked")
-    private FetchedDatum doGet(String url, Map<String, Comparable> metaData, boolean returnContent) throws BaseFetchException {
+    private FetchedDatum doGet(String url, Payload payload, boolean returnContent) throws BaseFetchException {
         LOGGER.trace("Fake fetching " + url);
         
         URL theUrl;
@@ -159,7 +151,9 @@ public class FakeHttpFetcher implements IHttpFetcher {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("x-responserate", "" + bytesPerSecond);
-        return new FetchedDatum(url, url, System.currentTimeMillis(), headers, new ContentBytes(new byte[contentSize]), "text/html", bytesPerSecond, metaData);
+        FetchedDatum result = new FetchedDatum(url, url, System.currentTimeMillis(), headers, new ContentBytes(new byte[contentSize]), "text/html", bytesPerSecond);
+        result.setPayload(payload);
+        return result;
     }
 
 	@Override

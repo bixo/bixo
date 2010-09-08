@@ -120,6 +120,14 @@ public class BixoFlowProcess extends FlowProcess {
         init(baseProcess, reporter);
     }
 
+    public BixoFlowProcess(FlowProcess baseProcess) {
+        if (baseProcess instanceof HadoopFlowProcess) {
+            init(baseProcess, new HadoopFlowReporter(((HadoopFlowProcess)baseProcess).getReporter()));
+        } else {
+            init(baseProcess, new LoggingFlowReporter());
+        }
+    }
+    
     public BixoFlowProcess(HadoopFlowProcess baseProcess) {
         IFlowReporter reporter = new HadoopFlowReporter(baseProcess.getReporter());
         init(baseProcess, reporter);

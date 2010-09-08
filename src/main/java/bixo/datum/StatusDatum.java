@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997-2009 101tec Inc.
+ * Copyright (c) 2010 TransPac Software, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy 
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,22 +22,30 @@
  */
 package bixo.datum;
 
-import java.util.Map;
-
 import bixo.exceptions.BaseFetchException;
-
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
-@SuppressWarnings({ "unchecked", "serial" })
-public class StatusDatum extends BaseDatum {
-    private String _url;
-    private UrlStatus _status;
-    private HttpHeaders _headers;
-    private BaseFetchException _exception;
-    private long _statusTime;
-    private String _hostAddress;
+@SuppressWarnings("serial")
+public class StatusDatum extends UrlDatum {
+    
+    public static final String STATUS_FN = fieldName(StatusDatum.class, "status");
+    public static final String HEADERS_FN = fieldName(StatusDatum.class, "headers");
+    public static final String EXCEPTION_FN = fieldName(StatusDatum.class, "exception");
+    public static final String STATUS_TIME_FN = fieldName(StatusDatum.class, "statusTime");
+    public static final String HOST_ADDRESS_FN = fieldName(StatusDatum.class, "hostAddress");
+        
+    public static final Fields FIELDS = new Fields(STATUS_FN, HEADERS_FN, EXCEPTION_FN, STATUS_TIME_FN, HOST_ADDRESS_FN).append(getSuperFields(StatusDatum.class));
+
+    public StatusDatum() {
+        super(FIELDS);
+    }
+    
+    public StatusDatum(TupleEntry tupleEntry) {
+        super(tupleEntry);
+        validateFields(tupleEntry, FIELDS);
+    }
     
     /**
      * Constructor for creating StatusDatum for a URL that was fetched successfully.
@@ -47,95 +55,75 @@ public class StatusDatum extends BaseDatum {
      * @param hostAddress Host IP address of server.
      * @param metaData User-provided meta-data.
      */
-    public StatusDatum(String url, HttpHeaders headers, String hostAddress, Map<String, Comparable> metaData) {
-        this(url, UrlStatus.FETCHED, headers, null, System.currentTimeMillis(), hostAddress, metaData);
+    public StatusDatum(String url, HttpHeaders headers, String hostAddress) {
+        this(url, UrlStatus.FETCHED, headers, null, System.currentTimeMillis(), hostAddress);
     }
     
-    public StatusDatum(String url, BaseFetchException e, Map<String, Comparable> metaData) {
-        this(url, e.mapToUrlStatus(), null, e, System.currentTimeMillis(), null, metaData);
+    public StatusDatum(String url, BaseFetchException e) {
+        this(url, e.mapToUrlStatus(), null, e, System.currentTimeMillis(), null);
     }
     
-    public StatusDatum(String url, UrlStatus status, Map<String, Comparable> metaData) {
-        this(url, status, null, null, System.currentTimeMillis(), null, metaData);
+    public StatusDatum(String url, UrlStatus status) {
+        this(url, status, null, null, System.currentTimeMillis(), null);
     }
     
-    public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BaseFetchException e, long statusTime, String hostAddress, Map<String, Comparable> metaData) {
-        super(metaData);
+    public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BaseFetchException e, long statusTime, String hostAddress) {
+        super(FIELDS);
         
-        _url = url;
-        _status = status;
-        _headers = headers;
-        _exception = e;
-        _statusTime = statusTime;
-        _hostAddress = hostAddress;
-    }
-
-    public String getUrl() {
-        return _url;
+        setUrl(url);
+        setStatus(status);
+        setHeaders(headers);
+        setException(e);
+        setStatusTime(statusTime);
+        setHostAddress(hostAddress);
     }
 
     public UrlStatus getStatus() {
-        return _status;
+        return UrlStatus.valueOf(_tupleEntry.getString(STATUS_FN));
     }
 
+    public void setStatus(UrlStatus status) {
+        _tupleEntry.set(STATUS_FN, status.name());
+    }
+    
     public HttpHeaders getHeaders() {
-        return _headers;
+        return new HttpHeaders((Tuple)_tupleEntry.get(HEADERS_FN));
     }
 
+    public void setHeaders(HttpHeaders headers) {
+        if (headers == null) {
+            _tupleEntry.set(HEADERS_FN, null);
+        } else {
+            _tupleEntry.set(HEADERS_FN, headers.toTuple());
+        }
+    }
+    
     public BaseFetchException getException() {
-        return _exception;
+        return (BaseFetchException)_tupleEntry.getObject(EXCEPTION_FN);
     }
 
+    public void setException(BaseFetchException e) {
+        _tupleEntry.set(EXCEPTION_FN, e);
+    }
+    
     public long getStatusTime() {
-        return _statusTime;
+        return _tupleEntry.getLong(STATUS_TIME_FN);
+    }
+    
+    public void setStatusTime(long statusTime) {
+        _tupleEntry.set(STATUS_TIME_FN, statusTime);
     }
     
     public String getHostAddress() {
-        return _hostAddress;
+        return _tupleEntry.getString(HOST_ADDRESS_FN);
+    }
+    
+    public void setHostAddress(String hostAddress) {
+        _tupleEntry.set(HOST_ADDRESS_FN, hostAddress);
     }
 
-    // ======================================================================================
-    // Below here is all Cascading-specific implementation
-    // ======================================================================================
-    
-    // Cascading field names that correspond to the datum fields.
-    public static final String URL_FIELD = fieldName(StatusDatum.class, "url");
-    public static final String STATUS_FIELD = fieldName(StatusDatum.class, "status");
-    public static final String HEADERS_FIELD = fieldName(StatusDatum.class, "headers");
-    public static final String EXCEPTION_FIELD = fieldName(StatusDatum.class, "exception");
-    public static final String STATUS_TIME_FIELD = fieldName(StatusDatum.class, "statusTime");
-    public static final String HOST_ADDRESS_FIELD = fieldName(StatusDatum.class, "hostAddress");
-        
-    public static final Fields FIELDS = new Fields(URL_FIELD, STATUS_FIELD, HEADERS_FIELD, EXCEPTION_FIELD, STATUS_TIME_FIELD, HOST_ADDRESS_FIELD);
-    
-    public StatusDatum(Tuple tuple, Fields metaDataFields) {
-        super(tuple, metaDataFields);
-        initFromTupleEntry(new TupleEntry(getStandardFields(), tuple));
+    public static Fields getGroupingField() {
+        return new Fields(UrlDatum.URL_FN);
     }
-    
-    public StatusDatum(TupleEntry entry, Fields metaDataFields) {
-        super(entry.getTuple(), metaDataFields);
-        initFromTupleEntry(entry);
-    }
-    
-    private void initFromTupleEntry(TupleEntry entry) {
-        _url = entry.getString(URL_FIELD);
-        _status = UrlStatus.valueOf(entry.getString(STATUS_FIELD));
-        _headers = new HttpHeaders((Tuple)entry.get(HEADERS_FIELD));
-        _exception = (BaseFetchException)entry.get(EXCEPTION_FIELD);
-        _statusTime = entry.getLong(STATUS_TIME_FIELD);
-        _hostAddress = entry.getString(HOST_ADDRESS_FIELD);
-    }
-    
-    @Override
-    public Fields getStandardFields() {
-        return FIELDS;
-    }
-    
-    @Override
-    protected Comparable[] getStandardValues() {
-        return new Comparable[] { _url, _status.name(), _headers == null ? null : _headers.toTuple(), (Comparable)_exception, _statusTime, _hostAddress };
-    }
-
 
 }

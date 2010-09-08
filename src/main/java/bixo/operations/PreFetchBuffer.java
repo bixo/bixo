@@ -18,7 +18,6 @@ import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
 import cascading.operation.BufferCall;
-import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
@@ -30,16 +29,12 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
     
     private FetcherPolicy _fetcherPolicy;
     private int _numReduceTasks;
-    private final Fields _metaDataFields;
 
-    public PreFetchBuffer(FetcherPolicy fetcherPolicy, int numReduceTasks, Fields metaDataFields) {
-        // There is no metadata that gets output from this, since a PreFetchedDatum has a list of
-        // ScoredUrlDatums, and these are what have meta-data.
+    public PreFetchBuffer(FetcherPolicy fetcherPolicy, int numReduceTasks) {
         super(PreFetchedDatum.FIELDS);
 
         _fetcherPolicy = fetcherPolicy;
         _numReduceTasks = numReduceTasks;
-        _metaDataFields = metaDataFields;
     }
 
     @Override
@@ -97,7 +92,7 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
                 }
             }
 
-            ScoredUrlDatum scoredDatum = new ScoredUrlDatum(values.next().getTuple(), _metaDataFields);
+            ScoredUrlDatum scoredDatum = new ScoredUrlDatum(values.next());
             urls.add(scoredDatum);
             totalUrls += 1;
 
@@ -105,7 +100,7 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
                 LOGGER.trace(String.format("Added %d urls for ref %s in group %d at %d", urls.size(), newKey.getRef(), newKey.getValue(), curRequestTime));
                 PreFetchedDatum datum = new PreFetchedDatum(urls, curRequestTime, nextRequestTime - curRequestTime, newKey.getValue(), newKey.getRef(), !values.hasNext());
                 datum.setSkipped(skipping);
-                collector.add(datum.toTuple());
+                collector.add(datum.getTuple());
 
                 curRequestTime = nextRequestTime;
                 urls.clear();
@@ -118,7 +113,7 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
             LOGGER.trace(String.format("Added %d urls for ref %s in group %d at %d", urls.size(), newKey.getRef(), newKey.getValue(), curRequestTime));
             PreFetchedDatum datum = new PreFetchedDatum(urls, curRequestTime, 0, newKey.getValue(), newKey.getRef(), true);
             datum.setSkipped(skipping);
-            collector.add(datum.toTuple());
+            collector.add(datum.getTuple());
         }
     }
 

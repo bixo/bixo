@@ -1,8 +1,10 @@
-package bixo.urldb;
+package bixo.url;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import bixo.url.SimpleUrlValidator;
 
 public class SimpleUrlValidatorTest {
 

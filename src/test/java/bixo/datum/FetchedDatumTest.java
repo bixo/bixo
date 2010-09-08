@@ -3,9 +3,7 @@ package bixo.datum;
 import org.junit.Assert;
 import org.junit.Test;
 
-import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
-
 
 public class FetchedDatumTest {
 
@@ -22,11 +20,11 @@ public class FetchedDatumTest {
         
         String value3 = "value3\nwith\nreturns";
         headers.add("key3", value3);
-        FetchedDatum datum = new FetchedDatum(url, url, 0, headers, new ContentBytes(), "", 0, null);
+        FetchedDatum datum = new FetchedDatum(url, url, 0, headers, new ContentBytes(), "", 0);
         
-        Tuple tuple = datum.toTuple();
+        Tuple tuple = datum.getTuple();
         
-        FetchedDatum newDatum = new FetchedDatum(tuple, new Fields());
+        FetchedDatum newDatum = new FetchedDatum(tuple);
         
         HttpHeaders newHeaders = newDatum.getHeaders();
         Assert.assertEquals("value", newHeaders.getFirst(key1));
@@ -46,7 +44,7 @@ public class FetchedDatumTest {
         
         HttpHeaders headers = new HttpHeaders();
         headers.add("status code", "200");
-        FetchedDatum datum = new FetchedDatum(url, url, 0, headers, new ContentBytes(), "", 0, null);
+        FetchedDatum datum = new FetchedDatum(url, url, 0, headers, new ContentBytes(), "", 0);
 
         String result = datum.toString();
         Assert.assertFalse(result.contains("FetchedDatum@"));

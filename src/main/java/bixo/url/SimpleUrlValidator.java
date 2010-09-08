@@ -1,4 +1,4 @@
-package bixo.urldb;
+package bixo.url;
 
 import java.net.URI;
 import java.net.URL;

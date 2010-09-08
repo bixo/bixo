@@ -1,4 +1,4 @@
-package bixo.urldb;
+package bixo.url;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;

@@ -1,4 +1,4 @@
-package bixo.urldb;
+package bixo.url;
 
 import java.net.MalformedURLException;
 import java.net.URL;

@@ -57,10 +57,11 @@ public class ProcessRobotsTask implements Runnable {
     public static void emptyQueue(Queue<GroupedUrlDatum> urls, String groupingKey, TupleEntryCollector collector) {
         GroupedUrlDatum datum;
         while ((datum = urls.poll()) != null) {
-            ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), 0, 0, UrlStatus.UNFETCHED, groupingKey, 1.0, datum.getMetaDataMap());
+            ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), groupingKey, UrlStatus.UNFETCHED, 1.0);
+            scoreUrl.setPayload(datum.getPayload());
             // TODO KKr - move synchronization up, to avoid lots of contention with other threads?
             synchronized (collector) {
-                collector.add(scoreUrl.toTuple());
+                collector.add(scoreUrl.getTuple());
             }
         }
     }
@@ -117,21 +118,22 @@ public class ProcessRobotsTask implements Runnable {
 
                     if (isDeferred) {
                         counter = FetchCounters.URLS_DEFERRED;
-                        scoreUrl = new ScoredUrlDatum(url, 0, 0, UrlStatus.SKIPPED_DEFERRED, GroupingKey.DEFERRED_GROUPING_KEY, 0.0, datum.getMetaDataMap());
+                        scoreUrl = new ScoredUrlDatum(url, GroupingKey.DEFERRED_GROUPING_KEY, UrlStatus.SKIPPED_DEFERRED, 0.0);
                     } else if (!robotRules.isAllowed(url)) {
                         counter = FetchCounters.URLS_BLOCKED;
-                        scoreUrl = new ScoredUrlDatum(url, 0, 0, UrlStatus.SKIPPED_BLOCKED, GroupingKey.BLOCKED_GROUPING_KEY, 0.0, datum.getMetaDataMap());
+                        scoreUrl = new ScoredUrlDatum(url, GroupingKey.BLOCKED_GROUPING_KEY, UrlStatus.SKIPPED_BLOCKED, 0.0);
                     } else {
                         counter = FetchCounters.URLS_ACCEPTED;
                         double score = _scorer.generateScore(domain, pld, datum);
-                        scoreUrl = new ScoredUrlDatum(url, 0, 0, UrlStatus.UNFETCHED, validKey, score, datum.getMetaDataMap());
+                        scoreUrl = new ScoredUrlDatum(url, validKey, UrlStatus.UNFETCHED, score);
                     }
                     
+                    scoreUrl.setPayload(datum.getPayload());
                     _flowProcess.increment(counter, 1);
 
                     // collectors aren't thread safe
                     synchronized (_collector) {
-                        _collector.add(scoreUrl.toTuple());
+                        _collector.add(scoreUrl.getTuple());
                     }
                 }
             }

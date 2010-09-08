@@ -4,36 +4,30 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import junit.framework.Assert;
 
 import org.junit.Test;
 
 import bixo.cascading.PartitioningKey;
-import cascading.tuple.Fields;
+import bixo.cascading.Payload;
 import cascading.tuple.Tuple;
-import cascading.tuple.TupleEntry;
 
 
 public class PreFetchedDatumTest {
 
-    @SuppressWarnings("unchecked")
-    private static List<ScoredUrlDatum> makeUrls(int count, String metadataFieldName) {
+    private static List<ScoredUrlDatum> makeUrls(int count, String payloadFieldName) {
         List<ScoredUrlDatum> results = new LinkedList<ScoredUrlDatum>();
 
-        Map<String, Comparable> metaData = new HashMap<String, Comparable>();
+       Payload payload = new Payload();
 
         for (int i = 0; i < count; i++) {
-            ScoredUrlDatum url;
-            if (metadataFieldName != null) {
-                metaData.put(metadataFieldName, "value-" + i);
-                url = new ScoredUrlDatum("http://domain.com/page-" + i, 0, 0, UrlStatus.UNFETCHED, "key", 1.0, metaData);
-            } else {
-                url = new ScoredUrlDatum("http://domain.com/page-" + i, 0, 0, UrlStatus.UNFETCHED, "key", 1.0, BaseDatum.EMPTY_METADATA_MAP);
+            ScoredUrlDatum url = new ScoredUrlDatum("http://domain.com/page-" + i, "key", UrlStatus.UNFETCHED, 1.0);
+            if (payloadFieldName != null) {
+                payload.put(payloadFieldName, "value-" + i);
+                url.setPayload(payload);
             }
 
             results.add(url);
@@ -49,9 +43,9 @@ public class PreFetchedDatumTest {
         PartitioningKey groupingKey = new PartitioningKey("key", 1);
         PreFetchedDatum pfd1 = new PreFetchedDatum(urls, fetchTime, 0, groupingKey.getValue(), groupingKey.getRef(), true);
         
-        Tuple t = pfd1.toTuple();
+        Tuple t = pfd1.getTuple();
         
-        PreFetchedDatum pfd2 = new PreFetchedDatum(t, new Fields("meta1"));
+        PreFetchedDatum pfd2 = new PreFetchedDatum(t);
         
         Assert.assertEquals(pfd1, pfd2);
     }
@@ -81,13 +75,11 @@ public class PreFetchedDatumTest {
         
         PartitioningKey groupingKey1 = new PartitioningKey("key1", 1);
         PreFetchedDatum pfd1 = new PreFetchedDatum(urls, fetchTime, 0, groupingKey1.getValue(), groupingKey1.getRef(), true);
-        TupleEntry te1 = new TupleEntry(PreFetchedDatum.FIELDS, pfd1.toTuple());
-        Comparable c1 = te1.get(PreFetchedDatum.GROUPING_KEY_FN);
+        Comparable c1 = pfd1.getGroupingKey();
         
         PartitioningKey groupingKey2 = new PartitioningKey("key2", 1);
         PreFetchedDatum pfd2 = new PreFetchedDatum(urls, fetchTime, 0, groupingKey2.getValue(), groupingKey2.getRef(), true);
-        TupleEntry te2 = new TupleEntry(PreFetchedDatum.FIELDS, pfd2.toTuple());
-        Comparable c2 = te2.get(PreFetchedDatum.GROUPING_KEY_FN);
+        Comparable c2 = pfd2.getGroupingKey();
         
         Assert.assertEquals(0, c1.compareTo(c2));
     }

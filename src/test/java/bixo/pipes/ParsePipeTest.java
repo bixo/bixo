@@ -76,8 +76,8 @@ public class ParsePipeTest extends CascadingTestCase {
                     headers.add(key, value);
                 }
                 
-                FetchedDatum contentTuple = new FetchedDatum(url, url, System.currentTimeMillis(), headers, new ContentBytes(content), mimetype, 0, null);
-                write.add(contentTuple.toTuple());
+                FetchedDatum contentTuple = new FetchedDatum(url, url, System.currentTimeMillis(), headers, new ContentBytes(content), mimetype, 0);
+                write.add(contentTuple.getTuple());
             }
         }
 

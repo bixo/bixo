@@ -5,26 +5,23 @@ import org.apache.log4j.Logger;
 import bixo.cascading.NullContext;
 import bixo.datum.UrlDatum;
 import bixo.hadoop.ImportCounters;
-import bixo.urldb.IUrlFilter;
+import bixo.url.IUrlFilter;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Filter;
 import cascading.operation.FilterCall;
 import cascading.operation.OperationCall;
-import cascading.tuple.Fields;
 
 @SuppressWarnings("serial")
 public class UrlFilter extends BaseOperation<NullContext> implements Filter<NullContext> {
 	private static final Logger LOGGER = Logger.getLogger(UrlFilter.class);
 	
-	private Fields _metaDataFields;
 	private IUrlFilter _filter;
 
 	private int _numFiltered;
 	private int _numAccepted;
 	
-	public UrlFilter(IUrlFilter filter, Fields metaDataFields) {
-		_metaDataFields = metaDataFields;
+	public UrlFilter(IUrlFilter filter) {
 		_filter = filter;
 	}
 
@@ -38,7 +35,7 @@ public class UrlFilter extends BaseOperation<NullContext> implements Filter<Null
 	
 	@Override
 	public boolean isRemove(FlowProcess process, FilterCall<NullContext> filterCall) {
-		UrlDatum datum = new UrlDatum(filterCall.getArguments().getTuple(), _metaDataFields);
+		UrlDatum datum = new UrlDatum(filterCall.getArguments());
 		if (_filter.isRemove(datum)) {
 		    process.increment(ImportCounters.URLS_FILTERED, 1);
 			_numFiltered += 1;

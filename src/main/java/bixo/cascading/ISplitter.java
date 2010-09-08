@@ -2,10 +2,10 @@ package bixo.cascading;
 
 import java.io.Serializable;
 
-import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntry;
 
-public interface ISplitter extends Serializable {
+public interface ISplitter extends Serializable     {
 	public String getLHSName();
 	
-	public boolean isLHS(Tuple tuple);
+	public boolean isLHS(TupleEntry tuple);
 }

@@ -8,10 +8,8 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 
 import bixo.cascading.NullContext;
-import bixo.datum.BaseDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.datum.UrlStatus;
 import bixo.fetcher.RandomResponseHandler;
 import bixo.fetcher.StringResponseHandler;
 import bixo.fetcher.http.SimpleHttpFetcher;
@@ -37,7 +35,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
 
         @Override
         public boolean matches(Object argument) {
-            ScoredUrlDatum datum = new ScoredUrlDatum((Tuple)argument, BaseDatum.EMPTY_METADATA_FIELDS);
+            ScoredUrlDatum datum = new ScoredUrlDatum((Tuple)argument);
             return (datum.getGroupKey().equals(GroupingKey.BLOCKED_GROUPING_KEY));
         }
     }
@@ -50,7 +48,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, ConfigUtils.BIXO_TEST_AGENT);
         ScoreGenerator scorer = new FixedScoreGenerator(1.0);
         RobotRulesParser parser = new SimpleRobotRulesParser();
-        FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, parser, scorer, BaseDatum.EMPTY_METADATA_FIELDS);
+        FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, parser, scorer);
         
         HadoopFlowProcess fp = Mockito.mock(HadoopFlowProcess.class);
         Mockito.when(fp.getJobConf()).thenReturn(new JobConf());
@@ -59,7 +57,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
         BufferCall<NullContext> bc = Mockito.mock(BufferCall.class);
         
         ArrayList<TupleEntry> iterValues = new ArrayList<TupleEntry>();
-        iterValues.add(new TupleEntry(new GroupedUrlDatum("http://localhost:8089", 0, 0, UrlStatus.UNFETCHED, "http://localhost:8089", BaseDatum.EMPTY_METADATA_MAP).toTuple()));
+        iterValues.add(new GroupedUrlDatum("http://localhost:8089", "http://localhost:8089").getTupleEntry());
         
         TupleEntryCollector collector = Mockito.mock(TupleEntryCollector.class);
         
@@ -95,7 +93,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, ConfigUtils.BIXO_TEST_AGENT);
         ScoreGenerator scorer = new FixedScoreGenerator(1.0);
         RobotRulesParser parser = new SimpleRobotRulesParser();
-        FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, parser, scorer, BaseDatum.EMPTY_METADATA_FIELDS);
+        FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, parser, scorer);
         
         HadoopFlowProcess fp = Mockito.mock(HadoopFlowProcess.class);
         Mockito.when(fp.getJobConf()).thenReturn(new JobConf());
@@ -104,7 +102,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
         BufferCall<NullContext> bc = Mockito.mock(BufferCall.class);
         
         ArrayList<TupleEntry> iterValues = new ArrayList<TupleEntry>();
-        iterValues.add(new TupleEntry(new GroupedUrlDatum("http://localhost:8089", 0, 0, UrlStatus.UNFETCHED, "http://localhost:8089", BaseDatum.EMPTY_METADATA_MAP).toTuple()));
+        iterValues.add(new GroupedUrlDatum("http://localhost:8089", "http://localhost:8089").getTupleEntry());
         
         TupleEntryCollector collector = Mockito.mock(TupleEntryCollector.class);
         

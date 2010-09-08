@@ -104,7 +104,7 @@ public class FetchTask implements Runnable {
                 } finally {
                     process.decrement(FetchCounters.URLS_FETCHING, 1);
 
-                    Tuple tuple = result.toTuple();
+                    Tuple tuple = result.getTuple();
                     tuple.add(status);
                    _fetchMgr.collect(tuple);
                 }
@@ -117,7 +117,7 @@ public class FetchTask implements Runnable {
                 process.increment(FetchCounters.URLS_SKIPPED, 1);
                 AbortedFetchException status = new AbortedFetchException(item.getUrl(), AbortedFetchReason.INTERRUPTED);
                 
-                Tuple tuple = result.toTuple();
+                Tuple tuple = result.getTuple();
                 tuple.add(status);
                _fetchMgr.collect(tuple);
             }

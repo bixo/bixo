@@ -1,9 +1,11 @@
-package bixo.urldb;
+package bixo.url;
 
 import org.junit.Assert;
 import org.junit.Test;
 
 import bixo.datum.UrlDatum;
+import bixo.url.IUrlFilter;
+import bixo.url.SimpleUrlFilter;
 
 
 public class SimpleUrlFilterTest {

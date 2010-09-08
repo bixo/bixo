@@ -22,7 +22,7 @@ import bixo.config.UserAgent;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.hadoop.HadoopUtils;
-import bixo.urldb.IUrlFilter;
+import bixo.url.IUrlFilter;
 import bixo.utils.FsUtils;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Hfs;

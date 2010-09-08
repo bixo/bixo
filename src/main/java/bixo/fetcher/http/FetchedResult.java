@@ -3,6 +3,7 @@ package bixo.fetcher.http;
 import java.security.InvalidParameterException;
 import java.util.Map;
 
+import bixo.cascading.Payload;
 import bixo.datum.HttpHeaders;
 
 public class FetchedResult {
@@ -17,7 +18,7 @@ public class FetchedResult {
     private final int _numRedirects;
     private final String _hostAddress;
 
-    private Map<String, Comparable> _metaDataMap;
+    private Payload _payload;
     
     public FetchedResult(   String baseUrl,
                             String redirectedUrl,
@@ -26,11 +27,11 @@ public class FetchedResult {
 	                        byte[] content,
 	                        String contentType,
 	                        int responseRate,
-	                        Map<String, Comparable> metaData,
+	                        Payload payload,
 	                        String newBaseUrl,
 	                        int numRedirects,
 	                        String hostAddress){
-		_metaDataMap = metaData;
+        _payload = payload;
 		
 		if (baseUrl == null) {
         	throw new InvalidParameterException("baseUrl cannot be null");
@@ -68,12 +69,12 @@ public class FetchedResult {
         _hostAddress = hostAddress;
 	}
 
-	public Map<String, Comparable> getMetaDataMap() {
-		return _metaDataMap;
+	public Payload getPayload() {
+		return _payload;
 	}
 
-	public void setMetaDataMap(Map<String, Comparable> metaDataMap) {
-		_metaDataMap = metaDataMap;
+	public void setMetaDataMap(Payload payload) {
+	    _payload = payload;
 	}
 
 	public String getBaseUrl() {

@@ -6,10 +6,8 @@ import java.net.URL;
 
 import org.apache.log4j.Logger;
 
-import bixo.cascading.MultiSinkTap;
 import bixo.cascading.NullContext;
 import bixo.datum.FetchedDatum;
-import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
@@ -47,7 +45,7 @@ public class RunFakeFetchPipe {
 
                 UrlDatum urlDatum = new UrlDatum(url.toString());
 
-                funcCall.getOutputCollector().add(urlDatum.toTuple());
+                funcCall.getOutputCollector().add(urlDatum.getTuple());
             } catch (MalformedURLException e) {
                 LOGGER.warn("Invalid URL: " + urlAsString);
                 // throw new RuntimeException("Invalid URL: " + urlAsString, e);
@@ -77,15 +75,12 @@ public class RunFakeFetchPipe {
 
             // Create the output, which is a dual file sink tap.
             String outputPath = "build/test/RunFakeFetchPipe/dual";
-            Tap status = new Hfs(new TextLine(new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD), new Fields(StatusDatum.STATUS_FIELD, StatusDatum.URL_FIELD)), outputPath + "/status",
-                            true);
-            Tap content = new Hfs(new TextLine(new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD), new Fields(FetchedDatum.BASE_URL_FIELD, FetchedDatum.CONTENT_FIELD)), outputPath + "/content",
-                            true);
-            Tap sink = new MultiSinkTap(status, content);
-
+            Tap status = new Hfs(new TextLine(), outputPath + "/status", true);
+            Tap content = new Hfs(new TextLine(null, FetchedDatum.FIELDS), outputPath + "/content", true);
+            
             // Finally we can run it.
             FlowConnector flowConnector = new FlowConnector();
-            Flow flow = flowConnector.connect(in, sink, fetchPipe);
+            Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
             flow.complete();
         } catch (Throwable t) {
             System.err.println("Exception running fake fetch pipe assembly: " + t.getMessage());

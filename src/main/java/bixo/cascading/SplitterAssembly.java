@@ -47,7 +47,7 @@ public class SplitterAssembly extends SubAssembly {
 	    
 		@Override
 		public boolean isRemove(FlowProcess flowProcess, FilterCall<NullContext> filterCall) {
-		    boolean result = _splitter.isLHS(filterCall.getArguments().getTuple()) != _wantLHS;
+		    boolean result = _splitter.isLHS(filterCall.getArguments()) != _wantLHS;
             if (!result) {
                 _flowProcess.increment(_counter, 1);
             }

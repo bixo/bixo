@@ -20,7 +20,7 @@ import bixo.datum.UrlDatum;
 import bixo.tools.sitecrawler.BixoJDBCTapFactory;
 import bixo.tools.sitecrawler.SiteCrawler;
 import bixo.tools.sitecrawler.UrlImporter;
-import bixo.urldb.IUrlFilter;
+import bixo.url.IUrlFilter;
 import bixo.utils.FsUtils;
 import cascading.flow.Flow;
 import cascading.flow.PlannerException;

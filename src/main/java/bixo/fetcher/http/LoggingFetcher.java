@@ -3,17 +3,18 @@ package bixo.fetcher.http;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Map;
 
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
+import bixo.cascading.Payload;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.ScoredUrlDatum;
+import bixo.datum.UrlStatus;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.UrlFetchException;
@@ -42,37 +43,17 @@ public class LoggingFetcher implements IHttpFetcher {
     }
 
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public FetchedDatum head(ScoredUrlDatum datum) throws BaseFetchException {
-        String url = datum.getUrl();
-        Map<String, Comparable> metaData = datum.getMetaDataMap();
-        logMetaData(url, metaData);
-        
-        // Create a simple HTML page here, where we fill in the URL as
-        // the field, and return that as the BytesWritable. we could add
-        // more of the datum values to the template if we cared.
-        try {
-            return makeFetchedDatum(url, metaData, "");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Should never happen", e);
-        } catch (MalformedURLException e) {
-            throw new UrlFetchException(url, e.getMessage());
-        }
-    }
-    
-    @SuppressWarnings("unchecked")
     @Override
     public FetchedDatum get(ScoredUrlDatum datum) throws BaseFetchException {
         String url = datum.getUrl();
-        Map<String, Comparable> metaData = datum.getMetaDataMap();
-        logMetaData(url, metaData);
+        Payload payload = datum.getPayload();
+        logPayload(url, payload);
         
         // Create a simple HTML page here, where we fill in the URL as
         // the field, and return that as the BytesWritable. we could add
         // more of the datum values to the template if we cared.
         try {
-            return makeFetchedDatum(url, metaData, String.format(HTML_TEMPLATE, url));
+            return makeFetchedDatum(url, String.format(HTML_TEMPLATE, url), payload);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Should never happen", e);
         } catch (MalformedURLException e) {
@@ -80,8 +61,7 @@ public class LoggingFetcher implements IHttpFetcher {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private FetchedDatum makeFetchedDatum(String url, Map<String, Comparable> metaData, String htmlContent) throws MalformedURLException, HttpFetchException, UnsupportedEncodingException {
+    private FetchedDatum makeFetchedDatum(String url, String htmlContent, Payload payload) throws MalformedURLException, HttpFetchException, UnsupportedEncodingException {
         URL theUrl = new URL(url);
         if (theUrl.getFile().equals("/robots.txt")) {
             throw new HttpFetchException(url, "Never return robots.txt from LoggingFetcher", HttpStatus.SC_NOT_FOUND, null);
@@ -96,18 +76,19 @@ public class LoggingFetcher implements IHttpFetcher {
         // the URL DB that might have been set using fake content, we know to ignore the
         // refetch time if we're doing a real fetch.
         headers.add(IHttpHeaders.CONTENT_LOCATION, FAKE_CONTENT_LOCATION);
-        return new FetchedDatum(url, url, System.currentTimeMillis(), headers, new ContentBytes(content), "text/html", 100000, metaData);
+        FetchedDatum result = new FetchedDatum(url, url, System.currentTimeMillis(), headers, new ContentBytes(content), "text/html", 100000);
+        result.setPayload(payload);
+        return result;
     }
 
 
-    @SuppressWarnings("unchecked")
-    private void logMetaData(String url, Map<String, Comparable> metaData) {
+    private void logPayload(String url, Payload payload) {
         StringBuilder msg = new StringBuilder(url);
         msg.append(" ( ");
-        for (String key : metaData.keySet()) {
+        for (String key : payload.keySet()) {
             msg.append(key);
             msg.append(':');
-            Comparable value = metaData.get(key);
+            Object value = payload.get(key);
             msg.append(value == null ? "null" : value.toString());
             msg.append(' ');
         }
@@ -120,7 +101,7 @@ public class LoggingFetcher implements IHttpFetcher {
     @Override
     public byte[] get(String url) throws BaseFetchException {
         try {
-            FetchedDatum result = get(new ScoredUrlDatum(url));
+            FetchedDatum result = get(new ScoredUrlDatum(url, "", UrlStatus.UNFETCHED));
             return result.getContentBytes();
         } catch (HttpFetchException e) {
             if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {

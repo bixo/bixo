@@ -9,20 +9,16 @@ import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
-import cascading.tuple.Fields;
-import cascading.tuple.Tuple;
 
 @SuppressWarnings({ "serial", "unchecked" })
 public class GroupFunction extends BaseOperation implements Function {
     private static final Logger LOGGER = Logger.getLogger(GroupFunction.class);
 
     private final IGroupingKeyGenerator _generator;
-    private final Fields _metaDataFieldNames;
 
-    public GroupFunction(Fields metaDataFieldNames, IGroupingKeyGenerator generator) {
-        super(new Fields(GroupedUrlDatum.GROUP_KEY_FIELD));
+    public GroupFunction(IGroupingKeyGenerator generator) {
+        super(GroupedUrlDatum.FIELDS);
         
-        _metaDataFieldNames = metaDataFieldNames;
         _generator = generator;
     }
 
@@ -30,11 +26,13 @@ public class GroupFunction extends BaseOperation implements Function {
     public void operate(FlowProcess process, FunctionCall funCall) {
         String key;
         try {
-            key = _generator.getGroupingKey(new UrlDatum(funCall.getArguments().getTuple(), _metaDataFieldNames));
-            funCall.getOutputCollector().add(new Tuple(key));
+            UrlDatum datum = new UrlDatum(funCall.getArguments());
+            key = _generator.getGroupingKey(datum);
+            GroupedUrlDatum result = new GroupedUrlDatum(datum, key);
+            funCall.getOutputCollector().add(result.getTuple());
         } catch (Exception e) {
+            // TODO KKr - don't lose the tuple (skipping support)
             LOGGER.error("Unexpected exception while grouping URL (probably badly formed)", e);
         }
     }
-
 }

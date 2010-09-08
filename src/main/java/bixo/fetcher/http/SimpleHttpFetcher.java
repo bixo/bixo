@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997-2009 101tec Inc.
+ * Copyright (c) 2010 TransPac Software, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy 
  * of this software and associated documentation files (the "Software"), to deal
@@ -31,9 +31,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -60,7 +58,6 @@ import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.RedirectException;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.params.ClientParamBean;
@@ -90,6 +87,7 @@ import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 
+import bixo.cascading.Payload;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.RedirectMode;
@@ -388,18 +386,14 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     private static FetchedDatum convert(FetchedResult result) {
     	FetchedDatum datum = new FetchedDatum(result.getBaseUrl(), result.getFetchedUrl(), result.getFetchTime(),
     	                result.getHeaders(), new ContentBytes(result.getContent()), result.getContentType(),
-    	                result.getResponseRate(), result.getMetaDataMap());
+    	                result.getResponseRate());
     	datum.setNewBaseUrl(result.getNewBaseUrl());
     	datum.setNumRedirects(result.getNumRedirects());
     	datum.setHostAddress(result.getHostAddress());
+    	datum.setPayload(result.getPayload());
     	return datum;
     }
 
-    @Override
-    public FetchedDatum head(ScoredUrlDatum scoredUrl) throws BaseFetchException {
-        return convert(request(new HttpHead(), scoredUrl));
-    }
-    
     @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
         return convert(request(new HttpGet(), scoredUrl));
@@ -409,7 +403,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         init();
 
         try {
-            return doRequest(request, scoredUrl.getUrl(), scoredUrl.getMetaDataMap());
+            return doRequest(request, scoredUrl.getUrl(), scoredUrl.getPayload());
         } catch (HttpFetchException e) {
             // Don't bother generating a trace for a 404 (not found)
             if (LOGGER.isTraceEnabled() && (e.getHttpStatus() != HttpStatus.SC_NOT_FOUND)) {
@@ -429,13 +423,12 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public byte[] get(String url) throws BaseFetchException {
         init();
         
         try {
-            FetchedDatum result = convert(doRequest(new HttpGet(), url, new HashMap<String, Comparable>()));
+            FetchedDatum result = convert(doRequest(new HttpGet(), url, new Payload()));
             return result.getContentBytes();
         } catch (HttpFetchException e) {
             if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
@@ -446,17 +439,15 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         }
     }
     
-    @SuppressWarnings("unchecked")
     public FetchedResult fetch(String url) throws BaseFetchException{
-    	return fetch(new HttpGet(),url,new HashMap<String,Comparable>());
+    	return fetch(new HttpGet(), url, new Payload());
     }
     
-    @SuppressWarnings("unchecked")
-    public FetchedResult fetch(HttpRequestBase request,String url,Map<String,Comparable> metaData) throws BaseFetchException{
+    public FetchedResult fetch(HttpRequestBase request, String url, Payload payload) throws BaseFetchException{
         init();
         
         try {
-        	return doRequest(request,url,metaData);
+        	return doRequest(request, url, payload);
         } catch (BaseFetchException e) {
         	if (LOGGER.isTraceEnabled()) {
         		LOGGER.trace(String.format("Exception fetching %s", url), e);
@@ -465,8 +456,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private FetchedResult doRequest(HttpRequestBase request, String url, Map<String, Comparable> metaData) throws BaseFetchException {
+    private FetchedResult doRequest(HttpRequestBase request, String url, Payload payload) throws BaseFetchException {
         LOGGER.trace("Fetching " + url);
 
         HttpResponse response;
@@ -669,7 +659,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
                                     content,
                                     contentType,
                                     (int)readRate,
-                                    metaData,
+                                    payload,
                                     newBaseUrl,
                                     numRedirects,
                                     hostAddress);

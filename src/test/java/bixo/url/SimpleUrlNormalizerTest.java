@@ -1,10 +1,11 @@
-package bixo.urldb;
+package bixo.url;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import bixo.urldb.SimpleUrlNormalizer;
+import bixo.url.IUrlNormalizer;
+import bixo.url.SimpleUrlNormalizer;
 
 
 public class SimpleUrlNormalizerTest {

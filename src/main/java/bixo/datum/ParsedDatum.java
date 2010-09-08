@@ -10,128 +10,88 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
-public class ParsedDatum extends BaseDatum {
-    private String _url;
-    private String _hostAddress;
-    private String _parsedText;
-    private String _language;
-    private String _title;
-    private Outlink[] _outlinks;
-    private Map<String, String> _parsedMeta;
+public class ParsedDatum extends UrlDatum {
     
+    private static final String HOST_ADDRESS_FN = fieldName(ParsedDatum.class, "hostAddress");
+    private static final String PARSED_TEXT_FN = fieldName(ParsedDatum.class, "parsedText");
+    private static final String LANGUAGE_FN = fieldName(ParsedDatum.class, "language");
+    private static final String TITLE_FN = fieldName(ParsedDatum.class, "title");
+    private static final String OUTLINKS_FN = fieldName(ParsedDatum.class, "outLinks");
+    private static final String PARSED_META_FN = fieldName(ParsedDatum.class, "parsedMeta");
+
+    public static final Fields FIELDS = new Fields(HOST_ADDRESS_FN, PARSED_TEXT_FN, LANGUAGE_FN, 
+                    TITLE_FN, OUTLINKS_FN, PARSED_META_FN).append(getSuperFields(ParsedDatum.class));
+
     /**
      * No argument constructor for use with FutureTask
      */
     public ParsedDatum() {
-        super(BaseDatum.EMPTY_METADATA_MAP);
+        super(FIELDS);
     }
     
-    @SuppressWarnings("unchecked")
-    public ParsedDatum(String url, String hostAddress, String parsedText, String language, String title, Outlink[] outlinks, Map<String, String> parsedMeta, Map<String, Comparable> metaData) {
-        super(metaData);
+    public ParsedDatum(TupleEntry tupleEntry) {
+        super(tupleEntry);
+        validateFields(tupleEntry, FIELDS);
+    }
+    
+    public ParsedDatum(String url, String hostAddress, String parsedText, String language, String title, Outlink[] outlinks, Map<String, String> parsedMeta) {
+        super(FIELDS);
         
-        _url = url;
-        _hostAddress = hostAddress;
-        _parsedText = parsedText;
-        _language = language;
-        _title = title;
-        _outlinks = outlinks;
-        _parsedMeta = parsedMeta;
-    }
-
-    public String getUrl() {
-        return _url;
-    }
-
-    public void setUrl(String url) {
-        _url = url;
+        setUrl(url);
+        setHostAddress(hostAddress);
+        setParsedText(parsedText);
+        setLanguage(language);
+        setTitle(title);
+        setOutlinks(outlinks);
+        setParsedMeta(parsedMeta);
     }
 
     public String getHostAddress() {
-        return _hostAddress;
+        return _tupleEntry.getString(HOST_ADDRESS_FN);
     }
 
     public void setHostAddress(String hostAddress) {
-        _hostAddress = hostAddress;
+        _tupleEntry.set(HOST_ADDRESS_FN, hostAddress);
     }
 
     public String getParsedText() {
-        return _parsedText;
+        return _tupleEntry.getString(PARSED_TEXT_FN);
     }
 
     public void setParsedText(String parsedText) {
-        _parsedText = parsedText;
+        _tupleEntry.set(PARSED_TEXT_FN, parsedText);
     }
 
     public String getLanguage() {
-        return _language;
+        return _tupleEntry.getString(LANGUAGE_FN);
     }
 
     public void setLanguage(String language) {
-        _language = language;
+        _tupleEntry.set(LANGUAGE_FN, language);
     }
 
     public String getTitle() {
-        return _title;
+        return _tupleEntry.getString(TITLE_FN);
     }
 
     public void setTitle(String title) {
-        _title = title;
+        _tupleEntry.set(TITLE_FN, title);
     }
 
     public Outlink[] getOutlinks() {
-        return _outlinks;
+        return convertTupleToOutlinks((Tuple)_tupleEntry.get(OUTLINKS_FN));
     }
 
     public void setOutlinks(Outlink[] outlinks) {
-        _outlinks = outlinks;
+        _tupleEntry.set(OUTLINKS_FN, convertOutlinksToTuple(outlinks));
     }
 
     public Map<String, String> getParsedMeta() {
-        return _parsedMeta;
+        return convertTupleToMap((Tuple)_tupleEntry.get(PARSED_META_FN));
     }
 
     public void setParsedMeta(Map<String, String> parsedMeta) {
-        _parsedMeta = parsedMeta;
-    }
-
-    // ======================================================================================
-    // Below here is all Cascading-specific implementation
-    // ======================================================================================
-
-    // Cascading field names that correspond to the datum fields.
-    public static final String URL_FIELD = fieldName(ParsedDatum.class, "url");
-    public static final String HOST_ADDRESS_FIELD = fieldName(ParsedDatum.class, "hostAddress");
-    public static final String PARSED_TEXT_FIELD = fieldName(ParsedDatum.class, "parsedText");
-    public static final String LANGUAGE_FIELD = fieldName(ParsedDatum.class, "language");
-    public static final String TITLE_FIELD = fieldName(ParsedDatum.class, "title");
-    public static final String OUTLINKS_FIELD = fieldName(ParsedDatum.class, "outLinks");
-    public static final String PARSED_META_FIELD = fieldName(ParsedDatum.class, "parsedMeta");
-
-    public static final Fields FIELDS = new Fields(URL_FIELD, HOST_ADDRESS_FIELD, PARSED_TEXT_FIELD, LANGUAGE_FIELD, TITLE_FIELD, OUTLINKS_FIELD, PARSED_META_FIELD);
-
-    public ParsedDatum(Tuple tuple, Fields metaDataFields) {
-        super(tuple, metaDataFields);
-        
-        TupleEntry entry = new TupleEntry(getStandardFields(), tuple);
-        _url = entry.getString(URL_FIELD);
-        _hostAddress = entry.getString(HOST_ADDRESS_FIELD);
-        _parsedText = entry.getString(PARSED_TEXT_FIELD);
-        _language = entry.getString(LANGUAGE_FIELD);
-        _title = entry.getString(TITLE_FIELD);
-        _outlinks = convertTupleToOutlinks((Tuple)entry.get(OUTLINKS_FIELD));
-        _parsedMeta = convertTupleToMap((Tuple)entry.get(PARSED_META_FIELD));
-    }
-
-    @Override
-    public Fields getStandardFields() {
-        return FIELDS;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    protected Comparable[] getStandardValues() {
-        return new Comparable[] { _url, _hostAddress, _parsedText, _language, _title, convertOutlinksToTuple(_outlinks), convertMapToTuple(_parsedMeta) };
+        _tupleEntry.set(PARSED_META_FN, convertMapToTuple(parsedMeta));
     }
 
     private Tuple convertOutlinksToTuple(Outlink[] outLinks) {
@@ -141,6 +101,7 @@ public class ParsedDatum extends BaseDatum {
             tuple.add(outlink.getAnchor());
             tuple.add(outlink.getRelAttributes());
         }
+        
         return tuple;
     }
 
@@ -152,6 +113,7 @@ public class ParsedDatum extends BaseDatum {
             int tupleOffset = i * 3;
             result[i] = new Outlink(tuple.getString(tupleOffset), tuple.getString(tupleOffset + 1), tuple.getString(tupleOffset + 2));
         }
+        
         return result;
     }
     
@@ -176,7 +138,12 @@ public class ParsedDatum extends BaseDatum {
             String value = (String)iter.next();
             result.put(key, value);
         }
+        
         return result;
+    }
+
+    public static Fields getParsedTextField() {
+        return new Fields(ParsedDatum.PARSED_TEXT_FN);
     }
 
 }
