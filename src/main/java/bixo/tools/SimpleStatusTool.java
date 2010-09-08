@@ -10,7 +10,7 @@ import org.kohsuke.args4j.CmdLineParser;
 
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.utils.FsUtils;
+import bixo.utils.CrawlDirUtils;
 import cascading.scheme.SequenceFile;
 import cascading.scheme.TextLine;
 import cascading.tap.Hfs;
@@ -55,14 +55,14 @@ public class SimpleStatusTool {
         	
         	int prevLoop = -1;
         	Path curDirPath = null;
-        	while ((curDirPath = FsUtils.findNextLoopDir(fs, crawlDirPath, prevLoop)) != null) {
+        	while ((curDirPath = CrawlDirUtils.findNextLoopDir(fs, crawlDirPath, prevLoop)) != null) {
         		String curDirName = curDirPath.toUri().toString();
         		LOGGER.info("");
         		LOGGER.info("================================================================");
         		LOGGER.info("Processing " + curDirName);
         		LOGGER.info("================================================================");
         		
-        		int curLoop = FsUtils.extractLoopNumber(curDirPath);
+        		int curLoop = CrawlDirUtils.extractLoopNumber(curDirPath);
         		if (curLoop != prevLoop + 1) {
         			LOGGER.warn(String.format("Missing directories between %d and %d", prevLoop, curLoop));
         		}

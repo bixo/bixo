@@ -21,7 +21,7 @@ import bixo.tools.sitecrawler.BixoJDBCTapFactory;
 import bixo.tools.sitecrawler.SiteCrawler;
 import bixo.tools.sitecrawler.UrlImporter;
 import bixo.urldb.IUrlFilter;
-import bixo.utils.FsUtils;
+import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
 import cascading.flow.PlannerException;
 
@@ -163,7 +163,7 @@ public class SimpleCrawlTool {
                 // Create a "0-<timestamp>" sub-directory with just a /urls subdir
                 // In the /urls dir the input file will have a single URL for the target domain.
 
-                Path curLoopDir = FsUtils.makeLoopDir(fs, outputPath, 0);
+                Path curLoopDir = CrawlDirUtils.makeLoopDir(fs, outputPath, 0);
                 String curLoopDirName = curLoopDir.toUri().toString();
                 setLoopLoggerFile(curLoopDirName, 0);
 
@@ -171,14 +171,14 @@ public class SimpleCrawlTool {
                 importer.importOneDomain(domain, BixoJDBCTapFactory.createUrlsSinkJDBCTap(options.getDbLocation()));
             } 
             
-            Path inputPath = FsUtils.findLatestLoopDir(fs, outputPath);
+            Path inputPath = CrawlDirUtils.findLatestLoopDir(fs, outputPath);
 
             if (inputPath == null) {
                 System.err.println("No previous cycle output dirs exist in " + outputDirName);
                 printUsageAndExit(parser);
             }
 
-            int startLoop = FsUtils.extractLoopNumber(inputPath);
+            int startLoop = CrawlDirUtils.extractLoopNumber(inputPath);
             int endLoop = startLoop + options.getNumLoops();
 
             UserAgent userAgent = new UserAgent(options.getAgentName(), EMAIL_ADDRESS, WEB_ADDRESS);
@@ -207,7 +207,7 @@ public class SimpleCrawlTool {
                     defaultPolicy.setCrawlEndTime(now + perLoopTime);
                 }
 
-                Path curLoopDir = FsUtils.makeLoopDir(fs, outputPath, curLoop);
+                Path curLoopDir = CrawlDirUtils.makeLoopDir(fs, outputPath, curLoop);
                 String curLoopDirName = curLoopDir.toUri().toString();
                 setLoopLoggerFile(curLoopDirName, curLoop);
 

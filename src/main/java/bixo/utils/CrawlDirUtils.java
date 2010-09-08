@@ -12,10 +12,8 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-/* TODO KKr Rename this something like CrawlDirUtils to distinguish it from
- * com.bixolabs.cascading.FsUtils (in cascading.utils)?
- */
-public class FsUtils {
+
+public class CrawlDirUtils {
 	private static final Pattern LOOP_DIRNAME_PATTERN = Pattern
 			.compile("(\\d+)-([^/]+)");
 
@@ -37,6 +35,15 @@ public class FsUtils {
 	    return result;
 	}
 	
+	
+	/**
+	 * 
+	 * @param fs
+	 * @param outputDir
+	 * @param loopNumber
+	 * @return Directory path <loopNumber>-<timestamp>
+	 * @throws IOException
+	 */
 	public static Path makeLoopDir(FileSystem fs, Path outputDir, int loopNumber)
 			throws IOException {
 		String timestamp = new SimpleDateFormat("yyyyMMdd'T'HHmmss")
@@ -46,6 +53,14 @@ public class FsUtils {
 		return loopDir;
 	}
 
+	/**
+	 * 
+	 * @param fs
+	 * @param outputPath
+	 * @return Path to the latest loop directory (based on the loop number); 
+	 *         null in the case of an error.
+	 * @throws IOException
+	 */
 	public static Path findLatestLoopDir(FileSystem fs, Path outputPath)
 			throws IOException {
 		int bestLoop = -1;
@@ -72,6 +87,15 @@ public class FsUtils {
 		return result;
 	}
 
+	/**
+	 * Given a loopNumber, returns the name of the next loop directory. 
+	 * 
+	 * @param fs
+	 * @param outputPath
+	 * @param loopNumber
+	 * @return Name of the next loop directory if one is present; null otherwise. 
+	 * @throws IOException
+	 */
 	public static Path findNextLoopDir(FileSystem fs, Path outputPath,
 			int loopNumber) throws IOException {
 		int bestLoop = Integer.MAX_VALUE;
