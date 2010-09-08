@@ -25,8 +25,8 @@ import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
 import cascading.flow.PlannerException;
 
-public class SimpleCrawlTool {
-    private static final Logger LOGGER = Logger.getLogger(SimpleCrawlTool.class);
+public class JDBCCrawlTool {
+    private static final Logger LOGGER = Logger.getLogger(JDBCCrawlTool.class);
 
     private static final long MILLISECONDS_PER_MINUTE = 60 * 1000L;
 
@@ -104,7 +104,7 @@ public class SimpleCrawlTool {
     }
 
     public static void main(String[] args) {
-        SimpleCrawlToolOptions options = new SimpleCrawlToolOptions();
+        JDBCCrawlToolOptions options = new JDBCCrawlToolOptions();
         CmdLineParser parser = new CmdLineParser(options);
 
         try {
@@ -189,7 +189,7 @@ public class SimpleCrawlTool {
             defaultPolicy.setFetcherMode(FetcherMode.EFFICIENT);
             
             int crawlDurationInMinutes = options.getCrawlDuration();
-            boolean hasEndTime = crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION;
+            boolean hasEndTime = crawlDurationInMinutes != JDBCCrawlToolOptions.NO_CRAWL_DURATION;
             long targetEndTime = hasEndTime ? System.currentTimeMillis()
                             + (crawlDurationInMinutes * MILLISECONDS_PER_MINUTE) : FetcherPolicy.NO_CRAWL_END_TIME;
 

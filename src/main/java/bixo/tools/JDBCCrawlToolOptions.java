@@ -4,7 +4,7 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
-public class SimpleCrawlToolOptions {
+public class JDBCCrawlToolOptions {
     public static final int NO_CRAWL_DURATION = 0;
     public static final int DEFAULT_MAX_THREADS = 10;
     private static final int DEFAULT_NUM_LOOPS = 1;
