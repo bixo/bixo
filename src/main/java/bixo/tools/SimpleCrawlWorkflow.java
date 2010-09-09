@@ -12,7 +12,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 
-import bixo.cascading.ISplitter;
+import bixo.cascading.Splitter;
 import bixo.cascading.NullContext;
 import bixo.cascading.SplitterAssembly;
 import bixo.cascading.TupleLogger;
@@ -64,7 +64,7 @@ public class SimpleCrawlWorkflow {
 
 
     @SuppressWarnings("serial")
-    private static class SplitFetchedUnfetchedCrawlDatums implements ISplitter {
+    private static class SplitFetchedUnfetchedCrawlDatums implements Splitter {
 
         @Override
         public String getLHSName() {

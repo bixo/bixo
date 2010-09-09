@@ -20,7 +20,7 @@ import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.FetchTask;
 import bixo.fetcher.IFetchMgr;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.HttpFetcher;
 import bixo.hadoop.FetchCounters;
 import bixo.utils.DiskQueue;
 import bixo.utils.ThreadedExecutor;
@@ -148,7 +148,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
 
     private static final long HARD_TERMINATION_CLEANUP_DURATION = 10 * 1000L;
 
-    private IHttpFetcher _fetcher;
+    private HttpFetcher _fetcher;
     private FetcherMode _fetcherMode;
 
     private transient ThreadedExecutor _executor;
@@ -161,7 +161,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     
     private transient AtomicBoolean _keepCollecting;
     
-    public FetchBuffer(IHttpFetcher fetcher) {
+    public FetchBuffer(HttpFetcher fetcher) {
         // We're going to output a tuple that contains a FetchedDatum, plus meta-data,
         // plus a result that could be a string, a status, or an exception
         super(FetchedDatum.FIELDS.append(FETCH_RESULT_FIELD));

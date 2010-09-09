@@ -20,35 +20,22 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher.http;
+package bixo.fetcher.util;
 
+import java.io.IOException;
 import java.io.Serializable;
 
-import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
-import bixo.datum.FetchedDatum;
-import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.FetchException;
+import bixo.datum.UrlDatum;
 
-public interface IHttpFetcher extends Serializable {
-    public FetcherPolicy getFetcherPolicy();
-    public int getMaxThreads();
-    public UserAgent getUserAgent();
-    
-    // Return results of HTTP GET request
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws FetchException;
-    
+@SuppressWarnings("serial")
+public abstract class GroupingKeyGenerator implements Serializable {
     /**
-     * Raw version of fetcher, for use when getting robots.txt (for example).
-     * The one significant difference is that if the resource doesn't exist, what
-     * gets returned is a zero-length byte[] array, versus an HttpFetchException.
+     * Return key used to group URL into one queue
      * 
-     * @param url - URL to fetch
-     * @return - byte array of data.
-     * 
-     * @throws FetchException 
+     * @param urlDatum URL to be grouped.
+     * @return key for grouping, or special value for cases where URL shouldn't be fetched.
+     * @throws IOException
      */
-    public byte[] get(String url) throws FetchException;
-
-    public void abort();
+    public abstract String getGroupingKey(UrlDatum urlDatum);
+    
 }

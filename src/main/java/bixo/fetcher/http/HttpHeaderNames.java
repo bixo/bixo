@@ -26,7 +26,7 @@ package bixo.fetcher.http;
  * @author Chris Mattmann
  * @author J&eacute;r&ocirc;me Charron
  */
-public interface IHttpHeaders {
+public interface HttpHeaderNames {
 
     public final static String CONTENT_ENCODING = "Content-Encoding";
 

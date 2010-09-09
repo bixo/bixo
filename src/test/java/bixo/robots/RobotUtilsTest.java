@@ -14,7 +14,7 @@ import org.mortbay.http.HttpServer;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
 import bixo.fetcher.SimulationWebServerForTests;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.HttpFetcher;
 import bixo.utils.ConfigUtils;
 
 
@@ -56,7 +56,7 @@ public class RobotUtilsTest {
      */
     @Test
     public void testCircularRedirect() throws Exception {
-        IHttpFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TEST_AGENT, 1);
+        HttpFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TEST_AGENT, 1);
         RobotRulesParser parser = new SimpleRobotRulesParser();
         
         SimulationWebServerForTests webServer = new SimulationWebServerForTests();
@@ -72,7 +72,7 @@ public class RobotUtilsTest {
 
     @Test
     public void testRedirectToHtml() throws Exception {
-        IHttpFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TEST_AGENT, 1);
+        HttpFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TEST_AGENT, 1);
         RobotRulesParser parser = new SimpleRobotRulesParser();
         
         SimulationWebServerForTests webServer = new SimulationWebServerForTests();

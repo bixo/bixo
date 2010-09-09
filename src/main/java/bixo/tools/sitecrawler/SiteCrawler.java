@@ -16,7 +16,7 @@ import bixo.datum.ParsedDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.HttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.FixedScoreGenerator;
 import bixo.fetcher.util.ScoreGenerator;
@@ -136,7 +136,7 @@ public class SiteCrawler {
         Tap urlSink = BixoJDBCTapFactory.createUrlsSinkJDBCTap(persistentDbLocation);
 
         // Create the sub-assembly that runs the fetch job
-        IHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, fetcherPolicy, userAgent);
+        HttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, fetcherPolicy, userAgent);
         ScoreGenerator scorer = new FixedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, numReducers, MetaData.FIELDS);
 

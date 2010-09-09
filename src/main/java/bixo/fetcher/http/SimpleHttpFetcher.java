@@ -106,7 +106,7 @@ import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
 import bixo.utils.HttpUtils;
 
 @SuppressWarnings("serial")
-public class SimpleHttpFetcher implements IHttpFetcher {
+public class SimpleHttpFetcher extends HttpFetcher {
     private static Logger LOGGER = Logger.getLogger(SimpleHttpFetcher.class);
 
     // We tried 10 seconds for all of these, but got a number of connection/read timeouts for
@@ -144,14 +144,10 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         "SSL",
     };
 
-    
-    private int _maxThreads;
     private HttpVersion _httpVersion;
     private int _socketTimeout;
     private int _connectionTimeout;
     private int _maxRetryCount;
-    private FetcherPolicy _fetcherPolicy;
-    private UserAgent _userAgent;
     
     transient private DefaultHttpClient _httpClient;
     
@@ -310,9 +306,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
     }
 
     public SimpleHttpFetcher(int maxThreads, FetcherPolicy fetcherPolicy, UserAgent userAgent) {
-        _maxThreads = maxThreads;
-        _fetcherPolicy = fetcherPolicy;
-        _userAgent = userAgent;
+        super(maxThreads, fetcherPolicy, userAgent);
 
         _httpVersion = HttpVersion.HTTP_1_1;
         _socketTimeout = DEFAULT_SOCKET_TIMEOUT;
@@ -322,21 +316,6 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         // Just to be explicit, we rely on lazy initialization of this so that
         // we don't have to worry about serializing it.
         _httpClient = null;
-    }
-
-    @Override
-    public int getMaxThreads() {
-        return _maxThreads;
-    }
-
-    @Override
-    public FetcherPolicy getFetcherPolicy() {
-        return _fetcherPolicy;
-    }
-
-    @Override
-    public UserAgent getUserAgent() {
-        return _userAgent;
     }
 
     public HttpVersion getHttpVersion() {
@@ -423,22 +402,6 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         }
     }
 
-    @Override
-    public byte[] get(String url) throws FetchException {
-        init();
-        
-        try {
-            FetchedDatum result = convert(doRequest(new HttpGet(), url, new Payload()));
-            return result.getContentBytes();
-        } catch (HttpFetchException e) {
-            if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
-                return new byte[0];
-            } else {
-                throw e;
-            }
-        }
-    }
-    
     public FetchedResult fetch(String url) throws FetchException{
     	return fetch(new HttpGet(), url, new Payload());
     }
@@ -509,7 +472,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
                 throw new UrlFetchException(url, "Host address not saved in context");
             }
 
-            Header cth = response.getFirstHeader(IHttpHeaders.CONTENT_TYPE);
+            Header cth = response.getFirstHeader(HttpHeaderNames.CONTENT_TYPE);
             if (cth != null) {
                 contentType = cth.getValue();
             }
@@ -580,7 +543,7 @@ public class SimpleHttpFetcher implements IHttpFetcher {
         // Figure out how much data we want to try to fetch.
         int targetLength = _fetcherPolicy.getMaxContentSize();
         boolean truncated = false;
-        String contentLengthStr = headerMap.getFirst(IHttpHeaders.CONTENT_LENGTH);
+        String contentLengthStr = headerMap.getFirst(HttpHeaderNames.CONTENT_LENGTH);
         if (contentLengthStr != null) {
             try {
                 int contentLength = Integer.parseInt(contentLengthStr);
@@ -788,9 +751,9 @@ public class SimpleHttpFetcher implements IHttpFetcher {
             
             // Set up default headers. This helps us get back from servers what we want.
             HashSet<Header> defaultHeaders = new HashSet<Header>();
-            defaultHeaders.add(new BasicHeader(IHttpHeaders.ACCEPT_LANGUAGE, _fetcherPolicy.getAcceptLanguage()));
-            defaultHeaders.add(new BasicHeader(IHttpHeaders.ACCEPT_CHARSET, DEFAULT_ACCEPT_CHARSET));
-            defaultHeaders.add(new BasicHeader(IHttpHeaders.ACCEPT, DEFAULT_ACCEPT));
+            defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT_LANGUAGE, _fetcherPolicy.getAcceptLanguage()));
+            defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT_CHARSET, DEFAULT_ACCEPT_CHARSET));
+            defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT, DEFAULT_ACCEPT));
             
             clientParams.setDefaultHeaders(defaultHeaders);
         }

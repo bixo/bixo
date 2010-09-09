@@ -37,7 +37,7 @@ import bixo.exceptions.AbortedFetchException;
 import bixo.exceptions.AbortedFetchReason;
 import bixo.exceptions.FetchException;
 import bixo.exceptions.IOFetchException;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.HttpFetcher;
 import bixo.hadoop.FetchCounters;
 import cascading.tuple.Tuple;
 
@@ -49,11 +49,11 @@ public class FetchTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(FetchTask.class);
     
     private IFetchMgr _fetchMgr;
-    private IHttpFetcher _httpFetcher;
+    private HttpFetcher _httpFetcher;
     private List<ScoredUrlDatum> _items;
     private String _ref;
     
-    public FetchTask(IFetchMgr fetchMgr, IHttpFetcher httpFetcher, List<ScoredUrlDatum> items, String ref) {
+    public FetchTask(IFetchMgr fetchMgr, HttpFetcher httpFetcher, List<ScoredUrlDatum> items, String ref) {
         _fetchMgr = fetchMgr;
         _httpFetcher = httpFetcher;
         _items = items;

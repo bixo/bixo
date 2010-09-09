@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997-2009 101tec Inc.
+ * Copyright (c) 2010 TransPac Software, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy 
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,21 +20,43 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher.util;
+package bixo.fetcher.http;
 
-import java.io.IOException;
 import java.io.Serializable;
 
-import bixo.datum.UrlDatum;
+import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
+import bixo.datum.FetchedDatum;
+import bixo.datum.ScoredUrlDatum;
+import bixo.exceptions.FetchException;
 
-public interface IGroupingKeyGenerator extends Serializable {
-    /**
-     * Return key used to group URL into one queue
-     * 
-     * @param urlDatum URL to be grouped.
-     * @return key for grouping, or special value for cases where URL shouldn't be fetched.
-     * @throws IOException
-     */
-    public String getGroupingKey(UrlDatum urlDatum);
+@SuppressWarnings("serial")
+public abstract class HttpFetcher implements Serializable {
     
+    protected int _maxThreads;
+    protected FetcherPolicy _fetcherPolicy;
+    protected UserAgent _userAgent;
+    
+    public HttpFetcher(int maxThreads, FetcherPolicy fetcherPolicy, UserAgent userAgent) {
+        _maxThreads = maxThreads;
+        _fetcherPolicy = fetcherPolicy;
+        _userAgent = userAgent;
+    }
+
+    public int getMaxThreads() {
+        return _maxThreads;
+    }
+
+    public FetcherPolicy getFetcherPolicy() {
+        return _fetcherPolicy;
+    }
+
+    public UserAgent getUserAgent() {
+        return _userAgent;
+    }
+
+    // Return results of HTTP GET request
+    public abstract FetchedDatum get(ScoredUrlDatum scoredUrl) throws FetchException;
+    
+    public abstract void abort();
 }

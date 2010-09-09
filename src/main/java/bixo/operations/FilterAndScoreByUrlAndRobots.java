@@ -11,7 +11,7 @@ import bixo.cascading.NullContext;
 import bixo.config.UserAgent;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.HttpFetcher;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.hadoop.FetchCounters;
 import bixo.robots.RobotRulesParser;
@@ -41,7 +41,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     private static final int MAX_URLS_IN_MEMORY = 100;
 
     private ScoreGenerator _scorer;
-	private IHttpFetcher _fetcher;
+	private HttpFetcher _fetcher;
 	private RobotRulesParser _parser;
 	
     private transient ThreadedExecutor _executor;
@@ -55,7 +55,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         _fetcher = RobotUtils.createFetcher(userAgent, maxThreads);
     }
 
-    public FilterAndScoreByUrlAndRobots(IHttpFetcher fetcher, RobotRulesParser parser, ScoreGenerator scorer) {
+    public FilterAndScoreByUrlAndRobots(HttpFetcher fetcher, RobotRulesParser parser, ScoreGenerator scorer) {
         // We're going to output a ScoredUrlDatum (what FetcherBuffer expects).
         super(ScoredUrlDatum.FIELDS);
 

@@ -14,13 +14,12 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
-import bixo.datum.UrlStatus;
 import bixo.exceptions.FetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.UrlFetchException;
 
 @SuppressWarnings("serial")
-public class LoggingFetcher implements IHttpFetcher {
+public class LoggingFetcher extends HttpFetcher {
     private static final Logger LOGGER = Logger.getLogger(LoggingFetcher.class);
     
     public static final String FAKE_CONTENT_LOCATION = "Fake-LoggingFetcher";
@@ -32,14 +31,8 @@ public class LoggingFetcher implements IHttpFetcher {
         "<title>LoggingFetcher</title>\n" +
         "</head><body>URL = %s</body></html>\n";
     
-    private int _maxThreads;
-    private FetcherPolicy _policy;
-    private UserAgent _userAgent;
-    
     public LoggingFetcher(int maxThreads) {
-        _maxThreads = maxThreads;
-        _policy = new FetcherPolicy();
-        _userAgent = new UserAgent("agentName", "agentName@domain.com", "http://agentName.domain.com");
+        super(maxThreads, new FetcherPolicy(), new UserAgent("agentName", "agentName@domain.com", "http://agentName.domain.com"));
     }
 
 
@@ -69,13 +62,13 @@ public class LoggingFetcher implements IHttpFetcher {
         
         byte[] content = htmlContent.getBytes("UTF-8");
         HttpHeaders headers = new HttpHeaders();
-        headers.add(IHttpHeaders.CONTENT_LENGTH, "" + content.length);
-        headers.add(IHttpHeaders.CONTENT_TYPE, "text/html");
+        headers.add(HttpHeaderNames.CONTENT_LENGTH, "" + content.length);
+        headers.add(HttpHeaderNames.CONTENT_TYPE, "text/html");
         
         // Set the location to a fixed value, so that when we're processing entries from
         // the URL DB that might have been set using fake content, we know to ignore the
         // refetch time if we're doing a real fetch.
-        headers.add(IHttpHeaders.CONTENT_LOCATION, FAKE_CONTENT_LOCATION);
+        headers.add(HttpHeaderNames.CONTENT_LOCATION, FAKE_CONTENT_LOCATION);
         FetchedDatum result = new FetchedDatum(url, url, System.currentTimeMillis(), headers, new ContentBytes(content), "text/html", 100000);
         result.setPayload(payload);
         return result;
@@ -96,38 +89,6 @@ public class LoggingFetcher implements IHttpFetcher {
 
         LOGGER.info(msg.toString());
     }
-
-
-    @Override
-    public byte[] get(String url) throws FetchException {
-        try {
-            FetchedDatum result = get(new ScoredUrlDatum(url, "", UrlStatus.UNFETCHED));
-            return result.getContentBytes();
-        } catch (HttpFetchException e) {
-            if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
-                return new byte[0];
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public FetcherPolicy getFetcherPolicy() {
-        return _policy;
-    }
-
-    @Override
-    public int getMaxThreads() {
-        return _maxThreads;
-    }
-
-
-	@Override
-	public UserAgent getUserAgent() {
-		return _userAgent;
-	}
-
 
     @Override
     public void abort() {

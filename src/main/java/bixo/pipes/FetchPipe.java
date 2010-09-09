@@ -5,7 +5,7 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
 
-import bixo.cascading.ISplitter;
+import bixo.cascading.Splitter;
 import bixo.cascading.NullContext;
 import bixo.cascading.NullSinkTap;
 import bixo.cascading.SplitterAssembly;
@@ -17,8 +17,8 @@ import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.exceptions.FetchException;
-import bixo.fetcher.http.IHttpFetcher;
-import bixo.fetcher.util.IGroupingKeyGenerator;
+import bixo.fetcher.http.HttpFetcher;
+import bixo.fetcher.util.GroupingKeyGenerator;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.operations.FetchBuffer;
 import bixo.operations.FilterAndScoreByUrlAndRobots;
@@ -56,7 +56,7 @@ public class FetchPipe extends SubAssembly {
      * to safely fetch robots.txt files.
      *
      */
-    private static class GroupByDomain implements IGroupingKeyGenerator {
+    private static class GroupByDomain extends GroupingKeyGenerator {
         
         @Override
         public String getGroupingKey(UrlDatum urlDatum) {
@@ -70,7 +70,7 @@ public class FetchPipe extends SubAssembly {
         }
     }
 
-    private static class SplitIntoSpecialAndRegularKeys implements ISplitter {
+    private static class SplitIntoSpecialAndRegularKeys extends Splitter {
 
         @Override
         public String getLHSName() {
@@ -192,15 +192,15 @@ public class FetchPipe extends SubAssembly {
      * @param metaDataFields
      */
     
-    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher) {
+    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, HttpFetcher fetcher) {
         this(urlProvider, scorer, fetcher, null, null, 1);
     }
 
-    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, int numReducers) {
+    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, HttpFetcher fetcher, int numReducers) {
         this(urlProvider, scorer, fetcher, null, null, numReducers);
     }
     
-    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, IHttpFetcher fetcher, IHttpFetcher robotsFetcher, RobotRulesParser parser,
+    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, HttpFetcher fetcher, HttpFetcher robotsFetcher, RobotRulesParser parser,
                     int numReducers) {
         
         Pipe robotsPipe = new Each(urlProvider, new GroupFunction(new GroupByDomain()));

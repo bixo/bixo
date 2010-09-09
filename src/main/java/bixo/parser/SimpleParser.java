@@ -16,7 +16,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import bixo.config.ParserPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
-import bixo.fetcher.http.IHttpHeaders;
+import bixo.fetcher.http.HttpHeaderNames;
 import bixo.utils.CharsetUtils;
 import bixo.utils.HttpUtils;
 import bixo.utils.IoUtils;
@@ -121,7 +121,7 @@ public class SimpleParser implements IParser {
 		
 		// See if we have a content location from the HTTP headers that we should use as
 		// the base for resolving relative URLs in the document.
-		String clUrl = fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_LOCATION);
+		String clUrl = fetchedDatum.getHeaders().getFirst(HttpHeaderNames.CONTENT_LOCATION);
 		if (clUrl != null) {
 			// FUTURE KKr - should we try to keep processing if this step fails, but
 			// refuse to resolve relative links?
@@ -140,7 +140,7 @@ public class SimpleParser implements IParser {
      * @return charset in response headers, or null
      */
     protected String getCharset(FetchedDatum datum) {
-        String result = CharsetUtils.clean(datum.getHeaders().getFirst(IHttpHeaders.CONTENT_ENCODING));
+        String result = CharsetUtils.clean(datum.getHeaders().getFirst(HttpHeaderNames.CONTENT_ENCODING));
         if (result == null) {
             result = CharsetUtils.clean(HttpUtils.getCharsetFromContentType(datum.getContentType()));
         }
@@ -156,7 +156,7 @@ public class SimpleParser implements IParser {
      * @return first language in response headers, or null
      */
     protected String getLanguage(FetchedDatum fetchedDatum, String charset) {
-        return fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_LANGUAGE);
+        return fetchedDatum.getHeaders().getFirst(HttpHeaderNames.CONTENT_LANGUAGE);
     }
 
 }
