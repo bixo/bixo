@@ -1,4 +1,4 @@
-package bixo.tools;
+package bixo.examples;
 
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;

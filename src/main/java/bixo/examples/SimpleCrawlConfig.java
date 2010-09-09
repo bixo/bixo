@@ -1,4 +1,4 @@
-package bixo.tools;
+package bixo.examples;
 
 public class SimpleCrawlConfig {
 

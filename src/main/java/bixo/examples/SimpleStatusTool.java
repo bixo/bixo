@@ -1,4 +1,4 @@
-package bixo.tools;
+package bixo.examples;
 
 import java.io.IOException;
 
@@ -12,6 +12,7 @@ import org.kohsuke.args4j.CmdLineParser;
 
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlStatus;
+import bixo.tools.CrawlDbDatum;
 import bixo.utils.CrawlDirUtils;
 import cascading.scheme.SequenceFile;
 import cascading.scheme.TextLine;

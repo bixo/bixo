@@ -1,4 +1,4 @@
-package bixo.tools;
+package bixo.tools.sitecrawler;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -19,8 +19,8 @@ import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.tools.sitecrawler.BixoJDBCTapFactory;
-import bixo.tools.sitecrawler.SiteCrawler;
+import bixo.examples.SimpleCrawlConfig;
+import bixo.tools.CrawlDbDatum;
 import bixo.url.IUrlFilter;
 import bixo.url.SimpleUrlNormalizer;
 import bixo.utils.CrawlDirUtils;
