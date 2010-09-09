@@ -10,18 +10,18 @@ import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 
-import bixo.cascading.Payload;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
+import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.exceptions.AbortedFetchException;
 import bixo.exceptions.AbortedFetchReason;
-import bixo.exceptions.BaseFetchException;
+import bixo.exceptions.FetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.UrlFetchException;
@@ -584,7 +584,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
     private static class CustomFetcher implements IHttpFetcher {
 
         @Override
-        public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
+        public FetchedDatum get(ScoredUrlDatum scoredUrl) throws FetchException {
             String url = scoredUrl.getUrl();
             if (url.contains("page-6")) {
                 throw new AbortedFetchException(url, AbortedFetchReason.SLOW_RESPONSE_RATE);
@@ -600,7 +600,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
 
         @Override
-        public byte[] get(String url) throws BaseFetchException {
+        public byte[] get(String url) throws FetchException {
             return null;
         }
 

@@ -1,10 +1,9 @@
 package bixo.fetcher.http;
 
 import java.security.InvalidParameterException;
-import java.util.Map;
 
-import bixo.cascading.Payload;
 import bixo.datum.HttpHeaders;
+import bixo.datum.Payload;
 
 public class FetchedResult {
     private final String _baseUrl;

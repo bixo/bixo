@@ -11,19 +11,19 @@ import bixo.cascading.NullSinkTap;
 import bixo.cascading.SplitterAssembly;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
-import bixo.datum.PreFetchedDatum;
+import bixo.datum.FetchSetDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.exceptions.BaseFetchException;
+import bixo.exceptions.FetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.util.IGroupingKeyGenerator;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.operations.FetchBuffer;
 import bixo.operations.FilterAndScoreByUrlAndRobots;
 import bixo.operations.GroupFunction;
-import bixo.operations.PreFetchBuffer;
+import bixo.operations.MakeFetchSetsBuffer;
 import bixo.robots.RobotRulesParser;
 import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.GroupingKey;
@@ -147,8 +147,8 @@ public class FetchPipe extends SubAssembly {
                 } else {
                     status = new StatusDatum(fd.getBaseUrl(), urlStatus);
                 }
-            } else if (result instanceof BaseFetchException) {
-                status = new StatusDatum(fd.getBaseUrl(), (BaseFetchException)result);
+            } else if (result instanceof FetchException) {
+                status = new StatusDatum(fd.getBaseUrl(), (FetchException)result);
             } else {
                 throw new RuntimeException("Unknown type for fetch status field: " + result.getClass());
             }
@@ -227,9 +227,9 @@ public class FetchPipe extends SubAssembly {
         // based on the hash of the IP address (with a range of values == number of reducers), plus a list of URLs and a target
         // crawl time.
         Pipe prefetchPipe = new GroupBy("Distributing URL sets", splitter.getRHSPipe(), GroupedUrlDatum.getGroupingField(), ScoredUrlDatum.getSortingField(), true);
-        prefetchPipe = new Every(prefetchPipe, new PreFetchBuffer(fetcher.getFetcherPolicy(), numReducers), Fields.RESULTS);
+        prefetchPipe = new Every(prefetchPipe, new MakeFetchSetsBuffer(fetcher.getFetcherPolicy(), numReducers), Fields.RESULTS);
         
-        Pipe fetchPipe = new GroupBy("Fetching URL sets", prefetchPipe, PreFetchedDatum.getGroupingField(), PreFetchedDatum.getSortingField());
+        Pipe fetchPipe = new GroupBy("Fetching URL sets", prefetchPipe, FetchSetDatum.getGroupingField(), FetchSetDatum.getSortingField());
         fetchPipe = new Every(fetchPipe, new FetchBuffer(fetcher), Fields.RESULTS);
 
         Pipe fetchedContent = new Pipe(CONTENT_PIPE_NAME, new Each(fetchPipe, new FilterErrorsFunction()));

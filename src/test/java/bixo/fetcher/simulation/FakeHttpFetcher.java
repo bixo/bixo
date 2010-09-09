@@ -29,14 +29,14 @@ import java.util.Random;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
-import bixo.cascading.Payload;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
+import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.BaseFetchException;
+import bixo.exceptions.FetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.UrlFetchException;
 import bixo.fetcher.http.IHttpFetcher;
@@ -77,12 +77,12 @@ public class FakeHttpFetcher implements IHttpFetcher {
     }
 
     @Override
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws FetchException {
         return doGet(scoredUrl.getUrl(), scoredUrl.getPayload(), true);
     }
 
     @Override
-    public byte[] get(String url) throws BaseFetchException {
+    public byte[] get(String url) throws FetchException {
         try {
             FetchedDatum result = doGet(url, new Payload(), true);
             return result.getContentBytes();
@@ -95,7 +95,7 @@ public class FakeHttpFetcher implements IHttpFetcher {
         }
     }
     
-    private FetchedDatum doGet(String url, Payload payload, boolean returnContent) throws BaseFetchException {
+    private FetchedDatum doGet(String url, Payload payload, boolean returnContent) throws FetchException {
         LOGGER.trace("Fake fetching " + url);
         
         URL theUrl;

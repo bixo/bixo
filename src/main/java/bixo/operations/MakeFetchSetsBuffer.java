@@ -9,7 +9,7 @@ import org.apache.log4j.Logger;
 import bixo.cascading.NullContext;
 import bixo.cascading.PartitioningKey;
 import bixo.config.FetcherPolicy;
-import bixo.datum.PreFetchedDatum;
+import bixo.datum.FetchSetDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.FetchRequest;
 import bixo.robots.RobotRules;
@@ -22,16 +22,16 @@ import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
 @SuppressWarnings( { "serial", "unchecked" })
-public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
-    private static final Logger LOGGER = Logger.getLogger(PreFetchBuffer.class);
+public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
+    private static final Logger LOGGER = Logger.getLogger(MakeFetchSetsBuffer.class);
 
     private static final int URLS_PER_SKIPPED_BATCH = 100;
     
     private FetcherPolicy _fetcherPolicy;
     private int _numReduceTasks;
 
-    public PreFetchBuffer(FetcherPolicy fetcherPolicy, int numReduceTasks) {
-        super(PreFetchedDatum.FIELDS);
+    public MakeFetchSetsBuffer(FetcherPolicy fetcherPolicy, int numReduceTasks) {
+        super(FetchSetDatum.FIELDS);
 
         _fetcherPolicy = fetcherPolicy;
         _numReduceTasks = numReduceTasks;
@@ -98,7 +98,7 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
 
             if (urls.size() >= targetSize) {
                 LOGGER.trace(String.format("Added %d urls for ref %s in group %d at %d", urls.size(), newKey.getRef(), newKey.getValue(), curRequestTime));
-                PreFetchedDatum datum = new PreFetchedDatum(urls, curRequestTime, nextRequestTime - curRequestTime, newKey.getValue(), newKey.getRef(), !values.hasNext());
+                FetchSetDatum datum = new FetchSetDatum(urls, curRequestTime, nextRequestTime - curRequestTime, newKey.getValue(), newKey.getRef(), !values.hasNext());
                 datum.setSkipped(skipping);
                 collector.add(datum.getTuple());
 
@@ -111,7 +111,7 @@ public class PreFetchBuffer extends BaseOperation<NullContext> implements Buffer
         // See if we have another partially built datum to add.
         if (urls.size() > 0) {
             LOGGER.trace(String.format("Added %d urls for ref %s in group %d at %d", urls.size(), newKey.getRef(), newKey.getValue(), curRequestTime));
-            PreFetchedDatum datum = new PreFetchedDatum(urls, curRequestTime, 0, newKey.getValue(), newKey.getRef(), true);
+            FetchSetDatum datum = new FetchSetDatum(urls, curRequestTime, 0, newKey.getValue(), newKey.getRef(), true);
             datum.setSkipped(skipping);
             collector.add(datum.getTuple());
         }

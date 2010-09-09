@@ -22,7 +22,7 @@
  */
 package bixo.datum;
 
-import bixo.exceptions.BaseFetchException;
+import bixo.exceptions.FetchException;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
@@ -59,7 +59,7 @@ public class StatusDatum extends UrlDatum {
         this(url, UrlStatus.FETCHED, headers, null, System.currentTimeMillis(), hostAddress);
     }
     
-    public StatusDatum(String url, BaseFetchException e) {
+    public StatusDatum(String url, FetchException e) {
         this(url, e.mapToUrlStatus(), null, e, System.currentTimeMillis(), null);
     }
     
@@ -67,7 +67,7 @@ public class StatusDatum extends UrlDatum {
         this(url, status, null, null, System.currentTimeMillis(), null);
     }
     
-    public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BaseFetchException e, long statusTime, String hostAddress) {
+    public StatusDatum(String url, UrlStatus status, HttpHeaders headers, FetchException e, long statusTime, String hostAddress) {
         super(FIELDS);
         
         setUrl(url);
@@ -98,11 +98,11 @@ public class StatusDatum extends UrlDatum {
         }
     }
     
-    public BaseFetchException getException() {
-        return (BaseFetchException)_tupleEntry.getObject(EXCEPTION_FN);
+    public FetchException getException() {
+        return (FetchException)_tupleEntry.getObject(EXCEPTION_FN);
     }
 
-    public void setException(BaseFetchException e) {
+    public void setException(FetchException e) {
         _tupleEntry.set(EXCEPTION_FN, e);
     }
     

@@ -12,7 +12,7 @@ import bixo.datum.HttpHeaders;
 import bixo.datum.UrlStatus;
 
 @SuppressWarnings({ "serial" })
-public class HttpFetchException extends BaseFetchException implements WritableComparable<HttpFetchException> {
+public class HttpFetchException extends FetchException implements WritableComparable<HttpFetchException> {
     private static final Logger LOGGER = Logger.getLogger(HttpFetchException.class);
     
     private int _httpStatus;

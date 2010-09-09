@@ -7,15 +7,15 @@ import java.net.URL;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
-import bixo.cascading.Payload;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
+import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.exceptions.BaseFetchException;
+import bixo.exceptions.FetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.UrlFetchException;
 
@@ -44,7 +44,7 @@ public class LoggingFetcher implements IHttpFetcher {
 
 
     @Override
-    public FetchedDatum get(ScoredUrlDatum datum) throws BaseFetchException {
+    public FetchedDatum get(ScoredUrlDatum datum) throws FetchException {
         String url = datum.getUrl();
         Payload payload = datum.getPayload();
         logPayload(url, payload);
@@ -99,7 +99,7 @@ public class LoggingFetcher implements IHttpFetcher {
 
 
     @Override
-    public byte[] get(String url) throws BaseFetchException {
+    public byte[] get(String url) throws FetchException {
         try {
             FetchedDatum result = get(new ScoredUrlDatum(url, "", UrlStatus.UNFETCHED));
             return result.getContentBytes();

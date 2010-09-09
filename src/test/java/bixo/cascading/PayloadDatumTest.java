@@ -4,6 +4,8 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import bixo.datum.PayloadDatum;
+
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 

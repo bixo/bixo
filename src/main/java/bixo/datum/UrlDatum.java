@@ -22,7 +22,6 @@
  */
 package bixo.datum;
 
-import bixo.cascading.PayloadDatum;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
@@ -63,7 +62,7 @@ public class UrlDatum extends PayloadDatum {
     }
     
     public UrlDatum(String url) {
-        this(FIELDS, url);
+        super(FIELDS);
         setUrl(url);
     }
 

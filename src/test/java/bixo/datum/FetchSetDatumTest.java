@@ -12,11 +12,10 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import bixo.cascading.PartitioningKey;
-import bixo.cascading.Payload;
 import cascading.tuple.Tuple;
 
 
-public class PreFetchedDatumTest {
+public class FetchSetDatumTest {
 
     private static List<ScoredUrlDatum> makeUrls(int count, String payloadFieldName) {
         List<ScoredUrlDatum> results = new LinkedList<ScoredUrlDatum>();
@@ -41,11 +40,11 @@ public class PreFetchedDatumTest {
         List<ScoredUrlDatum> urls = makeUrls(2, "meta1");
         long fetchTime = System.currentTimeMillis();
         PartitioningKey groupingKey = new PartitioningKey("key", 1);
-        PreFetchedDatum pfd1 = new PreFetchedDatum(urls, fetchTime, 0, groupingKey.getValue(), groupingKey.getRef(), true);
+        FetchSetDatum pfd1 = new FetchSetDatum(urls, fetchTime, 0, groupingKey.getValue(), groupingKey.getRef(), true);
         
         Tuple t = pfd1.getTuple();
         
-        PreFetchedDatum pfd2 = new PreFetchedDatum(t);
+        FetchSetDatum pfd2 = new FetchSetDatum(t);
         
         Assert.assertEquals(pfd1, pfd2);
     }
@@ -55,14 +54,14 @@ public class PreFetchedDatumTest {
         List<ScoredUrlDatum> urls = makeUrls(2, "meta1");
         long fetchTime = System.currentTimeMillis();
         PartitioningKey groupingKey = new PartitioningKey("key", 1);
-        PreFetchedDatum pfd1 = new PreFetchedDatum(urls, fetchTime, 1000, groupingKey.getValue(), groupingKey.getRef(), false);
+        FetchSetDatum pfd1 = new FetchSetDatum(urls, fetchTime, 1000, groupingKey.getValue(), groupingKey.getRef(), false);
 
         ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(byteArray);
         oos.writeObject(pfd1);
         
         ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(byteArray.toByteArray()));
-        PreFetchedDatum pfd2 = (PreFetchedDatum)ois.readObject();
+        FetchSetDatum pfd2 = (FetchSetDatum)ois.readObject();
  
         Assert.assertEquals(pfd1, pfd2);
     }
@@ -74,11 +73,11 @@ public class PreFetchedDatumTest {
         long fetchTime = System.currentTimeMillis();
         
         PartitioningKey groupingKey1 = new PartitioningKey("key1", 1);
-        PreFetchedDatum pfd1 = new PreFetchedDatum(urls, fetchTime, 0, groupingKey1.getValue(), groupingKey1.getRef(), true);
+        FetchSetDatum pfd1 = new FetchSetDatum(urls, fetchTime, 0, groupingKey1.getValue(), groupingKey1.getRef(), true);
         Comparable c1 = pfd1.getGroupingKey();
         
         PartitioningKey groupingKey2 = new PartitioningKey("key2", 1);
-        PreFetchedDatum pfd2 = new PreFetchedDatum(urls, fetchTime, 0, groupingKey2.getValue(), groupingKey2.getRef(), true);
+        FetchSetDatum pfd2 = new FetchSetDatum(urls, fetchTime, 0, groupingKey2.getValue(), groupingKey2.getRef(), true);
         Comparable c2 = pfd2.getGroupingKey();
         
         Assert.assertEquals(0, c1.compareTo(c2));
