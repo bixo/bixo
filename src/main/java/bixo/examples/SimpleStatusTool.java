@@ -10,7 +10,6 @@ import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
-import bixo.datum.StatusDatum;
 import bixo.datum.UrlStatus;
 import bixo.tools.CrawlDbDatum;
 import bixo.utils.CrawlDirUtils;
