@@ -1,8 +1,29 @@
+/*
+ * Copyright (c) 2010 TransPac Software, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy 
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights 
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+ * copies of the Software, and to permit persons to whom the Software is 
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in 
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
 package bixo.examples;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -12,16 +33,14 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 
-import bixo.cascading.Splitter;
 import bixo.cascading.NullContext;
+import bixo.cascading.Splitter;
 import bixo.cascading.SplitterAssembly;
 import bixo.cascading.TupleLogger;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
-import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
-import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.http.SimpleHttpFetcher;
@@ -39,8 +58,6 @@ import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
-import cascading.operation.Buffer;
-import cascading.operation.BufferCall;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 import cascading.operation.OperationCall;
@@ -54,7 +71,6 @@ import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
-import cascading.tuple.TupleEntryCollector;
 
 
 public class SimpleCrawlWorkflow {
@@ -120,10 +136,6 @@ public class SimpleCrawlWorkflow {
         }
     }
 
-
-    
-
- 
     
     public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, IUrlFilter urlFilter, SimpleCrawlToolOptions options) throws Throwable {
         JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
@@ -148,10 +160,12 @@ public class SimpleCrawlWorkflow {
 
         // Convert the urlsToFetchPipe so that we now deal with UrlDatums.
         urlsToFetchPipe = new Each(urlsToFetchPipe, new CreateUrlDatumFromCrawlDbFunction());
+        // A TupleLogger is a good way to follow the tuples around in a flow. You can enable the output
+        // of tuples by setting options.setDebugLogging() to true.
         urlsToFetchPipe = TupleLogger.makePipe(urlsToFetchPipe, true);
-
+        
         // Create the output sinks :
-        //      loop dir crawldb
+        //      crawldb
         //      content
         //      parse
         //      status
@@ -173,12 +187,16 @@ public class SimpleCrawlWorkflow {
         fetcher.setSocketTimeout(CrawlConfig.SOCKET_TIMEOUT);
         fetcher.setConnectionTimeout(CrawlConfig.CONNECTION_TIMEOUT);
 
-        // You can also provide a set of mime types you want to deal with - for now keep it simple.
+        // You can also provide a set of mime types you want to restrict what content type you 
+        // want to deal with - for now keep it simple.
         Set<String> validMimeTypes = new HashSet<String>();
         validMimeTypes.add("text/plain");
         validMimeTypes.add("text/html");
         fetcherPolicy.setValidMimeTypes(validMimeTypes);
 
+        // The scorer is used by the FetchPipe to assign a score to every URL that passes the 
+        // robots.txt processing. The score is used to sort URLs such that higher scoring URLs
+        // are fetched first. If URLs are skipped for any reason(s) lower scoring URLs are skipped.
         ScoreGenerator scorer = new FixedScoreGenerator();
 
         FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, numReducers);
@@ -205,13 +223,16 @@ public class SimpleCrawlWorkflow {
         urlFromFetchPipe = TupleLogger.makePipe(urlFromFetchPipe, true);
 
         // Finally join the URLs we get from parsing content with the URLs we got
-        // from the status ouput, and the urls we didn't process from the db so  that 
+        // from the status ouput, and the urls we didn't process from the db so that 
         // we have a unified stream of all known URLs for the crawldb.
         Pipe finishedUrlsFromDbPipe = new Each(finishedDatumsFromDb, new CreateUrlDatumFromCrawlDbFunction());
         finishedUrlsFromDbPipe = TupleLogger.makePipe(finishedUrlsFromDbPipe, true);
 
-        // NOTE : Ideally you would just do a CoGroup instead of converting all the pipes to emit UrlDatums
-        Pipe crawlDbPipe = new GroupBy("crawldb pipe", Pipe.pipes(urlFromFetchPipe, urlFromOutlinksPipe, finishedUrlsFromDbPipe), new Fields(UrlDatum.URL_FN));
+        // NOTE : Ideally you would just do a CoGroup instead of converting all the pipes to emit UrlDatums 
+        // and then doing the extra step of converting from UrlDatum to CrawlDbDatum.
+        // The reason this isn't being done here is because we are sharing LatestUrlDatumBuffer() with JDBCCrawlTool
+        Pipe crawlDbPipe = new GroupBy("crawldb pipe", Pipe.pipes(urlFromFetchPipe, urlFromOutlinksPipe, finishedUrlsFromDbPipe), 
+                        new Fields(UrlDatum.URL_FN));
         crawlDbPipe = new Every(crawlDbPipe, new LatestUrlDatumBuffer(), Fields.RESULTS);
         
         Pipe outputPipe = new Pipe ("output pipe");

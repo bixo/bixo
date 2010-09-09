@@ -1,3 +1,25 @@
+/*
+ * Copyright (c) 2010 TransPac Software, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy 
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights 
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+ * copies of the Software, and to permit persons to whom the Software is 
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in 
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
 package bixo.examples;
 
 import java.util.HashMap;
@@ -27,7 +49,6 @@ import bixo.pipes.FetchPipe;
 import bixo.pipes.ParsePipe;
 import bixo.url.IUrlFilter;
 import bixo.url.SimpleUrlNormalizer;
-
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -40,6 +61,7 @@ import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.scheme.SequenceFile;
+import cascading.scheme.TextLine;
 import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
@@ -96,11 +118,11 @@ public class JDBCCrawlWorkflow {
     }
 
     
-    public static Flow createFlow(Path inputDir, Path outputDir, UserAgent userAgent, FetcherPolicy fetcherPolicy,
+    public static Flow createFlow(Path inputDir, Path curLoopDirPath, UserAgent userAgent, FetcherPolicy fetcherPolicy,
                     IUrlFilter urlFilter, int maxThreads, boolean debug, String persistentDbLocation) throws Throwable {
         JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
         int numReducers = conf.getNumReduceTasks() * HadoopUtils.getTaskTrackers(conf);
-        FileSystem fs = outputDir.getFileSystem(conf);
+        FileSystem fs = curLoopDirPath.getFileSystem(conf);
 
         if (!fs.exists(inputDir)) {
             throw new IllegalStateException(String.format("Input directory %s doesn't exist", inputDir));
@@ -114,18 +136,18 @@ public class JDBCCrawlWorkflow {
         importPipe = new GroupBy(importPipe, new Fields(CrawlDbDatum.URL_FIELD));
         importPipe = new Every(importPipe, new BestUrlToFetchBuffer(), Fields.RESULTS);
 
-        String curCrawlDirName = outputDir.toUri().toString();
-
-        Path contentPath = new Path(outputDir, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+        Path contentPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
         Tap contentSink = new Hfs(new SequenceFile(FetchedDatum.FIELDS), contentPath.toString());
-        Path parsePath = new Path(outputDir, CrawlConfig.PARSE_SUBDIR_NAME);
-        Tap parseSink = new Hfs(new SequenceFile(ParsedDatum.FIELDS), parsePath.toString());
 
-        // VMa : The source and sink for urls is essentially the same database -
-        // since cascading
-        // doesn't allow you to use the same tap for source and sink we fake it
-        // by creating
-        // two separate taps.
+        Path parsePath = new Path(curLoopDirPath, CrawlConfig.PARSE_SUBDIR_NAME);
+        Tap parseSink = new Hfs(new SequenceFile(ParsedDatum.FIELDS), parsePath.toString());
+        
+        Path statusDirPath = new Path(curLoopDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
+        Tap statusSink = new Hfs(new TextLine(), statusDirPath.toString());
+
+        // NOTE: The source and sink for CrawlDbDatums is essentially the same database -
+        // since cascading doesn't allow you to use the same tap for source and 
+        // sink we fake it by creating two separate taps.
         Tap urlSink = JDBCTapFactory.createUrlsSinkJDBCTap(persistentDbLocation);
 
         // Create the sub-assembly that runs the fetch job
@@ -133,8 +155,9 @@ public class JDBCCrawlWorkflow {
         ScoreGenerator scorer = new FixedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, numReducers);
 
-        // Take content and split it into content output plus parse to extract
-        // URLs.
+        Pipe statusPipe = new Pipe("status pipe", fetchPipe.getStatusTailPipe());
+
+        // Take content and split it into content output plus parse to extract URLs.
         ParsePipe parsePipe = new ParsePipe(fetchPipe.getContentTailPipe(), new SimpleParser());
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction());
@@ -142,27 +165,29 @@ public class JDBCCrawlWorkflow {
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new NormalizeUrlFunction(new SimpleUrlNormalizer()));
 
         // Take status and output updated UrlDatum's. Again, since we are using
-        // the same database
-        // we need to create a new tap.
+        // the same database we need to create a new tap.
         Pipe urlFromFetchPipe = new Pipe("url from fetch", fetchPipe.getStatusTailPipe());
         urlFromFetchPipe = new Each(urlFromFetchPipe, new CreateUrlDatumFromStatusFunction());
 
         // Now we need to join the URLs we get from parsing content with the
-        // URLs we got
-        // from the status output, so we have a unified stream of all known
-        // URLs.
+        // URLs we got from the status output, so we have a unified stream
+        // of all known URLs.
         Pipe urlPipe = new GroupBy("url pipe", Pipe.pipes(urlFromFetchPipe, urlFromOutlinksPipe), new Fields(UrlDatum.URL_FN));
         urlPipe = new Every(urlPipe, new LatestUrlDatumBuffer(), Fields.RESULTS);
 
-        // Create the output map that connects each tail pipe to the appropriate
-        // sink.
+        Pipe outputPipe = new Pipe ("output pipe");
+        outputPipe = new Each(urlPipe, new CreateCrawlDbDatumFromUrlFunction());
+
+        // Create the output map that connects each tail pipe to the appropriate sink.
         Map<String, Tap> sinkMap = new HashMap<String, Tap>();
+        sinkMap.put(statusPipe.getName(), statusSink);
         sinkMap.put(FetchPipe.CONTENT_PIPE_NAME, contentSink);
         sinkMap.put(ParsePipe.PARSE_PIPE_NAME, parseSink);
-        sinkMap.put(urlPipe.getName(), urlSink);
+        sinkMap.put(outputPipe.getName(), urlSink);
+        
         // Finally we can run it.
         FlowConnector flowConnector = new FlowConnector(HadoopUtils.getDefaultProperties(JDBCCrawlWorkflow.class, debug, conf));
-        return flowConnector.connect(inputSource, sinkMap, fetchPipe.getContentTailPipe(), parsePipe.getTailPipe(), urlPipe);
+        return flowConnector.connect(inputSource, sinkMap, statusPipe, fetchPipe.getContentTailPipe(), parsePipe.getTailPipe(), outputPipe);
             
     }
 

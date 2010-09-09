@@ -1,3 +1,25 @@
+/*
+ * Copyright (c) 2010 TransPac Software, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy 
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights 
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
+ * copies of the Software, and to permit persons to whom the Software is 
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in 
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
+ */
 package bixo.examples;
 
 import org.apache.log4j.Logger;
@@ -51,14 +73,11 @@ public class CreateUrlDatumFromStatusFunction extends BaseOperation<NullContext>
                                     // time passed through
 
             // TODO KKr - it would be nice to be able to get the old status
-            // here,
-            // versus "knowing" that the only time a url is skipped by our
-            // scorer is
-            // when it's already been fetched.
+            // here, versus "knowing" that the only time a url is skipped by our
+            // scorer is when it's already been fetched.
         } else if (status == UrlStatus.UNFETCHED) {
             // Since we only try to fetch URLs that have never been fetched, we
-            // know that the
-            // last fetch time will always be 0.
+            // know that the last fetch time will always be 0.
             fetchTime = 0;
         } else {
             LOGGER.error(String.format("Unknown status %s for URL %s", status, url));
