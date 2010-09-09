@@ -20,8 +20,6 @@ import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.hadoop.HadoopUtils;
 import bixo.tools.CrawlDbDatum;
-import bixo.tools.sitecrawler.JDBCCrawlTool;
-import bixo.tools.sitecrawler.JDBCCrawlToolOptions;
 import bixo.url.IUrlFilter;
 import bixo.url.SimpleUrlNormalizer;
 import bixo.utils.CrawlDirUtils;
@@ -34,7 +32,7 @@ import cascading.tuple.TupleEntryCollector;
 
 public class SimpleCrawlTool {
 
-    private static final Logger LOGGER = Logger.getLogger(JDBCCrawlTool.class);
+    private static final Logger LOGGER = Logger.getLogger(SimpleCrawlTool.class);
 
     
     // Filter URLs that fall outside of the target domain
@@ -201,7 +199,7 @@ public class SimpleCrawlTool {
             // end up in situations where the fetch slows down due to a 'long tail' and by 
             // specifying a crawl duration you know exactly when the crawl will end.
             int crawlDurationInMinutes = options.getCrawlDuration();
-            boolean hasEndTime = crawlDurationInMinutes != JDBCCrawlToolOptions.NO_CRAWL_DURATION;
+            boolean hasEndTime = crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION;
             long targetEndTime = hasEndTime ? System.currentTimeMillis()
                             + (crawlDurationInMinutes * SimpleCrawlConfig.MILLISECONDS_PER_MINUTE) : FetcherPolicy.NO_CRAWL_END_TIME;
 
