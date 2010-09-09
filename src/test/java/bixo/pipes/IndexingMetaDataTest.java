@@ -18,8 +18,8 @@ import org.apache.lucene.search.TopDocs;
 import org.junit.Test;
 
 import bixo.cascading.NullContext;
-import bixo.cascading.Payload;
 import bixo.datum.ParsedDatum;
+import bixo.datum.Payload;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;

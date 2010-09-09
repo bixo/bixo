@@ -28,7 +28,7 @@ import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.BaseFetchException;
+import bixo.exceptions.FetchException;
 
 public interface IHttpFetcher extends Serializable {
     public FetcherPolicy getFetcherPolicy();
@@ -36,7 +36,7 @@ public interface IHttpFetcher extends Serializable {
     public UserAgent getUserAgent();
     
     // Return results of HTTP GET request
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException;
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws FetchException;
     
     /**
      * Raw version of fetcher, for use when getting robots.txt (for example).
@@ -46,9 +46,9 @@ public interface IHttpFetcher extends Serializable {
      * @param url - URL to fetch
      * @return - byte array of data.
      * 
-     * @throws BaseFetchException 
+     * @throws FetchException 
      */
-    public byte[] get(String url) throws BaseFetchException;
+    public byte[] get(String url) throws FetchException;
 
     public void abort();
 }

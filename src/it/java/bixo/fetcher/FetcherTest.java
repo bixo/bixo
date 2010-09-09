@@ -37,7 +37,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.exceptions.BaseFetchException;
+import bixo.exceptions.FetchException;
 import bixo.fetcher.http.IHttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.FixedScoreGenerator;
@@ -125,7 +125,7 @@ public class FetcherTest {
             StatusDatum sd = new StatusDatum(entry);
             if (sd.getStatus() != UrlStatus.FETCHED) {
                 LOGGER.error(String.format("Fetched failed! Status is %s for %s", sd.getStatus(), sd.getUrl()));
-                BaseFetchException e = sd.getException();
+                FetchException e = sd.getException();
                 if (e != null) {
                     LOGGER.error("Fetched failed due to exception", e);
                 }

@@ -1,4 +1,4 @@
-package bixo.cascading;
+package bixo.datum;
 
 import java.io.Serializable;
 import java.util.Collection;

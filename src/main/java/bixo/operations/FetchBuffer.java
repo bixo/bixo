@@ -9,13 +9,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
+import bixo.cascading.Datum;
 import bixo.cascading.LoggingFlowReporter;
 import bixo.cascading.NullContext;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
-import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
-import bixo.datum.PreFetchedDatum;
+import bixo.datum.FetchSetDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.FetchTask;
@@ -42,25 +42,25 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     private class QueuedValues {
         private static final int MAX_ELEMENTS_IN_MEMORY = 1000;
         
-        private DiskQueue<PreFetchedDatum> _queue;
+        private DiskQueue<FetchSetDatum> _queue;
         private Iterator<TupleEntry> _values;
         
         public QueuedValues(Iterator<TupleEntry> values) {
             _values = values;
-            _queue = new DiskQueue<PreFetchedDatum>(MAX_ELEMENTS_IN_MEMORY);
+            _queue = new DiskQueue<FetchSetDatum>(MAX_ELEMENTS_IN_MEMORY);
         }
         
         public boolean isEmpty() {
             return _queue.isEmpty() && !_values.hasNext();
         }
         
-        public PreFetchedDatum nextOrNull(FetcherMode mode) {
+        public FetchSetDatum nextOrNull(FetcherMode mode) {
             
             // Loop until we have something to return, or there's nothing that we can return.
             while (true) {
                 // First see if we've got something in the queue, and if so, then check if it's ready
                 // to be processed.
-                PreFetchedDatum datum = _queue.peek();
+                FetchSetDatum datum = _queue.peek();
                 if (datum != null) {
                     String ref = datum.getGroupingRef();
                     if (_activeRefs.get(ref) == null) {
@@ -94,7 +94,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 
                 // Nothing ready in the queue, let's see about the iterator.
                 if (_values.hasNext()) {
-                    datum = new PreFetchedDatum(_values.next());
+                    datum = new FetchSetDatum(_values.next());
                     if (datum.isSkipped()) {
                         List<ScoredUrlDatum> urls = datum.getUrls();
                         trace("Skipping %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
@@ -141,7 +141,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         }
     }
 
-    private static final Fields FETCH_RESULT_FIELD = new Fields(BaseDatum.fieldName(FetchBuffer.class, "fetch-exception"));
+    private static final Fields FETCH_RESULT_FIELD = new Fields(Datum.fieldName(FetchBuffer.class, "fetch-exception"));
 
     // Time to sleep when we don't have any URLs that can be fetched.
     private static final long NOTHING_TO_FETCH_SLEEP_TIME = 1000;
@@ -204,7 +204,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         // Each value is a PreFetchedDatum that contains a set of URLs to fetch in one request from
         // a single server, plus other values needed to set state properly.
         while (!Thread.interrupted() && !fetcherPolicy.isTerminateFetch() && !values.isEmpty()) {
-            PreFetchedDatum datum = values.nextOrNull(_fetcherMode);
+            FetchSetDatum datum = values.nextOrNull(_fetcherMode);
             
             try {
                 if (datum == null) {
@@ -255,7 +255,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             UrlStatus status = Thread.interrupted() ? UrlStatus.SKIPPED_INTERRUPTED : UrlStatus.SKIPPED_TIME_LIMIT;
             
             while (!values.isEmpty()) {
-                PreFetchedDatum datum = values.nextOrNull(FetcherMode.IMPOLITE);
+                FetchSetDatum datum = values.nextOrNull(FetcherMode.IMPOLITE);
                 List<ScoredUrlDatum> urls = datum.getUrls();
                 trace("Skipping %d urls from %s (e.g. %s) ", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
                 skipUrls(datum.getUrls(), status, null);

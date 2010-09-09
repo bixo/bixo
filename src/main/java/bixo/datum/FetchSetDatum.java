@@ -9,33 +9,38 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
+/**
+ * A FetchSetDatum represents a group of URLs that will be fetched using one
+ * persistent connection to the target server.
+ *
+ */
 @SuppressWarnings("serial")
-public class PreFetchedDatum extends Datum {
+public class FetchSetDatum extends Datum {
     
-    private static final String URLS_FN = fieldName(PreFetchedDatum.class, "urls");
-    private static final String FETCH_TIME_FN = fieldName(PreFetchedDatum.class, "fetchTime");
-    private static final String FETCH_DELAY_FN = fieldName(PreFetchedDatum.class, "fetchDelay");
-    private static final String GROUPING_KEY_FN = fieldName(PreFetchedDatum.class, "groupingKey");
-    private static final String GROUPING_REF_FN = fieldName(PreFetchedDatum.class, "groupingRef");
-    private static final String LAST_LIST_FN = fieldName(PreFetchedDatum.class, "lastList");
-    private static final String SKIPPED_FN = fieldName(PreFetchedDatum.class, "skipped");
+    private static final String URLS_FN = fieldName(FetchSetDatum.class, "urls");
+    private static final String FETCH_TIME_FN = fieldName(FetchSetDatum.class, "fetchTime");
+    private static final String FETCH_DELAY_FN = fieldName(FetchSetDatum.class, "fetchDelay");
+    private static final String GROUPING_KEY_FN = fieldName(FetchSetDatum.class, "groupingKey");
+    private static final String GROUPING_REF_FN = fieldName(FetchSetDatum.class, "groupingRef");
+    private static final String LAST_LIST_FN = fieldName(FetchSetDatum.class, "lastList");
+    private static final String SKIPPED_FN = fieldName(FetchSetDatum.class, "skipped");
     
     public static final Fields FIELDS = new Fields(URLS_FN, FETCH_TIME_FN, FETCH_DELAY_FN, GROUPING_KEY_FN, GROUPING_REF_FN, LAST_LIST_FN, SKIPPED_FN);
 
-    public PreFetchedDatum() {
+    public FetchSetDatum() {
         super(FIELDS);
     }
     
-    public PreFetchedDatum(Tuple tuple) {
+    public FetchSetDatum(Tuple tuple) {
         super(FIELDS, tuple);
     }
     
-    public PreFetchedDatum(TupleEntry tupleEntry) {
+    public FetchSetDatum(TupleEntry tupleEntry) {
         super(tupleEntry);
         validateFields(tupleEntry, FIELDS);
     }
 
-    public PreFetchedDatum(List<ScoredUrlDatum> urls, long fetchTime, long fetchDelay, int groupingKey, String groupingRef, boolean lastList) {
+    public FetchSetDatum(List<ScoredUrlDatum> urls, long fetchTime, long fetchDelay, int groupingKey, String groupingRef, boolean lastList) {
         super(FIELDS);
         
         setUrls(urls);

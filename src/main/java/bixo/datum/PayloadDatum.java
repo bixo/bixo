@@ -3,8 +3,9 @@
  * All rights reserved.
  *
  */
-package bixo.cascading;
+package bixo.datum;
 
+import bixo.cascading.Datum;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
