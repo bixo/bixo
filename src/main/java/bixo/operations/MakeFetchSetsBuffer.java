@@ -92,7 +92,7 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
                 }
             }
 
-            ScoredUrlDatum scoredDatum = new ScoredUrlDatum(values.next());
+            ScoredUrlDatum scoredDatum = new ScoredUrlDatum(new TupleEntry(values.next()));
             urls.add(scoredDatum);
             totalUrls += 1;
 
