@@ -1,4 +1,4 @@
-package bixo.tools;
+package bixo.examples;
 
 import java.io.IOException;
 
@@ -10,7 +10,9 @@ import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
+import bixo.datum.StatusDatum;
 import bixo.datum.UrlStatus;
+import bixo.tools.CrawlDbDatum;
 import bixo.utils.CrawlDirUtils;
 import cascading.scheme.SequenceFile;
 import cascading.scheme.TextLine;
@@ -40,10 +42,10 @@ public class SimpleStatusTool {
             TupleEntry entry = iter.next();
             totalEntries += 1;
     
-            // URL_FIELD, STATUS_FIELD, HEADERS_FIELD, EXCEPTION_FIELD, STATUS_TIME_FIELD, HOST_ADDRESS_FIELD
+            // STATUS_FN, HEADERS_FN, EXCEPTION_FN, STATUS_TIME_FN, HOST_ADDRESS_FN).append(getSuperFields(StatusDatum.class)
             String statusLine = entry.getString("line");
             String[] pieces = statusLine.split("\t");
-            UrlStatus status = UrlStatus.valueOf(pieces[1]);
+            UrlStatus status = UrlStatus.valueOf(pieces[0]);
             statusCounts[status.ordinal()] += 1;
         }
         
@@ -71,7 +73,7 @@ public class SimpleStatusTool {
             TupleEntry entry = iter.next();
             totalEntries += 1;
             
-            CrawlDbDatum datum = new CrawlDbDatum(entry.getTuple());
+            CrawlDbDatum datum = new CrawlDbDatum(entry);
             if (exportDb) {
                 LOGGER.info(datum.toString());
             }

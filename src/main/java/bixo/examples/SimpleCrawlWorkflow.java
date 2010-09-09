@@ -1,4 +1,4 @@
-package bixo.tools;
+package bixo.examples;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +33,7 @@ import bixo.operations.UrlFilter;
 import bixo.parser.SimpleParser;
 import bixo.pipes.FetchPipe;
 import bixo.pipes.ParsePipe;
+import bixo.tools.CrawlDbDatum;
 import bixo.url.IUrlFilter;
 import bixo.url.SimpleUrlNormalizer;
 import cascading.flow.Flow;
@@ -53,7 +54,6 @@ import cascading.scheme.TextLine;
 import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
-import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
@@ -74,7 +74,7 @@ public class SimpleCrawlWorkflow {
         @Override
         // LHS represents unfetched tuples
         public boolean isLHS(TupleEntry tupleEntry) {
-            CrawlDbDatum datum = new CrawlDbDatum(tupleEntry.getTuple());
+            CrawlDbDatum datum = new CrawlDbDatum(tupleEntry);
             // TODO VMa - verify if these are all the states we need to worry about
             UrlStatus status = datum.getLastStatus();
             if (status == UrlStatus.UNFETCHED
@@ -96,7 +96,7 @@ public class SimpleCrawlWorkflow {
     private static class CreateUrlDatumFromCrawlDbFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
         public CreateUrlDatumFromCrawlDbFunction() {
-            super(UrlDatum.FIELDS.append(CrawlDbDatum.PAYLOAD_FIELDS));
+            super(UrlDatum.FIELDS);
         }
 
         @Override
@@ -112,16 +112,14 @@ public class SimpleCrawlWorkflow {
         @SuppressWarnings("unchecked")
         @Override
         public void operate(FlowProcess flowProcess, FunctionCall<NullContext> funcCall) {
-            CrawlDbDatum datum = new CrawlDbDatum(funcCall.getArguments().getTuple());
-            // Put everything into the meta data since UrlDatum is changing.
-            Map<String, Comparable> metadata = new HashMap<String, Comparable>();
-            metadata.put(CrawlDbDatum.LAST_FETCHED_FIELD, datum.getLastFetched());
-            metadata.put(CrawlDbDatum.LAST_UPDATED_FIELD, datum.getLastUpdated());
-            metadata.put(CrawlDbDatum.LAST_STATUS_FIELD, datum.getLastStatus().name());
-            metadata.put(CrawlDbDatum.CRAWL_DEPTH, datum.getCrawlDepth());
-            UrlDatum urlDatum = new UrlDatum(datum.getUrl(), datum.getLastFetched(), datum.getLastUpdated(), datum.getLastStatus(), metadata);
-
-            funcCall.getOutputCollector().add(urlDatum.toTuple());
+            CrawlDbDatum datum = new CrawlDbDatum(funcCall.getArguments());
+            UrlDatum urlDatum = new UrlDatum(datum.getUrl());
+            urlDatum.setPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD, datum.getLastFetched());
+            urlDatum.setPayloadValue(CrawlDbDatum.LAST_UPDATED_FIELD, datum.getLastUpdated());
+            urlDatum.setPayloadValue(CrawlDbDatum.LAST_STATUS_FIELD, datum.getLastStatus().name());
+            urlDatum.setPayloadValue(CrawlDbDatum.CRAWL_DEPTH, datum.getCrawlDepth());
+            
+            funcCall.getOutputCollector().add(urlDatum.getTuple());
         }
     }
 
@@ -149,16 +147,15 @@ public class SimpleCrawlWorkflow {
         @SuppressWarnings("unchecked")
         @Override
         public void operate(FlowProcess flowProcess, FunctionCall<NullContext> funcCall) {
-            UrlDatum datum = new UrlDatum(funcCall.getArguments().getTuple(), CrawlDbDatum.PAYLOAD_FIELDS);
-            Map<String, Comparable> metadata = datum.getMetaDataMap();
-            Long lastFetched = (Long) metadata.get(CrawlDbDatum.LAST_FETCHED_FIELD);
-            Long lastUpdated = (Long) metadata.get(CrawlDbDatum.LAST_UPDATED_FIELD);
-            UrlStatus status = UrlStatus.valueOf((String)(metadata.get(CrawlDbDatum.LAST_STATUS_FIELD)));
-            Integer crawlDepth = (Integer) metadata.get(CrawlDbDatum.CRAWL_DEPTH);
+            UrlDatum datum = new UrlDatum(funcCall.getArguments());
+            Long lastFetched = (Long) datum.getPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD);
+            Long lastUpdated = (Long) datum.getPayloadValue(CrawlDbDatum.LAST_UPDATED_FIELD);
+            UrlStatus status = UrlStatus.valueOf((String)(datum.getPayloadValue(CrawlDbDatum.LAST_STATUS_FIELD)));
+            Integer crawlDepth = (Integer) datum.getPayloadValue(CrawlDbDatum.CRAWL_DEPTH);
 
             CrawlDbDatum crawldbDatum = new CrawlDbDatum(datum.getUrl(), lastFetched, lastUpdated, status, crawlDepth);
 
-            funcCall.getOutputCollector().add(crawldbDatum.toTuple());
+            funcCall.getOutputCollector().add(crawldbDatum.getTuple());
             _numCreated++;
         }
     }
@@ -170,7 +167,7 @@ public class SimpleCrawlWorkflow {
         private int _numCreated;
         
         public CreateUrlDatumFromStatusFunction() {
-            super(UrlDatum.FIELDS.append(CrawlDbDatum.PAYLOAD_FIELDS));
+            super(UrlDatum.FIELDS);
         }
 
         @Override
@@ -188,7 +185,7 @@ public class SimpleCrawlWorkflow {
         // TODO VMa - verify w/Ken about this method...
         @Override
         public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
-            StatusDatum datum = new StatusDatum(funcCall.getArguments(), CrawlDbDatum.PAYLOAD_FIELDS);
+            StatusDatum datum = new StatusDatum(funcCall.getArguments());
             UrlStatus status = datum.getStatus();
             String url = datum.getUrl();
             long statusTime = datum.getStatusTime();
@@ -213,13 +210,14 @@ public class SimpleCrawlWorkflow {
             }
 
             _numCreated += 1;
-            Map<String, Comparable> metaDataMap = datum.getMetaDataMap();
-            metaDataMap.put(CrawlDbDatum.LAST_FETCHED_FIELD, fetchTime);
-            metaDataMap.put(CrawlDbDatum.LAST_UPDATED_FIELD, statusTime);
-            metaDataMap.put(CrawlDbDatum.LAST_STATUS_FIELD, status.name());
 
-            UrlDatum urlDatum = new UrlDatum(url, fetchTime, statusTime, status, metaDataMap);
-            funcCall.getOutputCollector().add(urlDatum.toTuple());
+            UrlDatum urlDatum = new UrlDatum(url);
+            urlDatum.setPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD, fetchTime);
+            urlDatum.setPayloadValue(CrawlDbDatum.LAST_UPDATED_FIELD, statusTime);
+            urlDatum.setPayloadValue(CrawlDbDatum.LAST_STATUS_FIELD, status.name());
+            urlDatum.setPayloadValue(CrawlDbDatum.CRAWL_DEPTH, datum.getPayloadValue(CrawlDbDatum.CRAWL_DEPTH));
+
+            funcCall.getOutputCollector().add(urlDatum.getTuple());
         }
     }
 
@@ -228,7 +226,7 @@ public class SimpleCrawlWorkflow {
         private static final Logger LOGGER = Logger.getLogger(CreateUrlDatumFromOutlinksFunction.class);
         
         public CreateUrlDatumFromOutlinksFunction() {
-            super(UrlDatum.FIELDS.append(CrawlDbDatum.PAYLOAD_FIELDS));
+            super(UrlDatum.FIELDS);
         }
 
         @Override
@@ -244,13 +242,12 @@ public class SimpleCrawlWorkflow {
         @SuppressWarnings("unchecked")
         @Override
         public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
-            ParsedDatum datum = new ParsedDatum(funcCall.getArguments().getTuple(), CrawlDbDatum.PAYLOAD_FIELDS);
+            ParsedDatum datum = new ParsedDatum(funcCall.getArguments());
             Outlink outlinks[] = datum.getOutlinks();
             
             // Bump the crawl depth metadata value
-            Map<String, Comparable> metaData = datum.getMetaDataMap();
-            int crawlDepth = (Integer)metaData.get(CrawlDbDatum.CRAWL_DEPTH);
-            metaData.put(CrawlDbDatum.CRAWL_DEPTH, crawlDepth + 1);
+            int crawlDepth = (Integer)datum.getPayloadValue(CrawlDbDatum.CRAWL_DEPTH);
+            datum.setPayloadValue(CrawlDbDatum.CRAWL_DEPTH, crawlDepth + 1);
             
             TupleEntryCollector collector = funcCall.getOutputCollector();
 
@@ -258,8 +255,9 @@ public class SimpleCrawlWorkflow {
                 String url = outlink.getToUrl();
                 url = url.replaceAll("[\n\r]", "");
                 
-                UrlDatum urlDatum = new UrlDatum(url, 0, 0, UrlStatus.UNFETCHED, metaData);
-                collector.add(urlDatum.toTuple());
+                UrlDatum urlDatum = new UrlDatum(url);
+                urlDatum.setPayload(datum.getPayload());
+                collector.add(urlDatum.getTuple());
             }
         }
     }
@@ -271,7 +269,7 @@ public class SimpleCrawlWorkflow {
         private int _numLater;
         
         public LatestUrlDatumBuffer() {
-            super(UrlDatum.FIELDS.append(CrawlDbDatum.PAYLOAD_FIELDS));
+            super(UrlDatum.FIELDS);
         }
         
         @Override
@@ -296,13 +294,15 @@ public class SimpleCrawlWorkflow {
             UrlDatum bestDatum = null;
             
             int ignoredUrls = 0;
+            long bestFetched = 0;
             Iterator<TupleEntry> iter = bufferCall.getArgumentsIterator();
             while (iter.hasNext()) {
-                UrlDatum datum = new UrlDatum(iter.next().getTuple(), CrawlDbDatum.PAYLOAD_FIELDS);
+                UrlDatum datum = new UrlDatum(iter.next());
                 if (bestDatum == null) {
                     bestDatum = datum;
-                } else if (datum.getLastFetched() > bestDatum.getLastFetched()) {
-                    if (bestDatum.getLastFetched() != 0) {
+                    bestFetched = (Long)bestDatum.getPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD);
+                } else if ((Long)datum.getPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD) > bestFetched) {
+                    if (bestFetched != 0) {
                         _numLater += 1;
                         // Should never happen that we double-fetch a page
                         LOGGER.warn("Using URL with later fetch time: " + datum.getUrl());
@@ -310,6 +310,7 @@ public class SimpleCrawlWorkflow {
                     
                     // last fetched time will be 0 for never-fetched
                     bestDatum = datum;
+                    bestFetched = (Long)bestDatum.getPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD);
                 } else {
                     ignoredUrls += 1;
                 }
@@ -321,7 +322,7 @@ public class SimpleCrawlWorkflow {
             }
             
             if (bestDatum != null) {
-                bufferCall.getOutputCollector().add(bestDatum.toTuple());
+                bufferCall.getOutputCollector().add(bestDatum.getTuple());
             }
         }
 
@@ -382,7 +383,7 @@ public class SimpleCrawlWorkflow {
 
         ScoreGenerator scorer = new FixedScoreGenerator();
 
-        FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, numReducers, CrawlDbDatum.PAYLOAD_FIELDS);
+        FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, numReducers);
         Pipe statusPipe = new Pipe("status pipe", fetchPipe.getStatusTailPipe());
         Pipe contentPipe = new Pipe("content pipe", fetchPipe.getContentTailPipe());
         contentPipe = TupleLogger.makePipe(contentPipe, true);
@@ -391,12 +392,12 @@ public class SimpleCrawlWorkflow {
         // Take content and split it into content output plus parse to extract URLs.
         SimpleParser parser = new SimpleParser();
         parser.setExtractLanguage(false);
-        ParsePipe parsePipe = new ParsePipe(contentPipe, parser, CrawlDbDatum.PAYLOAD_FIELDS);
+        ParsePipe parsePipe = new ParsePipe(contentPipe, parser);
 
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction());
-        urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new UrlFilter(urlFilter, CrawlDbDatum.PAYLOAD_FIELDS));
-        urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new NormalizeUrlFunction(new SimpleUrlNormalizer(), CrawlDbDatum.PAYLOAD_FIELDS));
+        urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new UrlFilter(urlFilter));
+        urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new NormalizeUrlFunction(new SimpleUrlNormalizer()));
 
 
         // Take status and output urls from it  
@@ -407,7 +408,7 @@ public class SimpleCrawlWorkflow {
         // from the status ouput, and the urls we didn't process from the db so  that 
         // we have a unified stream of all known URLs for the crawldb.
         Pipe finishedUrlsFromDbPipe = new Each(finishedDatumsFromDb, new CreateUrlDatumFromCrawlDbFunction());
-        Pipe crawlDbPipe = new GroupBy("crawldb pipe", Pipe.pipes(urlFromFetchPipe, urlFromOutlinksPipe, finishedUrlsFromDbPipe), new Fields(UrlDatum.URL_FIELD));
+        Pipe crawlDbPipe = new GroupBy("crawldb pipe", Pipe.pipes(urlFromFetchPipe, urlFromOutlinksPipe, finishedUrlsFromDbPipe), new Fields(UrlDatum.URL_FN));
         crawlDbPipe = new Every(crawlDbPipe, new LatestUrlDatumBuffer(), Fields.RESULTS);
         
         crawlDbPipe = new Each(crawlDbPipe, new CreateCrawlDbDatumFromUrlFunction());

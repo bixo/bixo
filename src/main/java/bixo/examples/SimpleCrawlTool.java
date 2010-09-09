@@ -1,4 +1,4 @@
-package bixo.tools;
+package bixo.examples;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -19,6 +19,7 @@ import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.hadoop.HadoopUtils;
+import bixo.tools.CrawlDbDatum;
 import bixo.url.IUrlFilter;
 import bixo.url.SimpleUrlNormalizer;
 import bixo.utils.CrawlDirUtils;
@@ -31,7 +32,7 @@ import cascading.tuple.TupleEntryCollector;
 
 public class SimpleCrawlTool {
 
-    private static final Logger LOGGER = Logger.getLogger(JDBCCrawlTool.class);
+    private static final Logger LOGGER = Logger.getLogger(SimpleCrawlTool.class);
 
     
     // Filter URLs that fall outside of the target domain
@@ -107,7 +108,7 @@ public class SimpleCrawlTool {
 
             CrawlDbDatum datum = new CrawlDbDatum(normalizer.normalize("http://" + targetDomain), 0, 0, UrlStatus.UNFETCHED, 0);
 
-            writer.add(datum.toTuple());
+            writer.add(datum.getTuple());
             writer.close();
         } catch (Exception e) {
             HadoopUtils.safeRemove(crawlDbPath.getFileSystem(conf), crawlDbPath);
@@ -198,7 +199,7 @@ public class SimpleCrawlTool {
             // end up in situations where the fetch slows down due to a 'long tail' and by 
             // specifying a crawl duration you know exactly when the crawl will end.
             int crawlDurationInMinutes = options.getCrawlDuration();
-            boolean hasEndTime = crawlDurationInMinutes != JDBCCrawlToolOptions.NO_CRAWL_DURATION;
+            boolean hasEndTime = crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION;
             long targetEndTime = hasEndTime ? System.currentTimeMillis()
                             + (crawlDurationInMinutes * SimpleCrawlConfig.MILLISECONDS_PER_MINUTE) : FetcherPolicy.NO_CRAWL_END_TIME;
 

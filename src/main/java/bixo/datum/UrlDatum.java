@@ -29,7 +29,7 @@ import cascading.tuple.TupleEntry;
 @SuppressWarnings("serial")
 public class UrlDatum extends PayloadDatum {
     
-    protected static final String URL_FN = fieldName(UrlDatum.class, "url");
+    public static final String URL_FN = fieldName(UrlDatum.class, "url");
     public static final Fields FIELDS = new Fields(URL_FN).append(getSuperFields(UrlDatum.class));
     
     public UrlDatum() {
