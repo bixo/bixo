@@ -107,7 +107,7 @@ public class SimpleCrawlTool {
 
             CrawlDbDatum datum = new CrawlDbDatum(normalizer.normalize("http://" + targetDomain), 0, 0, UrlStatus.UNFETCHED, 0);
 
-            writer.add(datum.toTuple());
+            writer.add(datum.getTuple());
             writer.close();
         } catch (Exception e) {
             HadoopUtils.safeRemove(crawlDbPath.getFileSystem(conf), crawlDbPath);
