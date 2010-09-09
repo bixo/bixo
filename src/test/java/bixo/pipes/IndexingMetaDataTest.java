@@ -21,7 +21,7 @@ import bixo.cascading.NullContext;
 import bixo.datum.ParsedDatum;
 import bixo.datum.Payload;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.HttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.util.FixedScoreGenerator;
 import bixo.fetcher.util.ScoreGenerator;
@@ -81,7 +81,7 @@ public class IndexingMetaDataTest {
         write.close();
 
         Pipe pipe = new Pipe("urlSource");
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, DATA_COUNT);
+        HttpFetcher fetcher = new FakeHttpFetcher(false, DATA_COUNT);
 
         ScoreGenerator scorer = new FixedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, null, 1);

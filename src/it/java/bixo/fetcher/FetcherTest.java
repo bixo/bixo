@@ -38,7 +38,7 @@ import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.exceptions.FetchException;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.HttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.util.FixedScoreGenerator;
 import bixo.fetcher.util.ScoreGenerator;
@@ -108,7 +108,7 @@ public class FetcherTest {
         FetcherPolicy fetcherPolicy = new FetcherPolicy();
         fetcherPolicy.setMaxRequestsPerConnection(1);
         fetcherPolicy.setCrawlDelay(5 * 1000L);
-        IHttpFetcher fetcher = new SimpleHttpFetcher(2, fetcherPolicy, userAgent);
+        HttpFetcher fetcher = new SimpleHttpFetcher(2, fetcherPolicy, userAgent);
         ScoreGenerator scorer = new FixedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
 
@@ -148,7 +148,7 @@ public class FetcherTest {
         Pipe pipe = new Pipe("urlSource");
 
         UserAgent userAgent = new FirefoxUserAgent();
-        IHttpFetcher fetcher = new SimpleHttpFetcher(10, userAgent);
+        HttpFetcher fetcher = new SimpleHttpFetcher(10, userAgent);
         ScoreGenerator scorer = new FixedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
 

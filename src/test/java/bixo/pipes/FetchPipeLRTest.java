@@ -11,7 +11,6 @@ import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 
 import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.Payload;
@@ -26,12 +25,12 @@ import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.UrlFetchException;
 import bixo.fetcher.RandomResponseHandler;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.HttpFetcher;
 import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.TestWebServer;
 import bixo.fetcher.util.FixedScoreGenerator;
-import bixo.fetcher.util.IGroupingKeyGenerator;
+import bixo.fetcher.util.GroupingKeyGenerator;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.robots.RobotRulesParser;
 import bixo.robots.SimpleRobotRulesParser;
@@ -61,7 +60,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Lfs in = makeInputData(1, 1);
 
         Pipe pipe = new Pipe("urlSource");
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
+        HttpFetcher fetcher = new FakeHttpFetcher(false, 1);
         ScoreGenerator scorer = new FixedScoreGenerator();
         RobotRulesParser parser = new SimpleRobotRulesParser();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
@@ -98,7 +97,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
         Pipe pipe = new Pipe("urlSource");
         ScoreGenerator scorer = new FixedScoreGenerator();
-        IHttpFetcher fetcher = new SimpleHttpFetcher(ConfigUtils.BIXO_TEST_AGENT);
+        HttpFetcher fetcher = new SimpleHttpFetcher(ConfigUtils.BIXO_TEST_AGENT);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
         
         String outputPath = "build/test/FetchPipeTest/testFetchPipe";
@@ -172,7 +171,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         // Assume we should only need 10ms for fetching all 10 URLs.
         policy.setRequestTimeout(10);
         
-        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
         
         String outputPath = "build/test/FetchPipeTest/testFetchTerminationPipe";
@@ -217,7 +216,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Lfs in = makeInputData(1, 1, payload);
 
         Pipe pipe = new Pipe("urlSource");
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
+        HttpFetcher fetcher = new FakeHttpFetcher(false, 10);
         ScoreGenerator scorer = new FixedScoreGenerator();
         RobotRulesParser parser = new SimpleRobotRulesParser();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
@@ -252,7 +251,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Lfs in = makeInputData(1, 1);
 
         Pipe pipe = new Pipe("urlSource");
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
+        HttpFetcher fetcher = new FakeHttpFetcher(false, 1);
         ScoreGenerator scorer = new SkippedScoreGenerator();
         RobotRulesParser parser = new SimpleRobotRulesParser();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
@@ -281,7 +280,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         // This will force all URLs to get skipped because of the crawl end time limit.
         FetcherPolicy defaultPolicy = new FetcherPolicy();
         defaultPolicy.setCrawlEndTime(0);
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
+        HttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
         ScoreGenerator scorer = new FixedScoreGenerator();
         RobotRulesParser parser = new SimpleRobotRulesParser();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
@@ -326,7 +325,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         final int maxUrls = 1;
         FetcherPolicy defaultPolicy = new FetcherPolicy();
         defaultPolicy.setMaxUrlsPerServer(maxUrls);
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
+        HttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
         ScoreGenerator scorer = new FixedScoreGenerator();
         RobotRulesParser parser = new SimpleRobotRulesParser();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
@@ -527,7 +526,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
      */
 
     @SuppressWarnings({ "serial", "unused" })
-    private static class CustomGrouper implements IGroupingKeyGenerator {
+    private static class CustomGrouper extends GroupingKeyGenerator {
 
         @Override
         public String getGroupingKey(UrlDatum urlDatum) {
@@ -581,8 +580,12 @@ public class FetchPipeLRTest extends CascadingTestCase {
     }
     
     @SuppressWarnings({ "serial", "unused" })
-    private static class CustomFetcher implements IHttpFetcher {
+    private static class CustomFetcher extends HttpFetcher {
 
+        public CustomFetcher() {
+            super(1, new MaxUrlFetcherPolicy(4), ConfigUtils.BIXO_TEST_AGENT);
+        }
+        
         @Override
         public FetchedDatum get(ScoredUrlDatum scoredUrl) throws FetchException {
             String url = scoredUrl.getUrl();
@@ -599,26 +602,6 @@ public class FetchPipeLRTest extends CascadingTestCase {
             }
         }
 
-        @Override
-        public byte[] get(String url) throws FetchException {
-            return null;
-        }
-
-        @Override
-        public FetcherPolicy getFetcherPolicy() {
-            return new MaxUrlFetcherPolicy(4);
-        }
-
-        @Override
-        public int getMaxThreads() {
-            return 1;
-        }
-
-		@Override
-		public UserAgent getUserAgent() {
-			return ConfigUtils.BIXO_TEST_AGENT;
-		}
-        
 	    @Override
 	    public void abort() {
 	        // Do nothing

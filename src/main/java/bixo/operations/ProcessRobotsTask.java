@@ -12,7 +12,7 @@ import bixo.cascading.BixoFlowProcess;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.HttpFetcher;
 import bixo.fetcher.util.ScoreGenerator;
 import bixo.hadoop.FetchCounters;
 import bixo.robots.RobotRules;
@@ -29,12 +29,12 @@ public class ProcessRobotsTask implements Runnable {
     private String _protocolAndDomain;
     private ScoreGenerator _scorer;
     private Queue<GroupedUrlDatum> _urls;
-    private IHttpFetcher _fetcher;
+    private HttpFetcher _fetcher;
     private TupleEntryCollector _collector;
     private RobotRulesParser _parser;
     private BixoFlowProcess _flowProcess;
 
-    public ProcessRobotsTask(String protocolAndDomain, ScoreGenerator scorer, Queue<GroupedUrlDatum> urls, IHttpFetcher fetcher, 
+    public ProcessRobotsTask(String protocolAndDomain, ScoreGenerator scorer, Queue<GroupedUrlDatum> urls, HttpFetcher fetcher, 
                     RobotRulesParser parser, TupleEntryCollector collector, BixoFlowProcess flowProcess) {
         _protocolAndDomain = protocolAndDomain;
         _scorer = scorer;

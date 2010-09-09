@@ -30,7 +30,6 @@ import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
@@ -39,16 +38,14 @@ import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.FetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.UrlFetchException;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.HttpFetcher;
 import bixo.utils.ConfigUtils;
 
 @SuppressWarnings("serial")
-public class FakeHttpFetcher implements IHttpFetcher {
+public class FakeHttpFetcher extends HttpFetcher {
     private static Logger LOGGER = Logger.getLogger(FakeHttpFetcher.class);
 
     private boolean _randomFetching;
-    private int _maxThreads;
-    private FetcherPolicy _fetcherPolicy;
     private Random _rand;
 
     public FakeHttpFetcher() {
@@ -60,41 +57,17 @@ public class FakeHttpFetcher implements IHttpFetcher {
     }
     
     public FakeHttpFetcher(boolean randomFetching, int maxThreads, FetcherPolicy fetcherPolicy) {
+        super(maxThreads, fetcherPolicy, ConfigUtils.BIXO_TEST_AGENT);
+        
         _randomFetching = randomFetching;
-        _maxThreads = maxThreads;
-        _fetcherPolicy = fetcherPolicy;
         _rand = new Random();
     }
     
-    @Override
-    public int getMaxThreads() {
-        return _maxThreads;
-    }
-
-    @Override
-    public FetcherPolicy getFetcherPolicy() {
-        return _fetcherPolicy;
-    }
-
     @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws FetchException {
         return doGet(scoredUrl.getUrl(), scoredUrl.getPayload(), true);
     }
 
-    @Override
-    public byte[] get(String url) throws FetchException {
-        try {
-            FetchedDatum result = doGet(url, new Payload(), true);
-            return result.getContentBytes();
-        } catch (HttpFetchException e) {
-            if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
-                return new byte[0];
-            } else {
-                throw e;
-            }
-        }
-    }
-    
     private FetchedDatum doGet(String url, Payload payload, boolean returnContent) throws FetchException {
         LOGGER.trace("Fake fetching " + url);
         
@@ -156,11 +129,6 @@ public class FakeHttpFetcher implements IHttpFetcher {
         return result;
     }
 
-	@Override
-	public UserAgent getUserAgent() {
-		return ConfigUtils.BIXO_TEST_AGENT;
-	}
-	
     @Override
     public void abort() {
         // Do nothing

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997-2009 101tec Inc.
+ * Copyright (c) 2010 TransPac Software, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy 
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,42 +25,25 @@ package bixo.fetcher.simulation;
 import org.apache.http.HttpStatus;
 
 import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.FetchException;
 import bixo.exceptions.HttpFetchException;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.HttpFetcher;
 import bixo.utils.ConfigUtils;
 
 @SuppressWarnings("serial")
-public class NullHttpFetcher implements IHttpFetcher {
+public class NullHttpFetcher extends HttpFetcher {
 
-    @Override
-    public int getMaxThreads() {
-        return 1;
+    public NullHttpFetcher() {
+        super(1, new FetcherPolicy(), ConfigUtils.BIXO_TEST_AGENT);
     }
-
-    @Override
-    public FetcherPolicy getFetcherPolicy() {
-        return new FetcherPolicy();
-    }
-
+    
     @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws FetchException {
         throw new HttpFetchException(scoredUrl.getUrl(), "All requests throw 404 exception", HttpStatus.SC_NOT_FOUND, null);
     }
 
-    @Override
-    public byte[] get(String url) throws FetchException {
-        return new byte[0];
-    }
-
-	@Override
-	public UserAgent getUserAgent() {
-		return ConfigUtils.BIXO_TEST_AGENT;
-	}
-	
     @Override
     public void abort() {
         // Do nothing

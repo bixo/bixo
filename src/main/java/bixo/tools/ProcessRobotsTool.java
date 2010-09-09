@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.http.HttpFetcher;
 import bixo.robots.RobotRules;
 import bixo.robots.RobotUtils;
 import bixo.robots.SimpleRobotRulesParser;
@@ -35,7 +35,7 @@ public class ProcessRobotsTool {
         // Uncomment this to see the wire log for HttpClient
         // System.setProperty("bixo.http.level", "DEBUG");
         
-        IHttpFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TOOL_AGENT, 1);
+        HttpFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TOOL_AGENT, 1);
         
         boolean interactive = args.length == 0;
         int index = 0;

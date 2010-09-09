@@ -12,7 +12,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 
-import bixo.cascading.ISplitter;
+import bixo.cascading.Splitter;
 import bixo.cascading.NullContext;
 import bixo.cascading.SplitterAssembly;
 import bixo.cascading.TupleLogger;
@@ -64,7 +64,7 @@ public class SimpleCrawlWorkflow {
 
 
     @SuppressWarnings("serial")
-    private static class SplitFetchedUnfetchedCrawlDatums implements ISplitter {
+    private static class SplitFetchedUnfetchedCrawlDatums extends Splitter {
 
         @Override
         public String getLHSName() {
@@ -108,7 +108,6 @@ public class SimpleCrawlWorkflow {
             LOGGER.info("Ending creation of URLs from status");
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public void operate(FlowProcess flowProcess, FunctionCall<NullContext> funcCall) {
             CrawlDbDatum datum = new CrawlDbDatum(funcCall.getArguments());
@@ -143,7 +142,6 @@ public class SimpleCrawlWorkflow {
             LOGGER.info("Crawldb datums created : " + _numCreated);
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public void operate(FlowProcess flowProcess, FunctionCall<NullContext> funcCall) {
             UrlDatum datum = new UrlDatum(funcCall.getArguments());
@@ -240,7 +238,6 @@ public class SimpleCrawlWorkflow {
             LOGGER.info("Ending creation of outlink URLs");
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
             ParsedDatum datum = new ParsedDatum(funcCall.getArguments());
