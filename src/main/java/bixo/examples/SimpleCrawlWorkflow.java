@@ -345,11 +345,12 @@ public class SimpleCrawlWorkflow {
         SplitterAssembly splitter = new SplitterAssembly(importPipe, new SplitFetchedUnfetchedCrawlDatums());
 
         Pipe finishedDatumsFromDb = splitter.getRHSPipe();
-        Pipe urlsToFetchPipe = splitter.getLHSPipe();
+        Pipe urlsToFetchPipe = new Pipe("urls to Fetch", splitter.getLHSPipe());
 
         // Convert the urlsToFetchPipe so that we now deal with UrlDatums.
         urlsToFetchPipe = new Each(urlsToFetchPipe, new CreateUrlDatumFromCrawlDbFunction());
-        
+        urlsToFetchPipe = TupleLogger.makePipe(urlsToFetchPipe, true);
+
         // Create the output sinks :
         //      loop dir crawldb
         //      content
@@ -396,16 +397,21 @@ public class SimpleCrawlWorkflow {
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction());
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new UrlFilter(urlFilter));
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new NormalizeUrlFunction(new SimpleUrlNormalizer()));
+        urlFromOutlinksPipe = TupleLogger.makePipe(urlFromOutlinksPipe, true);
 
 
         // Take status and output urls from it  
         Pipe urlFromFetchPipe = new Pipe("url from fetch");
         urlFromFetchPipe = new Each(statusPipe, new CreateUrlDatumFromStatusFunction());
+        urlFromFetchPipe = TupleLogger.makePipe(urlFromFetchPipe, true);
 
         // Finally join the URLs we get from parsing content with the URLs we got
         // from the status ouput, and the urls we didn't process from the db so  that 
         // we have a unified stream of all known URLs for the crawldb.
         Pipe finishedUrlsFromDbPipe = new Each(finishedDatumsFromDb, new CreateUrlDatumFromCrawlDbFunction());
+        finishedUrlsFromDbPipe = TupleLogger.makePipe(finishedUrlsFromDbPipe, true);
+
+        // NOTE : Ideally you would just do a CoGroup instead of converting all the pipes to emit UrlDatums
         Pipe crawlDbPipe = new GroupBy("crawldb pipe", Pipe.pipes(urlFromFetchPipe, urlFromOutlinksPipe, finishedUrlsFromDbPipe), new Fields(UrlDatum.URL_FN));
         crawlDbPipe = new Every(crawlDbPipe, new LatestUrlDatumBuffer(), Fields.RESULTS);
         

@@ -11,6 +11,7 @@ public class SimpleCrawlToolOptions {
     private static final int DEFAULT_NUM_LOOPS = 1;
 
     private String _loggingAppender = null;
+    private boolean _debugLogging = false;
 
     private String _outputDir;
     private String _agentName;
@@ -27,8 +28,9 @@ public class SimpleCrawlToolOptions {
     }
 
     @Option(name = "-d", usage = "debug logging", required = false)
-    private boolean _debugLogging = false;
-
+    public void setDebugLogging(boolean debugLogging) {
+        _debugLogging = debugLogging;
+    }
 
     @Option(name = "-logger", usage = "set logging appender (console, DRFA)", required = false)
     public void setLoggingAppender(String loggingAppender) {
