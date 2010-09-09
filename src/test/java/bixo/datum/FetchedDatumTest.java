@@ -1,7 +1,16 @@
 package bixo.datum;
 
-import org.junit.Assert;
+import static org.junit.Assert.*;
+
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import junit.framework.Assert;
+
 import org.junit.Test;
+
+import bixo.utils.ThreadedExecutor;
 
 import cascading.tuple.Tuple;
 
@@ -27,9 +36,9 @@ public class FetchedDatumTest {
         FetchedDatum newDatum = new FetchedDatum(tuple);
         
         HttpHeaders newHeaders = newDatum.getHeaders();
-        Assert.assertEquals("value", newHeaders.getFirst(key1));
-        Assert.assertEquals(value2, newHeaders.getFirst("key2"));
-        Assert.assertEquals(value3, newHeaders.getFirst("key3"));
+        assertEquals("value", newHeaders.getFirst(key1));
+        assertEquals(value2, newHeaders.getFirst("key2"));
+        assertEquals(value3, newHeaders.getFirst("key3"));
     }
     
     @Test
@@ -47,6 +56,19 @@ public class FetchedDatumTest {
         FetchedDatum datum = new FetchedDatum(url, url, 0, headers, new ContentBytes(), "", 0);
 
         String result = datum.toString();
-        Assert.assertFalse(result.contains("FetchedDatum@"));
+        assertFalse(result.contains("FetchedDatum@"));
     }
+    
+    @Test
+    public void testCreatingFromParams() throws Exception {
+        FetchedDatum datum = new FetchedDatum("baseUrl", "fetchedUrl",
+                        0,
+                        new HttpHeaders(),
+                        new ContentBytes(),
+                        "text/html",
+                        0);
+        assertEquals("baseUrl", datum.getBaseUrl());
+        assertEquals(0, datum.getFetchTime());
+    }
+    
 }

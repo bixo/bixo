@@ -76,19 +76,21 @@ public class FetcherTest {
     private String makeCrawlDb(String workingFolder, String inputPath) throws IOException {
 
         // We don't want to regenerate this DB all the time.
-        if (!new File(workingFolder, URL_DB_NAME).exists()) {
+        File crawlDBFile = new File(workingFolder, URL_DB_NAME);
+        String crawlDBPath = crawlDBFile.getAbsolutePath();
+        if (!crawlDBFile.exists()) {
             Pipe importPipe = new Pipe("import URLs");
             importPipe = new Each(importPipe, new LoadUrlsFunction());
             
             Tap sourceTap = new Lfs(new TextLine(), inputPath);
-            Tap sinkTap = new Lfs(new SequenceFile(UrlDatum.FIELDS), workingFolder, true);
+            Tap sinkTap = new Lfs(new SequenceFile(UrlDatum.FIELDS), crawlDBPath, true);
             
             FlowConnector flowConnector = new FlowConnector();
             Flow flow = flowConnector.connect(sourceTap, sinkTap, importPipe);
             flow.complete();
         }
 
-        return workingFolder + "/" + URL_DB_NAME;
+        return crawlDBPath;
     }
     
     @Test

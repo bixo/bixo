@@ -1,6 +1,7 @@
 package bixo.operations;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
@@ -40,6 +41,12 @@ public class FilterAndScoreByUrlAndRobotsTest {
         }
     }
     
+    private List<TupleEntry> getGroupedurlDatumList(String url) {
+        List<TupleEntry> iterValues = new ArrayList<TupleEntry>();
+        iterValues.add(new GroupedUrlDatum(url, url).getTupleEntry());
+        return iterValues;
+    }
+    
     @SuppressWarnings("unchecked")
     @Test
     public void testUsingAllThreads() throws Exception {
@@ -56,13 +63,10 @@ public class FilterAndScoreByUrlAndRobotsTest {
         OperationCall<NullContext> oc = Mockito.mock(OperationCall.class);
         BufferCall<NullContext> bc = Mockito.mock(BufferCall.class);
         
-        ArrayList<TupleEntry> iterValues = new ArrayList<TupleEntry>();
-        iterValues.add(new GroupedUrlDatum("http://localhost:8089", "http://localhost:8089").getTupleEntry());
-        
         TupleEntryCollector collector = Mockito.mock(TupleEntryCollector.class);
         
         Mockito.when(bc.getGroup()).thenReturn(new TupleEntry(new Tuple("http://localhost:8089")));
-        Mockito.when(bc.getArgumentsIterator()).thenReturn(iterValues.iterator());
+        Mockito.when(bc.getArgumentsIterator()).thenReturn(getGroupedurlDatumList("http://localhost:8089").iterator());
         Mockito.when(bc.getOutputCollector()).thenReturn(collector);
         
         TestWebServer server = null;
@@ -101,13 +105,10 @@ public class FilterAndScoreByUrlAndRobotsTest {
         OperationCall<NullContext> oc = Mockito.mock(OperationCall.class);
         BufferCall<NullContext> bc = Mockito.mock(BufferCall.class);
         
-        ArrayList<TupleEntry> iterValues = new ArrayList<TupleEntry>();
-        iterValues.add(new GroupedUrlDatum("http://localhost:8089", "http://localhost:8089").getTupleEntry());
-        
         TupleEntryCollector collector = Mockito.mock(TupleEntryCollector.class);
         
         Mockito.when(bc.getGroup()).thenReturn(new TupleEntry(new Tuple("http://localhost:8089")));
-        Mockito.when(bc.getArgumentsIterator()).thenReturn(iterValues.iterator());
+        Mockito.when(bc.getArgumentsIterator()).thenReturn(getGroupedurlDatumList("http://localhost:8089").iterator());
         Mockito.when(bc.getOutputCollector()).thenReturn(collector);
         
         TestWebServer server = null;
