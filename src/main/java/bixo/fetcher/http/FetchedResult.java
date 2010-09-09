@@ -1,7 +1,6 @@
 package bixo.fetcher.http;
 
 import java.security.InvalidParameterException;
-import java.util.Map;
 
 import bixo.datum.HttpHeaders;
 import bixo.datum.Payload;
