@@ -98,7 +98,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         DiskQueue<GroupedUrlDatum> urls = new DiskQueue<GroupedUrlDatum>(MAX_URLS_IN_MEMORY);
         Iterator<TupleEntry> values = bufferCall.getArgumentsIterator();
         while (values.hasNext()) {
-            urls.add(new GroupedUrlDatum(values.next()));
+            urls.add(new GroupedUrlDatum(new TupleEntry(values.next())));
         }
         
         try {
