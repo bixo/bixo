@@ -5,13 +5,15 @@ import org.junit.Test;
 
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.IOFetchException;
+import bixo.fetcher.BaseFetcher;
+import bixo.fetcher.SimpleHttpFetcher;
 import bixo.utils.ConfigUtils;
 
 public class SimpleHttpFetcherIntegrationTest {
     
     @Test
     public final void testNoDomain() {
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, ConfigUtils.BIXO_IT_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, ConfigUtils.BIXO_IT_AGENT);
         String url = "http://www.facebookxxxxx.com";
         
         try {

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 1997-2009 101tec Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy 
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,20 +20,22 @@
  * SOFTWARE.
  *
  */
-package bixo.url;
+package bixo.operations;
 
+import java.io.IOException;
 import java.io.Serializable;
 
-/**
- * Validate urls
- * 
- */
+import bixo.datum.UrlDatum;
 
-public interface IUrlValidator extends Serializable {
-
+@SuppressWarnings("serial")
+public abstract class BaseGroupGenerator implements Serializable {
     /**
-     * Return true if the url is valid
+     * Return key used to group URL into one queue
+     * 
+     * @param urlDatum URL to be grouped.
+     * @return key for grouping, or special value for cases where URL shouldn't be fetched.
+     * @throws IOException
      */
-    public boolean validate(String url);
-
+    public abstract String getGroupingKey(UrlDatum urlDatum);
+    
 }

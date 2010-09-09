@@ -8,7 +8,7 @@ import cascading.operation.OperationCall;
 import cascading.tuple.TupleEntryCollector;
 
 @SuppressWarnings("serial")
-public abstract class BaseFunction<INDATUM extends Datum, OUTDATUM extends Datum> extends BaseOperation<NullContext> implements Function<NullContext> {
+public abstract class BaseFunction<INDATUM extends BaseDatum, OUTDATUM extends BaseDatum> extends BaseOperation<NullContext> implements Function<NullContext> {
 
     private INDATUM _inDatum;
     private TupleEntryCollector _collector;

@@ -20,8 +20,8 @@ import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.hadoop.HadoopUtils;
 import bixo.tools.CrawlDbDatum;
-import bixo.url.IUrlFilter;
-import bixo.url.SimpleUrlNormalizer;
+import bixo.urls.BaseUrlFilter;
+import bixo.urls.SimpleUrlNormalizer;
 import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
 import cascading.flow.PlannerException;
@@ -37,7 +37,7 @@ public class SimpleCrawlTool {
     
     // Filter URLs that fall outside of the target domain
     @SuppressWarnings("serial")
-    private static class DomainUrlFilter implements IUrlFilter {
+    private static class DomainUrlFilter extends BaseUrlFilter {
 
         private String _domain;
         private Pattern _suffixExclusionPattern;
@@ -205,7 +205,7 @@ public class SimpleCrawlTool {
 
             // By setting up a url filter we only deal with urls that we want to 
             // instead of all the urls that we extract.
-            IUrlFilter urlFilter = new DomainUrlFilter(domain);
+            BaseUrlFilter urlFilter = new DomainUrlFilter(domain);
 
             // OK, now we're ready to start looping, since we've got our current settings
             for (int curLoop = startLoop + 1; curLoop <= endLoop; curLoop++) {

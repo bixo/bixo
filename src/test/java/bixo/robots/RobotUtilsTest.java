@@ -13,8 +13,8 @@ import org.mortbay.http.HttpResponse;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
+import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.SimulationWebServerForTests;
-import bixo.fetcher.http.HttpFetcher;
 import bixo.utils.ConfigUtils;
 
 
@@ -56,14 +56,14 @@ public class RobotUtilsTest {
      */
     @Test
     public void testCircularRedirect() throws Exception {
-        HttpFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TEST_AGENT, 1);
-        RobotRulesParser parser = new SimpleRobotRulesParser();
+        BaseFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TEST_AGENT, 1);
+        BaseRobotsParser parser = new SimpleRobotRulesParser();
         
         SimulationWebServerForTests webServer = new SimulationWebServerForTests();
         HttpServer server = webServer.startServer(new CircularRedirectResponseHandler(), 8089);
         
         try {
-            RobotRules rules = RobotUtils.getRobotRules(fetcher, parser, new URL("http://localhost:8089/robots.txt"));
+            BaseRobotRules rules = RobotUtils.getRobotRules(fetcher, parser, new URL("http://localhost:8089/robots.txt"));
             Assert.assertTrue(rules.isAllowAll());
         } finally {
             server.stop();
@@ -72,14 +72,14 @@ public class RobotUtilsTest {
 
     @Test
     public void testRedirectToHtml() throws Exception {
-        HttpFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TEST_AGENT, 1);
-        RobotRulesParser parser = new SimpleRobotRulesParser();
+        BaseFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TEST_AGENT, 1);
+        BaseRobotsParser parser = new SimpleRobotRulesParser();
         
         SimulationWebServerForTests webServer = new SimulationWebServerForTests();
         HttpServer server = webServer.startServer(new RedirectToTopResponseHandler(), 8089);
         
         try {
-            RobotRules rules = RobotUtils.getRobotRules(fetcher, parser, new URL("http://localhost:8089/robots.txt"));
+            BaseRobotRules rules = RobotUtils.getRobotRules(fetcher, parser, new URL("http://localhost:8089/robots.txt"));
             Assert.assertTrue(rules.isAllowAll());
         } finally {
             server.stop();

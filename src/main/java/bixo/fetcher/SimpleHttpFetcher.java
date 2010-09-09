@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher.http;
+package bixo.fetcher;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -97,7 +97,7 @@ import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.AbortedFetchException;
 import bixo.exceptions.AbortedFetchReason;
-import bixo.exceptions.FetchException;
+import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.RedirectFetchException;
@@ -106,7 +106,7 @@ import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
 import bixo.utils.HttpUtils;
 
 @SuppressWarnings("serial")
-public class SimpleHttpFetcher extends HttpFetcher {
+public class SimpleHttpFetcher extends BaseFetcher {
     private static Logger LOGGER = Logger.getLogger(SimpleHttpFetcher.class);
 
     // We tried 10 seconds for all of these, but got a number of connection/read timeouts for
@@ -374,11 +374,11 @@ public class SimpleHttpFetcher extends HttpFetcher {
     }
 
     @Override
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws FetchException {
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
         return convert(request(new HttpGet(), scoredUrl));
     }
 
-    private FetchedResult request(HttpRequestBase request, ScoredUrlDatum scoredUrl) throws FetchException {
+    private FetchedResult request(HttpRequestBase request, ScoredUrlDatum scoredUrl) throws BaseFetchException {
         init();
 
         try {
@@ -396,22 +396,22 @@ public class SimpleHttpFetcher extends HttpFetcher {
                 LOGGER.debug(String.format("Exception fetching %s (%s)", scoredUrl.getUrl(), e.getMessage()));
             }
             throw e;
-        } catch (FetchException e) {
+        } catch (BaseFetchException e) {
             LOGGER.debug(String.format("Exception fetching %s (%s)", scoredUrl.getUrl(), e.getMessage()));
             throw e;
         }
     }
 
-    public FetchedResult fetch(String url) throws FetchException{
+    public FetchedResult fetch(String url) throws BaseFetchException{
     	return fetch(new HttpGet(), url, new Payload());
     }
     
-    public FetchedResult fetch(HttpRequestBase request, String url, Payload payload) throws FetchException{
+    public FetchedResult fetch(HttpRequestBase request, String url, Payload payload) throws BaseFetchException{
         init();
         
         try {
         	return doRequest(request, url, payload);
-        } catch (FetchException e) {
+        } catch (BaseFetchException e) {
         	if (LOGGER.isTraceEnabled()) {
         		LOGGER.trace(String.format("Exception fetching %s", url), e);
         	}
@@ -419,7 +419,7 @@ public class SimpleHttpFetcher extends HttpFetcher {
         }
     }
 
-    private FetchedResult doRequest(HttpRequestBase request, String url, Payload payload) throws FetchException {
+    private FetchedResult doRequest(HttpRequestBase request, String url, Payload payload) throws BaseFetchException {
         LOGGER.trace("Fetching " + url);
 
         HttpResponse response;
@@ -530,7 +530,7 @@ public class SimpleHttpFetcher extends HttpFetcher {
             throw new UrlFetchException(url, e.getMessage());
         } catch (IllegalStateException e) {
             throw new UrlFetchException(url, e.getMessage());
-        } catch (FetchException e) {
+        } catch (BaseFetchException e) {
             throw e;
         } catch (Exception e) {
             // Map anything else to a generic IOFetchException

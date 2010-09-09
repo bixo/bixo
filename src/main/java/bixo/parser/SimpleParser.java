@@ -16,17 +16,16 @@ import org.apache.tika.parser.AutoDetectParser;
 import bixo.config.ParserPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
-import bixo.fetcher.http.HttpHeaderNames;
+import bixo.fetcher.HttpHeaderNames;
 import bixo.utils.CharsetUtils;
 import bixo.utils.HttpUtils;
 import bixo.utils.IoUtils;
 
 @SuppressWarnings("serial")
-public class SimpleParser implements IParser {
+public class SimpleParser extends BaseParser {
     private static final Logger LOGGER = Logger.getLogger(SimpleParser.class);
 
     private boolean _extractLanguage = true;
-    private ParserPolicy _parserPolicy;
     protected BaseContentExtractor _contentExtractor;
     protected BaseLinkExtractor _linkExtractor;
     private transient AutoDetectParser _parser;
@@ -40,9 +39,10 @@ public class SimpleParser implements IParser {
     }
     
     public SimpleParser(BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, ParserPolicy parserPolicy) {
+        super(parserPolicy);
+        
         _contentExtractor = contentExtractor;
         _linkExtractor = linkExtractor;
-        _parserPolicy = parserPolicy;
     }
     
     protected synchronized void init() {
@@ -51,8 +51,8 @@ public class SimpleParser implements IParser {
         }
         
         _contentExtractor.reset();
-        _linkExtractor.setLinkTags(_parserPolicy.getLinkTags());
-        _linkExtractor.setLinkAttributeTypes(_parserPolicy.getLinkAttributeTypes());
+        _linkExtractor.setLinkTags(getParserPolicy().getLinkTags());
+        _linkExtractor.setLinkAttributeTypes(getParserPolicy().getLinkAttributeTypes());
         _linkExtractor.reset();
     }
 
@@ -62,10 +62,6 @@ public class SimpleParser implements IParser {
     
     public boolean isExtractLanguage() {
         return _extractLanguage;
-    }
-    
-    public ParserPolicy getParserPolicy() {
-        return _parserPolicy;
     }
     
     @Override

@@ -35,14 +35,14 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.FetchException;
+import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.UrlFetchException;
-import bixo.fetcher.http.HttpFetcher;
+import bixo.fetcher.BaseFetcher;
 import bixo.utils.ConfigUtils;
 
 @SuppressWarnings("serial")
-public class FakeHttpFetcher extends HttpFetcher {
+public class FakeHttpFetcher extends BaseFetcher {
     private static Logger LOGGER = Logger.getLogger(FakeHttpFetcher.class);
 
     private boolean _randomFetching;
@@ -64,11 +64,11 @@ public class FakeHttpFetcher extends HttpFetcher {
     }
     
     @Override
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws FetchException {
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
         return doGet(scoredUrl.getUrl(), scoredUrl.getPayload(), true);
     }
 
-    private FetchedDatum doGet(String url, Payload payload, boolean returnContent) throws FetchException {
+    private FetchedDatum doGet(String url, Payload payload, boolean returnContent) throws BaseFetchException {
         LOGGER.trace("Fake fetching " + url);
         
         URL theUrl;

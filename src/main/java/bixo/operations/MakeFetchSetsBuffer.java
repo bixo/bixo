@@ -12,7 +12,7 @@ import bixo.config.FetcherPolicy;
 import bixo.datum.FetchSetDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.FetchRequest;
-import bixo.robots.RobotRules;
+import bixo.robots.BaseRobotRules;
 import bixo.utils.GroupingKey;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
@@ -51,7 +51,7 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
         }
 
         long crawlDelay = GroupingKey.getCrawlDelayFromKey(key);
-        if (crawlDelay == RobotRules.UNSET_CRAWL_DELAY) {
+        if (crawlDelay == BaseRobotRules.UNSET_CRAWL_DELAY) {
             crawlDelay = _fetcherPolicy.getCrawlDelay();
         }
         

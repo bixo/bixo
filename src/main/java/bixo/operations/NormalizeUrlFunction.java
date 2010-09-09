@@ -2,7 +2,7 @@ package bixo.operations;
 
 import bixo.cascading.NullContext;
 import bixo.datum.UrlDatum;
-import bixo.url.IUrlNormalizer;
+import bixo.urls.BaseUrlNormalizer;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
@@ -11,9 +11,9 @@ import cascading.operation.FunctionCall;
 @SuppressWarnings("serial")
 public class NormalizeUrlFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
-    private final IUrlNormalizer _normalizer;
+    private final BaseUrlNormalizer _normalizer;
 
-    public NormalizeUrlFunction(IUrlNormalizer normalizer) {
+    public NormalizeUrlFunction(BaseUrlNormalizer normalizer) {
         super(UrlDatum.FIELDS);
         
         _normalizer = normalizer;

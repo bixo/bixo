@@ -1,8 +1,9 @@
-package bixo.url;
+package bixo.urls;
 
 import java.io.Serializable;
 
-public interface IUrlNormalizer extends Serializable {
+@SuppressWarnings("serial")
+public abstract class BaseUrlNormalizer implements Serializable {
 
     /**
      * Convert <url> into a normalized format, where unimportant differences between
@@ -12,5 +13,5 @@ public interface IUrlNormalizer extends Serializable {
      * @return - normalized URL. Still might not be valid, if input URL (for example)
      *           uses an unknown protocol and thus no checks can be done.
      */
-    public String normalize(String url);
+    public abstract String normalize(String url);
 }

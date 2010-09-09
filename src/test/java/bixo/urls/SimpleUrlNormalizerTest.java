@@ -1,11 +1,11 @@
-package bixo.url;
+package bixo.urls;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import bixo.url.IUrlNormalizer;
-import bixo.url.SimpleUrlNormalizer;
+import bixo.urls.BaseUrlNormalizer;
+import bixo.urls.SimpleUrlNormalizer;
 
 
 public class SimpleUrlNormalizerTest {
@@ -15,7 +15,7 @@ public class SimpleUrlNormalizerTest {
     	normalizeTest(_normalizer, weird, normal, testName);
     }
 
-    private void normalizeTest(IUrlNormalizer normalizer, String weird, String normal, String testName) {
+    private void normalizeTest(BaseUrlNormalizer normalizer, String weird, String normal, String testName) {
         Assert.assertEquals(testName + ": " + weird, normal, normalizer.normalize(weird));
     }
 

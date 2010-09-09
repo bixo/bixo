@@ -5,26 +5,26 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
 
-import bixo.cascading.Splitter;
 import bixo.cascading.NullContext;
 import bixo.cascading.NullSinkTap;
+import bixo.cascading.BaseSplitter;
 import bixo.cascading.SplitterAssembly;
+import bixo.datum.FetchSetDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
-import bixo.datum.FetchSetDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.exceptions.FetchException;
-import bixo.fetcher.http.HttpFetcher;
-import bixo.fetcher.util.GroupingKeyGenerator;
-import bixo.fetcher.util.ScoreGenerator;
+import bixo.exceptions.BaseFetchException;
+import bixo.fetcher.BaseFetcher;
+import bixo.operations.BaseGroupGenerator;
+import bixo.operations.BaseScoreGenerator;
 import bixo.operations.FetchBuffer;
 import bixo.operations.FilterAndScoreByUrlAndRobots;
 import bixo.operations.GroupFunction;
 import bixo.operations.MakeFetchSetsBuffer;
-import bixo.robots.RobotRulesParser;
+import bixo.robots.BaseRobotsParser;
 import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.GroupingKey;
 import bixo.utils.UrlUtils;
@@ -56,7 +56,7 @@ public class FetchPipe extends SubAssembly {
      * to safely fetch robots.txt files.
      *
      */
-    private static class GroupByDomain extends GroupingKeyGenerator {
+    private static class GroupByDomain extends BaseGroupGenerator {
         
         @Override
         public String getGroupingKey(UrlDatum urlDatum) {
@@ -70,7 +70,7 @@ public class FetchPipe extends SubAssembly {
         }
     }
 
-    private static class SplitIntoSpecialAndRegularKeys extends Splitter {
+    private static class SplitIntoSpecialAndRegularKeys extends BaseSplitter {
 
         @Override
         public String getLHSName() {
@@ -147,8 +147,8 @@ public class FetchPipe extends SubAssembly {
                 } else {
                     status = new StatusDatum(fd.getBaseUrl(), urlStatus);
                 }
-            } else if (result instanceof FetchException) {
-                status = new StatusDatum(fd.getBaseUrl(), (FetchException)result);
+            } else if (result instanceof BaseFetchException) {
+                status = new StatusDatum(fd.getBaseUrl(), (BaseFetchException)result);
             } else {
                 throw new RuntimeException("Unknown type for fetch status field: " + result.getClass());
             }
@@ -192,15 +192,15 @@ public class FetchPipe extends SubAssembly {
      * @param metaDataFields
      */
     
-    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, HttpFetcher fetcher) {
+    public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseFetcher fetcher) {
         this(urlProvider, scorer, fetcher, null, null, 1);
     }
 
-    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, HttpFetcher fetcher, int numReducers) {
+    public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseFetcher fetcher, int numReducers) {
         this(urlProvider, scorer, fetcher, null, null, numReducers);
     }
     
-    public FetchPipe(Pipe urlProvider, ScoreGenerator scorer, HttpFetcher fetcher, HttpFetcher robotsFetcher, RobotRulesParser parser,
+    public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseFetcher fetcher, BaseFetcher robotsFetcher, BaseRobotsParser parser,
                     int numReducers) {
         
         Pipe robotsPipe = new Each(urlProvider, new GroupFunction(new GroupByDomain()));
@@ -228,14 +228,13 @@ public class FetchPipe extends SubAssembly {
         // crawl time.
         Pipe prefetchPipe = new GroupBy("Distributing URL sets", splitter.getRHSPipe(), GroupedUrlDatum.getGroupingField(), ScoredUrlDatum.getSortingField(), true);
         prefetchPipe = new Every(prefetchPipe, new MakeFetchSetsBuffer(fetcher.getFetcherPolicy(), numReducers), Fields.RESULTS);
-        
         Pipe fetchPipe = new GroupBy("Fetching URL sets", prefetchPipe, FetchSetDatum.getGroupingField(), FetchSetDatum.getSortingField());
         fetchPipe = new Every(fetchPipe, new FetchBuffer(fetcher), Fields.RESULTS);
 
         Pipe fetchedContent = new Pipe(CONTENT_PIPE_NAME, new Each(fetchPipe, new FilterErrorsFunction()));
-        
+
         Pipe fetchedStatus = new Pipe("fetched status", new Each(fetchPipe, new MakeStatusFunction()));
-        
+
         // We need to merge URLs from the LHS of the splitter (never fetched) so that our status pipe
         // gets status for every URL we put into this sub-assembly.
         Pipe skippedStatus = new Pipe("skipped status", new Each(splitter.getLHSPipe(), new MakeSkippedStatus()));

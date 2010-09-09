@@ -26,12 +26,12 @@ public class SplitterAssembly extends SubAssembly {
 	
     @SuppressWarnings("unchecked")
 	private static class SplitterFilter extends BaseOperation<NullContext> implements Filter<NullContext> {
-		private Splitter _splitter;
+		private BaseSplitter _splitter;
 		private boolean _wantLHS;
         private Enum _counter;
 	    private transient BixoFlowProcess _flowProcess;
 		
-		public SplitterFilter(Splitter splitter, boolean wantLHS, Enum counter) {
+		public SplitterFilter(BaseSplitter splitter, boolean wantLHS, Enum counter) {
 			_splitter = splitter;
 			_wantLHS = wantLHS;
 			_counter = counter;
@@ -62,13 +62,13 @@ public class SplitterAssembly extends SubAssembly {
 	    }
 	}
 
-    public SplitterAssembly(Pipe inputPipe, Splitter splitter) {
+    public SplitterAssembly(Pipe inputPipe, BaseSplitter splitter) {
         this(inputPipe, splitter, SplitterCounters.LHS, SplitterCounters.RHS);
     }
 
     @SuppressWarnings("unchecked")
 	public SplitterAssembly(Pipe inputPipe,
-                            Splitter splitter,
+                            BaseSplitter splitter,
                             Enum lhsCounter,
                             Enum rhsCounter) {
 		_baseName = inputPipe.getName();

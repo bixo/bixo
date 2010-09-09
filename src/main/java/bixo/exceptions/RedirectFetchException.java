@@ -9,7 +9,7 @@ import org.apache.hadoop.io.WritableComparable;
 import bixo.datum.UrlStatus;
 
 @SuppressWarnings({ "serial" })
-public class RedirectFetchException extends FetchException implements WritableComparable<RedirectFetchException> {
+public class RedirectFetchException extends BaseFetchException implements WritableComparable<RedirectFetchException> {
     
     // Possible redirect exception types.
     

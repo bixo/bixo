@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
-import bixo.cascading.Datum;
+import bixo.cascading.BaseDatum;
 import bixo.cascading.LoggingFlowReporter;
 import bixo.cascading.NullContext;
 import bixo.config.FetcherPolicy;
@@ -18,9 +18,9 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.FetchSetDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
+import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.FetchTask;
 import bixo.fetcher.IFetchMgr;
-import bixo.fetcher.http.HttpFetcher;
 import bixo.hadoop.FetchCounters;
 import bixo.utils.DiskQueue;
 import bixo.utils.ThreadedExecutor;
@@ -141,14 +141,14 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         }
     }
 
-    private static final Fields FETCH_RESULT_FIELD = new Fields(Datum.fieldName(FetchBuffer.class, "fetch-exception"));
+    private static final Fields FETCH_RESULT_FIELD = new Fields(BaseDatum.fieldName(FetchBuffer.class, "fetch-exception"));
 
     // Time to sleep when we don't have any URLs that can be fetched.
     private static final long NOTHING_TO_FETCH_SLEEP_TIME = 1000;
 
     private static final long HARD_TERMINATION_CLEANUP_DURATION = 10 * 1000L;
 
-    private HttpFetcher _fetcher;
+    private BaseFetcher _fetcher;
     private FetcherMode _fetcherMode;
 
     private transient ThreadedExecutor _executor;
@@ -161,7 +161,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     
     private transient AtomicBoolean _keepCollecting;
     
-    public FetchBuffer(HttpFetcher fetcher) {
+    public FetchBuffer(BaseFetcher fetcher) {
         // We're going to output a tuple that contains a FetchedDatum, plus meta-data,
         // plus a result that could be a string, a status, or an exception
         super(FetchedDatum.FIELDS.append(FETCH_RESULT_FIELD));

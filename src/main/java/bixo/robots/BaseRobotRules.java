@@ -5,7 +5,7 @@ package bixo.robots;
  * get a set of rules, and a crawl-delay.
  */
 
-public abstract class RobotRules {
+public abstract class BaseRobotRules {
     public static final long DEFAULT_CRAWL_DELAY = 30 * 1000L;
     public static final long UNSET_CRAWL_DELAY = Long.MIN_VALUE;
 

@@ -9,10 +9,10 @@ import org.apache.log4j.Logger;
 import bixo.cascading.NullContext;
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.http.HttpFetcher;
+import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
-import bixo.fetcher.util.FixedScoreGenerator;
-import bixo.fetcher.util.ScoreGenerator;
+import bixo.operations.BaseScoreGenerator;
+import bixo.operations.FixedScoreGenerator;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -69,8 +69,8 @@ public class RunFakeFetchPipe {
 
             Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFunction());
 
-            ScoreGenerator scorer = new FixedScoreGenerator();
-            HttpFetcher fetcher = new FakeHttpFetcher(true, 10);
+            BaseScoreGenerator scorer = new FixedScoreGenerator();
+            BaseFetcher fetcher = new FakeHttpFetcher(true, 10);
             FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher);
 
             // Create the output, which is a dual file sink tap.

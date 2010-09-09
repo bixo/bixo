@@ -1,16 +1,9 @@
 package bixo.datum;
 
-import static org.junit.Assert.*;
-
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import junit.framework.Assert;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import org.junit.Test;
-
-import bixo.utils.ThreadedExecutor;
 
 import cascading.tuple.Tuple;
 

@@ -11,7 +11,7 @@ import bixo.robots.SimpleRobotRules.RobotRulesMode;
 
 
 @SuppressWarnings("serial")
-public class SimpleRobotRulesParser extends RobotRulesParser {
+public class SimpleRobotRulesParser extends BaseRobotsParser {
     private static final Logger LOGGER = Logger.getLogger(SimpleRobotRulesParser.class);
     
     private static final Pattern SIMPLE_HTML_PATTERN = Pattern.compile("(?is)<(html|head|body)\\s*>");
@@ -37,7 +37,7 @@ public class SimpleRobotRulesParser extends RobotRulesParser {
     private int _numWarnings;
     
     @Override
-    public RobotRules failedFetch(int httpStatusCode) {
+    public BaseRobotRules failedFetch(int httpStatusCode) {
         SimpleRobotRules result;
         
         if ((httpStatusCode >= 200) && (httpStatusCode < 300)) {
@@ -62,7 +62,7 @@ public class SimpleRobotRulesParser extends RobotRulesParser {
     }
 
     @Override
-    public RobotRules parseContent(String url, byte[] content, String contentType, String robotName) {
+    public BaseRobotRules parseContent(String url, byte[] content, String contentType, String robotName) {
         _numWarnings = 0;
         
         // If there's nothing there, treat it like we have no restrictions.

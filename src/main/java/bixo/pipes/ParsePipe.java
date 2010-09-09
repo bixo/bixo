@@ -29,7 +29,7 @@ import bixo.cascading.LoggingFlowReporter;
 import bixo.cascading.NullContext;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
-import bixo.parser.IParser;
+import bixo.parser.BaseParser;
 import bixo.parser.ParserCounters;
 import bixo.parser.SimpleParser;
 import cascading.flow.FlowProcess;
@@ -52,9 +52,9 @@ public class ParsePipe extends SubAssembly {
     private static class ParseFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
         private transient BixoFlowProcess _flowProcess;
-        private IParser _parser;
+        private BaseParser _parser;
 
-        public ParseFunction(IParser parser) {
+        public ParseFunction(BaseParser parser) {
             super(ParsedDatum.FIELDS);
             _parser = parser;
         }
@@ -93,7 +93,7 @@ public class ParsePipe extends SubAssembly {
         this(fetcherPipe, new SimpleParser());
     }
     
-    public ParsePipe(Pipe fetcherPipe, IParser parser) {
+    public ParsePipe(Pipe fetcherPipe, BaseParser parser) {
         Pipe parsePipe = new Pipe(PARSE_PIPE_NAME, fetcherPipe);
 
         ParseFunction parserFunction = new ParseFunction(parser);

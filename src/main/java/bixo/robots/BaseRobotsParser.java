@@ -3,7 +3,7 @@ package bixo.robots;
 import java.io.Serializable;
 
 @SuppressWarnings("serial")
-public abstract class RobotRulesParser implements Serializable {
+public abstract class BaseRobotsParser implements Serializable {
 
     /**
      * Parse the robots.txt file in <content>, and return rules appropriate for
@@ -17,7 +17,7 @@ public abstract class RobotRulesParser implements Serializable {
      * @return robot rules.
      */
     
-    public abstract RobotRules parseContent(String url, byte[] content, String contentType, String robotName);
+    public abstract BaseRobotRules parseContent(String url, byte[] content, String contentType, String robotName);
     
     
     /**
@@ -27,5 +27,5 @@ public abstract class RobotRulesParser implements Serializable {
      * @param httpStatusCode a failure status code (NOT 2xx)
      * @return robot rules
      */
-    public abstract RobotRules failedFetch(int httpStatusCode);
+    public abstract BaseRobotRules failedFetch(int httpStatusCode);
 }

@@ -21,7 +21,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
-import bixo.fetcher.http.HttpHeaderNames;
+import bixo.fetcher.HttpHeaderNames;
 
 
 public class SimpleParserTest {
@@ -294,7 +294,7 @@ public class SimpleParserTest {
     public void testHtmlParsing() throws Exception {
         URL path = SimpleParserTest.class.getResource("/simple-page.html");
 
-        IParser parser = new SimpleParser();
+        BaseParser parser = new SimpleParser();
         FetchedDatum content = makeFetchedDatum(path);
         ParsedDatum parse = parser.parse(content);
         Assert.assertNotNull(parse.getParsedText());

@@ -11,10 +11,9 @@ import bixo.cascading.NullContext;
 import bixo.config.UserAgent;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.http.HttpFetcher;
-import bixo.fetcher.util.ScoreGenerator;
+import bixo.fetcher.BaseFetcher;
 import bixo.hadoop.FetchCounters;
-import bixo.robots.RobotRulesParser;
+import bixo.robots.BaseRobotsParser;
 import bixo.robots.RobotUtils;
 import bixo.utils.DiskQueue;
 import bixo.utils.GroupingKey;
@@ -40,14 +39,14 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
 
     private static final int MAX_URLS_IN_MEMORY = 100;
 
-    private ScoreGenerator _scorer;
-	private HttpFetcher _fetcher;
-	private RobotRulesParser _parser;
+    private BaseScoreGenerator _scorer;
+	private BaseFetcher _fetcher;
+	private BaseRobotsParser _parser;
 	
     private transient ThreadedExecutor _executor;
     private transient BixoFlowProcess _flowProcess;
 
-    public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, RobotRulesParser parser, ScoreGenerator scorer) {
+    public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, BaseRobotsParser parser, BaseScoreGenerator scorer) {
         super(ScoredUrlDatum.FIELDS);
 
         _scorer = scorer;
@@ -55,7 +54,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         _fetcher = RobotUtils.createFetcher(userAgent, maxThreads);
     }
 
-    public FilterAndScoreByUrlAndRobots(HttpFetcher fetcher, RobotRulesParser parser, ScoreGenerator scorer) {
+    public FilterAndScoreByUrlAndRobots(BaseFetcher fetcher, BaseRobotsParser parser, BaseScoreGenerator scorer) {
         // We're going to output a ScoredUrlDatum (what FetcherBuffer expects).
         super(ScoredUrlDatum.FIELDS);
 

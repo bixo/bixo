@@ -22,13 +22,13 @@
  */
 package bixo.tools;
 
-import bixo.cascading.Datum;
+import bixo.cascading.BaseDatum;
 import bixo.datum.UrlStatus;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
-public class CrawlDbDatum extends Datum {
+public class CrawlDbDatum extends BaseDatum {
     
 
     public static final String URL_FIELD = fieldName(CrawlDbDatum.class, "url");

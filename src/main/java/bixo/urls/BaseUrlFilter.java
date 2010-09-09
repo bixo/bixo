@@ -20,22 +20,23 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher.util;
+package bixo.urls;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 import bixo.datum.UrlDatum;
 
+/**
+ * Filter urls
+ * 
+ */
+
 @SuppressWarnings("serial")
-public abstract class GroupingKeyGenerator implements Serializable {
+public abstract class BaseUrlFilter implements Serializable {
+
     /**
-     * Return key used to group URL into one queue
-     * 
-     * @param urlDatum URL to be grouped.
-     * @return key for grouping, or special value for cases where URL shouldn't be fetched.
-     * @throws IOException
+     * Return true if we should filter out (remove) the datum
      */
-    public abstract String getGroupingKey(UrlDatum urlDatum);
-    
+    public abstract boolean isRemove(UrlDatum datum);
+
 }

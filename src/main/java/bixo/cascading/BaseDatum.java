@@ -10,11 +10,11 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
-public abstract class Datum implements Serializable {
+public abstract class BaseDatum implements Serializable {
     
     protected TupleEntry _tupleEntry;
     
-    public Datum() {
+    public BaseDatum() {
         this(new Fields());
     }
     
@@ -23,7 +23,7 @@ public abstract class Datum implements Serializable {
      * 
      * @param fields Names of fields
      */
-    public Datum(Fields fields) {
+    public BaseDatum(Fields fields) {
         this(new TupleEntry(fields, Tuple.size(fields.size())));
     }
     
@@ -37,7 +37,7 @@ public abstract class Datum implements Serializable {
      * @param fields Names of fields
      * @param tuple Data for the datum
      */
-    public Datum(Fields fields, Tuple tuple) {
+    public BaseDatum(Fields fields, Tuple tuple) {
         if (fields.size() != tuple.size()) {
             throw new IllegalArgumentException("Size of fields must be the same as the size of the tuple: " + fields + "/" + tuple);
         }
@@ -46,7 +46,7 @@ public abstract class Datum implements Serializable {
     }
     
 
-    public Datum(TupleEntry tupleEntry) {
+    public BaseDatum(TupleEntry tupleEntry) {
         _tupleEntry = tupleEntry;
     }
     
@@ -149,7 +149,7 @@ public abstract class Datum implements Serializable {
         if (getClass() != obj.getClass())
             return false;
         
-        Datum other = (Datum) obj;
+        BaseDatum other = (BaseDatum) obj;
         if (_tupleEntry == null) {
             return other._tupleEntry == null;
         } else if (!_tupleEntry.getFields().equals(other._tupleEntry.getFields())) {
@@ -162,7 +162,7 @@ public abstract class Datum implements Serializable {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends Datum> T copy(T datum) {
+    public static <T extends BaseDatum> T copy(T datum) {
         try {
             T result = (T)datum.getClass().newInstance();
             result.setTupleEntry(datum.getTupleEntry());
@@ -187,14 +187,14 @@ public abstract class Datum implements Serializable {
     }
     
     @SuppressWarnings("unchecked")
-    public static Fields getSuperFields(Class<? extends Datum> clazz) {
+    public static Fields getSuperFields(Class<? extends BaseDatum> clazz) {
         try {
             Class<?> superClass = clazz.getSuperclass();
-            if (superClass.equals(Datum.class)) {
+            if (superClass.equals(BaseDatum.class)) {
                 return new Fields();
             } else {
-                Class<? extends Datum> superClazz = (Class<? extends Datum>)clazz.getSuperclass();
-                Datum datum = superClazz.newInstance();
+                Class<? extends BaseDatum> superClazz = (Class<? extends BaseDatum>)clazz.getSuperclass();
+                BaseDatum datum = superClazz.newInstance();
                 return datum.getFields();
             }
         } catch (Exception e) {

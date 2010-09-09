@@ -18,7 +18,7 @@ public class BaseFetchExceptionTest {
 	@SuppressWarnings("serial")
 	@Test
 	public void testSerialization() throws IOException {
-		FetchException e = new FetchException("url", "msg") {
+		BaseFetchException e = new BaseFetchException("url", "msg") {
 
 			@Override
 			public UrlStatus mapToUrlStatus() {
@@ -30,7 +30,7 @@ public class BaseFetchExceptionTest {
 		DataOutputStream output = new DataOutputStream(backingStore);
 		e.writeBaseFields(output);
 		
-		FetchException e2 = new FetchException() {
+		BaseFetchException e2 = new BaseFetchException() {
 
 			@Override
 			public UrlStatus mapToUrlStatus() {

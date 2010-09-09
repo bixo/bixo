@@ -12,13 +12,11 @@ import bixo.cascading.NullContext;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.RandomResponseHandler;
+import bixo.fetcher.SimpleHttpFetcher;
 import bixo.fetcher.StringResponseHandler;
-import bixo.fetcher.http.SimpleHttpFetcher;
 import bixo.fetcher.simulation.TestWebServer;
-import bixo.fetcher.util.FixedScoreGenerator;
-import bixo.fetcher.util.ScoreGenerator;
 import bixo.hadoop.FetchCounters;
-import bixo.robots.RobotRulesParser;
+import bixo.robots.BaseRobotsParser;
 import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
@@ -53,8 +51,8 @@ public class FilterAndScoreByUrlAndRobotsTest {
         final int maxThreads = 10;
         
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, ConfigUtils.BIXO_TEST_AGENT);
-        ScoreGenerator scorer = new FixedScoreGenerator(1.0);
-        RobotRulesParser parser = new SimpleRobotRulesParser();
+        BaseScoreGenerator scorer = new FixedScoreGenerator(1.0);
+        BaseRobotsParser parser = new SimpleRobotRulesParser();
         FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, parser, scorer);
         
         HadoopFlowProcess fp = Mockito.mock(HadoopFlowProcess.class);
@@ -95,8 +93,8 @@ public class FilterAndScoreByUrlAndRobotsTest {
         final int maxThreads = 1;
         
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, ConfigUtils.BIXO_TEST_AGENT);
-        ScoreGenerator scorer = new FixedScoreGenerator(1.0);
-        RobotRulesParser parser = new SimpleRobotRulesParser();
+        BaseScoreGenerator scorer = new FixedScoreGenerator(1.0);
+        BaseRobotsParser parser = new SimpleRobotRulesParser();
         FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, parser, scorer);
         
         HadoopFlowProcess fp = Mockito.mock(HadoopFlowProcess.class);

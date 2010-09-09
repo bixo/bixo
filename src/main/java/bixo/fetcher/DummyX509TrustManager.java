@@ -1,4 +1,4 @@
-package bixo.fetcher.http;
+package bixo.fetcher;
 
 import java.security.KeyStore;
 import java.security.KeyStoreException;

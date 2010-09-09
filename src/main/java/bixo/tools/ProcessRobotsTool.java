@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 
-import bixo.fetcher.http.HttpFetcher;
-import bixo.robots.RobotRules;
+import bixo.fetcher.BaseFetcher;
+import bixo.robots.BaseRobotRules;
 import bixo.robots.RobotUtils;
 import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
@@ -35,7 +35,7 @@ public class ProcessRobotsTool {
         // Uncomment this to see the wire log for HttpClient
         // System.setProperty("bixo.http.level", "DEBUG");
         
-        HttpFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TOOL_AGENT, 1);
+        BaseFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TOOL_AGENT, 1);
         
         boolean interactive = args.length == 0;
         int index = 0;
@@ -60,7 +60,7 @@ public class ProcessRobotsTool {
             	}
             	
             	System.out.println("Processing " + robotsUrl.toExternalForm());
-            	RobotRules rules = RobotUtils.getRobotRules(fetcher, new SimpleRobotRulesParser(), robotsUrl);
+            	BaseRobotRules rules = RobotUtils.getRobotRules(fetcher, new SimpleRobotRulesParser(), robotsUrl);
                 System.out.println(String.format("Deferred visits = %s, allow all = %s, allow none = %s, top-level allowed = %s",
                                 rules.isDeferVisits(),
                                 rules.isAllowAll(),

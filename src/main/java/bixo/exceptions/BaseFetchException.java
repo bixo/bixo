@@ -13,38 +13,38 @@ import java.io.PrintWriter;
 import bixo.datum.UrlStatus;
 
 @SuppressWarnings({ "serial" })
-public abstract class FetchException extends Exception {
+public abstract class BaseFetchException extends Exception {
     private String _url = "";
     private Exception _exception;
     
-	protected FetchException() {
+	protected BaseFetchException() {
 		super();
 		
         _exception = new Exception();
     }
     
-    protected FetchException(String url) {
+    protected BaseFetchException(String url) {
     	super();
     	
         _exception = new Exception();
         _url = url;
     }
     
-    protected FetchException(String url, String msg) {
+    protected BaseFetchException(String url, String msg) {
     	super(msg);
     	
         _exception = new Exception(msg);
         _url = url;
     }
     
-    protected FetchException(String url, Exception e) {
+    protected BaseFetchException(String url, Exception e) {
     	super(e);
     	
         _exception = new Exception(e);
         _url = url;
     }
     
-    protected FetchException(String url, String msg, Exception e) {
+    protected BaseFetchException(String url, String msg, Exception e) {
     	super(msg, e);
     	
         _exception = new Exception(msg, e);
@@ -56,7 +56,7 @@ public abstract class FetchException extends Exception {
         return _url;
     }
     
-    protected int compareToBase(FetchException e) {
+    protected int compareToBase(BaseFetchException e) {
         return _url.compareTo(e._url);
     }
 

@@ -1,4 +1,4 @@
-package bixo.url;
+package bixo.urls;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -12,7 +12,7 @@ import org.apache.log4j.Logger;
 import bixo.utils.StringUtils;
 
 @SuppressWarnings("serial")
-public class SimpleUrlNormalizer implements IUrlNormalizer {
+public class SimpleUrlNormalizer extends BaseUrlNormalizer {
     private static final Logger LOGGER = Logger.getLogger(SimpleUrlNormalizer.class);
     
     // http://en.wikipedia.org/wiki/Percent-encoding - full set of reserved chars is:

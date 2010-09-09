@@ -4,7 +4,6 @@ import org.apache.log4j.Logger;
 
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.util.GroupingKeyGenerator;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
@@ -14,9 +13,9 @@ import cascading.operation.FunctionCall;
 public class GroupFunction extends BaseOperation implements Function {
     private static final Logger LOGGER = Logger.getLogger(GroupFunction.class);
 
-    private final GroupingKeyGenerator _generator;
+    private final BaseGroupGenerator _generator;
 
-    public GroupFunction(GroupingKeyGenerator generator) {
+    public GroupFunction(BaseGroupGenerator generator) {
         super(GroupedUrlDatum.FIELDS);
         
         _generator = generator;

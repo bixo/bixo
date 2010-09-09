@@ -9,7 +9,8 @@ import cascading.tuple.Fields;
 
 public class DatumTest {
 
-    private static class MyDatum extends Datum {
+    @SuppressWarnings("serial")
+    private static class MyDatum extends BaseDatum {
 
         public static final Fields FIELDS = new Fields("a", "b");
         

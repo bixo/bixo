@@ -15,8 +15,8 @@ public class PayloadDatumTest {
     @SuppressWarnings("serial")
     private static class MyDatum extends PayloadDatum {
         
-        public static final String A_FN = Datum.fieldName(MyDatum.class, "a");
-        public static final Fields FIELDS = new Fields(A_FN).append(Datum.getSuperFields(MyDatum.class));
+        public static final String A_FN = BaseDatum.fieldName(MyDatum.class, "a");
+        public static final Fields FIELDS = new Fields(A_FN).append(BaseDatum.getSuperFields(MyDatum.class));
         
         public MyDatum() {
             super(FIELDS);

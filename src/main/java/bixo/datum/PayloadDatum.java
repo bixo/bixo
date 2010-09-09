@@ -5,7 +5,7 @@
  */
 package bixo.datum;
 
-import bixo.cascading.Datum;
+import bixo.cascading.BaseDatum;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
@@ -18,10 +18,10 @@ import cascading.tuple.TupleEntry;
  * one subclass to an instance of another).
  */
 @SuppressWarnings("serial")
-public class PayloadDatum extends Datum {
+public class PayloadDatum extends BaseDatum {
 
     public static final String PAYLOAD_FN = fieldName(PayloadDatum.class, "payload");
-    public static final Fields FIELDS = new Fields(PAYLOAD_FN).append(Datum.getSuperFields(PayloadDatum.class));
+    public static final Fields FIELDS = new Fields(PAYLOAD_FN).append(BaseDatum.getSuperFields(PayloadDatum.class));
 
     private transient Payload _payload;
     private transient boolean _updated = false;

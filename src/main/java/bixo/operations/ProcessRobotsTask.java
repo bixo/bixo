@@ -12,11 +12,10 @@ import bixo.cascading.BixoFlowProcess;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.fetcher.http.HttpFetcher;
-import bixo.fetcher.util.ScoreGenerator;
+import bixo.fetcher.BaseFetcher;
 import bixo.hadoop.FetchCounters;
-import bixo.robots.RobotRules;
-import bixo.robots.RobotRulesParser;
+import bixo.robots.BaseRobotRules;
+import bixo.robots.BaseRobotsParser;
 import bixo.robots.RobotUtils;
 import bixo.utils.DomainInfo;
 import bixo.utils.DomainNames;
@@ -27,15 +26,15 @@ public class ProcessRobotsTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ProcessRobotsTask.class);
 
     private String _protocolAndDomain;
-    private ScoreGenerator _scorer;
+    private BaseScoreGenerator _scorer;
     private Queue<GroupedUrlDatum> _urls;
-    private HttpFetcher _fetcher;
+    private BaseFetcher _fetcher;
     private TupleEntryCollector _collector;
-    private RobotRulesParser _parser;
+    private BaseRobotsParser _parser;
     private BixoFlowProcess _flowProcess;
 
-    public ProcessRobotsTask(String protocolAndDomain, ScoreGenerator scorer, Queue<GroupedUrlDatum> urls, HttpFetcher fetcher, 
-                    RobotRulesParser parser, TupleEntryCollector collector, BixoFlowProcess flowProcess) {
+    public ProcessRobotsTask(String protocolAndDomain, BaseScoreGenerator scorer, Queue<GroupedUrlDatum> urls, BaseFetcher fetcher, 
+                    BaseRobotsParser parser, TupleEntryCollector collector, BixoFlowProcess flowProcess) {
         _protocolAndDomain = protocolAndDomain;
         _scorer = scorer;
         _urls = urls;
@@ -97,7 +96,7 @@ public class ProcessRobotsTask implements Runnable {
                 
                 emptyQueue(_urls, GroupingKey.SKIPPED_GROUPING_KEY, _collector);
             } else {
-                RobotRules robotRules = RobotUtils.getRobotRules(_fetcher, _parser, new URL(domainInfo.getProtocolAndDomain() + "/robots.txt"));
+                BaseRobotRules robotRules = RobotUtils.getRobotRules(_fetcher, _parser, new URL(domainInfo.getProtocolAndDomain() + "/robots.txt"));
 
                 String validKey = null;
                 boolean isDeferred = robotRules.isDeferVisits();

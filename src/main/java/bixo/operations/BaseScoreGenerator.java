@@ -1,4 +1,4 @@
-package bixo.fetcher.util;
+package bixo.operations;
 
 import java.io.Serializable;
 import java.net.MalformedURLException;
@@ -8,7 +8,7 @@ import bixo.datum.GroupedUrlDatum;
 import bixo.utils.DomainNames;
 
 @SuppressWarnings("serial")
-public abstract class ScoreGenerator implements Serializable {
+public abstract class BaseScoreGenerator implements Serializable {
     public static final double SKIP_SCORE = Double.NEGATIVE_INFINITY;
 
     /**

@@ -37,11 +37,9 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.exceptions.FetchException;
-import bixo.fetcher.http.HttpFetcher;
-import bixo.fetcher.http.SimpleHttpFetcher;
-import bixo.fetcher.util.FixedScoreGenerator;
-import bixo.fetcher.util.ScoreGenerator;
+import bixo.exceptions.BaseFetchException;
+import bixo.operations.BaseScoreGenerator;
+import bixo.operations.FixedScoreGenerator;
 import bixo.operations.LoadUrlsFunction;
 import bixo.pipes.FetchPipe;
 import cascading.flow.Flow;
@@ -110,8 +108,8 @@ public class FetcherTest {
         FetcherPolicy fetcherPolicy = new FetcherPolicy();
         fetcherPolicy.setMaxRequestsPerConnection(1);
         fetcherPolicy.setCrawlDelay(5 * 1000L);
-        HttpFetcher fetcher = new SimpleHttpFetcher(2, fetcherPolicy, userAgent);
-        ScoreGenerator scorer = new FixedScoreGenerator();
+        BaseFetcher fetcher = new SimpleHttpFetcher(2, fetcherPolicy, userAgent);
+        BaseScoreGenerator scorer = new FixedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
 
         FlowConnector flowConnector = new FlowConnector();
@@ -127,7 +125,7 @@ public class FetcherTest {
             StatusDatum sd = new StatusDatum(entry);
             if (sd.getStatus() != UrlStatus.FETCHED) {
                 LOGGER.error(String.format("Fetched failed! Status is %s for %s", sd.getStatus(), sd.getUrl()));
-                FetchException e = sd.getException();
+                BaseFetchException e = sd.getException();
                 if (e != null) {
                     LOGGER.error("Fetched failed due to exception", e);
                 }
@@ -150,8 +148,8 @@ public class FetcherTest {
         Pipe pipe = new Pipe("urlSource");
 
         UserAgent userAgent = new FirefoxUserAgent();
-        HttpFetcher fetcher = new SimpleHttpFetcher(10, userAgent);
-        ScoreGenerator scorer = new FixedScoreGenerator();
+        BaseFetcher fetcher = new SimpleHttpFetcher(10, userAgent);
+        BaseScoreGenerator scorer = new FixedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
 
         FlowConnector flowConnector = new FlowConnector();

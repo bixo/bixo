@@ -35,9 +35,8 @@ import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.exceptions.AbortedFetchException;
 import bixo.exceptions.AbortedFetchReason;
-import bixo.exceptions.FetchException;
+import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.IOFetchException;
-import bixo.fetcher.http.HttpFetcher;
 import bixo.hadoop.FetchCounters;
 import cascading.tuple.Tuple;
 
@@ -49,11 +48,11 @@ public class FetchTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(FetchTask.class);
     
     private IFetchMgr _fetchMgr;
-    private HttpFetcher _httpFetcher;
+    private BaseFetcher _httpFetcher;
     private List<ScoredUrlDatum> _items;
     private String _ref;
     
-    public FetchTask(IFetchMgr fetchMgr, HttpFetcher httpFetcher, List<ScoredUrlDatum> items, String ref) {
+    public FetchTask(IFetchMgr fetchMgr, BaseFetcher httpFetcher, List<ScoredUrlDatum> items, String ref) {
         _fetchMgr = fetchMgr;
         _httpFetcher = httpFetcher;
         _items = items;
@@ -87,7 +86,7 @@ public class FetchTask implements Runnable {
                     process.setStatus(Level.TRACE, "Fetched " + result);
 
                     status = UrlStatus.FETCHED.toString();
-                } catch (FetchException e) {
+                } catch (BaseFetchException e) {
                     // TODO KKr - we'd have to do something special here for AbortedFetchException with
                     // the reason == INTERRUPTED, as we'd want to (a) increment URLS_SKIPPED, not failed,
                     // and we'd want to bail out of this loop (or set the interrupted flag)

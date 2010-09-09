@@ -1,4 +1,4 @@
-package bixo.fetcher.http;
+package bixo.fetcher;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -14,12 +14,12 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.FetchException;
+import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.UrlFetchException;
 
 @SuppressWarnings("serial")
-public class LoggingFetcher extends HttpFetcher {
+public class LoggingFetcher extends BaseFetcher {
     private static final Logger LOGGER = Logger.getLogger(LoggingFetcher.class);
     
     public static final String FAKE_CONTENT_LOCATION = "Fake-LoggingFetcher";
@@ -37,7 +37,7 @@ public class LoggingFetcher extends HttpFetcher {
 
 
     @Override
-    public FetchedDatum get(ScoredUrlDatum datum) throws FetchException {
+    public FetchedDatum get(ScoredUrlDatum datum) throws BaseFetchException {
         String url = datum.getUrl();
         Payload payload = datum.getPayload();
         logPayload(url, payload);

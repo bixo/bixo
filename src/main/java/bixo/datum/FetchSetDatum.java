@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import bixo.cascading.Datum;
+import bixo.cascading.BaseDatum;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
@@ -15,7 +15,7 @@ import cascading.tuple.TupleEntry;
  *
  */
 @SuppressWarnings("serial")
-public class FetchSetDatum extends Datum {
+public class FetchSetDatum extends BaseDatum {
     
     private static final String URLS_FN = fieldName(FetchSetDatum.class, "urls");
     private static final String FETCH_TIME_FN = fieldName(FetchSetDatum.class, "fetchTime");

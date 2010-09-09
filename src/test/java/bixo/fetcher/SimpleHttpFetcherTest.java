@@ -1,4 +1,4 @@
-package bixo.fetcher.http;
+package bixo.fetcher;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -25,8 +25,9 @@ import bixo.exceptions.AbortedFetchReason;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.RedirectFetchException;
 import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
-import bixo.fetcher.RandomResponseHandler;
-import bixo.fetcher.ResourcesResponseHandler;
+import bixo.fetcher.BaseFetcher;
+import bixo.fetcher.HttpHeaderNames;
+import bixo.fetcher.SimpleHttpFetcher;
 import bixo.fetcher.simulation.SimulationWebServer;
 import bixo.utils.ConfigUtils;
 
@@ -122,7 +123,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
     @Test
     public final void testConnectionTimeout() throws Exception {
         HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8088/simple-page.html";
         
         try {
@@ -141,7 +142,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         SocketListener sl = (SocketListener)server.getListeners()[0];
         sl.setLingerTimeSecs(-1);
 
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/simple-page.html";
         fetcher.get(new ScoredUrlDatum(url));
         
@@ -165,7 +166,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setMinResponseRate(20000);
 
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
 
         String url = "http://localhost:8089/test.html";
         try {
@@ -187,7 +188,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setMinResponseRate(FetcherPolicy.NO_MIN_RESPONSE_RATE);
 
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
 
         String url = "http://localhost:8089/test.html";
         fetcher.get(new ScoredUrlDatum(url));
@@ -198,7 +199,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
     public final void testLargeContent() throws Exception {
         FetcherPolicy policy = new FetcherPolicy();
         HttpServer server = startServer(new RandomResponseHandler(policy.getMaxContentSize() * 2), 8089);
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/test.html";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
@@ -212,7 +213,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
 
         FetcherPolicy policy = new FetcherPolicy();
         policy.setMaxContentSize(1000);
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         
         ScoredUrlDatum datumToFetch = new ScoredUrlDatum("http://localhost:8089/karlie.html");
         
@@ -234,7 +235,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
     public final void testLargeHtml() throws Exception {
         FetcherPolicy policy = new FetcherPolicy();
         HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/karlie.html";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
@@ -247,7 +248,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
     public final void testContentTypeHeader() throws Exception {
         FetcherPolicy policy = new FetcherPolicy();
         HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/simple-page.html";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
@@ -261,7 +262,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
     public final void testTempRedirectHandling() throws Exception {
         FetcherPolicy policy = new FetcherPolicy();
         HttpServer server = startServer(new RedirectResponseHandler(), 8089);
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/base";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
@@ -275,7 +276,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
     public final void testPermRedirectHandling() throws Exception {
         FetcherPolicy policy = new FetcherPolicy();
         HttpServer server = startServer(new RedirectResponseHandler(true), 8089);
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/base";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
@@ -290,7 +291,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setRedirectMode(RedirectMode.FOLLOW_TEMP);
         HttpServer server = startServer(new RedirectResponseHandler(true), 8089);
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/base";
         
         try {
@@ -327,7 +328,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         
         FetcherPolicy policy = new FetcherPolicy();
         HttpServer server = startServer(new LanguageResponseHandler(englishContent, foreignContent), 8089);
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();
@@ -343,7 +344,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         policy.setValidMimeTypes(validMimeTypes);
 
         HttpServer server = startServer(new MimeTypeResponseHandler("text/xml"), 8089);
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/";
         
         try {
@@ -365,7 +366,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         policy.setValidMimeTypes(validMimeTypes);
 
         HttpServer server = startServer(new MimeTypeResponseHandler(null), 8089);
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/";
         
         try {
@@ -385,7 +386,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         policy.setValidMimeTypes(validMimeTypes);
 
         HttpServer server = startServer(new MimeTypeResponseHandler("text/html; charset=UTF-8"), 8089);
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/";
         
         try {
@@ -401,7 +402,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
     public final void testHostAddress() throws Exception {
         FetcherPolicy policy = new FetcherPolicy();
         HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
-        HttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/simple-page.html";
         FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
         server.stop();

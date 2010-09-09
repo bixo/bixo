@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.fetcher.http;
+package bixo.fetcher;
 
 import java.io.Serializable;
 
@@ -28,16 +28,16 @@ import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.FetchException;
+import bixo.exceptions.BaseFetchException;
 
 @SuppressWarnings("serial")
-public abstract class HttpFetcher implements Serializable {
+public abstract class BaseFetcher implements Serializable {
     
     protected int _maxThreads;
     protected FetcherPolicy _fetcherPolicy;
     protected UserAgent _userAgent;
     
-    public HttpFetcher(int maxThreads, FetcherPolicy fetcherPolicy, UserAgent userAgent) {
+    public BaseFetcher(int maxThreads, FetcherPolicy fetcherPolicy, UserAgent userAgent) {
         _maxThreads = maxThreads;
         _fetcherPolicy = fetcherPolicy;
         _userAgent = userAgent;
@@ -56,7 +56,7 @@ public abstract class HttpFetcher implements Serializable {
     }
 
     // Return results of HTTP GET request
-    public abstract FetchedDatum get(ScoredUrlDatum scoredUrl) throws FetchException;
+    public abstract FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException;
     
     public abstract void abort();
 }

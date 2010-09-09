@@ -5,7 +5,7 @@ import org.apache.log4j.Logger;
 import bixo.cascading.NullContext;
 import bixo.datum.UrlDatum;
 import bixo.hadoop.ImportCounters;
-import bixo.url.IUrlFilter;
+import bixo.urls.BaseUrlFilter;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Filter;
@@ -16,12 +16,12 @@ import cascading.operation.OperationCall;
 public class UrlFilter extends BaseOperation<NullContext> implements Filter<NullContext> {
 	private static final Logger LOGGER = Logger.getLogger(UrlFilter.class);
 	
-	private IUrlFilter _filter;
+	private BaseUrlFilter _filter;
 
 	private int _numFiltered;
 	private int _numAccepted;
 	
-	public UrlFilter(IUrlFilter filter) {
+	public UrlFilter(BaseUrlFilter filter) {
 		_filter = filter;
 	}
 

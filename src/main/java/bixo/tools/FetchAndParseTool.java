@@ -15,7 +15,7 @@ import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.http.SimpleHttpFetcher;
+import bixo.fetcher.SimpleHttpFetcher;
 import bixo.parser.SimpleParser;
 
 public class FetchAndParseTool {

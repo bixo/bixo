@@ -1,8 +1,10 @@
-package bixo.fetcher.util;
+package bixo.operations;
 
 import junit.framework.Assert;
 
 import org.junit.Test;
+
+import bixo.operations.FixedScoreGenerator;
 
 
 public class FixedScoreGeneratorTest {

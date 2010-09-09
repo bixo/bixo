@@ -23,7 +23,7 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 
-import bixo.cascading.Datum;
+import bixo.cascading.BaseDatum;
 import cascading.scheme.Scheme;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
@@ -43,7 +43,7 @@ public class IndexScheme extends Scheme {
     private static final String INDEX_SETTINGS_KEY = "bixo.indexer.indexSettings";
     private static final String STORE_SETTINGS_KEY = "bixo.indexer.storeSettings";
     
-    public static final String BOOST_FIELD = Datum.fieldName(IndexScheme.class, "boost");
+    public static final String BOOST_FIELD = BaseDatum.fieldName(IndexScheme.class, "boost");
     public static final Fields BOOST_FIELDS = new Fields(BOOST_FIELD);
 
     private Class<? extends Analyzer> _analyzer;

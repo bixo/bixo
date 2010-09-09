@@ -27,20 +27,20 @@ import org.apache.http.HttpStatus;
 import bixo.config.FetcherPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.exceptions.FetchException;
+import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
-import bixo.fetcher.http.HttpFetcher;
+import bixo.fetcher.BaseFetcher;
 import bixo.utils.ConfigUtils;
 
 @SuppressWarnings("serial")
-public class NullHttpFetcher extends HttpFetcher {
+public class NullHttpFetcher extends BaseFetcher {
 
     public NullHttpFetcher() {
         super(1, new FetcherPolicy(), ConfigUtils.BIXO_TEST_AGENT);
     }
     
     @Override
-    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws FetchException {
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
         throw new HttpFetchException(scoredUrl.getUrl(), "All requests throw 404 exception", HttpStatus.SC_NOT_FOUND, null);
     }
 

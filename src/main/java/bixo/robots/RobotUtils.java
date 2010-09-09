@@ -12,8 +12,8 @@ import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.RedirectFetchException;
-import bixo.fetcher.http.HttpFetcher;
-import bixo.fetcher.http.SimpleHttpFetcher;
+import bixo.fetcher.BaseFetcher;
+import bixo.fetcher.SimpleHttpFetcher;
 
 public class RobotUtils {
     private static final Logger LOGGER = Logger.getLogger(RobotUtils.class);
@@ -40,7 +40,7 @@ public class RobotUtils {
     // FUTURE KKr - add in time to do the download.
     private static final long MAX_FETCH_TIME = (ROBOTS_CONNECTION_TIMEOUT + ROBOTS_SOCKET_TIMEOUT) * ROBOTS_RETRY_COUNT;
 
-    public static HttpFetcher createFetcher(UserAgent userAgent, int maxThreads) {
+    public static BaseFetcher createFetcher(UserAgent userAgent, int maxThreads) {
         // TODO KKr - add static createRobotsFetcher method somewhere that
         // I can use here, and also in SimpleGroupingKeyGenerator
         FetcherPolicy policy = new FetcherPolicy();
@@ -66,7 +66,7 @@ public class RobotUtils {
      * @param robotsUrl URL to robots.txt file
      * @return Robot rules
      */
-    public static RobotRules getRobotRules(HttpFetcher fetcher, RobotRulesParser parser, URL robotsUrl) {
+    public static BaseRobotRules getRobotRules(BaseFetcher fetcher, BaseRobotsParser parser, URL robotsUrl) {
         
         try {
             String urlToFetch = robotsUrl.toExternalForm();

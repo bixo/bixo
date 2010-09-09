@@ -12,7 +12,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 
-import bixo.cascading.Splitter;
+import bixo.cascading.BaseSplitter;
 import bixo.cascading.NullContext;
 import bixo.cascading.SplitterAssembly;
 import bixo.cascading.TupleLogger;
@@ -24,18 +24,18 @@ import bixo.datum.ParsedDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.fetcher.http.SimpleHttpFetcher;
-import bixo.fetcher.util.FixedScoreGenerator;
-import bixo.fetcher.util.ScoreGenerator;
+import bixo.fetcher.SimpleHttpFetcher;
 import bixo.hadoop.HadoopUtils;
+import bixo.operations.BaseScoreGenerator;
+import bixo.operations.FixedScoreGenerator;
 import bixo.operations.NormalizeUrlFunction;
 import bixo.operations.UrlFilter;
 import bixo.parser.SimpleParser;
 import bixo.pipes.FetchPipe;
 import bixo.pipes.ParsePipe;
 import bixo.tools.CrawlDbDatum;
-import bixo.url.IUrlFilter;
-import bixo.url.SimpleUrlNormalizer;
+import bixo.urls.BaseUrlFilter;
+import bixo.urls.SimpleUrlNormalizer;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -64,7 +64,7 @@ public class SimpleCrawlWorkflow {
 
 
     @SuppressWarnings("serial")
-    private static class SplitFetchedUnfetchedCrawlDatums extends Splitter {
+    private static class SplitFetchedUnfetchedCrawlDatums extends BaseSplitter {
 
         @Override
         public String getLHSName() {
@@ -325,7 +325,7 @@ public class SimpleCrawlWorkflow {
 
     }
     
-    public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, IUrlFilter urlFilter, SimpleCrawlToolOptions options) throws Throwable {
+    public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, SimpleCrawlToolOptions options) throws Throwable {
         JobConf conf = HadoopUtils.getDefaultJobConf(SimpleCrawlConfig.CRAWL_STACKSIZE_KB);
         int numReducers = conf.getNumReduceTasks() * HadoopUtils.getTaskTrackers(conf);
         Properties props = HadoopUtils.getDefaultProperties(SimpleCrawlWorkflow.class, options.isDebugLogging(), conf);
@@ -378,7 +378,7 @@ public class SimpleCrawlWorkflow {
         validMimeTypes.add("text/html");
         fetcherPolicy.setValidMimeTypes(validMimeTypes);
 
-        ScoreGenerator scorer = new FixedScoreGenerator();
+        BaseScoreGenerator scorer = new FixedScoreGenerator();
 
         FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, numReducers);
         Pipe statusPipe = new Pipe("status pipe", fetchPipe.getStatusTailPipe());

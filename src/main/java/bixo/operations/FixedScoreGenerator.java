@@ -1,7 +1,7 @@
-package bixo.fetcher.util;
+package bixo.operations;
 
 @SuppressWarnings("serial")
-public class FixedScoreGenerator extends ScoreGenerator {
+public class FixedScoreGenerator extends BaseScoreGenerator {
 
     public static final double DEFAULT_SCORE = 1.0;
     
