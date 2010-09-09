@@ -11,7 +11,6 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
 import bixo.datum.UrlStatus;
-import bixo.tools.CrawlDbDatum;
 import bixo.utils.CrawlDirUtils;
 import cascading.scheme.SequenceFile;
 import cascading.scheme.TextLine;

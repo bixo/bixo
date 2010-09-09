@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  */
-package bixo.tools;
+package bixo.examples;
 
 import bixo.cascading.Datum;
 import bixo.datum.UrlStatus;

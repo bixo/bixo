@@ -33,7 +33,6 @@ import bixo.operations.UrlFilter;
 import bixo.parser.SimpleParser;
 import bixo.pipes.FetchPipe;
 import bixo.pipes.ParsePipe;
-import bixo.tools.CrawlDbDatum;
 import bixo.url.IUrlFilter;
 import bixo.url.SimpleUrlNormalizer;
 import cascading.flow.Flow;

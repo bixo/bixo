@@ -19,7 +19,6 @@ import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.hadoop.HadoopUtils;
-import bixo.tools.CrawlDbDatum;
 import bixo.url.IUrlFilter;
 import bixo.url.SimpleUrlNormalizer;
 import bixo.utils.CrawlDirUtils;
