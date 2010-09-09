@@ -15,7 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Launch an EC2 Hadoop master.
+# Launch or find an EC2 Hadoop master instance:
+# launch-hadooop-master <cluster> [<type> [<price>]]
 
 if [ -z $1 ]; then
   echo "Cluster name required!"
@@ -23,6 +24,8 @@ if [ -z $1 ]; then
 fi
 
 CLUSTER=$1
+INSTANCE_TYPE={$2:-$DEFAULT_INSTANCE_TYPE}
+SPOT_PRICE=$3
 
 # Import variables
 bin=`dirname "$0"`
@@ -86,14 +89,15 @@ AMI_IMAGE=`ec2-describe-images -a | grep $S3_BUCKET | grep $HADOOP_VERSION | gre
 # Start a master
 [ -f "$bin"/../etc/$USER_DATA_FILE ] && USER_DATA_FILE=../etc/$USER_DATA_FILE
 
-# 2010-08-31 CSc Need access to $INSTANCE_TYPE in hadoop-ec2-init-remote.sh.
-#
+# Resolve several variables within hadoop-ec2-init-remote.sh, to create a script
+# that will be installed on the master and executed there after it.
 echo "Starting master with AMI $AMI_IMAGE"
 sed -e "s|%AWS_ACCESS_KEY_ID%|$AWS_ACCESS_KEY_ID|" \
     -e "s|%AWS_SECRET_ACCESS_KEY%|$AWS_SECRET_ACCESS_KEY|" \
     -e "s|%INSTANCE_TYPE%|$INSTANCE_TYPE|" \
        "$bin"/$USER_DATA_FILE > .user_data_file.master
 
+# Launch the master instance
 INSTANCE=`ec2-run-instances $AMI_IMAGE -n 1 -g $CLUSTER_MASTER -k $KEY_NAME -f .user_data_file.master -t $INSTANCE_TYPE $KERNEL_ARG | grep INSTANCE | awk '{print $2}'`
 
 rm .user_data_file.master
@@ -110,6 +114,11 @@ while true; do
   sleep 1
 done
 
+# Save away cluster description in user's home directory where other scripts
+# can access it.
+# 
+# TODO CSc Copy these three files to S3 as well?
+#
 MASTER_EC2_HOST=`ec2-describe-instances $INSTANCE | grep INSTANCE | grep running | grep $MASTER_HOST | awk '{print $4}'`
 echo $MASTER_HOST > $MASTER_PRIVATE_IP_PATH
 echo $MASTER_EC2_HOST > $MASTER_IP_PATH

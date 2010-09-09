@@ -15,7 +15,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Launch an EC2 Hadoop slaves.
+# Launch a set of EC2 Hadoop slave instances to do the bidding of
+# a previously launched master instance:
+# launch-hadooop-slaves <cluster> <#slaves> [<type> [<price>]]
 
 if [ -z $1 ]; then
   echo "Cluster name required!"
@@ -28,8 +30,9 @@ if [ -z $2 ]; then
 fi
 
 CLUSTER=$1
-NO_INSTANCES=$2
-PRICE=$3
+NUM_SLAVES=$2
+INSTANCE_TYPE={$3:-$DEFAULT_INSTANCE_TYPE}
+SPOT_PRICE=$4
 
 # Import variables
 bin=`dirname "$0"`
@@ -41,34 +44,34 @@ if [ ! -f $MASTER_IP_PATH ]; then
   exit -1
 fi
 
-# Finding Hadoop image
+# Find the Hadoop image in the S3 bucket
 AMI_IMAGE=`ec2-describe-images -a | grep $S3_BUCKET | grep $HADOOP_VERSION | grep $ARCH${HADOOP_EC2_PROFILE:+-$HADOOP_EC2_PROFILE} | grep available | awk '{print $2}'`
+
+# Retrieve cluster description from user's home directory where launch-hadoop-master
+# has saved it.
 MASTER_HOST=`cat $MASTER_PRIVATE_IP_PATH`
 MASTER_ZONE=`cat $MASTER_ZONE_PATH`
 
 # Substituting master hostname
 [ -f "$bin"/../etc/$USER_DATA_FILE ] && USER_DATA_FILE=../etc/$USER_DATA_FILE
 
-# 2010-08-31 CSc Need access to $INSTANCE_TYPE in hadoop-ec2-init-remote.sh.
-#
+# Resolve several variables within hadoop-ec2-init-remote.sh, to create a script
+# that will be installed on the slaves and executed there after booting them.
 sed -e "s|%MASTER_HOST%|$MASTER_HOST|" \
     -e "s|%AWS_ACCESS_KEY_ID%|$AWS_ACCESS_KEY_ID|" \
     -e "s|%AWS_SECRET_ACCESS_KEY%|$AWS_SECRET_ACCESS_KEY|" \
     -e "s|%INSTANCE_TYPE%|$INSTANCE_TYPE|" \
        "$bin"/$USER_DATA_FILE > .user_data_file.slave
 
-# Start slaves
-#
-# 2010-08-30 CSc Add support for spot instances (also fixed bugs in echo statements).
-#
-if [ -z $PRICE ]; then
-    echo "Adding $NO_INSTANCES node(s) to cluster group $CLUSTER with AMI $AMI_IMAGE"
-    ec2-run-instances $AMI_IMAGE -n "$NO_INSTANCES" -g "$CLUSTER" -k "$KEY_NAME" -f .user_data_file.slave -t "$INSTANCE_TYPE" -z "$MASTER_ZONE" $KERNEL_ARG | grep INSTANCE | awk '{print $2}'
+# Launch all the slave instances
+if [ -z $SPOT_PRICE ]; then
+    echo "Adding $NUM_SLAVES node(s) to cluster group $CLUSTER with AMI $AMI_IMAGE"
+    ec2-run-instances $AMI_IMAGE -n "$NUM_SLAVES" -g "$CLUSTER" -k "$KEY_NAME" -f .user_data_file.slave -t "$INSTANCE_TYPE" -z "$MASTER_ZONE" $KERNEL_ARG | grep INSTANCE | awk '{print $2}'
 else
-    echo "Requesting $NO_INSTANCES (max price $PRICE) spot instance node(s) for cluster group $CLUSTER with AMI $AMI_IMAGE"
+    echo "Requesting $NUM_SLAVES (max price $SPOT_PRICE) spot instance node(s) for cluster group $CLUSTER with AMI $AMI_IMAGE"
     ec2-request-spot-instances $AMI_IMAGE \
-        --price "$PRICE" \
-        --instance-count "$NO_INSTANCES" \
+        --price "$SPOT_PRICE" \
+        --instance-count "$NUM_SLAVES" \
         --launch-group "$CLUSTER" \
         --group "$CLUSTER" \
         -k "$KEY_NAME" \

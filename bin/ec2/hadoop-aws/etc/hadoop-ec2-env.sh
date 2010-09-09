@@ -15,6 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO CSc It would be nice if each project didn't have to have its own copy of this file,
+# but we can live with this as long as they can share the upper-level scripts in
+# hadoop-aws/bin/ and the lower-level ones in $EC2_HOME=support/ec2-api-tools-1.3
+
 # The current cluster 'profile', default is null
 HADOOP_EC2_PROFILE=
 
@@ -43,33 +47,37 @@ PRIVATE_KEY_PATH=`echo "$EC2_KEYDIR"/"id_rsa-$KEY_NAME"`
 SSH_OPTS=`echo -i "$PRIVATE_KEY_PATH" -o StrictHostKeyChecking=no -o ServerAliveInterval=30`
 
 # The version of Hadoop to use.
-# HADOOP_VERSION=cloudera-hadoop-fedora-20090623
-HADOOP_VERSION=0.19.2
-#HADOOP_VERSION=0.19.1
+#
+# TODO CSc It would be nice to be able to make this project-specific,
+# but not really necessary.
+#
+HADOOP_VERSION=0.20.2
 
 # The Amazon S3 bucket where the Hadoop AMI is stored.
-# The default value is for public images, so can be left if you are using running a public image.
-# Change this value only if you are creating your own (private) AMI
+# The default value is for public images, so can be left if you are using running a
+# public image. Change this value only if you are creating your own (private) AMI
 # so you can store it in a bucket you own.
 #S3_BUCKET=cloudera-ec2-hadoop-images
 #S3_BUCKET=hadoop-images
-S3_BUCKET=bixolabs-ami
-#S3_BUCKET=yale-vldb
+S3_BUCKET=bixolabs-public-amis
 
 # Enable public access to JobTracker and TaskTracker web interfaces
 ENABLE_WEB_PORTS=true
 
-# The script to run on instance boot.
+# The script to run on an instance (master or slave) after it's booted in EC2.
 USER_DATA_FILE=hadoop-ec2-init-remote.sh
 
-# The EC2 instance type: m1.small, m1.large, m1.xlarge
-INSTANCE_TYPE="m1.small"
-#INSTANCE_TYPE="m1.large"
-#INSTANCE_TYPE="m1.xlarge"
-#INSTANCE_TYPE="c1.medium"
-#INSTANCE_TYPE="c1.xlarge"
+# The EC2 instance type to use if $INSTANCE_TYPE is not set
+# $INSTANCE_TYPE can be set via an optional parameter to
+# $HADOOP_AWS_HOME/bin/[hadoop-ec2|launch-hadoop-[cluster|master|slaves]] scripts
+DEFAULT_INSTANCE_TYPE="m1.small"
+#DEFAULT_INSTANCE_TYPE="m1.large"
+#DEFAULT_INSTANCE_TYPE="m1.xlarge"
+#DEFAULT_INSTANCE_TYPE="m1.medium"
+#DEFAULT_INSTANCE_TYPE="m1.xlarge"
 
-# The EC2 group master name. CLUSTER is set by calling scripts
+# The EC2 group master name. $CLUSTER is set via parameter passed to
+# $HADOOP_AWS_HOME/bin/[hadoop-ec2|launch-hadoop-[cluster|master|slaves]] scripts
 CLUSTER_MASTER=$CLUSTER-master
 
 # Cached values for a given cluster
@@ -78,7 +86,7 @@ MASTER_IP_PATH=~/.hadooop-$CLUSTER_MASTER
 MASTER_ZONE_PATH=~/.hadooop-zone-$CLUSTER_MASTER
 
 #
-# The following variables are only used when creating an AMI.
+# NOTE: The following variables are only used when *creating* a new AMI.
 #
 
 # The version number of the installed JDK.
@@ -88,11 +96,11 @@ JAVA_VERSION=1.6.0_10
 # The download URL for the Sun JDK. Visit http://java.sun.com/javase/downloads/index.jsp and get the URL for the "Linux self-extracting file".
 if [ "$INSTANCE_TYPE" == "m1.small" -o "$INSTANCE_TYPE" == "c1.medium" ]; then
   ARCH='i386'
-  BASE_AMI_IMAGE="ami-d424c6bd"  # ec2-public-images/fedora-8-i386-base-v1.08.manifest.xml
+  BASE_AMI_IMAGE="ami-48b54021"  # bixolabs-public-amis/bixolabs-hadoop-0.20.2-i386.manifest.xml
   JAVA_BINARY_URL=''
 else
   ARCH='x86_64'
-  BASE_AMI_IMAGE="ami-0111f768"  # yale-vldb/hadoop-0.19.1-x86_64.manifest.xml
+  BASE_AMI_IMAGE="ami-ba55bfd3"  # bixolabs-public-amis/bixolabs-hadoop-0.20.2-x86_64.manifest.xml
   JAVA_BINARY_URL=''
 fi
 
