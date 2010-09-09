@@ -26,18 +26,17 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
-public class SimpleCrawlToolOptions {
-
+public class JDBCCrawlToolOptions {
     public static final int NO_CRAWL_DURATION = 0;
     public static final int DEFAULT_MAX_THREADS = 10;
     private static final int DEFAULT_NUM_LOOPS = 1;
 
     private String _loggingAppender = null;
-    private boolean _debugLogging = false;
 
     private String _outputDir;
     private String _agentName;
     private String _domain;
+    private String _dbLocation = null;
     
     private int _crawlDuration = NO_CRAWL_DURATION;
     private int _maxThreads = DEFAULT_MAX_THREADS;
@@ -50,9 +49,7 @@ public class SimpleCrawlToolOptions {
     }
 
     @Option(name = "-d", usage = "debug logging", required = false)
-    public void setDebugLogging(boolean debugLogging) {
-        _debugLogging = debugLogging;
-    }
+    private boolean _debugLogging = false;
 
     @Option(name = "-logger", usage = "set logging appender (console, DRFA)", required = false)
     public void setLoggingAppender(String loggingAppender) {
@@ -82,6 +79,11 @@ public class SimpleCrawlToolOptions {
     @Option(name = "-duration", usage = "target crawl duration in minutes", required = false)
     public void setCrawlDuration(int crawlDuration) {
         _crawlDuration = crawlDuration;
+    }
+
+    @Option(name = "-persist", usage = "location where the db will be persisted", required = false)
+    public void setDbLocation(String dbLocation) {
+        _dbLocation = dbLocation;
     }
 
     public String getOutputDir() {
@@ -116,11 +118,13 @@ public class SimpleCrawlToolOptions {
         return _loggingAppender;
     }
 
+    public String getDbLocation() {
+        return _dbLocation;
+    }
+    
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
     }
-
-
 
 }

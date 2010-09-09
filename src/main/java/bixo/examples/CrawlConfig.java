@@ -22,43 +22,31 @@
  */
 package bixo.examples;
 
-import org.apache.commons.lang.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
-import org.kohsuke.args4j.Option;
+public class CrawlConfig {
 
-public class SimpleStatusToolOptions {
-    private boolean _debugLogging = false;
+    public static final String CRAWLDB_SUBDIR_NAME = "crawldb";
+    public static final String CONTENT_SUBDIR_NAME = "content";
+    public static final String STATUS_SUBDIR_NAME = "status";
+    public static final String PARSE_SUBDIR_NAME = "parse";
 
-    private String _crawlDir;
+
+
+    public static final String WEB_ADDRESS = "http://wiki.github.com/bixo/bixo/bixocrawler";
+    public static final String EMAIL_ADDRESS = "bixo-dev@yahoogroups.com";
+
+    // Fetcher policy constants
+    public static final int CRAWL_STACKSIZE_KB = 128;
+    public static final int MAX_CONTENT_SIZE = 128 * 1024;
+    public static final long DEFAULT_CRAWL_DELAY = 10 * 1000L; // in millisecond
+//    public static final int MAX_CONNECTIONS_PER_HOST = 30;
+//    public static final int MAX_REQUESTS_PER_CONNECTION = 10;
+//    public static final int MIN_RESPONSE_RATE = 1024;          // Min bytes/second
     
-    @Option(name = "-d", usage = "debug logging", required = false)
-    public void setDebugLogging(boolean debugLogging) {
-        this._debugLogging = debugLogging;
-    }
+    // Fetcher constants
+    public static final int MAX_RETRIES = 2;
+    public static final int SOCKET_TIMEOUT = 10 * 1000;
+    public static final int CONNECTION_TIMEOUT = 10 * 1000;
 
-    @Option(name = "-crawldir", usage = "output directory of preceeding crawl", required = true)
-    public void setCrawlDir(String crawlDir) {
-    	_crawlDir = crawlDir;
-    }
-
-    @Option(name = "-exportdb", usage = "only export the crawldb", required = false)
-    private boolean _exportDb = false;
-
-    public String getCrawlDir() {
-        return _crawlDir;
-    }
-
-    public boolean isDebugLogging() {
-        return _debugLogging;
-    }
-    
-    public boolean isExportDb() {
-        return _exportDb;
-    }
-    
-    @Override
-    public String toString() {
-        return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
-    }
-
+    // Misc
+    public static final long MILLISECONDS_PER_MINUTE = 60 * 1000L;
 }
