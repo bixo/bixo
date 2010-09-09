@@ -80,7 +80,7 @@ public class SimpleCrawlWorkflowLRTest implements Serializable {
 
         HadoopUtils.safeRemove(fs, baseDirPath);
         Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, baseDirPath, 0);
-        Path crawlDbPath = new Path(curLoopDirPath, SimpleCrawlConfig.CRAWLDB_SUBDIR_NAME);
+        Path crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
 
         SimpleCrawlTool.importOneDomain("localhost:8089", crawlDbPath, conf);
         curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, baseDirPath, 1);
@@ -110,7 +110,7 @@ public class SimpleCrawlWorkflowLRTest implements Serializable {
         }
 
         // Update the crawlDb path
-        crawlDbPath = new Path(curLoopDirPath, SimpleCrawlConfig.CRAWLDB_SUBDIR_NAME);
+        crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
 
         // Now we should have an output/1-<timestamp>/ directory, where the /urls dir has 11 entries with
         // one being previously crawled, and the other 10 being pending.
@@ -153,7 +153,7 @@ public class SimpleCrawlWorkflowLRTest implements Serializable {
             server.stop();
         }
         // Update crawldb path
-        crawlDbPath = new Path(curLoopDirPath, SimpleCrawlConfig.CRAWLDB_SUBDIR_NAME);
+        crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
 
         crawldbTap = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), crawlDbPath.toString());
         iter = crawldbTap.openForRead(conf);

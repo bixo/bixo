@@ -28,7 +28,7 @@ public class SimpleStatusTool {
     }
 
 	private static void processStatus(JobConf conf, Path curDirPath) throws IOException {
-        Path statusPath = new Path(curDirPath, SimpleCrawlConfig.STATUS_SUBDIR_NAME);
+        Path statusPath = new Path(curDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
         Tap statusTap = new Hfs(new TextLine(), statusPath.toUri().toString());
         
         TupleEntryIterator iter = statusTap.openForRead(conf);
@@ -60,7 +60,7 @@ public class SimpleStatusTool {
     private static void processCrawlDb(JobConf conf, Path curDirPath, boolean exportDb) throws IOException {
         TupleEntryIterator iter;
         int totalEntries;
-        Path crawlDbPath = new Path(curDirPath, SimpleCrawlConfig.CRAWLDB_SUBDIR_NAME);
+        Path crawlDbPath = new Path(curDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
         Tap crawldbTap = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), crawlDbPath.toUri().toString());
         iter = crawldbTap.openForRead(conf);
         totalEntries = 0;

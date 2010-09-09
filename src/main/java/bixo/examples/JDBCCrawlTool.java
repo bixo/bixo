@@ -1,5 +1,6 @@
 package bixo.examples;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
@@ -18,22 +19,19 @@ import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.hadoop.HadoopUtils;
+import bixo.examples.CrawlConfig;
+import bixo.examples.CrawlDbDatum;
 import bixo.url.IUrlFilter;
 import bixo.url.SimpleUrlNormalizer;
 import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
 import cascading.flow.PlannerException;
-import cascading.scheme.SequenceFile;
-import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 
-public class SimpleCrawlTool {
+public class JDBCCrawlTool {
+    private static final Logger LOGGER = Logger.getLogger(JDBCCrawlTool.class);
 
-    private static final Logger LOGGER = Logger.getLogger(SimpleCrawlTool.class);
-
-    
     // Filter URLs that fall outside of the target domain
     @SuppressWarnings("serial")
     private static class DomainUrlFilter implements IUrlFilter {
@@ -55,6 +53,7 @@ public class SimpleCrawlTool {
             // Skip URLs with protocols we don't want to try to process
             if (!_protocolInclusionPattern.matcher(urlAsString).find()) {
                 return true;
+                
             }
 
             if (_suffixExclusionPattern.matcher(urlAsString).find()) {
@@ -81,7 +80,7 @@ public class SimpleCrawlTool {
     private static void setLoopLoggerFile(String outputDirName, int loopNumber) {
         Logger rootLogger = Logger.getRootLogger();
 
-        String filename = String.format("%s/%d-SimpleCrawlTool.log", outputDirName, loopNumber);
+        String filename = String.format("%s/%d-JDBCCrawlTool.log", outputDirName, loopNumber);
         FileAppender appender = (FileAppender)rootLogger.getAppender("loop-logger");
         if (appender == null) {
             appender = new FileAppender();
@@ -98,26 +97,25 @@ public class SimpleCrawlTool {
         }
     }
     
-    public static void importOneDomain(String targetDomain, Path crawlDbPath, JobConf conf) throws Exception {
-        
-        try {
-            Tap urlSink = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), crawlDbPath.toUri().toString(), true);
-            TupleEntryCollector writer = urlSink.openForWrite(conf);
-            SimpleUrlNormalizer normalizer = new SimpleUrlNormalizer();
+    private static void importOneDomain(String targetDomain, Tap urlSink, JobConf conf) throws IOException {
 
+        TupleEntryCollector writer;
+        try {
+            writer = urlSink.openForWrite(conf);
+            SimpleUrlNormalizer normalizer = new SimpleUrlNormalizer();
             CrawlDbDatum datum = new CrawlDbDatum(normalizer.normalize("http://" + targetDomain), 0, 0, UrlStatus.UNFETCHED, 0);
 
             writer.add(datum.getTuple());
             writer.close();
-        } catch (Exception e) {
-            HadoopUtils.safeRemove(crawlDbPath.getFileSystem(conf), crawlDbPath);
+        } catch (IOException e) {
             throw e;
         }
+
     }
 
 
     public static void main(String[] args) {
-        SimpleCrawlToolOptions options = new SimpleCrawlToolOptions();
+        JDBCCrawlToolOptions options = new JDBCCrawlToolOptions();
         CmdLineParser parser = new CmdLineParser(options);
 
         try {
@@ -156,8 +154,20 @@ public class SimpleCrawlTool {
             Path outputPath = new Path(outputDirName);
             FileSystem fs = outputPath.getFileSystem(conf);
 
-            // See if the user isn't starting from scratch then set up the 
-            // output directory and create an initial urls subdir.
+            // See if the user is starting from scratch
+            if (options.getDbLocation() == null) {
+                if (fs.exists(outputPath)) {
+                    System.out.println("Previous cycle output dirs exist in " + outputDirName);
+                    System.out.println("Deleting the output dir before running");
+                    fs.delete(outputPath, true);
+                }
+            } else {
+                Path dbLocationPath = new Path(options.getDbLocation());
+                if (!fs.exists(dbLocationPath)) {
+                    fs.mkdirs(dbLocationPath);
+                }
+            }
+            
             if (!fs.exists(outputPath)) {
                 fs.mkdirs(outputPath);
 
@@ -168,45 +178,35 @@ public class SimpleCrawlTool {
                 String curLoopDirName = curLoopDir.toUri().toString();
                 setLoopLoggerFile(curLoopDirName, 0);
 
-                Path crawlDbPath = new Path(curLoopDir, CrawlConfig.CRAWLDB_SUBDIR_NAME);
-                importOneDomain(domain, crawlDbPath, conf);
-            }
+                importOneDomain(domain, JDBCTapFactory.createUrlsSinkJDBCTap(options.getDbLocation()), conf);
+            } 
             
-            Path latestDirPath = CrawlDirUtils.findLatestLoopDir(fs, outputPath);
+            Path inputPath = CrawlDirUtils.findLatestLoopDir(fs, outputPath);
 
-            if (latestDirPath == null) {
+            if (inputPath == null) {
                 System.err.println("No previous cycle output dirs exist in " + outputDirName);
                 printUsageAndExit(parser);
             }
 
-            Path crawlDbPath = new Path(latestDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
-
-            // Set up the start and end loop counts.
-            int startLoop = CrawlDirUtils.extractLoopNumber(latestDirPath);
+            int startLoop = CrawlDirUtils.extractLoopNumber(inputPath);
             int endLoop = startLoop + options.getNumLoops();
 
-            // Set up the UserAgent for the fetcher.
             UserAgent userAgent = new UserAgent(options.getAgentName(), CrawlConfig.EMAIL_ADDRESS, CrawlConfig.WEB_ADDRESS);
 
-            // You also get to customize the FetcherPolicy
             FetcherPolicy defaultPolicy = new FetcherPolicy();
             defaultPolicy.setCrawlDelay(CrawlConfig.DEFAULT_CRAWL_DELAY);
             defaultPolicy.setMaxContentSize(CrawlConfig.MAX_CONTENT_SIZE);
             defaultPolicy.setFetcherMode(FetcherMode.EFFICIENT);
             
-            // It is a good idea to set up a crawl duration when running long crawls as you may 
-            // end up in situations where the fetch slows down due to a 'long tail' and by 
-            // specifying a crawl duration you know exactly when the crawl will end.
             int crawlDurationInMinutes = options.getCrawlDuration();
-            boolean hasEndTime = crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION;
+            boolean hasEndTime = crawlDurationInMinutes != JDBCCrawlToolOptions.NO_CRAWL_DURATION;
             long targetEndTime = hasEndTime ? System.currentTimeMillis()
                             + (crawlDurationInMinutes * CrawlConfig.MILLISECONDS_PER_MINUTE) : FetcherPolicy.NO_CRAWL_END_TIME;
 
-            // By setting up a url filter we only deal with urls that we want to 
-            // instead of all the urls that we extract.
             IUrlFilter urlFilter = new DomainUrlFilter(domain);
 
             // OK, now we're ready to start looping, since we've got our current settings
+
             for (int curLoop = startLoop + 1; curLoop <= endLoop; curLoop++) {
 
                 // Adjust target end time, if appropriate.
@@ -217,18 +217,17 @@ public class SimpleCrawlTool {
                     defaultPolicy.setCrawlEndTime(now + perLoopTime);
                 }
 
-                Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, outputPath, curLoop);
-                String curLoopDirName = curLoopDirPath.toUri().toString();
+                Path curLoopDir = CrawlDirUtils.makeLoopDir(fs, outputPath, curLoop);
+                String curLoopDirName = curLoopDir.toUri().toString();
                 setLoopLoggerFile(curLoopDirName, curLoop);
 
-                Flow flow = SimpleCrawlWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, options); 
+                Flow flow = JDBCCrawlWorkflow.createFlow(inputPath, curLoopDir, userAgent, defaultPolicy, urlFilter, 
+                               options.getMaxThreads(), options.isDebugLogging(), options.getDbLocation());
                 flow.complete();
-                
-                // Writing out .dot files is a good way to verify your flows.
 //              flow.writeDOT("build/valid-flow.dot");
 
-                // Update crawlDbPath to point to the latest crawl db
-                crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+                // Input for the next round is our current output
+                inputPath = curLoopDir;
             }
         } catch (PlannerException e) {
             e.writeDOT("build/failed-flow.dot");
@@ -240,7 +239,7 @@ public class SimpleCrawlTool {
             t.printStackTrace(System.err);
             System.exit(-1);
         }
+        JDBCTapFactory.shutdown();
     }
-
 
 }

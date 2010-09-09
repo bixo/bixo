@@ -1,6 +1,6 @@
 package bixo.examples;
 
-public class SimpleCrawlConfig {
+public class CrawlConfig {
 
     public static final String CRAWLDB_SUBDIR_NAME = "crawldb";
     public static final String CONTENT_SUBDIR_NAME = "content";
