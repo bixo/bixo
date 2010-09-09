@@ -94,7 +94,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 
                 // Nothing ready in the queue, let's see about the iterator.
                 if (_values.hasNext()) {
-                    datum = new FetchSetDatum(_values.next());
+                    datum = new FetchSetDatum(new TupleEntry(_values.next()));
                     if (datum.isSkipped()) {
                         List<ScoredUrlDatum> urls = datum.getUrls();
                         trace("Skipping %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
