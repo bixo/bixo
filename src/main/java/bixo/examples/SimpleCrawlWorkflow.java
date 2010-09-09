@@ -75,7 +75,6 @@ public class SimpleCrawlWorkflow {
         // LHS represents unfetched tuples
         public boolean isLHS(TupleEntry tupleEntry) {
             CrawlDbDatum datum = new CrawlDbDatum(tupleEntry);
-            // TODO VMa - verify if these are all the states we need to worry about
             UrlStatus status = datum.getLastStatus();
             if (status == UrlStatus.UNFETCHED
                 || status == UrlStatus.SKIPPED_DEFERRED
@@ -215,6 +214,8 @@ public class SimpleCrawlWorkflow {
             urlDatum.setPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD, fetchTime);
             urlDatum.setPayloadValue(CrawlDbDatum.LAST_UPDATED_FIELD, statusTime);
             urlDatum.setPayloadValue(CrawlDbDatum.LAST_STATUS_FIELD, status.name());
+            // Don't change the crawl depth here - we do that only in the case of a 
+            // successful parse
             urlDatum.setPayloadValue(CrawlDbDatum.CRAWL_DEPTH, datum.getPayloadValue(CrawlDbDatum.CRAWL_DEPTH));
 
             funcCall.getOutputCollector().add(urlDatum.getTuple());
@@ -245,7 +246,7 @@ public class SimpleCrawlWorkflow {
             ParsedDatum datum = new ParsedDatum(funcCall.getArguments());
             Outlink outlinks[] = datum.getOutlinks();
             
-            // Bump the crawl depth metadata value
+            // Bump the crawl depth value only on a successful parse
             int crawlDepth = (Integer)datum.getPayloadValue(CrawlDbDatum.CRAWL_DEPTH);
             datum.setPayloadValue(CrawlDbDatum.CRAWL_DEPTH, crawlDepth + 1);
             
@@ -401,8 +402,8 @@ public class SimpleCrawlWorkflow {
 
 
         // Take status and output urls from it  
-        Pipe urlFromFetchPipe = new Pipe("url from fetch", statusPipe);
-        urlFromFetchPipe = new Each(urlFromFetchPipe, new CreateUrlDatumFromStatusFunction());
+        Pipe urlFromFetchPipe = new Pipe("url from fetch");
+        urlFromFetchPipe = new Each(statusPipe, new CreateUrlDatumFromStatusFunction());
 
         // Finally join the URLs we get from parsing content with the URLs we got
         // from the status ouput, and the urls we didn't process from the db so  that 
@@ -411,7 +412,8 @@ public class SimpleCrawlWorkflow {
         Pipe crawlDbPipe = new GroupBy("crawldb pipe", Pipe.pipes(urlFromFetchPipe, urlFromOutlinksPipe, finishedUrlsFromDbPipe), new Fields(UrlDatum.URL_FN));
         crawlDbPipe = new Every(crawlDbPipe, new LatestUrlDatumBuffer(), Fields.RESULTS);
         
-        crawlDbPipe = new Each(crawlDbPipe, new CreateCrawlDbDatumFromUrlFunction());
+        Pipe outputPipe = new Pipe ("output pipe");
+        outputPipe = new Each(crawlDbPipe, new CreateCrawlDbDatumFromUrlFunction());
         
         // Create the output map that connects each tail pipe to the appropriate sink.
         Map<String, Tap> sinkMap = new HashMap<String, Tap>();
@@ -421,7 +423,7 @@ public class SimpleCrawlWorkflow {
         sinkMap.put(crawlDbPipe.getName(), loopCrawldbSink);
 
         FlowConnector flowConnector = new FlowConnector(props);
-        Flow flow = flowConnector.connect(inputSource, sinkMap, statusPipe, contentPipe, parsePipe.getTailPipe(), crawlDbPipe);
+        Flow flow = flowConnector.connect(inputSource, sinkMap, statusPipe, contentPipe, parsePipe.getTailPipe(), outputPipe);
 
         return flow;
     }

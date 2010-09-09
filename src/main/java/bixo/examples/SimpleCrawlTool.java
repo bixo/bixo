@@ -99,7 +99,7 @@ public class SimpleCrawlTool {
         }
     }
     
-    private static void importOneDomain(String targetDomain, Path crawlDbPath, JobConf conf) throws Exception {
+    public static void importOneDomain(String targetDomain, Path crawlDbPath, JobConf conf) throws Exception {
         
         try {
             Tap urlSink = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), crawlDbPath.toUri().toString(), true);

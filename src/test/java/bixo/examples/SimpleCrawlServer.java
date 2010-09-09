@@ -1,15 +1,15 @@
-package bixo.tools.sitecrawler;
+package bixo.examples;
 
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
 import bixo.fetcher.simulation.SimulationWebServer;
 
-public class SiteCrawlerServer extends SimulationWebServer {
+public class SimpleCrawlServer extends SimulationWebServer {
 
     private HttpServer _server;
     
-    public SiteCrawlerServer(AbstractHttpHandler handler, int port) throws Exception {
+    public SimpleCrawlServer(AbstractHttpHandler handler, int port) throws Exception {
         _server = startServer(handler, port);
     }
     
