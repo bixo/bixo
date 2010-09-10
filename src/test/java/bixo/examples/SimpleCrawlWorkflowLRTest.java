@@ -1,6 +1,7 @@
 package bixo.examples;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -17,19 +18,18 @@ import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
-import cascading.flow.Flow;
-import cascading.scheme.SequenceFile;
-import cascading.tap.Hfs;
-import cascading.tuple.TupleEntryIterator;
-
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.hadoop.HadoopUtils;
-import bixo.url.IUrlFilter;
+import bixo.urls.BaseUrlFilter;
 import bixo.utils.CrawlDirUtils;
+import cascading.flow.Flow;
+import cascading.scheme.SequenceFile;
+import cascading.tap.Hfs;
+import cascading.tuple.TupleEntryIterator;
 
 
 @SuppressWarnings("serial")
@@ -88,7 +88,7 @@ public class SimpleCrawlWorkflowLRTest implements Serializable {
         FetcherPolicy defaultPolicy = new FetcherPolicy();
         defaultPolicy.setCrawlDelay(1);
         defaultPolicy.setFetcherMode(FetcherMode.COMPLETE);
-        IUrlFilter urlFilter = new IUrlFilter() {
+        BaseUrlFilter urlFilter = new BaseUrlFilter() {
 
             @Override
             public boolean isRemove(UrlDatum datum) {

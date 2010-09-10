@@ -29,11 +29,11 @@ import java.util.regex.Pattern;
 import org.apache.log4j.Logger;
 
 import bixo.datum.UrlDatum;
-import bixo.url.IUrlFilter;
+import bixo.urls.BaseUrlFilter;
 
 // Filter URLs that fall outside of the target domain
 @SuppressWarnings("serial")
-public class DomainUrlFilter implements IUrlFilter {
+public class DomainUrlFilter extends BaseUrlFilter {
     private static final Logger LOGGER = Logger.getLogger(DomainUrlFilter.class);
 
     private String _domain;

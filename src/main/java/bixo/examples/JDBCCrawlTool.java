@@ -37,8 +37,8 @@ import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.UrlStatus;
-import bixo.url.IUrlFilter;
-import bixo.url.SimpleUrlNormalizer;
+import bixo.urls.BaseUrlFilter;
+import bixo.urls.SimpleUrlNormalizer;
 import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
 import cascading.flow.PlannerException;
@@ -183,7 +183,7 @@ public class JDBCCrawlTool {
             long targetEndTime = hasEndTime ? 
                             System.currentTimeMillis() + (crawlDurationInMinutes * CrawlConfig.MILLISECONDS_PER_MINUTE) : FetcherPolicy.NO_CRAWL_END_TIME;
 
-            IUrlFilter urlFilter = new DomainUrlFilter(domain);
+            BaseUrlFilter urlFilter = new DomainUrlFilter(domain);
 
             // Now we're ready to start looping, since we've got our current settings
             for (int curLoop = startLoop + 1; curLoop <= endLoop; curLoop++) {

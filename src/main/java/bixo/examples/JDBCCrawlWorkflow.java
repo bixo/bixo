@@ -37,18 +37,18 @@ import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.http.HttpFetcher;
-import bixo.fetcher.http.SimpleHttpFetcher;
-import bixo.fetcher.util.FixedScoreGenerator;
-import bixo.fetcher.util.ScoreGenerator;
+import bixo.fetcher.BaseFetcher;
+import bixo.fetcher.SimpleHttpFetcher;
 import bixo.hadoop.HadoopUtils;
+import bixo.operations.BaseScoreGenerator;
+import bixo.operations.FixedScoreGenerator;
 import bixo.operations.NormalizeUrlFunction;
 import bixo.operations.UrlFilter;
 import bixo.parser.SimpleParser;
 import bixo.pipes.FetchPipe;
 import bixo.pipes.ParsePipe;
-import bixo.url.IUrlFilter;
-import bixo.url.SimpleUrlNormalizer;
+import bixo.urls.BaseUrlFilter;
+import bixo.urls.SimpleUrlNormalizer;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -119,7 +119,7 @@ public class JDBCCrawlWorkflow {
 
     
     public static Flow createFlow(Path inputDir, Path curLoopDirPath, UserAgent userAgent, FetcherPolicy fetcherPolicy,
-                    IUrlFilter urlFilter, int maxThreads, boolean debug, String persistentDbLocation) throws Throwable {
+                    BaseUrlFilter urlFilter, int maxThreads, boolean debug, String persistentDbLocation) throws Throwable {
         JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
         int numReducers = conf.getNumReduceTasks() * HadoopUtils.getTaskTrackers(conf);
         FileSystem fs = curLoopDirPath.getFileSystem(conf);
@@ -151,8 +151,8 @@ public class JDBCCrawlWorkflow {
         Tap urlSink = JDBCTapFactory.createUrlsSinkJDBCTap(persistentDbLocation);
 
         // Create the sub-assembly that runs the fetch job
-        HttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, fetcherPolicy, userAgent);
-        ScoreGenerator scorer = new FixedScoreGenerator();
+        BaseFetcher fetcher = new SimpleHttpFetcher(maxThreads, fetcherPolicy, userAgent);
+        BaseScoreGenerator scorer = new FixedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, numReducers);
 
         Pipe statusPipe = new Pipe("status pipe", fetchPipe.getStatusTailPipe());

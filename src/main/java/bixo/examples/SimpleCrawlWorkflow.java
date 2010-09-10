@@ -33,8 +33,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 
+import bixo.cascading.BaseSplitter;
 import bixo.cascading.NullContext;
-import bixo.cascading.Splitter;
 import bixo.cascading.SplitterAssembly;
 import bixo.cascading.TupleLogger;
 import bixo.config.FetcherPolicy;
@@ -52,8 +52,8 @@ import bixo.operations.UrlFilter;
 import bixo.parser.SimpleParser;
 import bixo.pipes.FetchPipe;
 import bixo.pipes.ParsePipe;
-import bixo.url.IUrlFilter;
-import bixo.url.SimpleUrlNormalizer;
+import bixo.urls.BaseUrlFilter;
+import bixo.urls.SimpleUrlNormalizer;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -137,7 +137,7 @@ public class SimpleCrawlWorkflow {
     }
 
     
-    public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, IUrlFilter urlFilter, SimpleCrawlToolOptions options) throws Throwable {
+    public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, SimpleCrawlToolOptions options) throws Throwable {
         JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
         int numReducers = conf.getNumReduceTasks() * HadoopUtils.getTaskTrackers(conf);
         Properties props = HadoopUtils.getDefaultProperties(SimpleCrawlWorkflow.class, options.isDebugLogging(), conf);
@@ -197,7 +197,7 @@ public class SimpleCrawlWorkflow {
         // The scorer is used by the FetchPipe to assign a score to every URL that passes the 
         // robots.txt processing. The score is used to sort URLs such that higher scoring URLs
         // are fetched first. If URLs are skipped for any reason(s) lower scoring URLs are skipped.
-        ScoreGenerator scorer = new FixedScoreGenerator();
+        BaseScoreGenerator scorer = new FixedScoreGenerator();
 
         FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, numReducers);
         Pipe statusPipe = new Pipe("status pipe", fetchPipe.getStatusTailPipe());
