@@ -6,9 +6,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import junit.framework.Assert;
@@ -23,7 +21,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
-import bixo.fetcher.http.IHttpHeaders;
+import bixo.fetcher.HttpHeaderNames;
 
 
 public class SimpleParserTest {
@@ -37,10 +35,10 @@ public class SimpleParserTest {
 		String url = "http://olddomain.com/base-url.html";
 		String contentType = "text/html; charset=utf-8";
 		HttpHeaders headers = new HttpHeaders();
-		headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
-		headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+		headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+		headers.add(HttpHeaderNames.CONTENT_ENCODING, "utf-8");
 		ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
-		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0);
 		
 		// Call parser.parse
 		SimpleParser parser = new SimpleParser();
@@ -69,11 +67,11 @@ public class SimpleParserTest {
 		
 		String contentType = "text/html; charset=utf-8";
 		HttpHeaders headers = new HttpHeaders();
-		headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
-		headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
-		headers.add(IHttpHeaders.CONTENT_LOCATION, location);
+		headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+		headers.add(HttpHeaderNames.CONTENT_ENCODING, "utf-8");
+		headers.add(HttpHeaderNames.CONTENT_LOCATION, location);
 		ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
-		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0);
 		
 		// Call parser.parse
 		SimpleParser parser = new SimpleParser();
@@ -102,11 +100,11 @@ public class SimpleParserTest {
 		
 		String contentType = "text/html; charset=utf-8";
 		HttpHeaders headers = new HttpHeaders();
-		headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
-		headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
-		headers.add(IHttpHeaders.CONTENT_LOCATION, location);
+		headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+		headers.add(HttpHeaderNames.CONTENT_ENCODING, "utf-8");
+		headers.add(HttpHeaderNames.CONTENT_LOCATION, location);
 		ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
-		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0);
 		
 		// Call parser.parse
 		SimpleParser parser = new SimpleParser();
@@ -133,10 +131,10 @@ public class SimpleParserTest {
 		
 		String contentType = "text/html; charset=utf-8";
 		HttpHeaders headers = new HttpHeaders();
-		headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
-		headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+		headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+		headers.add(HttpHeaderNames.CONTENT_ENCODING, "utf-8");
 		ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
-		FetchedDatum fetchedDatum = new FetchedDatum(url, redirectedUrl, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+		FetchedDatum fetchedDatum = new FetchedDatum(url, redirectedUrl, System.currentTimeMillis(), headers, content, contentType, 0);
 		
 		// Call parser.parse
 		SimpleParser parser = new SimpleParser();
@@ -162,10 +160,10 @@ public class SimpleParserTest {
         
         String contentType = "text/html; charset=utf-8";
         HttpHeaders headers = new HttpHeaders();
-        headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
-        headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+        headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+        headers.add(HttpHeaderNames.CONTENT_ENCODING, "utf-8");
         ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
-        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0);
         
         // Call parser.parse
         SimpleParser parser = new SimpleParser();
@@ -191,10 +189,10 @@ public class SimpleParserTest {
         
         String contentType = "text/html; charset=utf-8";
         HttpHeaders headers = new HttpHeaders();
-        headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
-        headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+        headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+        headers.add(HttpHeaderNames.CONTENT_ENCODING, "utf-8");
         ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
-        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0);
         
         // Call parser.parse
         ParserPolicy policy = new ParserPolicy( ParserPolicy.DEFAULT_MAX_PARSE_DURATION,
@@ -231,10 +229,10 @@ public class SimpleParserTest {
         
         String contentType = "text/html; charset=utf-8";
         HttpHeaders headers = new HttpHeaders();
-        headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
-        headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+        headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+        headers.add(HttpHeaderNames.CONTENT_ENCODING, "utf-8");
         ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
-        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0);
         
         // Call parser.parse
         Set<String> linkTags =
@@ -277,10 +275,10 @@ public class SimpleParserTest {
 		String url = "http://domain.com/simple-content.html";
 		String contentType = "text/html; charset=utf-8";
 		HttpHeaders headers = new HttpHeaders();
-		headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
-		headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+		headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+		headers.add(HttpHeaderNames.CONTENT_ENCODING, "utf-8");
 		ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
-		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0);
 		
 		// Call parser.parse
 		SimpleParser parser = new SimpleParser();
@@ -296,7 +294,7 @@ public class SimpleParserTest {
     public void testHtmlParsing() throws Exception {
         URL path = SimpleParserTest.class.getResource("/simple-page.html");
 
-        IParser parser = new SimpleParser();
+        BaseParser parser = new SimpleParser();
         FetchedDatum content = makeFetchedDatum(path);
         ParsedDatum parse = parser.parse(content);
         Assert.assertNotNull(parse.getParsedText());
@@ -325,10 +323,10 @@ public class SimpleParserTest {
         String url = "http://domain.com/simple-content.html";
         String contentType = "text/html; charset=utf-8";
         HttpHeaders headers = new HttpHeaders();
-        headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
-        headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+        headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+        headers.add(HttpHeaderNames.CONTENT_ENCODING, "utf-8");
         ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
-        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0);
         
         SimpleParser parser = new SimpleParser(new BaseContentExtractor() {
 
@@ -361,10 +359,10 @@ public class SimpleParserTest {
         String url = "http://domain.com/meta-nofollow.html";
         String contentType = "text/html; charset=utf-8";
         HttpHeaders headers = new HttpHeaders();
-        headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
-        headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
+        headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+        headers.add(HttpHeaderNames.CONTENT_ENCODING, "utf-8");
         ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
-        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0);
         
         ParserPolicy policy = new ParserPolicy(Integer.MAX_VALUE);
         SimpleParser parser = new SimpleParser(policy);
@@ -383,12 +381,12 @@ public class SimpleParserTest {
 		String url = "http://domain.com/simple-content.html";
 		String contentType = "text/html; charset=utf-8";
 		HttpHeaders headers = new HttpHeaders();
-		headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
-		headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
-		headers.add(IHttpHeaders.CONTENT_LANGUAGE, "en");
+		headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+		headers.add(HttpHeaderNames.CONTENT_ENCODING, "utf-8");
+		headers.add(HttpHeaderNames.CONTENT_LANGUAGE, "en");
 
 		ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
-		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0);
 		
 		// Call parser.parse
 		SimpleParser parser = new SimpleParser();
@@ -411,12 +409,12 @@ public class SimpleParserTest {
 		String url = "http://domain.com/lang-dc.html";
 		String contentType = "text/html; charset=utf-8";
 		HttpHeaders headers = new HttpHeaders();
-		headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
-		headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
-		headers.add(IHttpHeaders.CONTENT_LANGUAGE, "en");
+		headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+		headers.add(HttpHeaderNames.CONTENT_ENCODING, "utf-8");
+		headers.add(HttpHeaderNames.CONTENT_LANGUAGE, "en");
 
 		ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
-		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0);
 		
 		// Call parser.parse
 		SimpleParser parser = new SimpleParser();
@@ -440,12 +438,12 @@ public class SimpleParserTest {
 		String url = "http://domain.com/lang-dc.html";
 		String contentType = "text/html; charset=utf-8";
 		HttpHeaders headers = new HttpHeaders();
-		headers.add(IHttpHeaders.CONTENT_TYPE, contentType);
-		headers.add(IHttpHeaders.CONTENT_ENCODING, "utf-8");
-		headers.add(IHttpHeaders.CONTENT_LANGUAGE, "en");
+		headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+		headers.add(HttpHeaderNames.CONTENT_ENCODING, "utf-8");
+		headers.add(HttpHeaderNames.CONTENT_LANGUAGE, "en");
 
 		ContentBytes content = new ContentBytes(html.getBytes("utf-8"));
-		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0, makeMetadata());
+		FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0);
 		
 		// Call parser.parse
 		SimpleParser parser = new SimpleParser();
@@ -460,10 +458,6 @@ public class SimpleParserTest {
 
     }
 
-	@SuppressWarnings("unchecked")
-	private static Map<String, Comparable> makeMetadata() {
-		return new HashMap<String, Comparable>();
-	}
 	private static String readFromFile(String filePath) throws IOException {
 		InputStream is = SimpleParserTest.class.getResourceAsStream("/" + filePath);
 		
@@ -477,7 +471,7 @@ public class SimpleParserTest {
         in.readFully(bytes);
 
         String url = path.toExternalForm().toString();
-        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), new HttpHeaders(), new ContentBytes(bytes), "text/html", 0, null);
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), new HttpHeaders(), new ContentBytes(bytes), "text/html", 0);
         return fetchedDatum;
     }
     

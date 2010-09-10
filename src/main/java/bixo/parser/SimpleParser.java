@@ -16,17 +16,16 @@ import org.apache.tika.parser.AutoDetectParser;
 import bixo.config.ParserPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
-import bixo.fetcher.http.IHttpHeaders;
+import bixo.fetcher.HttpHeaderNames;
 import bixo.utils.CharsetUtils;
 import bixo.utils.HttpUtils;
 import bixo.utils.IoUtils;
 
 @SuppressWarnings("serial")
-public class SimpleParser implements IParser {
+public class SimpleParser extends BaseParser {
     private static final Logger LOGGER = Logger.getLogger(SimpleParser.class);
 
     private boolean _extractLanguage = true;
-    private ParserPolicy _parserPolicy;
     protected BaseContentExtractor _contentExtractor;
     protected BaseLinkExtractor _linkExtractor;
     private transient AutoDetectParser _parser;
@@ -40,9 +39,10 @@ public class SimpleParser implements IParser {
     }
     
     public SimpleParser(BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, ParserPolicy parserPolicy) {
+        super(parserPolicy);
+        
         _contentExtractor = contentExtractor;
         _linkExtractor = linkExtractor;
-        _parserPolicy = parserPolicy;
     }
     
     protected synchronized void init() {
@@ -51,8 +51,8 @@ public class SimpleParser implements IParser {
         }
         
         _contentExtractor.reset();
-        _linkExtractor.setLinkTags(_parserPolicy.getLinkTags());
-        _linkExtractor.setLinkAttributeTypes(_parserPolicy.getLinkAttributeTypes());
+        _linkExtractor.setLinkTags(getParserPolicy().getLinkTags());
+        _linkExtractor.setLinkAttributeTypes(getParserPolicy().getLinkAttributeTypes());
         _linkExtractor.reset();
     }
 
@@ -62,10 +62,6 @@ public class SimpleParser implements IParser {
     
     public boolean isExtractLanguage() {
         return _extractLanguage;
-    }
-    
-    public ParserPolicy getParserPolicy() {
-        return _parserPolicy;
     }
     
     @Override
@@ -109,7 +105,7 @@ public class SimpleParser implements IParser {
             // TODO KKr Should there be a BaseParser to take care of copying
             // these two fields?
             result.setHostAddress(fetchedDatum.getHostAddress());
-            result.setMetaDataMap(fetchedDatum.getMetaDataMap());
+            result.setPayload(fetchedDatum.getPayload());
             return result;
         } finally {
             IoUtils.safeClose(is);
@@ -121,7 +117,7 @@ public class SimpleParser implements IParser {
 		
 		// See if we have a content location from the HTTP headers that we should use as
 		// the base for resolving relative URLs in the document.
-		String clUrl = fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_LOCATION);
+		String clUrl = fetchedDatum.getHeaders().getFirst(HttpHeaderNames.CONTENT_LOCATION);
 		if (clUrl != null) {
 			// FUTURE KKr - should we try to keep processing if this step fails, but
 			// refuse to resolve relative links?
@@ -140,7 +136,7 @@ public class SimpleParser implements IParser {
      * @return charset in response headers, or null
      */
     protected String getCharset(FetchedDatum datum) {
-        String result = CharsetUtils.clean(datum.getHeaders().getFirst(IHttpHeaders.CONTENT_ENCODING));
+        String result = CharsetUtils.clean(datum.getHeaders().getFirst(HttpHeaderNames.CONTENT_ENCODING));
         if (result == null) {
             result = CharsetUtils.clean(HttpUtils.getCharsetFromContentType(datum.getContentType()));
         }
@@ -156,7 +152,7 @@ public class SimpleParser implements IParser {
      * @return first language in response headers, or null
      */
     protected String getLanguage(FetchedDatum fetchedDatum, String charset) {
-        return fetchedDatum.getHeaders().getFirst(IHttpHeaders.CONTENT_LANGUAGE);
+        return fetchedDatum.getHeaders().getFirst(HttpHeaderNames.CONTENT_LANGUAGE);
     }
 
 }

@@ -18,7 +18,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.TeeContentHandler;
 
-import bixo.datum.BaseDatum;
 import bixo.datum.ParsedDatum;
 
 class TikaCallable implements Callable<ParsedDatum> {
@@ -65,7 +64,7 @@ class TikaCallable implements Callable<ParsedDatum> {
             String lang = _extractLanguage ? detectLanguage(_metadata, profilingHandler) : "";
             return new ParsedDatum(_metadata.get(Metadata.RESOURCE_NAME_KEY), null, _contentExtractor.getContent(), lang,
                             _metadata.get(Metadata.TITLE),
-                            _linkExtractor.getLinks(), makeMap(_metadata), BaseDatum.EMPTY_METADATA_MAP);
+                            _linkExtractor.getLinks(), makeMap(_metadata));
         } catch (Exception e) {
             // Generic exception that's OK to re-throw
             throw e;

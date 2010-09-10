@@ -89,8 +89,8 @@ public class IndexSchemaTest {
         TupleEntryCollector write = lfs.openForWrite(new JobConf());
         for (int i = 0; i < 10; i++) {
             float boost = 0.5f + i/5.0f;
-            ParsedDatum resultTuple = new ParsedDatum("http://" + i, "127.0.0.1", "test " + i + " " + boost, "en", "title-" + i, new Outlink[0], null, null);
-            write.add(resultTuple.toTuple());
+            ParsedDatum resultTuple = new ParsedDatum("http://" + i, "127.0.0.1", "test " + i + " " + boost, "en", "title-" + i, new Outlink[0], null);
+            write.add(resultTuple.getTuple());
         }
         write.close();
 
@@ -101,7 +101,7 @@ public class IndexSchemaTest {
 
         // Rename the fields from what we've got, to what the Lucene field names should be.
         Pipe indexingPipe = new Pipe("parse importer");
-        Fields parseFields = new Fields(ParsedDatum.PARSED_TEXT_FIELD);
+        Fields parseFields = ParsedDatum.getParsedTextField();
         indexingPipe = new Each(indexingPipe, parseFields, new Identity(indexFields));
 
         // We want to inject in the boost field. So we'll pass everything to

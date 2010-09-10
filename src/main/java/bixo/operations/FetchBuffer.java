@@ -9,18 +9,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.BixoFlowProcess;
+import bixo.cascading.BaseDatum;
 import bixo.cascading.LoggingFlowReporter;
 import bixo.cascading.NullContext;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
-import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
-import bixo.datum.PreFetchedDatum;
+import bixo.datum.FetchSetDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
+import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.FetchTask;
 import bixo.fetcher.IFetchMgr;
-import bixo.fetcher.http.IHttpFetcher;
 import bixo.hadoop.FetchCounters;
 import bixo.utils.DiskQueue;
 import bixo.utils.ThreadedExecutor;
@@ -42,25 +42,25 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     private class QueuedValues {
         private static final int MAX_ELEMENTS_IN_MEMORY = 1000;
         
-        private DiskQueue<PreFetchedDatum> _queue;
+        private DiskQueue<FetchSetDatum> _queue;
         private Iterator<TupleEntry> _values;
         
         public QueuedValues(Iterator<TupleEntry> values) {
             _values = values;
-            _queue = new DiskQueue<PreFetchedDatum>(MAX_ELEMENTS_IN_MEMORY);
+            _queue = new DiskQueue<FetchSetDatum>(MAX_ELEMENTS_IN_MEMORY);
         }
         
         public boolean isEmpty() {
             return _queue.isEmpty() && !_values.hasNext();
         }
         
-        public PreFetchedDatum nextOrNull(FetcherMode mode) {
+        public FetchSetDatum nextOrNull(FetcherMode mode) {
             
             // Loop until we have something to return, or there's nothing that we can return.
             while (true) {
                 // First see if we've got something in the queue, and if so, then check if it's ready
                 // to be processed.
-                PreFetchedDatum datum = _queue.peek();
+                FetchSetDatum datum = _queue.peek();
                 if (datum != null) {
                     String ref = datum.getGroupingRef();
                     if (_activeRefs.get(ref) == null) {
@@ -94,7 +94,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 
                 // Nothing ready in the queue, let's see about the iterator.
                 if (_values.hasNext()) {
-                    datum = new PreFetchedDatum(_values.next().getTuple(), _metaDataFields);
+                    datum = new FetchSetDatum(new TupleEntry(_values.next()));
                     if (datum.isSkipped()) {
                         List<ScoredUrlDatum> urls = datum.getUrls();
                         trace("Skipping %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
@@ -148,9 +148,8 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
 
     private static final long HARD_TERMINATION_CLEANUP_DURATION = 10 * 1000L;
 
-    private IHttpFetcher _fetcher;
+    private BaseFetcher _fetcher;
     private FetcherMode _fetcherMode;
-    private final Fields _metaDataFields;
 
     private transient ThreadedExecutor _executor;
     private transient BixoFlowProcess _flowProcess;
@@ -162,14 +161,13 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     
     private transient AtomicBoolean _keepCollecting;
     
-    public FetchBuffer(IHttpFetcher fetcher, Fields metaDataFields) {
+    public FetchBuffer(BaseFetcher fetcher) {
         // We're going to output a tuple that contains a FetchedDatum, plus meta-data,
         // plus a result that could be a string, a status, or an exception
-        super(FetchedDatum.FIELDS.append(metaDataFields).append(FETCH_RESULT_FIELD));
+        super(FetchedDatum.FIELDS.append(FETCH_RESULT_FIELD));
 
         _fetcher = fetcher;
         _fetcherMode = _fetcher.getFetcherPolicy().getFetcherMode();
-        _metaDataFields = metaDataFields;
     }
 
     @Override
@@ -206,7 +204,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         // Each value is a PreFetchedDatum that contains a set of URLs to fetch in one request from
         // a single server, plus other values needed to set state properly.
         while (!Thread.interrupted() && !fetcherPolicy.isTerminateFetch() && !values.isEmpty()) {
-            PreFetchedDatum datum = values.nextOrNull(_fetcherMode);
+            FetchSetDatum datum = values.nextOrNull(_fetcherMode);
             
             try {
                 if (datum == null) {
@@ -257,7 +255,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             UrlStatus status = Thread.interrupted() ? UrlStatus.SKIPPED_INTERRUPTED : UrlStatus.SKIPPED_TIME_LIMIT;
             
             while (!values.isEmpty()) {
-                PreFetchedDatum datum = values.nextOrNull(FetcherMode.IMPOLITE);
+                FetchSetDatum datum = values.nextOrNull(FetcherMode.IMPOLITE);
                 List<ScoredUrlDatum> urls = datum.getUrls();
                 trace("Skipping %d urls from %s (e.g. %s) ", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
                 skipUrls(datum.getUrls(), status, null);
@@ -341,7 +339,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     private void skipUrls(List<ScoredUrlDatum> urls, UrlStatus status, String traceMsg) {
         for (ScoredUrlDatum datum : urls) {
             FetchedDatum result = new FetchedDatum(datum);
-            Tuple tuple = result.toTuple();
+            Tuple tuple = result.getTuple();
             tuple.add(status.toString());
             _collector.add(tuple);
         }

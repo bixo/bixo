@@ -37,7 +37,6 @@ import bixo.exceptions.AbortedFetchException;
 import bixo.exceptions.AbortedFetchReason;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.IOFetchException;
-import bixo.fetcher.http.IHttpFetcher;
 import bixo.hadoop.FetchCounters;
 import cascading.tuple.Tuple;
 
@@ -49,11 +48,11 @@ public class FetchTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(FetchTask.class);
     
     private IFetchMgr _fetchMgr;
-    private IHttpFetcher _httpFetcher;
+    private BaseFetcher _httpFetcher;
     private List<ScoredUrlDatum> _items;
     private String _ref;
     
-    public FetchTask(IFetchMgr fetchMgr, IHttpFetcher httpFetcher, List<ScoredUrlDatum> items, String ref) {
+    public FetchTask(IFetchMgr fetchMgr, BaseFetcher httpFetcher, List<ScoredUrlDatum> items, String ref) {
         _fetchMgr = fetchMgr;
         _httpFetcher = httpFetcher;
         _items = items;
@@ -104,7 +103,7 @@ public class FetchTask implements Runnable {
                 } finally {
                     process.decrement(FetchCounters.URLS_FETCHING, 1);
 
-                    Tuple tuple = result.toTuple();
+                    Tuple tuple = result.getTuple();
                     tuple.add(status);
                    _fetchMgr.collect(tuple);
                 }
@@ -117,7 +116,7 @@ public class FetchTask implements Runnable {
                 process.increment(FetchCounters.URLS_SKIPPED, 1);
                 AbortedFetchException status = new AbortedFetchException(item.getUrl(), AbortedFetchReason.INTERRUPTED);
                 
-                Tuple tuple = result.toTuple();
+                Tuple tuple = result.getTuple();
                 tuple.add(status);
                _fetchMgr.collect(tuple);
             }

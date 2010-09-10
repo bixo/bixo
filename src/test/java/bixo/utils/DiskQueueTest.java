@@ -1,9 +1,11 @@
 package bixo.utils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
 import org.junit.Test;
@@ -11,6 +13,7 @@ import org.junit.Test;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
+import bixo.datum.Payload;
 
 public class DiskQueueTest {
 
@@ -143,9 +146,7 @@ public class DiskQueueTest {
         }
     }
     
-    // TODO KKr - reenable when FetchedDatum is serializable
-    // @Test
-    @SuppressWarnings("unchecked")
+    @Test
     public void testGettingBackWhatWasWritten() {
         final int numElements = 100;
         DiskQueue<FetchedDatum> queue = new DiskQueue<FetchedDatum>(numElements/10);
@@ -160,9 +161,10 @@ public class DiskQueueTest {
             ContentBytes content = new ContentBytes(new String("content-" + i).getBytes());
             String contentType = "text/plain";
             int responseRate = (i + 1) * 1000;
-            Map<String, Comparable> metaData = new HashMap<String, Comparable>();
-            metaData.put("key", "value-" + i);
-            FetchedDatum datum = new FetchedDatum(baseUrl, redirectedUrl, fetchTime, headers, content, contentType, responseRate, metaData);
+            Payload payload = new Payload();
+            payload.put("key", "value-" + i);
+            FetchedDatum datum = new FetchedDatum(baseUrl, redirectedUrl, fetchTime, headers, content, contentType, responseRate);
+            datum.setPayload(payload);
             datums[i] = datum;
             assertTrue(queue.offer(datum));
         }

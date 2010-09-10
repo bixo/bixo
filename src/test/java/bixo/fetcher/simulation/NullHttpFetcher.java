@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997-2009 101tec Inc.
+ * Copyright (c) 2010 TransPac Software, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy 
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,30 +25,18 @@ package bixo.fetcher.simulation;
 import org.apache.http.HttpStatus;
 
 import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.BaseFetcher;
 import bixo.utils.ConfigUtils;
 
 @SuppressWarnings("serial")
-public class NullHttpFetcher implements IHttpFetcher {
+public class NullHttpFetcher extends BaseFetcher {
 
-    @Override
-    public int getMaxThreads() {
-        return 1;
-    }
-
-    @Override
-    public FetcherPolicy getFetcherPolicy() {
-        return new FetcherPolicy();
-    }
-
-    @Override
-    public FetchedDatum head(ScoredUrlDatum scoredUrl) throws BaseFetchException {
-        throw new HttpFetchException(scoredUrl.getUrl(), "All requests throw 404 exception", HttpStatus.SC_NOT_FOUND, null);
+    public NullHttpFetcher() {
+        super(1, new FetcherPolicy(), ConfigUtils.BIXO_TEST_AGENT);
     }
     
     @Override
@@ -56,16 +44,6 @@ public class NullHttpFetcher implements IHttpFetcher {
         throw new HttpFetchException(scoredUrl.getUrl(), "All requests throw 404 exception", HttpStatus.SC_NOT_FOUND, null);
     }
 
-    @Override
-    public byte[] get(String url) throws BaseFetchException {
-        return new byte[0];
-    }
-
-	@Override
-	public UserAgent getUserAgent() {
-		return ConfigUtils.BIXO_TEST_AGENT;
-	}
-	
     @Override
     public void abort() {
         // Do nothing

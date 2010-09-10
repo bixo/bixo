@@ -3,12 +3,14 @@ package bixo.datum;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.hadoop.io.BinaryComparable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 
-public class ContentBytes extends BinaryComparable implements WritableComparable<BinaryComparable> {
+@SuppressWarnings("serial")
+public class ContentBytes extends BinaryComparable implements WritableComparable<BinaryComparable>, Serializable {
 
     private static final int LENGTH_BYTES = 4;
     private static final byte[] EMPTY_BYTES = {};

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997-2009 101tec Inc.
+ * Copyright (c) 2010 TransPac Software, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy 
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,61 +22,54 @@
  */
 package bixo.datum;
 
+import java.io.Serializable;
 import java.security.InvalidParameterException;
-import java.util.Map;
 
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
-public class FetchedDatum extends BaseDatum {
-    private String _baseUrl;
-    private String _newBaseUrl;
-    private String _fetchedUrl;
-    private long _fetchTime;
-    private ContentBytes _content;
-    private String _contentType;
-    private int _responseRate;
-    private int _numRedirects;
-    private String _hostAddress;
-    private HttpHeaders _headers;
+public class FetchedDatum extends UrlDatum implements Serializable {
+    
+    private static final String NEW_BASE_URL_FN = fieldName(FetchedDatum.class, "newBaseUrl");
+    private static final String FETCHED_URL_FN = fieldName(FetchedDatum.class, "fetchedUrl");
+    private static final String FETCH_TIME_FN = fieldName(FetchedDatum.class, "fetchTime");
+    private static final String CONTENT_FN = fieldName(FetchedDatum.class, "content");
+    private static final String CONTENT_TYPE_FN = fieldName(FetchedDatum.class, "contentType");
+    private static final String RESPONSE_RATE_FN = fieldName(FetchedDatum.class, "responseRate");
+    private static final String NUM_REDIRECTS_FN = fieldName(FetchedDatum.class, "numRedirects");
+    private static final String HOST_ADDRESS_FN = fieldName(FetchedDatum.class, "hostAddress");
+    private static final String HTTP_HEADERS_FN = fieldName(FetchedDatum.class, "httpHeaders");
 
-    @SuppressWarnings("unchecked")
-    public FetchedDatum(String baseUrl, String redirectedUrl, long fetchTime, HttpHeaders headers,
-                    ContentBytes content, String contentType, int responseRate,
-                    Map<String, Comparable> metaData) {
-        super(metaData);
+    public static final Fields FIELDS = new Fields(NEW_BASE_URL_FN,
+                    FETCHED_URL_FN, FETCH_TIME_FN, CONTENT_FN, CONTENT_TYPE_FN,
+                    RESPONSE_RATE_FN, NUM_REDIRECTS_FN, HOST_ADDRESS_FN,
+                    HTTP_HEADERS_FN).append(getSuperFields(FetchedDatum.class));
 
-        if (baseUrl == null) {
-            throw new InvalidParameterException("baseUrl cannot be null");
-        }
+    public FetchedDatum(Tuple tuple) {
+        super(FIELDS, tuple);
+    }
+    
+    public FetchedDatum(TupleEntry tupleEntry) {
+        super(tupleEntry);
+        validateFields(tupleEntry, FIELDS);
+    }
+    
+    public FetchedDatum(String baseUrl, String fetchedUrl, long fetchTime, HttpHeaders headers,
+                    ContentBytes content, String contentType, int responseRate) {
+        super(FIELDS);
 
-        if (redirectedUrl == null) {
-            throw new InvalidParameterException("redirectedUrl cannot be null");
-        }
-
-        if (headers == null) {
-            throw new InvalidParameterException("headers cannot be null");
-        }
-
-        if (content == null) {
-            throw new InvalidParameterException("content cannot be null");
-        }
-
-        if (contentType == null) {
-            throw new InvalidParameterException("contentType cannot be null");
-        }
-
-        _baseUrl = baseUrl;
-        _newBaseUrl = null;
-        _fetchedUrl = redirectedUrl;
-        _fetchTime = fetchTime;
-        _content = content;
-        _contentType = contentType;
-        _responseRate = responseRate;
-        _numRedirects = 0;
-        _headers = headers;
+        setBaseUrl(baseUrl);
+        setFetchedUrl(fetchedUrl);
+        setFetchTime(fetchTime);
+        setContent(content);
+        setContentType(contentType);
+        setResponseRate(responseRate);
+        setHeaders(headers);
+        
+        setNumRedirects(0);
+        setNewBaseUrl(null);
     }
 
     /**
@@ -87,9 +80,8 @@ public class FetchedDatum extends BaseDatum {
      * @param metaData
      *            - metadata
      */
-    @SuppressWarnings("unchecked")
-    public FetchedDatum(String url, Map<String, Comparable> metaData) {
-        this(url, url, 0, new HttpHeaders(), new ContentBytes(), "", 0, metaData);
+    public FetchedDatum(String url) {
+        this(url, url, 0, new HttpHeaders(), new ContentBytes(), "", 0);
     }
 
     /**
@@ -99,11 +91,16 @@ public class FetchedDatum extends BaseDatum {
      *            Valid datum with url/metadata needed to create FetchedDatum
      */
     public FetchedDatum(final ScoredUrlDatum scoredDatum) {
-        this(scoredDatum.getUrl(), scoredDatum.getMetaDataMap());
+        this(scoredDatum.getUrl());
     }
 
+    /**
+     * Return the original URL - use the UrlDatum support for this.
+     * 
+     * @return original URL we tried to fetch
+     */
     public String getBaseUrl() {
-        return _baseUrl;
+        return getUrl();
     }
 
     public void setBaseUrl(String baseUrl) {
@@ -111,141 +108,124 @@ public class FetchedDatum extends BaseDatum {
             throw new InvalidParameterException("baseUrl cannot be null");
         }
 
-        _baseUrl = baseUrl;
+        setUrl(baseUrl);
     }
     
     public String getNewBaseUrl() {
-        return _newBaseUrl;
+        return _tupleEntry.getString(NEW_BASE_URL_FN);
     }
 
     public void setNewBaseUrl(String newBaseUrl) {
-        _newBaseUrl = newBaseUrl;
+        _tupleEntry.set(NEW_BASE_URL_FN, newBaseUrl);
     }
 
     public String getFetchedUrl() {
-        return _fetchedUrl;
+        return _tupleEntry.getString(FETCHED_URL_FN);
     }
 
+    public void setFetchedUrl(String fetchedUrl) {
+        if (fetchedUrl == null) {
+            throw new InvalidParameterException("fetchedUrl cannot be null");
+        }
+
+        _tupleEntry.set(FETCHED_URL_FN, fetchedUrl);
+    }
+    
     public long getFetchTime() {
-        return _fetchTime;
+        return _tupleEntry.getLong(FETCH_TIME_FN);
+    }
+    
+    public void setFetchTime(long fetchTime) {
+        _tupleEntry.set(FETCH_TIME_FN, fetchTime);
     }
 
     public byte[] getContentBytes() {
-        return _content.getBytes();
+        return ((ContentBytes)_tupleEntry.getObject(CONTENT_FN)).getBytes();
     }
     
     public int getContentLength() {
-        return _content.getLength();
+        return ((ContentBytes)_tupleEntry.getObject(CONTENT_FN)).getLength();
+    }
+    
+    public void setContent(ContentBytes content) {
+        if (content == null) {
+            throw new InvalidParameterException("content cannot be null");
+        }
+
+        _tupleEntry.set(CONTENT_FN, content);
     }
     
     public String getContentType() {
-        return _contentType;
+        return _tupleEntry.getString(CONTENT_TYPE_FN);
     }
 
+    public void setContentType(String contentType) {
+        if (contentType == null) {
+            throw new InvalidParameterException("contentType cannot be null");
+        }
+
+        _tupleEntry.set(CONTENT_TYPE_FN, contentType);
+    }
+    
     public int getResponseRate() {
-        return _responseRate;
+        return _tupleEntry.getInteger(RESPONSE_RATE_FN);
     }
 
+    public void setResponseRate(int responseRate) {
+        _tupleEntry.set(RESPONSE_RATE_FN, responseRate);
+    }
+    
     public int getNumRedirects() {
-        return _numRedirects;
+        return _tupleEntry.getInteger(NUM_REDIRECTS_FN);
     }
 
     public void setNumRedirects(int numRedirects) {
-        _numRedirects = numRedirects;
+        _tupleEntry.set(NUM_REDIRECTS_FN, numRedirects);
     }
 
     public String getHostAddress() {
-        return _hostAddress;
+        return _tupleEntry.getString(HOST_ADDRESS_FN);
     }
 
     public void setHostAddress(String hostAddress) {
-        _hostAddress = hostAddress;
+        _tupleEntry.set(HOST_ADDRESS_FN, hostAddress);
     }
 
     public HttpHeaders getHeaders() {
-        return _headers;
+        return new HttpHeaders((Tuple)_tupleEntry.get(HTTP_HEADERS_FN));
     }
 
+    public void setHeaders(HttpHeaders headers) {
+        if (headers == null) {
+            throw new InvalidParameterException("headers cannot be null");
+        }
+
+        _tupleEntry.set(HTTP_HEADERS_FN, headers.toTuple());
+    }
+    
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder("[base URL] ");
-        result.append(_baseUrl);
-        if (_newBaseUrl != null) {
+        result.append(getBaseUrl());
+        if (getNewBaseUrl() != null) {
             result.append(" | [perm redir URL] ");
-            result.append(_newBaseUrl);
+            result.append(getNewBaseUrl());
         }
 
-        if (!_baseUrl.equals(_fetchedUrl)) {
+        if (!getBaseUrl().equals(getFetchedUrl())) {
             result.append(" | [final URL] ");
-            result.append(_fetchedUrl);
+            result.append(getFetchedUrl());
         }
 
-        if (_headers != null) {
-            for (String headerName : _headers.getNames()) {
-                result.append(" | [header] ");
-                result.append(headerName);
-                result.append(": ");
-                result.append(_headers.getFirst(headerName));
-            }
+        HttpHeaders headers = getHeaders();
+        for (String headerName : headers.getNames()) {
+            result.append(" | [header] ");
+            result.append(headerName);
+            result.append(": ");
+            result.append(headers.getFirst(headerName));
         }
 
         return result.toString();
-    }
-
-    // ======================================================================================
-    // Below here is all Cascading-specific implementation
-    // ======================================================================================
-
-    // Cascading field names that correspond to the datum fields.
-    public static final String BASE_URL_FIELD = fieldName(FetchedDatum.class, "baseUrl");
-    public static final String NEW_BASE_URL_FIELD = fieldName(FetchedDatum.class, "newBaseUrl");
-    public static final String FETCHED_URL_FIELD = fieldName(FetchedDatum.class, "fetchedUrl");
-    public static final String FETCH_TIME_FIELD = fieldName(FetchedDatum.class, "fetchTime");
-    public static final String CONTENT_FIELD = fieldName(FetchedDatum.class, "content");
-    public static final String CONTENT_TYPE_FIELD = fieldName(FetchedDatum.class, "contentType");
-    public static final String RESPONSE_RATE_FIELD = fieldName(FetchedDatum.class, "responseRate");
-    public static final String NUM_REDIRECTS_FIELD = fieldName(FetchedDatum.class, "numRedirects");
-    public static final String HOST_ADDRESS_FIELD = fieldName(FetchedDatum.class, "hostAddress");
-    public static final String HTTP_HEADERS_FIELD = fieldName(FetchedDatum.class, "httpHeaders");
-
-    public static final Fields FIELDS = new Fields(BASE_URL_FIELD, NEW_BASE_URL_FIELD,
-                    FETCHED_URL_FIELD, FETCH_TIME_FIELD, CONTENT_FIELD, CONTENT_TYPE_FIELD,
-                    RESPONSE_RATE_FIELD, NUM_REDIRECTS_FIELD, HOST_ADDRESS_FIELD,
-                    HTTP_HEADERS_FIELD);
-
-    public FetchedDatum(Tuple tuple, Fields metaDataFields) {
-        super(tuple, metaDataFields);
-        initFromTupleEntry(new TupleEntry(getStandardFields(), tuple));
-    }
-
-    public FetchedDatum(TupleEntry entry, Fields metaDataFields) {
-        super(entry.getTuple(), metaDataFields);
-        initFromTupleEntry(entry);
-    }
-
-    private void initFromTupleEntry(TupleEntry entry) {
-        _baseUrl = entry.getString(BASE_URL_FIELD);
-        _newBaseUrl = entry.getString(NEW_BASE_URL_FIELD);
-        _fetchedUrl = entry.getString(FETCHED_URL_FIELD);
-        _fetchTime = entry.getLong(FETCH_TIME_FIELD);
-        _content = (ContentBytes) entry.get(CONTENT_FIELD);
-        _contentType = entry.getString(CONTENT_TYPE_FIELD);
-        _responseRate = entry.getInteger(RESPONSE_RATE_FIELD);
-        _numRedirects = entry.getInteger(NUM_REDIRECTS_FIELD);
-        _hostAddress = entry.getString(HOST_ADDRESS_FIELD);
-        _headers = new HttpHeaders((Tuple)entry.get(HTTP_HEADERS_FIELD));
-    }
-
-    @Override
-    public Fields getStandardFields() {
-        return FIELDS;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    protected Comparable[] getStandardValues() {
-        return new Comparable[] { _baseUrl, _newBaseUrl, _fetchedUrl, _fetchTime, _content,
-                        _contentType, _responseRate, _numRedirects, _hostAddress, _headers.toTuple() };
     }
 
 }

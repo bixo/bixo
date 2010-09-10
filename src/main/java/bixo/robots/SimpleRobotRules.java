@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * get a set of rules, and a crawl-delay.
  */
 
-public class SimpleRobotRules extends RobotRules {
+public class SimpleRobotRules extends BaseRobotRules {
 
     public enum RobotRulesMode {
         ALLOW_ALL,

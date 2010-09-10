@@ -2,30 +2,30 @@ package bixo.operations;
 
 import bixo.cascading.NullContext;
 import bixo.datum.UrlDatum;
-import bixo.urldb.IUrlNormalizer;
+import bixo.urls.BaseUrlNormalizer;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
-import cascading.tuple.Fields;
 
 @SuppressWarnings("serial")
 public class NormalizeUrlFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
-    private final IUrlNormalizer _normalizer;
-    private final Fields _metaDataFields;
+    private final BaseUrlNormalizer _normalizer;
 
-    public NormalizeUrlFunction(IUrlNormalizer normalizer, Fields metaDataFields) {
-        super(UrlDatum.FIELDS.append(metaDataFields));
+    public NormalizeUrlFunction(BaseUrlNormalizer normalizer) {
+        super(UrlDatum.FIELDS);
         
         _normalizer = normalizer;
-        _metaDataFields = metaDataFields;
     }
 
     @Override
     public void operate(FlowProcess process, FunctionCall<NullContext> funCall) {
-        UrlDatum datum = new UrlDatum(funCall.getArguments().getTuple(), _metaDataFields);
-        datum.setUrl(_normalizer.normalize(datum.getUrl()));
-        funCall.getOutputCollector().add(datum.toTuple());
+        UrlDatum datum = new UrlDatum(funCall.getArguments());
+        
+        // Create copy, since we're setting a field, and the tuple is going to be unmodifiable.
+        UrlDatum result = new UrlDatum(datum);
+        result.setUrl(_normalizer.normalize(datum.getUrl()));
+        funCall.getOutputCollector().add(result.getTuple());
     }
 }

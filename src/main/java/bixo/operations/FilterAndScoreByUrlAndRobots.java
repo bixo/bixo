@@ -11,10 +11,9 @@ import bixo.cascading.NullContext;
 import bixo.config.UserAgent;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.http.IHttpFetcher;
-import bixo.fetcher.util.ScoreGenerator;
+import bixo.fetcher.BaseFetcher;
 import bixo.hadoop.FetchCounters;
-import bixo.robots.RobotRulesParser;
+import bixo.robots.BaseRobotsParser;
 import bixo.robots.RobotUtils;
 import bixo.utils.DiskQueue;
 import bixo.utils.GroupingKey;
@@ -24,7 +23,6 @@ import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
 import cascading.operation.BufferCall;
-import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 
 /**
@@ -41,31 +39,27 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
 
     private static final int MAX_URLS_IN_MEMORY = 100;
 
-    private ScoreGenerator _scorer;
-    private Fields _metadataFields;
-	private IHttpFetcher _fetcher;
-	private RobotRulesParser _parser;
+    private BaseScoreGenerator _scorer;
+	private BaseFetcher _fetcher;
+	private BaseRobotsParser _parser;
 	
     private transient ThreadedExecutor _executor;
     private transient BixoFlowProcess _flowProcess;
 
-    public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, RobotRulesParser parser, ScoreGenerator scorer, Fields metadataFields) {
-        // We're going to output a ScoredUrlDatum (what FetcherBuffer expects).
-        super(ScoredUrlDatum.FIELDS.append(metadataFields));
+    public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, BaseRobotsParser parser, BaseScoreGenerator scorer) {
+        super(ScoredUrlDatum.FIELDS);
 
         _scorer = scorer;
         _parser = parser;
-        _metadataFields = metadataFields;
         _fetcher = RobotUtils.createFetcher(userAgent, maxThreads);
     }
 
-    public FilterAndScoreByUrlAndRobots(IHttpFetcher fetcher, RobotRulesParser parser, ScoreGenerator scorer, Fields metadataFields) {
+    public FilterAndScoreByUrlAndRobots(BaseFetcher fetcher, BaseRobotsParser parser, BaseScoreGenerator scorer) {
         // We're going to output a ScoredUrlDatum (what FetcherBuffer expects).
-        super(ScoredUrlDatum.FIELDS.append(metadataFields));
+        super(ScoredUrlDatum.FIELDS);
 
         _scorer = scorer;
         _parser = parser;
-        _metadataFields = metadataFields;
         _fetcher = fetcher;
     }
 
@@ -75,11 +69,9 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         
         // FUTURE KKr - use Cascading process vs creating our own, once it
         // supports logging in local mode, and a setStatus() call.
-        // FUTURE KKr - check for a serialized external reporter in the process,
-        // add it if it exists.
         _flowProcess = new BixoFlowProcess((HadoopFlowProcess)flowProcess);
         _flowProcess.addReporter(new LoggingFlowReporter());
-    };
+    }
     
     @Override
     public void cleanup(FlowProcess flowProcess, cascading.operation.OperationCall<NullContext> operationCall) {
@@ -95,7 +87,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         }
         
         _flowProcess.dumpCounters();
-    };
+    }
     
 	@Override
 	public void operate(FlowProcess flowProcess, BufferCall<NullContext> bufferCall) {
@@ -105,7 +97,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         DiskQueue<GroupedUrlDatum> urls = new DiskQueue<GroupedUrlDatum>(MAX_URLS_IN_MEMORY);
         Iterator<TupleEntry> values = bufferCall.getArgumentsIterator();
         while (values.hasNext()) {
-            urls.add(new GroupedUrlDatum(values.next().getTuple(), _metadataFields));
+            urls.add(new GroupedUrlDatum(new TupleEntry(values.next())));
         }
         
         try {

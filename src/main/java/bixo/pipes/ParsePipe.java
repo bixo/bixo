@@ -29,7 +29,7 @@ import bixo.cascading.LoggingFlowReporter;
 import bixo.cascading.NullContext;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
-import bixo.parser.IParser;
+import bixo.parser.BaseParser;
 import bixo.parser.ParserCounters;
 import bixo.parser.SimpleParser;
 import cascading.flow.FlowProcess;
@@ -42,7 +42,6 @@ import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
 import cascading.tuple.Fields;
-import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
 public class ParsePipe extends SubAssembly {
@@ -53,12 +52,10 @@ public class ParsePipe extends SubAssembly {
     private static class ParseFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
         private transient BixoFlowProcess _flowProcess;
-        private IParser _parser;
-        private Fields _metaDataFields;
+        private BaseParser _parser;
 
-        public ParseFunction(IParser parser, Fields inMetaDataFields, Fields outMetaDataFields) {
-            super(ParsedDatum.FIELDS.append(outMetaDataFields));
-            _metaDataFields = inMetaDataFields;
+        public ParseFunction(BaseParser parser) {
+            super(ParsedDatum.FIELDS);
             _parser = parser;
         }
 
@@ -78,13 +75,12 @@ public class ParsePipe extends SubAssembly {
         
         @Override
         public void operate(FlowProcess flowProcess, FunctionCall<NullContext> functionCall) {
-            TupleEntry arguments = functionCall.getArguments();
-            FetchedDatum fetchedDatum = new FetchedDatum(arguments.getTuple(), _metaDataFields);
+            FetchedDatum fetchedDatum = new FetchedDatum(functionCall.getArguments());
             
             try {
                 ParsedDatum parseResult = _parser.parse(fetchedDatum);
                 _flowProcess.increment(ParserCounters.DOCUMENTS_PARSED, 1);
-                functionCall.getOutputCollector().add(parseResult.toTuple());
+                functionCall.getOutputCollector().add(parseResult.getTuple());
             } catch (Exception e) {
                 LOGGER.warn("Error processing " + fetchedDatum.getBaseUrl(), e);
                 _flowProcess.increment(ParserCounters.DOCUMENTS_FAILED, 1);
@@ -94,21 +90,13 @@ public class ParsePipe extends SubAssembly {
     }
 
     public ParsePipe(Pipe fetcherPipe) {
-        this(fetcherPipe, new SimpleParser(), new Fields());
+        this(fetcherPipe, new SimpleParser());
     }
     
-    public ParsePipe(Pipe fetcherPipe, IParser parser) {
-        this(fetcherPipe, parser, new Fields());
-    }
-
-    public ParsePipe(Pipe fetcherPipe, IParser parser, Fields metaDataFields) {
-    	this(fetcherPipe, parser, metaDataFields, metaDataFields);
-    }
-    
-    public ParsePipe(Pipe fetcherPipe, IParser parser, Fields inMetaDataFields, Fields outMetaDataFields) {
+    public ParsePipe(Pipe fetcherPipe, BaseParser parser) {
         Pipe parsePipe = new Pipe(PARSE_PIPE_NAME, fetcherPipe);
 
-        ParseFunction parserFunction = new ParseFunction(parser, inMetaDataFields, outMetaDataFields);
+        ParseFunction parserFunction = new ParseFunction(parser);
         parsePipe = new Each(parsePipe, parserFunction, Fields.RESULTS);
         setTails(parsePipe);
     }

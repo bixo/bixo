@@ -17,5 +17,4 @@ public class FetchRequest {
         return _nextRequestTime;
     }
     
-    
 }

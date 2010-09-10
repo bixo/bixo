@@ -1,59 +1,61 @@
 package bixo.datum;
 
-import java.util.Arrays;
-import java.util.Map;
+import java.io.Serializable;
 
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
-public class GroupedUrlDatum extends UrlDatum {
+public class GroupedUrlDatum extends UrlDatum implements Serializable {
 
-    private String _groupKey;
-
-    @SuppressWarnings("unchecked")
-    public GroupedUrlDatum(String url, long lastFetched, long lastUpdated, UrlStatus lastStatus, String groupKey, Map<String, Comparable> metaData) {
-        super(url, lastFetched, lastUpdated, lastStatus, metaData);
-        _groupKey = groupKey;
+    private static final String GROUP_KEY_FN = fieldName(GroupedUrlDatum.class, "groupKey");
+    public static final Fields FIELDS = new Fields(GROUP_KEY_FN).append(getSuperFields(GroupedUrlDatum.class));
+    
+    public GroupedUrlDatum() {
+        super(FIELDS);
+    }
+    
+    public GroupedUrlDatum(Fields fields) {
+        super(fields);
+        validateFields(fields, FIELDS);
+    }
+    
+    public GroupedUrlDatum(Fields fields, Tuple tuple) {
+        super(fields, tuple);
+        validateFields(fields, FIELDS);
     }
 
+    public GroupedUrlDatum(TupleEntry tupleEntry) {
+        super(tupleEntry);
+        validateFields(tupleEntry, FIELDS);
+    }
+
+    public GroupedUrlDatum(String url, String groupKey) {
+        super(FIELDS, url);
+        setGroupKey(groupKey);
+    }
+
+    public GroupedUrlDatum(Fields fields, String url, String groupKey) {
+        super(fields, url);
+        setGroupKey(groupKey);
+    }
+
+    public GroupedUrlDatum(UrlDatum datum, String groupKey) {
+        super(FIELDS, datum.getUrl());
+        setGroupKey(groupKey);
+        setPayload(datum);
+    }
+    
     public String getGroupKey() {
-        return _groupKey;
+        return _tupleEntry.getString(GROUP_KEY_FN);
     }
 
     public void setGroupKey(String groupKey) {
-        _groupKey = groupKey;
+        _tupleEntry.set(GROUP_KEY_FN, groupKey);
     }
-
-    // ======================================================================================
-    // Below here is all Cascading-specific implementation
-    // ======================================================================================
     
-    // Cascading field names that correspond to the datum fields.
-    public static final String GROUP_KEY_FIELD = fieldName(GroupedUrlDatum.class, "groupKey");
-        
-    public static final Fields FIELDS = UrlDatum.FIELDS.append(new Fields(GROUP_KEY_FIELD));
-    
-    public GroupedUrlDatum(Tuple tuple, Fields metaDataFields) {
-        super(tuple, metaDataFields);
-        
-        TupleEntry entry = new TupleEntry(getStandardFields(), tuple);
-        _groupKey = entry.getString(GROUP_KEY_FIELD);
-    };
-    
-    @Override
-    public Fields getStandardFields() {
-        return FIELDS;
+    public static Fields getGroupingField() {
+        return new Fields(GROUP_KEY_FN);
     }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    protected Comparable[] getStandardValues() {
-        Comparable[] baseValues = super.getStandardValues();
-        Comparable[] copyOf = Arrays.copyOf(baseValues, baseValues.length + 1);
-        copyOf[baseValues.length] = _groupKey;
-        return copyOf;
-    }
-
 }

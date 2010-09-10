@@ -5,8 +5,8 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
-import bixo.urldb.IUrlNormalizer;
-import bixo.urldb.SimpleUrlNormalizer;
+import bixo.urls.BaseUrlNormalizer;
+import bixo.urls.SimpleUrlNormalizer;
 
 public class RunUrlNormalizer {
 
@@ -20,7 +20,7 @@ public class RunUrlNormalizer {
         try {
             List<String> lines = FileUtils.readLines(new File(args[0]));
 
-            IUrlNormalizer urlNormalizer = new SimpleUrlNormalizer();
+            BaseUrlNormalizer urlNormalizer = new SimpleUrlNormalizer();
             for (String url : lines) {
                 curUrl = url;
                 String normalized = urlNormalizer.normalize(curUrl);

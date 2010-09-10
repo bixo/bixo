@@ -12,11 +12,10 @@ import bixo.cascading.BixoFlowProcess;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.fetcher.http.IHttpFetcher;
-import bixo.fetcher.util.ScoreGenerator;
+import bixo.fetcher.BaseFetcher;
 import bixo.hadoop.FetchCounters;
-import bixo.robots.RobotRules;
-import bixo.robots.RobotRulesParser;
+import bixo.robots.BaseRobotRules;
+import bixo.robots.BaseRobotsParser;
 import bixo.robots.RobotUtils;
 import bixo.utils.DomainInfo;
 import bixo.utils.DomainNames;
@@ -27,15 +26,15 @@ public class ProcessRobotsTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ProcessRobotsTask.class);
 
     private String _protocolAndDomain;
-    private ScoreGenerator _scorer;
+    private BaseScoreGenerator _scorer;
     private Queue<GroupedUrlDatum> _urls;
-    private IHttpFetcher _fetcher;
+    private BaseFetcher _fetcher;
     private TupleEntryCollector _collector;
-    private RobotRulesParser _parser;
+    private BaseRobotsParser _parser;
     private BixoFlowProcess _flowProcess;
 
-    public ProcessRobotsTask(String protocolAndDomain, ScoreGenerator scorer, Queue<GroupedUrlDatum> urls, IHttpFetcher fetcher, 
-                    RobotRulesParser parser, TupleEntryCollector collector, BixoFlowProcess flowProcess) {
+    public ProcessRobotsTask(String protocolAndDomain, BaseScoreGenerator scorer, Queue<GroupedUrlDatum> urls, BaseFetcher fetcher, 
+                    BaseRobotsParser parser, TupleEntryCollector collector, BixoFlowProcess flowProcess) {
         _protocolAndDomain = protocolAndDomain;
         _scorer = scorer;
         _urls = urls;
@@ -57,10 +56,11 @@ public class ProcessRobotsTask implements Runnable {
     public static void emptyQueue(Queue<GroupedUrlDatum> urls, String groupingKey, TupleEntryCollector collector) {
         GroupedUrlDatum datum;
         while ((datum = urls.poll()) != null) {
-            ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), 0, 0, UrlStatus.UNFETCHED, groupingKey, 1.0, datum.getMetaDataMap());
+            ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), groupingKey, UrlStatus.UNFETCHED, 1.0);
+            scoreUrl.setPayload(datum.getPayload());
             // TODO KKr - move synchronization up, to avoid lots of contention with other threads?
             synchronized (collector) {
-                collector.add(scoreUrl.toTuple());
+                collector.add(scoreUrl.getTuple());
             }
         }
     }
@@ -96,7 +96,7 @@ public class ProcessRobotsTask implements Runnable {
                 
                 emptyQueue(_urls, GroupingKey.SKIPPED_GROUPING_KEY, _collector);
             } else {
-                RobotRules robotRules = RobotUtils.getRobotRules(_fetcher, _parser, new URL(domainInfo.getProtocolAndDomain() + "/robots.txt"));
+                BaseRobotRules robotRules = RobotUtils.getRobotRules(_fetcher, _parser, new URL(domainInfo.getProtocolAndDomain() + "/robots.txt"));
 
                 String validKey = null;
                 boolean isDeferred = robotRules.isDeferVisits();
@@ -117,21 +117,22 @@ public class ProcessRobotsTask implements Runnable {
 
                     if (isDeferred) {
                         counter = FetchCounters.URLS_DEFERRED;
-                        scoreUrl = new ScoredUrlDatum(url, 0, 0, UrlStatus.SKIPPED_DEFERRED, GroupingKey.DEFERRED_GROUPING_KEY, 0.0, datum.getMetaDataMap());
+                        scoreUrl = new ScoredUrlDatum(url, GroupingKey.DEFERRED_GROUPING_KEY, UrlStatus.SKIPPED_DEFERRED, 0.0);
                     } else if (!robotRules.isAllowed(url)) {
                         counter = FetchCounters.URLS_BLOCKED;
-                        scoreUrl = new ScoredUrlDatum(url, 0, 0, UrlStatus.SKIPPED_BLOCKED, GroupingKey.BLOCKED_GROUPING_KEY, 0.0, datum.getMetaDataMap());
+                        scoreUrl = new ScoredUrlDatum(url, GroupingKey.BLOCKED_GROUPING_KEY, UrlStatus.SKIPPED_BLOCKED, 0.0);
                     } else {
                         counter = FetchCounters.URLS_ACCEPTED;
                         double score = _scorer.generateScore(domain, pld, datum);
-                        scoreUrl = new ScoredUrlDatum(url, 0, 0, UrlStatus.UNFETCHED, validKey, score, datum.getMetaDataMap());
+                        scoreUrl = new ScoredUrlDatum(url, validKey, UrlStatus.UNFETCHED, score);
                     }
                     
+                    scoreUrl.setPayload(datum.getPayload());
                     _flowProcess.increment(counter, 1);
 
                     // collectors aren't thread safe
                     synchronized (_collector) {
-                        _collector.add(scoreUrl.toTuple());
+                        _collector.add(scoreUrl.getTuple());
                     }
                 }
             }

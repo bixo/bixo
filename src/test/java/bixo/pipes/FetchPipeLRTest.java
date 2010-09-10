@@ -1,8 +1,7 @@
 package bixo.pipes;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.OutputStream;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.http.HttpStatus;
@@ -11,12 +10,12 @@ import org.junit.Test;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
+import org.mortbay.http.handler.AbstractHttpHandler;
 
 import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
-import bixo.datum.BaseDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
+import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
@@ -27,15 +26,15 @@ import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.UrlFetchException;
+import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.RandomResponseHandler;
-import bixo.fetcher.http.IHttpFetcher;
-import bixo.fetcher.http.SimpleHttpFetcher;
+import bixo.fetcher.SimpleHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.TestWebServer;
-import bixo.fetcher.util.FixedScoreGenerator;
-import bixo.fetcher.util.IGroupingKeyGenerator;
-import bixo.fetcher.util.ScoreGenerator;
-import bixo.robots.RobotRulesParser;
+import bixo.operations.BaseGroupGenerator;
+import bixo.operations.BaseScoreGenerator;
+import bixo.operations.FixedScoreGenerator;
+import bixo.robots.BaseRobotsParser;
 import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
@@ -47,7 +46,6 @@ import cascading.scheme.SequenceFile;
 import cascading.tap.Hfs;
 import cascading.tap.Lfs;
 import cascading.tap.Tap;
-import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
@@ -64,10 +62,10 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Lfs in = makeInputData(1, 1);
 
         Pipe pipe = new Pipe("urlSource");
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
-        ScoreGenerator scorer = new FixedScoreGenerator();
-        RobotRulesParser parser = new SimpleRobotRulesParser();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        BaseFetcher fetcher = new FakeHttpFetcher(false, 1);
+        BaseScoreGenerator scorer = new FixedScoreGenerator();
+        BaseRobotsParser parser = new SimpleRobotRulesParser();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
         
         String outputPath = DEFAULT_OUTPUT_PATH;
         Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath, true);
@@ -80,14 +78,13 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Lfs validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath);
         TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
         Assert.assertTrue(tupleEntryIterator.hasNext());
-        StatusDatum sd = new StatusDatum(tupleEntryIterator.next(), new Fields());
+        StatusDatum sd = new StatusDatum(tupleEntryIterator.next());
         Assert.assertEquals(UrlStatus.FETCHED, sd.getStatus());
         HttpHeaders headers = sd.getHeaders();
         Assert.assertNotNull(headers);
         Assert.assertTrue(headers.getNames().size() > 0);
     }
     
-    @SuppressWarnings("unchecked")
     @Test
     public void testFetchPipe() throws Exception {
         // System.setProperty("bixo.root.level", "TRACE");
@@ -95,19 +92,16 @@ public class FetchPipeLRTest extends CascadingTestCase {
         final int numPages = 10;
         final int port = 8089;
         
-        Fields metaDataFields = new Fields("meta-test");
-        Map<String, Comparable> metadata = new HashMap<String, Comparable>();
-        metadata.put("meta-test", "value");
-        Lfs in = makeInputData("localhost:" + port, numPages, metadata);
+        Lfs in = makeInputData("localhost:" + port, numPages, new Payload());
 
         Pipe pipe = new Pipe("urlSource");
-        ScoreGenerator scorer = new FixedScoreGenerator();
-        IHttpFetcher fetcher = new SimpleHttpFetcher(ConfigUtils.BIXO_TEST_AGENT);
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1, metaDataFields);
+        BaseScoreGenerator scorer = new FixedScoreGenerator();
+        BaseFetcher fetcher = new SimpleHttpFetcher(ConfigUtils.BIXO_TEST_AGENT);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
         
         String outputPath = "build/test/FetchPipeTest/testFetchPipe";
-        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS.append(metaDataFields)), outputPath + "/status", true);
-        Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS.append(metaDataFields)), outputPath + "/content", true);
+        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
+        Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
 
         // Finally we can run it.
         FlowConnector flowConnector = new FlowConnector();
@@ -122,38 +116,50 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
         
         // Verify numPages fetched and numPages status entries were saved.
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS.append(metaDataFields)), outputPath + "/content");
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
         TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
         
         int totalEntries = 0;
+        boolean[] fetchedPages = new boolean[numPages];
         while (tupleEntryIterator.hasNext()) {
             TupleEntry entry = tupleEntryIterator.next();
             totalEntries += 1;
 
             // Verify we can convert properly
-            FetchedDatum datum = new FetchedDatum(entry, metaDataFields);
-            Assert.assertNotNull(datum.getBaseUrl());
-            Assert.assertNotNull(datum.getFetchedUrl());
+            FetchedDatum datum = new FetchedDatum(entry);
+            String url = datum.getBaseUrl();
+            Assert.assertNotNull(url);
             
-            // Verify metadata
-            String metaValue = entry.getString("meta-test");
-            Assert.assertNotNull(metaValue);
-            Assert.assertEquals("value", metaValue);
+            // Verify that we got one of each page
+            int idOffset = url.indexOf(".html") - 1;
+            int pageId = Integer.parseInt(url.substring(idOffset, idOffset + 1));
+            Assert.assertFalse(fetchedPages[pageId]);
+            fetchedPages[pageId] = true;
         }
-                
+        
         Assert.assertEquals(numPages, totalEntries);
         tupleEntryIterator.close();
         
-        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS.append(metaDataFields)), outputPath + "/status");
+        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
         tupleEntryIterator = validate.openForRead(new JobConf());
         totalEntries = 0;
+        fetchedPages = new boolean[numPages];
         while (tupleEntryIterator.hasNext()) {
             TupleEntry entry = tupleEntryIterator.next();
             totalEntries += 1;
 
             // Verify we can convert properly
-            StatusDatum sd = new StatusDatum(entry, metaDataFields);
+            StatusDatum sd = new StatusDatum(entry);
             Assert.assertEquals(UrlStatus.FETCHED, sd.getStatus());
+            
+            
+            // Verify that we got one of each page
+            String url = sd.getUrl();
+            Assert.assertNotNull(url);
+            int idOffset = url.indexOf(".html") - 1;
+            int pageId = Integer.parseInt(url.substring(idOffset, idOffset + 1));
+            Assert.assertFalse(fetchedPages[pageId]);
+            fetchedPages[pageId] = true;
         }
         
         Assert.assertEquals(numPages, totalEntries);
@@ -169,15 +175,15 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Lfs in = makeInputData("localhost:" + port, numPages, null);
 
         Pipe pipe = new Pipe("urlSource");
-        ScoreGenerator scorer = new FixedScoreGenerator();
+        BaseScoreGenerator scorer = new FixedScoreGenerator();
         
         FetcherPolicy policy = new FetcherPolicy();
         policy.setCrawlEndTime(System.currentTimeMillis() + 20000);
         // Assume we should only need 10ms for fetching all 10 URLs.
         policy.setRequestTimeout(10);
         
-        IHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
         
         String outputPath = "build/test/FetchPipeTest/testFetchTerminationPipe";
         Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
@@ -206,37 +212,37 @@ public class FetchPipeLRTest extends CascadingTestCase {
             totalEntries += 1;
 
             // Verify we can convert properly
-            StatusDatum sd = new StatusDatum(entry, BaseDatum.EMPTY_METADATA_FIELDS);
+            StatusDatum sd = new StatusDatum(entry);
             Assert.assertEquals(UrlStatus.SKIPPED_INTERRUPTED, sd.getStatus());
         }
         
+
         // TODO CSc - re-enable this test, when termination really works.
         // Assert.assertEquals(numPages, totalEntries);
     }
     
-    @SuppressWarnings("unchecked")
     @Test
-    public void testMetaData() throws Exception {
-        Map<String, Comparable> metaData = new HashMap<String, Comparable>();
-        metaData.put("key", "value");
-        Lfs in = makeInputData(1, 1, metaData);
+    public void testPayloads() throws Exception {
+        Payload payload = new Payload();
+        payload.put("key", "value");
+        Lfs in = makeInputData(1, 1, payload);
 
         Pipe pipe = new Pipe("urlSource");
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
-        ScoreGenerator scorer = new FixedScoreGenerator();
-        RobotRulesParser parser = new SimpleRobotRulesParser();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1, new Fields("key"));
+        BaseFetcher fetcher = new FakeHttpFetcher(false, 10);
+        BaseScoreGenerator scorer = new FixedScoreGenerator();
+        BaseRobotsParser parser = new SimpleRobotRulesParser();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
         
         String outputPath = "build/test/FetchPipeTest/dual";
-        Fields contentFields = FetchedDatum.FIELDS.append(new Fields("key"));
-        Tap content = new Hfs(new SequenceFile(contentFields), outputPath + "/content", true);
+        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
+        Tap content = new Hfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
 
         // Finally we can run it.
         FlowConnector flowConnector = new FlowConnector();
-        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(null, content), fetchPipe);
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
         
-        Lfs validate = new Lfs(new SequenceFile(contentFields), outputPath + "/content");
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
         TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
         
         int totalEntries = 0;
@@ -244,10 +250,28 @@ public class FetchPipeLRTest extends CascadingTestCase {
             TupleEntry entry = tupleEntryIterator.next();
             totalEntries += 1;
             
-            Assert.assertEquals(entry.size(), contentFields.size());
-            String metaValue = entry.getString("key");
-            Assert.assertNotNull(metaValue);
-            Assert.assertEquals("value", metaValue);
+            FetchedDatum datum = new FetchedDatum(entry);
+            String payloadValue = (String)datum.getPayloadValue("key");
+            Assert.assertNotNull(payloadValue);
+            Assert.assertEquals("value", payloadValue);
+        }
+        
+        Assert.assertEquals(1, totalEntries);
+        tupleEntryIterator.close();
+        
+        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
+        tupleEntryIterator = validate.openForRead(new JobConf());
+        totalEntries = 0;
+        while (tupleEntryIterator.hasNext()) {
+            TupleEntry entry = tupleEntryIterator.next();
+            totalEntries += 1;
+
+            // Verify we can convert properly
+            StatusDatum sd = new StatusDatum(entry);
+            Assert.assertEquals(UrlStatus.FETCHED, sd.getStatus());
+            String payloadValue = (String)sd.getPayloadValue("key");
+            Assert.assertNotNull(payloadValue);
+            Assert.assertEquals("value", payloadValue);
         }
         
         Assert.assertEquals(1, totalEntries);
@@ -258,10 +282,10 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Lfs in = makeInputData(1, 1);
 
         Pipe pipe = new Pipe("urlSource");
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
-        ScoreGenerator scorer = new SkippedScoreGenerator();
-        RobotRulesParser parser = new SimpleRobotRulesParser();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        BaseFetcher fetcher = new FakeHttpFetcher(false, 1);
+        BaseScoreGenerator scorer = new SkippedScoreGenerator();
+        BaseRobotsParser parser = new SimpleRobotRulesParser();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
         
         String outputPath = DEFAULT_OUTPUT_PATH;
         Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
@@ -287,10 +311,10 @@ public class FetchPipeLRTest extends CascadingTestCase {
         // This will force all URLs to get skipped because of the crawl end time limit.
         FetcherPolicy defaultPolicy = new FetcherPolicy();
         defaultPolicy.setCrawlEndTime(0);
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
-        ScoreGenerator scorer = new FixedScoreGenerator();
-        RobotRulesParser parser = new SimpleRobotRulesParser();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        BaseFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
+        BaseScoreGenerator scorer = new FixedScoreGenerator();
+        BaseRobotsParser parser = new SimpleRobotRulesParser();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
 
         // Create the output
         String outputPath = DEFAULT_OUTPUT_PATH;
@@ -308,12 +332,11 @@ public class FetchPipeLRTest extends CascadingTestCase {
         validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
         tupleEntryIterator = validate.openForRead(new JobConf());
         
-        Fields metaDataFields = new Fields();
         int numEntries = 0;
         while (tupleEntryIterator.hasNext()) {
             numEntries += 1;
             TupleEntry entry = tupleEntryIterator.next();
-            StatusDatum status = new StatusDatum(entry, metaDataFields);
+            StatusDatum status = new StatusDatum(entry);
             Assert.assertEquals(UrlStatus.SKIPPED_TIME_LIMIT, status.getStatus());
         }
         
@@ -333,10 +356,10 @@ public class FetchPipeLRTest extends CascadingTestCase {
         final int maxUrls = 1;
         FetcherPolicy defaultPolicy = new FetcherPolicy();
         defaultPolicy.setMaxUrlsPerServer(maxUrls);
-        IHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
-        ScoreGenerator scorer = new FixedScoreGenerator();
-        RobotRulesParser parser = new SimpleRobotRulesParser();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1, BaseDatum.EMPTY_METADATA_FIELDS);
+        BaseFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
+        BaseScoreGenerator scorer = new FixedScoreGenerator();
+        BaseRobotsParser parser = new SimpleRobotRulesParser();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
 
         // Create the output
         String outputPath = DEFAULT_OUTPUT_PATH;
@@ -356,12 +379,11 @@ public class FetchPipeLRTest extends CascadingTestCase {
         validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
         tupleEntryIterator = validate.openForRead(new JobConf());
         
-        Fields metaDataFields = new Fields();
         int numSkippedEntries = 0;
         int numFetchedEntries = 0;
         while (tupleEntryIterator.hasNext()) {
             TupleEntry entry = tupleEntryIterator.next();
-            StatusDatum status = new StatusDatum(entry, metaDataFields);
+            StatusDatum status = new StatusDatum(entry);
             if (status.getStatus() == UrlStatus.SKIPPED_PER_SERVER_LIMIT) {
                 numSkippedEntries += 1;
             } else if (status.getStatus() == UrlStatus.FETCHED) {
@@ -429,7 +451,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         while (tupleEntryIterator.hasNext()) {
             numEntries += 1;
             TupleEntry entry = tupleEntryIterator.next();
-            StatusDatum status = new StatusDatum(entry, metaDataFields);
+            StatusDatum status = new StatusDatum(entry);
             int ordinal = status.getStatus().ordinal();
             Assert.assertFalse(returnedStatus[ordinal]);
             returnedStatus[ordinal] = true;
@@ -440,11 +462,11 @@ public class FetchPipeLRTest extends CascadingTestCase {
     */
     
     @SuppressWarnings("serial")
-    private static class SkippedScoreGenerator extends ScoreGenerator {
+    private static class SkippedScoreGenerator extends BaseScoreGenerator {
 
         @Override
         public double generateScore(String domain, String pld, String url) {
-            return ScoreGenerator.SKIP_SCORE;
+            return BaseScoreGenerator.SKIP_SCORE;
         }
     }
     
@@ -475,16 +497,14 @@ public class FetchPipeLRTest extends CascadingTestCase {
         return makeInputData(numDomains, numPages, null);
     }
     
-    @SuppressWarnings("unchecked")
-    private Lfs makeInputData(int numDomains, int numPages, Map<String, Comparable> metaData) throws IOException {
-        Fields sfFields = UrlDatum.FIELDS.append(BaseDatum.makeMetaDataFields(metaData));
-        Lfs in = new Lfs(new SequenceFile(sfFields), DEFAULT_INPUT_PATH, true);
+    private Lfs makeInputData(int numDomains, int numPages, Payload payload) throws IOException {
+        Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), DEFAULT_INPUT_PATH, true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
         for (int i = 0; i < numDomains; i++) {
             for (int j = 0; j < numPages; j++) {
                 // Use special domain name pattern so code deep inside of operations "knows" not
                 // to try to resolve host names to IP addresses.
-                write.add(makeTuple("bixo-test-domain-" + i + ".com", j, metaData));
+                write.add(makeTuple("bixo-test-domain-" + i + ".com", j, payload));
             }
         }
         
@@ -492,23 +512,21 @@ public class FetchPipeLRTest extends CascadingTestCase {
         return in;
     }
     
-    @SuppressWarnings("unchecked")
-    private Lfs makeInputData(String domain, int numPages, Map<String, Comparable> metaData) throws IOException {
-        Fields sfFields = UrlDatum.FIELDS.append(BaseDatum.makeMetaDataFields(metaData));
-        Lfs in = new Lfs(new SequenceFile(sfFields), DEFAULT_INPUT_PATH, true);
+    private Lfs makeInputData(String domain, int numPages, Payload payload) throws IOException {
+        Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), DEFAULT_INPUT_PATH, true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
         for (int j = 0; j < numPages; j++) {
-            write.add(makeTuple(domain, j, metaData));
+            write.add(makeTuple(domain, j, payload));
         }
 
         write.close();
         return in;
     }
     
-    @SuppressWarnings("unchecked")
-    private Tuple makeTuple(String domain, int pageNumber, Map<String, Comparable> metaData) {
-        UrlDatum url = new UrlDatum("http://" + domain + "/page-" + pageNumber + ".html?size=10", 0, 0, UrlStatus.UNFETCHED, metaData);
-        return url.toTuple();
+    private Tuple makeTuple(String domain, int pageNumber, Payload payload) {
+        UrlDatum url = new UrlDatum("http://" + domain + "/page-" + pageNumber + ".html?size=10");
+        url.setPayload(payload);
+        return url.getTuple();
     }
     
     @SuppressWarnings("serial")
@@ -532,6 +550,29 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
     }
     
+    @SuppressWarnings("serial")
+    private static class NoRobotsHtmlResponseHandler extends AbstractHttpHandler {
+
+        @Override
+        public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+            if (pathInContext.endsWith("/robots.txt")) {
+                throw new HttpException(HttpStatus.SC_NOT_FOUND, "No robots.txt");
+            } else {
+                final String template = "<htm><head><title>%s</title></head><body></body></html>";
+                
+                String htmlResponse = String.format(template, pathInContext.substring(1));
+                byte[] content = htmlResponse.getBytes("UTF-8");
+                response.setContentLength(content.length);
+                response.setContentType("text/html; charset=UTF-8");
+                response.setStatus(200);
+                
+                OutputStream os = response.getOutputStream();
+                os.write(content);
+                os.flush();
+            }
+        }
+    }
+    
     /***********************************************************************
      * Lots of ugly custom classes to support serializable "mocking" for a
      * particular test case. Mockito mocks aren't serializable,
@@ -539,7 +580,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
      */
 
     @SuppressWarnings({ "serial", "unused" })
-    private static class CustomGrouper implements IGroupingKeyGenerator {
+    private static class CustomGrouper extends BaseGroupGenerator {
 
         @Override
         public String getGroupingKey(UrlDatum urlDatum) {
@@ -593,11 +634,10 @@ public class FetchPipeLRTest extends CascadingTestCase {
     }
     
     @SuppressWarnings({ "serial", "unused" })
-    private static class CustomFetcher implements IHttpFetcher {
+    private static class CustomFetcher extends BaseFetcher {
 
-        @Override
-        public FetchedDatum head(ScoredUrlDatum scoredUrl) throws BaseFetchException {
-            throw new RuntimeException("Unexpected HEAD request");
+        public CustomFetcher() {
+            super(1, new MaxUrlFetcherPolicy(4), ConfigUtils.BIXO_TEST_AGENT);
         }
         
         @Override
@@ -616,26 +656,6 @@ public class FetchPipeLRTest extends CascadingTestCase {
             }
         }
 
-        @Override
-        public byte[] get(String url) throws BaseFetchException {
-            return null;
-        }
-
-        @Override
-        public FetcherPolicy getFetcherPolicy() {
-            return new MaxUrlFetcherPolicy(4);
-        }
-
-        @Override
-        public int getMaxThreads() {
-            return 1;
-        }
-
-		@Override
-		public UserAgent getUserAgent() {
-			return ConfigUtils.BIXO_TEST_AGENT;
-		}
-        
 	    @Override
 	    public void abort() {
 	        // Do nothing

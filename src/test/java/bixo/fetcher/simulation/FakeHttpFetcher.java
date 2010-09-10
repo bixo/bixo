@@ -24,32 +24,28 @@ package bixo.fetcher.simulation;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
+import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.UrlFetchException;
-import bixo.fetcher.http.IHttpFetcher;
+import bixo.fetcher.BaseFetcher;
 import bixo.utils.ConfigUtils;
 
 @SuppressWarnings("serial")
-public class FakeHttpFetcher implements IHttpFetcher {
+public class FakeHttpFetcher extends BaseFetcher {
     private static Logger LOGGER = Logger.getLogger(FakeHttpFetcher.class);
 
     private boolean _randomFetching;
-    private int _maxThreads;
-    private FetcherPolicy _fetcherPolicy;
     private Random _rand;
 
     public FakeHttpFetcher() {
@@ -61,49 +57,18 @@ public class FakeHttpFetcher implements IHttpFetcher {
     }
     
     public FakeHttpFetcher(boolean randomFetching, int maxThreads, FetcherPolicy fetcherPolicy) {
+        super(maxThreads, fetcherPolicy, ConfigUtils.BIXO_TEST_AGENT);
+        
         _randomFetching = randomFetching;
-        _maxThreads = maxThreads;
-        _fetcherPolicy = fetcherPolicy;
         _rand = new Random();
     }
     
     @Override
-    public int getMaxThreads() {
-        return _maxThreads;
-    }
-
-    @Override
-    public FetcherPolicy getFetcherPolicy() {
-        return _fetcherPolicy;
-    }
-
-    @Override
-    public FetchedDatum head(ScoredUrlDatum scoredUrl) throws BaseFetchException {
-        return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap(), false);
-    }
-    
-    @Override
     public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
-        return doGet(scoredUrl.getUrl(), scoredUrl.getMetaDataMap(), true);
+        return doGet(scoredUrl.getUrl(), scoredUrl.getPayload(), true);
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public byte[] get(String url) throws BaseFetchException {
-        try {
-            FetchedDatum result = doGet(url, new HashMap<String, Comparable>(), true);
-            return result.getContentBytes();
-        } catch (HttpFetchException e) {
-            if (e.getHttpStatus() == HttpStatus.SC_NOT_FOUND) {
-                return new byte[0];
-            } else {
-                throw e;
-            }
-        }
-    }
-    
-    @SuppressWarnings("unchecked")
-    private FetchedDatum doGet(String url, Map<String, Comparable> metaData, boolean returnContent) throws BaseFetchException {
+    private FetchedDatum doGet(String url, Payload payload, boolean returnContent) throws BaseFetchException {
         LOGGER.trace("Fake fetching " + url);
         
         URL theUrl;
@@ -159,14 +124,11 @@ public class FakeHttpFetcher implements IHttpFetcher {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("x-responserate", "" + bytesPerSecond);
-        return new FetchedDatum(url, url, System.currentTimeMillis(), headers, new ContentBytes(new byte[contentSize]), "text/html", bytesPerSecond, metaData);
+        FetchedDatum result = new FetchedDatum(url, url, System.currentTimeMillis(), headers, new ContentBytes(new byte[contentSize]), "text/html", bytesPerSecond);
+        result.setPayload(payload);
+        return result;
     }
 
-	@Override
-	public UserAgent getUserAgent() {
-		return ConfigUtils.BIXO_TEST_AGENT;
-	}
-	
     @Override
     public void abort() {
         // Do nothing
