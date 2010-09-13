@@ -20,14 +20,22 @@ if [ "$IS_MASTER" == "true" ]; then
  MASTER_HOST=`wget -q -O - http://169.254.169.254/latest/meta-data/local-hostname`
 fi
 
+# These values get filled in by launch-hadoop-master and launch-hadoop-slaves
+# locally to create the version of this file that is set to the remote instance.
+# The variables (and other variables in this script) are then set up and used
+# when the script is run on the instance to set up various configuration files
+# for the master or slave.
 AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
 AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
+INSTANCE_TYPE=%INSTANCE_TYPE%
+EXTRA_CORE_SITE_PROPERTIES="%EXTRA_CORE_SITE_PROPERTIES%"
+EXTRA_HDFS_SITE_PROPERTIES="%EXTRA_HDFS_SITE_PROPERTIES%"
+EXTRA_MAPRED_SITE_PROPERTIES="%EXTRA_MAPRED_SITE_PROPERTIES%"
 
 HADOOP_HOME=`ls -d /usr/local/hadoop-*`
 
-# 2010-08-31 CSc For m1.small slaves, we only get one virtual core (1 EC2 Compute Unit)
+# For m1.small slaves, we only get one virtual core (1 EC2 Compute Unit)
 #
-INSTANCE_TYPE=%INSTANCE_TYPE%
 if [ "$INSTANCE_TYPE" == "m1.small" ]; then
  NUM_SLAVE_CORES=1
 else
@@ -39,83 +47,43 @@ fi
 # Modify this section to customize your Hadoop cluster.
 ################################################################################
 
-cat > $HADOOP_HOME/conf/hadoop-site.xml <<EOF
+cat > $HADOOP_HOME/conf/core-site.xml <<EOF
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 
+<!-- Put site-specific property overrides in this file. -->
+
 <configuration>
+
+<!--- global properties -->
 
 <property>
   <name>hadoop.tmp.dir</name>
   <value>/mnt/hadoop</value>
+  <description>A base for other temporary directories.
+  
+  AWS EC2 instances have a large /mnt drive for log files, etc.
+  </description>
 </property>
+
+<!-- i/o properties -->
+
+<!-- file system properties -->
 
 <property>
   <name>fs.default.name</name>
   <value>hdfs://$MASTER_HOST:50001</value>
-</property>
-
-<property>
-  <name>mapred.job.tracker</name>
-  <value>hdfs://$MASTER_HOST:50002</value>
-</property>
-
-<property>
-  <name>tasktracker.http.threads</name>
-  <value>80</value>
-</property>
-
-
-<!-- 2010-08-25 CSc I changed the following properties in the (generic?) set from
-     Bixo's hadoop-ec2-init-remote.sh:
-  -->
-<property>
-  <name>mapred.tasktracker.map.tasks.maximum</name>
-  <value>$NUM_SLAVE_CORES</value>
-  <description>The maximum number of map tasks that will be run
-  simultaneously by a task tracker.
+  <description>The name of the default file system.  A URI whose
+  scheme and authority determine the FileSystem implementation.  The
+  uri's scheme determines the config property (fs.SCHEME.impl) naming
+  the FileSystem implementation class.  The uri's authority is used to
+  determine the host, port, etc. for a filesystem.
   
-  For m1.small slaves, we only get one virtual core (1 EC2 Compute Unit),
-  so we shouldn't be running two map tasks on the same slave simultaneously.
-  </description>
-</property>
-<property>
-  <name>mapred.tasktracker.reduce.tasks.maximum</name>
-  <value>$NUM_SLAVE_CORES</value>
-  <description>The maximum number of reduce tasks that will be run
-  simultaneously by a task tracker.
-  
-  For m1.small slaves, we only get one virtual core (1 EC2 Compute Unit),
-  so we shouldn't be running two reduce tasks on the same slave simultaneously.
+  While running in EC2, we want to default to HDFS.
   </description>
 </property>
 
-
-<property>
-  <name>mapred.output.compress</name>
-  <value>true</value>
-</property>
-
-<property>
-  <name>mapred.output.compression.type</name>
-  <value>BLOCK</value>
-</property>
-
-<property>
-  <name>io.compression.codecs</name>
-  <value>org.apache.hadoop.io.compress.GzipCodec,org.apache.hadoop.io.compress.DefaultCodec,org.apache.hadoop.io.compress.BZip2Codec</value>
-</property>
-  
-<property>
-  <name>dfs.client.block.write.retries</name>
-  <value>3</value>
-</property>
-
-<property>
-  <name>mapred.task.timeout</name>
-  <value>1200000</value>
-  <description>Bump to 20 minutes (was 10m, or 600K ms)</description>
-</property>
+<!-- AWS EC2-specific properties -->
 
 <property>
   <name>fs.s3n.awsAccessKeyId</name>
@@ -137,10 +105,121 @@ cat > $HADOOP_HOME/conf/hadoop-site.xml <<EOF
   <value>$AWS_SECRET_ACCESS_KEY</value>
 </property>
 
+$EXTRA_CORE_SITE_PROPERTIES
+
+</configuration>
+EOF
+
+cat > $HADOOP_HOME/conf/hdfs-site.xml <<EOF
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+
 <property>
   <name>dfs.permissions</name>
   <value>false</value>
+  <description>
+    If "true", enable permission checking in HDFS.
+    If "false", permission checking is turned off,
+    but all other behavior is unchanged.
+    Switching from one parameter value to the other does not change the mode,
+    owner or group of files or directories.
+    
+    TODO CSc Figure out why AWS wants this set to false.
+  </description>
 </property>
+
+$EXTRA_HDFS_SITE_PROPERTIES
+
+</configuration>
+EOF
+
+cat > $HADOOP_HOME/conf/mapred-site.xml <<EOF
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+
+<!-- i/o properties -->
+
+<property>
+  <name>mapred.job.tracker</name>
+  <value>hdfs://$MASTER_HOST:50002</value>
+  <description>The host and port that the MapReduce job tracker runs
+  at.  If "local", then jobs are run in-process as a single map
+  and reduce task.
+  
+  Here we specify the AWS EC2 job tracker host and port.
+  </description>
+</property>
+
+<property>
+  <name>mapred.task.timeout</name>
+  <value>1200000</value>
+  <description>The number of milliseconds before a task will be
+  terminated if it neither reads an input, writes an output, nor
+  updates its status string.
+  
+  Bump to 20 minutes (was 10m, or 600K ms)
+  </description>
+</property>
+
+<property>
+  <name>mapred.tasktracker.map.tasks.maximum</name>
+  <value>$NUM_SLAVE_CORES</value>
+  <description>The maximum number of map tasks that will be run
+  simultaneously by a task tracker.
+  
+  For m1.small slaves, we only get one virtual core (1 EC2 Compute Unit),
+  so we shouldn't be running two map tasks on the same slave simultaneously.
+  </description>
+</property>
+<property>
+  <name>mapred.tasktracker.reduce.tasks.maximum</name>
+  <value>$NUM_SLAVE_CORES</value>
+  <description>The maximum number of reduce tasks that will be run
+  simultaneously by a task tracker.
+  
+  For m1.small slaves, we only get one virtual core (1 EC2 Compute Unit),
+  so we shouldn't be running two reduce tasks on the same slave simultaneously.
+  </description>
+</property>
+
+<property>
+  <name>tasktracker.http.threads</name>
+  <value>80</value>
+  <description>The number of worker threads that for the http server. This is
+               used for map output fetching
+               
+  Double number of threads per AWS recommendation.
+  </description>
+</property>
+
+<property>
+  <name>mapred.output.compress</name>
+  <value>true</value>
+  <description>Should the job outputs be compressed?
+  
+  Compress them by default, though jobs can override this.
+  </description>
+</property>
+
+<property>
+  <name>mapred.output.compression.type</name>
+  <value>BLOCK</value>
+  <description>If the job outputs are to compressed as SequenceFiles, how should
+               they be compressed? Should be one of NONE, RECORD or BLOCK.
+               
+  Compressing on a record basis is probably better for Cascading jobs.
+  </description>
+</property>
+
+$EXTRA_MAPRED_SITE_PROPERTIES
 
 </configuration>
 EOF

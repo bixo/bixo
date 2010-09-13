@@ -25,7 +25,7 @@ if [ -z $1 ]; then
 fi
 
 if [ -z $2 ]; then
-  echo "Must specify the number of slaves to start."
+  echo "You must specify the number of slaves to start."
   exit -1
 fi
 
@@ -40,7 +40,7 @@ bin=`cd "$bin"; pwd`
 . ${HADOOP_EC2_ENV:-$bin/hadoop-ec2-env.sh}
 
 if [ ! -f $MASTER_IP_PATH ]; then
-  echo "Must start Cluster Master first!"
+  echo "You must launch the cluster's master node first!"
   exit -1
 fi
 
@@ -52,16 +52,16 @@ AMI_IMAGE=`ec2-describe-images -a | grep $S3_BUCKET | grep $HADOOP_VERSION | gre
 MASTER_HOST=`cat $MASTER_PRIVATE_IP_PATH`
 MASTER_ZONE=`cat $MASTER_ZONE_PATH`
 
-# Substituting master hostname
-[ -f "$bin"/../etc/$USER_DATA_FILE ] && USER_DATA_FILE=../etc/$USER_DATA_FILE
-
-# Resolve several variables within hadoop-ec2-init-remote.sh, to create a script
-# that will be installed on the slaves and executed there after booting them.
+# Resolve several variable values within hadoop-ec2-init-remote.sh, to create a script
+# that will be installed on the slaves and executed there during the boot sequence.
 sed -e "s|%MASTER_HOST%|$MASTER_HOST|" \
     -e "s|%AWS_ACCESS_KEY_ID%|$AWS_ACCESS_KEY_ID|" \
     -e "s|%AWS_SECRET_ACCESS_KEY%|$AWS_SECRET_ACCESS_KEY|" \
     -e "s|%INSTANCE_TYPE%|$INSTANCE_TYPE|" \
-       "$bin"/$USER_DATA_FILE > .user_data_file.slave
+    -e "s|%EXTRA_CORE_SITE_PROPERTIES%|$EXTRA_CORE_SITE_PROPERTIES|" \
+    -e "s|%EXTRA_HDFS_SITE_PROPERTIES%|$EXTRA_HDFS_SITE_PROPERTIES|" \
+    -e "s|%EXTRA_MAPRED_SITE_PROPERTIES%|$EXTRA_MAPRED_SITE_PROPERTIES|" \
+       "$USER_DATA_FILE_TEMPLATE" > .user_data_file.slave
 
 # Launch all the slave instances
 if [ -z $SPOT_PRICE ]; then

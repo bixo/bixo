@@ -15,10 +15,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TODO CSc It would be nice if each project didn't have to have its own copy of this file,
-# but we can live with this as long as they can share the upper-level scripts in
-# hadoop-aws/bin/ and the lower-level ones in $EC2_HOME=support/ec2-api-tools-1.3
-
 # The current cluster 'profile', default is null
 HADOOP_EC2_PROFILE=
 
@@ -48,8 +44,8 @@ SSH_OPTS=`echo -i "$PRIVATE_KEY_PATH" -o StrictHostKeyChecking=no -o ServerAlive
 
 # The version of Hadoop to use.
 #
-# TODO CSc It would be nice to be able to make this project-specific,
-# but not really necessary.
+# TODO CSc It would be nice to be able to make this project-specific without overriding
+# this entire file, but it's not that important.
 #
 HADOOP_VERSION=0.20.2
 
@@ -64,8 +60,10 @@ S3_BUCKET=bixolabs-public-amis
 # Enable public access to JobTracker and TaskTracker web interfaces
 ENABLE_WEB_PORTS=true
 
-# The script to run on an instance (master or slave) after it's booted in EC2.
-USER_DATA_FILE=hadoop-ec2-init-remote.sh
+# TODO CSc I renamed $USER_DATA_FILE to be $USER_DATA_FILE_TEMPLATE, and put the whole
+# path into this variable. I changed launch-master and launch-slaves to use the new
+# variable, but I wonder if any other EC2 scripts use it. Is it worth just writing
+# out its definition here?
 
 # The EC2 instance type to use if $INSTANCE_TYPE is not set
 # $INSTANCE_TYPE can be set via an optional parameter to
@@ -81,6 +79,9 @@ DEFAULT_INSTANCE_TYPE="m1.small"
 CLUSTER_MASTER=$CLUSTER-master
 
 # Cached values for a given cluster
+#
+# TODO CSc Fix these file names (i.e., "hadooop" => "hadoop").
+#
 MASTER_PRIVATE_IP_PATH=~/.hadooop-private-$CLUSTER_MASTER
 MASTER_IP_PATH=~/.hadooop-$CLUSTER_MASTER
 MASTER_ZONE_PATH=~/.hadooop-zone-$CLUSTER_MASTER

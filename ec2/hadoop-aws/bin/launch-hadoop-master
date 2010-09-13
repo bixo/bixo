@@ -85,17 +85,25 @@ fi
 # Finding Hadoop image
 echo "Looking for AMI image in bucket $S3_BUCKET with version $HADOOP_VERSION and architecture $ARCH${HADOOP_EC2_PROFILE:+-$HADOOP_EC2_PROFILE}"
 AMI_IMAGE=`ec2-describe-images -a | grep $S3_BUCKET | grep $HADOOP_VERSION | grep $ARCH${HADOOP_EC2_PROFILE:+-$HADOOP_EC2_PROFILE} | grep available | awk '{print $2}'`
+if [ -z $AMI_IMAGE ]; then
+    echo "Unable to find a matching image!"
+    exit -1
+fi
 
-# Start a master
-[ -f "$bin"/../etc/$USER_DATA_FILE ] && USER_DATA_FILE=../etc/$USER_DATA_FILE
-
-# Resolve several variables within hadoop-ec2-init-remote.sh, to create a script
-# that will be installed on the master and executed there after it.
+# Resolve several variable values within hadoop-ec2-init-remote.sh, to create a script
+# that will be installed on the master and executed there during the boot sequence.
+#
+# TODO CSc Should we put .user_data_file.master into $PROJECT_BASEDIR?
+# TODO CSc Should we leave it there vs. deleting it so we know what it contained?
+#
 echo "Starting master with AMI $AMI_IMAGE"
 sed -e "s|%AWS_ACCESS_KEY_ID%|$AWS_ACCESS_KEY_ID|" \
     -e "s|%AWS_SECRET_ACCESS_KEY%|$AWS_SECRET_ACCESS_KEY|" \
     -e "s|%INSTANCE_TYPE%|$INSTANCE_TYPE|" \
-       "$bin"/$USER_DATA_FILE > .user_data_file.master
+    -e "s|%EXTRA_CORE_SITE_PROPERTIES%|$EXTRA_CORE_SITE_PROPERTIES|" \
+    -e "s|%EXTRA_HDFS_SITE_PROPERTIES%|${EXTRA_HDFS_SITE_PROPERTIES}|" \
+    -e "s|%EXTRA_MAPRED_SITE_PROPERTIES%|$EXTRA_MAPRED_SITE_PROPERTIES|" \
+       "$USER_DATA_FILE_TEMPLATE" > .user_data_file.master
 
 # Launch the master instance
 INSTANCE=`ec2-run-instances $AMI_IMAGE -n 1 -g $CLUSTER_MASTER -k $KEY_NAME -f .user_data_file.master -t $INSTANCE_TYPE $KERNEL_ARG | grep INSTANCE | awk '{print $2}'`
