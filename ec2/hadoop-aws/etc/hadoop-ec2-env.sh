@@ -49,14 +49,6 @@ SSH_OPTS=`echo -i "$PRIVATE_KEY_PATH" -o StrictHostKeyChecking=no -o ServerAlive
 #
 HADOOP_VERSION=0.20.2
 
-# The Amazon S3 bucket where the Hadoop AMI is stored.
-# The default value is for public images, so can be left if you are using running a
-# public image. Change this value only if you are creating your own (private) AMI
-# so you can store it in a bucket you own.
-#S3_BUCKET=cloudera-ec2-hadoop-images
-#S3_BUCKET=hadoop-images
-S3_BUCKET=bixolabs-public-amis
-
 # Enable public access to JobTracker and TaskTracker web interfaces
 ENABLE_WEB_PORTS=true
 
@@ -66,13 +58,13 @@ ENABLE_WEB_PORTS=true
 # out its definition here?
 
 # The EC2 instance type to use if $INSTANCE_TYPE is not set
-# $INSTANCE_TYPE can be set via an optional parameter to
+# Instance type can be set via an optional parameter to
 # $HADOOP_AWS_HOME/bin/[hadoop-ec2|launch-hadoop-[cluster|master|slaves]] scripts
 DEFAULT_INSTANCE_TYPE="m1.small"
 #DEFAULT_INSTANCE_TYPE="m1.large"
 #DEFAULT_INSTANCE_TYPE="m1.xlarge"
-#DEFAULT_INSTANCE_TYPE="m1.medium"
-#DEFAULT_INSTANCE_TYPE="m1.xlarge"
+#DEFAULT_INSTANCE_TYPE="c1.medium"
+#DEFAULT_INSTANCE_TYPE="c1.xlarge"
 
 # The EC2 group master name. $CLUSTER is set via parameter passed to
 # $HADOOP_AWS_HOME/bin/[hadoop-ec2|launch-hadoop-[cluster|master|slaves]] scripts
@@ -81,13 +73,16 @@ CLUSTER_MASTER=$CLUSTER-master
 # Cached values for a given cluster
 #
 # TODO CSc Fix these file names (i.e., "hadooop" => "hadoop").
+# TODO CSc Put these guys into project EC2 folder instead?
 #
 MASTER_PRIVATE_IP_PATH=~/.hadooop-private-$CLUSTER_MASTER
 MASTER_IP_PATH=~/.hadooop-$CLUSTER_MASTER
 MASTER_ZONE_PATH=~/.hadooop-zone-$CLUSTER_MASTER
 
 #
-# NOTE: The following variables are only used when *creating* a new AMI.
+# NOTE: Most of the following variables are only used when *creating* a new AMI.
+# The exception is $KERNEL_ARG, which is passed to ec2-run-instances by
+# launch-hadoop-master and launch-hadoop-slaves.
 #
 
 # The version number of the installed JDK.
@@ -95,7 +90,7 @@ JAVA_VERSION=1.6.0_10
 
 # SUPPORTED_ARCHITECTURES = ['i386', 'x86_64']
 # The download URL for the Sun JDK. Visit http://java.sun.com/javase/downloads/index.jsp and get the URL for the "Linux self-extracting file".
-if [ "$INSTANCE_TYPE" == "m1.small" -o "$INSTANCE_TYPE" == "c1.medium" ]; then
+if [ "$DEFAULT_INSTANCE_TYPE" == "m1.small" -o "$DEFAULT_INSTANCE_TYPE" == "c1.medium" ]; then
   ARCH='i386'
   BASE_AMI_IMAGE="ami-48b54021"  # bixolabs-public-amis/bixolabs-hadoop-0.20.2-i386.manifest.xml
   JAVA_BINARY_URL=''
@@ -105,16 +100,16 @@ else
   JAVA_BINARY_URL=''
 fi
 
-if [ "$INSTANCE_TYPE" == "c1.medium" ]; then
+if [ "$DEFAULT_INSTANCE_TYPE" == "c1.medium" ]; then
   # AMI_KERNEL=aki-9b00e5f2 # ec2-public-images/vmlinuz-2.6.18-xenU-ec2-v1.0.i386.aki.manifest.xml
   AMI_KERNEL=aki-a71cf9ce # ec2-public-images/ec2-vmlinuz-2.6.21.7-2.fc8xen.i386.manifest.xml
 fi
 
-if [ "$INSTANCE_TYPE" == "c1.xlarge" ]; then
+if [ "$DEFAULT_INSTANCE_TYPE" == "c1.xlarge" ]; then
   # AMI_KERNEL=aki-9800e5f1 # ec2-public-images/vmlinuz-2.6.18-xenU-ec2-v1.0.x86_64.aki.manifest.xml
   AMI_KERNEL=aki-b51cf9dc # ec2-public-images/ec2-vmlinuz-2.6.21.7-2.fc8xen.x86_64.manifest.xml
 fi
 
-if [ "$AMI_KERNEL" != "" ]; then
+if [ -n "$AMI_KERNEL" ]; then
   KERNEL_ARG="--kernel ${AMI_KERNEL}"
 fi

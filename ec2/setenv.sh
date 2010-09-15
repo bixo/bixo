@@ -8,17 +8,19 @@
 # project-specific changes. Instead, edit the project-specific setenv.sh folder
 # within your project's ec2/ directory (which should source this file).
 
+# TODO CSc Leverage what Whirl is doing for EC2 cluster setup?
+
 echo "Initializing EC2 environment..."
 
 # The folder containing this setenv.sh script.
 #
-EC2_BASEDIR=`pwd`
+export EC2_BASEDIR=`pwd`
 if [ ! -e "$EC2_BASEDIR/setenv.sh" ]; then
     echo "Error: You must execute this script from within the ec2 directory."
     return
 fi
 if [ -z "$PROJECT_EC2_BASEDIR" ]; then
-    PROJECT_EC2_BASEDIR="$EC2_BASEDIR"
+    export PROJECT_EC2_BASEDIR="$EC2_BASEDIR"
 fi
 echo 'EC2_BASEDIR='$EC2_BASEDIR
 echo 'PROJECT_EC2_BASEDIR='$PROJECT_EC2_BASEDIR
@@ -183,10 +185,8 @@ echo 'HADOOP_EC2_ENV='$HADOOP_EC2_ENV
 . $HADOOP_EC2_ENV
 
 # Remind the user that we've set up some options providing security parameters
-# for doing SSH into EC2, and that they better have access to the single S3 bucket
-# containing all of the AMIs.
+# for doing SSH into EC2.
 #
 echo ""
-echo "Note: Your Amazon EC2 Key Pair must have access to the S3 bucket named '$S3_BUCKET' for loading AMIs."
 echo 'You may use "ssh $SSH_OPTS ..." for standard ssh commands against EC2.'
 echo ""

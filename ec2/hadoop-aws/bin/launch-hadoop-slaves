@@ -31,7 +31,7 @@ fi
 
 CLUSTER=$1
 NUM_SLAVES=$2
-INSTANCE_TYPE={$3:-$DEFAULT_INSTANCE_TYPE}
+INSTANCE_TYPE=${3}
 SPOT_PRICE=$4
 
 # Import variables
@@ -44,8 +44,43 @@ if [ ! -f $MASTER_IP_PATH ]; then
   exit -1
 fi
 
-# Find the Hadoop image in the S3 bucket
-AMI_IMAGE=`ec2-describe-images -a | grep $S3_BUCKET | grep $HADOOP_VERSION | grep $ARCH${HADOOP_EC2_PROFILE:+-$HADOOP_EC2_PROFILE} | grep available | awk '{print $2}'`
+if [ -z $INSTANCE_TYPE ]; then
+    echo 'Instance <type> parameter not specified - using $DEFAULT_INSTANCE_TYPE'" ($DEFAULT_INSTANCE_TYPE)"
+    INSTANCE_TYPE=$DEFAULT_INSTANCE_TYPE
+fi
+
+# Find an appropriate Amazon Machine Image.
+# If $AMI_IMAGE is not set, we look for an AMI matching $INSTANCE_TYPE among those
+# accessible by this user (including the public ones).
+#
+# TODO CSc Move this to launch-hadoop-cluster (exporting variables) so it can set up
+# things for both the master and slaves?
+#
+if [ -z "$AMI_IMAGE" ]; then
+    echo '$AMI_IMAGE'" not set."
+    if [ "$INSTANCE_TYPE" == "m1.small" ] && [ -n "$AMI_IMAGE_M1_SMALL" ]; then
+        echo 'Using $AMI_IMAGE_M1_SMALL'" ($AMI_IMAGE_M1_SMALL)."
+        AMI_IMAGE=$AMI_IMAGE_M1_SMALL
+    elif [ "$INSTANCE_TYPE" == "m1.large" ] && [ -n "$AMI_IMAGE_M1_LARGE" ]; then
+        echo 'Using $AMI_IMAGE_M1_LARGE'" ($AMI_IMAGE_M1_LARGE)."
+        AMI_IMAGE=$AMI_IMAGE_M1_LARGE
+    else
+        if [ -z "$AMI_GREP_PATTERN" ]; then
+            if [ "$INSTANCE_TYPE" == "m1.small" ] || [ "$INSTANCE_TYPE" == "c1.medium" ]; then
+              AMI_GREP_PATTERN="${HADOOP_VERSION}-i386"
+            else
+              AMI_GREP_PATTERN="${HADOOP_VERSION}-x86_64"
+            fi
+        fi
+        echo "Searching for an available AMI matching '$AMI_GREP_PATTERN'..."
+        AMI_IMAGE=`ec2-describe-images -x all | grep $AMI_GREP_PATTERN | grep available | awk '{print $2}'`
+        if [ -z "$AMI_IMAGE" ]; then
+            echo "Unable to find a matching image!"
+            exit -1
+        fi
+        echo "Found matching image ($AMI_IMAGE)."
+    fi
+fi
 
 # Retrieve cluster description from user's home directory where launch-hadoop-master
 # has saved it.

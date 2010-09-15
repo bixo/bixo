@@ -137,6 +137,8 @@ $EXTRA_HDFS_SITE_PROPERTIES
 </configuration>
 EOF
 
+# TODO CSc Should we install and use an LZO compression codec?
+#
 cat > $HADOOP_HOME/conf/mapred-site.xml <<EOF
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
@@ -216,6 +218,16 @@ cat > $HADOOP_HOME/conf/mapred-site.xml <<EOF
                they be compressed? Should be one of NONE, RECORD or BLOCK.
                
   Compressing on a record basis is probably better for Cascading jobs.
+  </description>
+</property>
+
+<property>
+  <name>mapred.compress.map.output</name>
+  <value>true</value>
+  <description>Should the outputs of the maps be compressed before being
+               sent across the network. Uses SequenceFile compression.
+               
+  The maps often generate huge files outside DFS, so it's better to compress them.
   </description>
 </property>
 
@@ -360,4 +372,7 @@ if [ "$IS_MASTER" == "false" ]; then
 fi
 
 # Run this script on next boot
-rm -f /var/ec2/ec2-run-user-data.*
+# 
+# TODO CSc Re-enable this file removal once testing is complete!
+#
+#rm -f /var/ec2/ec2-run-user-data.*
