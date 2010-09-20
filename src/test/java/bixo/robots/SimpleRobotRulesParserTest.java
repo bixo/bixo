@@ -7,7 +7,7 @@ import java.util.Arrays;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.junit.Assert;
+import static org.junit.Assert.*;
 import org.junit.Test;
 
 
@@ -26,7 +26,7 @@ public class SimpleRobotRulesParserTest {
     @Test
     public void testEmptyRules() throws MalformedURLException {
         RobotRules rules = createRobotRules("Any-darn-crawler", "".getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
     // TODO - reenable this test when wildcards (the '*' in the disallow) are supported.
@@ -36,7 +36,7 @@ public class SimpleRobotRulesParserTest {
         + "Disallow: /index.cfm?fuseaction=sitesearch.results*";
         
         RobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
-        Assert.assertFalse(rules.isAllowed("http://searchservice.domain.com/index.cfm?fuseaction=sitesearch.results&type=People&qry=california&pg=2"));
+        assertFalse(rules.isAllowed("http://searchservice.domain.com/index.cfm?fuseaction=sitesearch.results&type=People&qry=california&pg=2"));
     }
     
     @Test
@@ -58,7 +58,7 @@ public class SimpleRobotRulesParserTest {
         + LF;
 
         RobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
     @Test
@@ -67,7 +67,7 @@ public class SimpleRobotRulesParserTest {
         + "Disallow: /";
 
         RobotRules rules = createRobotRules("any-darn-crawler", simpleRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/robots.txt"));
+        assertTrue(rules.isAllowed("http://www.domain.com/robots.txt"));
     }
     
     @Test
@@ -81,8 +81,8 @@ public class SimpleRobotRulesParserTest {
         + "Disallow: /";
 
         RobotRules rules = createRobotRules("crawler3", simpleRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
     }
     
     @Test
@@ -91,7 +91,7 @@ public class SimpleRobotRulesParserTest {
         + "Disallow:";
 
         RobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes("UTF-8"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
     @Test
@@ -100,7 +100,7 @@ public class SimpleRobotRulesParserTest {
         + "Disallow:";
         
         RobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
     @Test
@@ -125,21 +125,21 @@ public class SimpleRobotRulesParserTest {
         RobotRules rules;
 
         rules = createRobotRules("WebCrawler/3.0", mixedEndingsRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/index.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/"));
+        assertTrue(rules.isAllowed("http://www.fict.org/index.html"));
 
         rules = createRobotRules("Unknown/1.0", mixedEndingsRobotsTxt.getBytes());
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/server.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/services/fast.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/services/slow.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/orgo.gif"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/org/about.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/org/plans.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/%7Ejim/jim.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/%7Emak/mak.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/"));
+        assertFalse(rules.isAllowed("http://www.fict.org/index.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
+        assertTrue(rules.isAllowed("http://www.fict.org/server.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/services/fast.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/services/slow.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/orgo.gif"));
+        assertTrue(rules.isAllowed("http://www.fict.org/org/about.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/org/plans.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/%7Ejim/jim.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/%7Emak/mak.html"));
 
     }
     
@@ -167,56 +167,56 @@ public class SimpleRobotRulesParserTest {
         RobotRules rules;
         
         rules = createRobotRules("UnhipBot/0.1", rfpExampleRobotsTxt.getBytes());
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/server.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/services/fast.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/services/slow.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/orgo.gif"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/org/about.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/org/plans.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/%7Ejim/jim.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/%7Emak/mak.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/"));
+        assertFalse(rules.isAllowed("http://www.fict.org/index.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
+        assertFalse(rules.isAllowed("http://www.fict.org/server.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/services/fast.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/services/slow.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/orgo.gif"));
+        assertFalse(rules.isAllowed("http://www.fict.org/org/about.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/org/plans.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/%7Ejim/jim.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/%7Emak/mak.html"));
 
         rules = createRobotRules("WebCrawler/3.0", rfpExampleRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/server.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/services/fast.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/services/slow.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/orgo.gif"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/org/about.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/org/plans.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/%7Ejim/jim.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/%7Emak/mak.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/"));
+        assertTrue(rules.isAllowed("http://www.fict.org/index.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
+        assertTrue(rules.isAllowed("http://www.fict.org/server.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/services/fast.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/services/slow.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/orgo.gif"));
+        assertTrue(rules.isAllowed("http://www.fict.org/org/about.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/org/plans.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/%7Ejim/jim.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/%7Emak/mak.html"));
 
         rules = createRobotRules("Excite/1.0", rfpExampleRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/server.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/services/fast.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/services/slow.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/orgo.gif"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/org/about.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/org/plans.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/%7Ejim/jim.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/%7Emak/mak.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/"));
+        assertTrue(rules.isAllowed("http://www.fict.org/index.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
+        assertTrue(rules.isAllowed("http://www.fict.org/server.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/services/fast.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/services/slow.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/orgo.gif"));
+        assertTrue(rules.isAllowed("http://www.fict.org/org/about.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/org/plans.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/%7Ejim/jim.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/%7Emak/mak.html"));
 
         rules = createRobotRules("Unknown/1.0", rfpExampleRobotsTxt.getBytes());
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/server.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/services/fast.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/services/slow.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/orgo.gif"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/org/about.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/org/plans.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.fict.org/%7Ejim/jim.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.fict.org/%7Emak/mak.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/"));
+        assertFalse(rules.isAllowed("http://www.fict.org/index.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/robots.txt"));
+        assertTrue(rules.isAllowed("http://www.fict.org/server.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/services/fast.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/services/slow.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/orgo.gif"));
+        assertTrue(rules.isAllowed("http://www.fict.org/org/about.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/org/plans.html"));
+        assertFalse(rules.isAllowed("http://www.fict.org/%7Ejim/jim.html"));
+        assertTrue(rules.isAllowed("http://www.fict.org/%7Emak/mak.html"));
     }
 
     @Test
@@ -240,114 +240,114 @@ public class SimpleRobotRulesParserTest {
         RobotRules rules;
         
         rules = createRobotRules("Agent1", nutchRobotsTxt.getBytes());
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/a"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/a/"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/b/a"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/b/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b/b/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/b/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/d"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/d/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/d"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/d/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/doh.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/"));
+        assertFalse(rules.isAllowed("http://www.domain.com/a"));
+        assertFalse(rules.isAllowed("http://www.domain.com/a/"));
+        assertFalse(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b"));
+        assertFalse(rules.isAllowed("http://www.domain.com/b/a"));
+        assertFalse(rules.isAllowed("http://www.domain.com/b/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b/b/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/b/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/d"));
+        assertTrue(rules.isAllowed("http://www.domain.com/d/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/d"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/d/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/doh.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/f/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/f/"));
 
         rules = createRobotRules("Agent2", nutchRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b/b/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/b/foo.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/d"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/d/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/d"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/e/d/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/doh.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/"));
+        assertTrue(rules.isAllowed("http://www.domain.com/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/a/"));
+        assertTrue(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b/b/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/b/foo.html"));
+        assertFalse(rules.isAllowed("http://www.domain.com/d"));
+        assertFalse(rules.isAllowed("http://www.domain.com/d/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/d"));
+        assertFalse(rules.isAllowed("http://www.domain.com/e/d/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/doh.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/f/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/f/"));
 
         rules = createRobotRules("Agent3", nutchRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b/b/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/b/foo.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/d"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/d/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/d"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/e/d/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/doh.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/"));
+        assertTrue(rules.isAllowed("http://www.domain.com/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/a/"));
+        assertTrue(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b/b/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/b/foo.html"));
+        assertFalse(rules.isAllowed("http://www.domain.com/d"));
+        assertFalse(rules.isAllowed("http://www.domain.com/d/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/d"));
+        assertFalse(rules.isAllowed("http://www.domain.com/e/d/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/doh.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/f/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/f/"));
 
         rules = createRobotRules("Agent4", nutchRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b/b/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/b/foo.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/d"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/d/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/d"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/e/d/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/doh.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/"));
+        assertTrue(rules.isAllowed("http://www.domain.com/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/a/"));
+        assertTrue(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b/b/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/b/foo.html"));
+        assertFalse(rules.isAllowed("http://www.domain.com/d"));
+        assertFalse(rules.isAllowed("http://www.domain.com/d/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/d"));
+        assertFalse(rules.isAllowed("http://www.domain.com/e/d/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/doh.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/f/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/f/"));
 
         rules = createRobotRules("Agent5", nutchRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/b/b/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/c/b/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/d"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/d/a"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/a/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/d"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/d/foo.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/e/doh.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/index.html"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/f/"));
+        assertTrue(rules.isAllowed("http://www.domain.com/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/a/"));
+        assertTrue(rules.isAllowed("http://www.domain.com/a/bloh/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/b/b/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/c/b/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/d"));
+        assertTrue(rules.isAllowed("http://www.domain.com/d/a"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/a/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/d"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/d/foo.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/e/doh.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/f/index.html"));
+        assertFalse(rules.isAllowed("http://www.domain.com/foo/bar/baz.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/f/"));
     }
     
     
@@ -372,12 +372,12 @@ public class SimpleRobotRulesParserTest {
         RobotRules rules;
         
         rules = createRobotRules("anybot", htmlRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
-        Assert.assertEquals(10000, rules.getCrawlDelay());
+        assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
+        assertEquals(10000, rules.getCrawlDelay());
 
         rules = createRobotRules("bogusbot", htmlRobotsTxt.getBytes());
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
-        Assert.assertEquals(30000, rules.getCrawlDelay());
+        assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
+        assertEquals(30000, rules.getCrawlDelay());
     }
     
     @Test
@@ -385,8 +385,8 @@ public class SimpleRobotRulesParserTest {
         final String htmlFile = "<HTML><HEAD><TITLE>Site under Maintenance</TITLE></HTML>";
         
         RobotRules rules = createRobotRules("anybot", htmlFile.getBytes("us-ascii"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/"));
-        Assert.assertFalse(rules.isDeferVisits());
+        assertTrue(rules.isAllowed("http://www.domain.com/"));
+        assertFalse(rules.isDeferVisits());
     }
 
     @Test
@@ -412,25 +412,25 @@ public class SimpleRobotRulesParserTest {
         
         RobotRules rules;
         rules = createRobotRules("Mozilla allowbot1 99.9", heritrixRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/path"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/"));
+        assertTrue(rules.isAllowed("http://www.domain.com/path"));
+        assertTrue(rules.isAllowed("http://www.domain.com/"));
 
         rules = createRobotRules("Mozilla allowbot2 99.9", heritrixRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/path"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/foo"));
+        assertTrue(rules.isAllowed("http://www.domain.com/path"));
+        assertTrue(rules.isAllowed("http://www.domain.com/"));
+        assertFalse(rules.isAllowed("http://www.domain.com/foo"));
 
         rules = createRobotRules("Mozilla denybot 99.9", heritrixRobotsTxt.getBytes());
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/path"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/"));
-        Assert.assertEquals(RobotRules.UNSET_CRAWL_DELAY, rules.getCrawlDelay());
+        assertFalse(rules.isAllowed("http://www.domain.com/path"));
+        assertFalse(rules.isAllowed("http://www.domain.com/"));
+        assertEquals(RobotRules.UNSET_CRAWL_DELAY, rules.getCrawlDelay());
         
         rules = createRobotRules("Mozilla anonbot 99.9", heritrixRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/path"));
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/cgi-bin/foo.pl"));
+        assertTrue(rules.isAllowed("http://www.domain.com/path"));
+        assertFalse(rules.isAllowed("http://www.domain.com/cgi-bin/foo.pl"));
 
         rules = createRobotRules("Mozilla delaybot 99.9", heritrixRobotsTxt.getBytes());
-        Assert.assertEquals(20000, rules.getCrawlDelay());
+        assertEquals(20000, rules.getCrawlDelay());
     }
 
     
@@ -442,8 +442,8 @@ public class SimpleRobotRulesParserTest {
         + "Disallow: /";
 
         RobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/SomePage.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/SomePage.html"));
     }
     
     
@@ -453,7 +453,7 @@ public class SimpleRobotRulesParserTest {
         + "Disallow:";
 
         RobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
     
@@ -463,7 +463,7 @@ public class SimpleRobotRulesParserTest {
         + "Allow:";
 
         RobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
     
@@ -478,24 +478,24 @@ public class SimpleRobotRulesParserTest {
         + "Disallow: /";
 
         RobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
+        assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
     
     @Test
     public void testMultiMatches() throws MalformedURLException {
         // Make sure we only take the first record that matches.
-        final String simpleRobotsTxt = "User-agent: darn-crawler" + CRLF
+        final String simpleRobotsTxt = "User-agent: crawlerbot" + CRLF
         + "Disallow: /index.html" + CRLF
         + "Allow: /" + CRLF
         + CRLF
         + "User-agent: crawler" + CRLF
         + "Disallow: /";
 
-        RobotRules rules = createRobotRules("Any-darn-crawler", simpleRobotsTxt.getBytes());
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
+        RobotRules rules = createRobotRules("crawlerbot", simpleRobotsTxt.getBytes());
+        assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
     @Test
@@ -506,8 +506,8 @@ public class SimpleRobotRulesParserTest {
         + "Allow: /";
 
         RobotRules rules = createRobotRules("crawler2", simpleRobotsTxt.getBytes());
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
-        Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
+        assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
+        assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
     @Test
@@ -521,7 +521,7 @@ public class SimpleRobotRulesParserTest {
         + "Disallow: /";
 
         RobotRules rules = createRobotRules("crawler2", simpleRobotsTxt.getBytes());
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/anypage.html"));
+        assertFalse(rules.isAllowed("http://www.domain.com/anypage.html"));
     }
     
     @Test
@@ -531,7 +531,7 @@ public class SimpleRobotRulesParserTest {
 
         SimpleRobotRulesParser parser = new SimpleRobotRulesParser();
         parser.parseContent("url", robotsTxt.getBytes(), "text/plain", "foobot");
-        Assert.assertEquals(0, parser.getNumWarnings());
+        assertEquals(0, parser.getNumWarnings());
     }
     
     @Test
@@ -540,12 +540,12 @@ public class SimpleRobotRulesParserTest {
         
         SimpleRobotRulesParser robotParser = new SimpleRobotRulesParser();
         rules = robotParser.failedFetch(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-        Assert.assertTrue(rules.isDeferVisits());
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
+        assertTrue(rules.isDeferVisits());
+        assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
         
         rules = robotParser.failedFetch(HttpServletResponse.SC_MOVED_PERMANENTLY);
-        Assert.assertTrue(rules.isDeferVisits());
-        Assert.assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
+        assertTrue(rules.isDeferVisits());
+        assertFalse(rules.isAllowed("http://www.domain.com/index.html"));
         
         // All 4xx status codes should result in open access (ala Google)
         // SC_FORBIDDEN
@@ -553,14 +553,14 @@ public class SimpleRobotRulesParserTest {
         // SC_GONE
         for (int status = 400; status < 420; status++) {
             rules = robotParser.failedFetch(status);
-            Assert.assertFalse(rules.isDeferVisits());
-            Assert.assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
+            assertFalse(rules.isDeferVisits());
+            assertTrue(rules.isAllowed("http://www.domain.com/index.html"));
         }
         
         // Calling failedFetch with a good status code should trigger an exception.
         try {
             robotParser.failedFetch(HttpServletResponse.SC_OK);
-            Assert.fail("Should have thrown an exception");
+            fail("Should have thrown an exception");
         } catch (Exception e) {
             // valid
         }
@@ -577,7 +577,7 @@ public class SimpleRobotRulesParserTest {
         
         RobotRules rules = createRobotRules("bixo", delayRules1RobotsTxt.getBytes());
         long crawlDelay = rules.getCrawlDelay();
-        Assert.assertEquals("testing crawl delay for agent bixo - rule 1", 10000, crawlDelay);
+        assertEquals("testing crawl delay for agent bixo - rule 1", 10000, crawlDelay);
         
         final String delayRules2RobotsTxt = "User-agent: foobot" + CR +
                             "Crawl-delay: 20" + CR +
@@ -586,7 +586,7 @@ public class SimpleRobotRulesParserTest {
         
         rules = createRobotRules("bixo", delayRules2RobotsTxt.getBytes());
         crawlDelay = rules.getCrawlDelay();
-        Assert.assertEquals("testing crawl delay for agent bixo - rule 2", RobotRules.UNSET_CRAWL_DELAY, crawlDelay);
+        assertEquals("testing crawl delay for agent bixo - rule 2", RobotRules.UNSET_CRAWL_DELAY, crawlDelay);
       }
 
     @Test
@@ -596,7 +596,7 @@ public class SimpleRobotRulesParserTest {
         "Disallow:" + CR;
 
         RobotRules rules = createRobotRules("bixo", robotsTxt.getBytes());
-        Assert.assertFalse("disallow all if huge crawl delay", rules.isAllowed("http://www.domain.com/"));
+        assertFalse("disallow all if huge crawl delay", rules.isAllowed("http://www.domain.com/"));
     }
     
     @Test
@@ -615,13 +615,13 @@ public class SimpleRobotRulesParserTest {
             + "Disallow: /";
         
         RobotRules rules = createRobotRules("googlebot/2.1", krugleRobotsTxt.getBytes());
-        Assert.assertTrue(rules.isAllowed("http://www.krugle.com/examples/index.html"));
+        assertTrue(rules.isAllowed("http://www.krugle.com/examples/index.html"));
     }
     
     @Test
     public void testRobotsWithBOM() throws Exception {
         RobotRules rules = createRobotRules("foobot", readFile("/robots/robots-with-bom.txt"));
-        Assert.assertFalse("Disallow match against *", rules.isAllowed("http://www.domain.com/profile"));
+        assertFalse("Disallow match against *", rules.isAllowed("http://www.domain.com/profile"));
     }
     
     @Test
@@ -631,13 +631,67 @@ public class SimpleRobotRulesParserTest {
         "Disallow:" + CR;
 
         RobotRules rules = createRobotRules("bixo", robotsTxt.getBytes());
-        Assert.assertEquals(500, rules.getCrawlDelay());
+        assertEquals(500, rules.getCrawlDelay());
     }
     
     @Test
     public void testIgnoringHost() throws Exception {
         RobotRules rules = createRobotRules("foobot", readFile("/robots/www.flot.com-robots.txt"));
-        Assert.assertFalse("Disallow img directory", rules.isAllowed("http://www.flot.com/img/"));
+        assertFalse("Disallow img directory", rules.isAllowed("http://www.flot.com/img/"));
+    }
+    
+    @Test
+    public void testDirectiveTypos() throws Exception {
+        RobotRules rules = createRobotRules("bot1", readFile("/robots/directive-typos-robots.txt"));
+        assertFalse("desallow", rules.isAllowed("http://domain.com/desallow/"));
+        assertFalse("dissalow", rules.isAllowed("http://domain.com/dissalow/"));
+        
+        rules = createRobotRules("bot2", readFile("/robots/directive-typos-robots.txt"));
+        assertFalse("useragent", rules.isAllowed("http://domain.com/useragent/"));
+        
+        rules = createRobotRules("bot3", readFile("/robots/directive-typos-robots.txt"));
+        assertFalse("useg-agent", rules.isAllowed("http://domain.com/useg-agent/"));
+        
+        rules = createRobotRules("bot4", readFile("/robots/directive-typos-robots.txt"));
+        assertFalse("useragent-no-colon", rules.isAllowed("http://domain.com/useragent-no-colon/"));
+    }
+    
+    @Test
+    public void testFormatErrors() throws Exception {
+        RobotRules rules = createRobotRules("bot1", readFile("/robots/format-errors-robots.txt"));
+        assertFalse("whitespace-before-colon", rules.isAllowed("http://domain.com/whitespace-before-colon/"));
+        assertFalse("no-colon", rules.isAllowed("http://domain.com/no-colon/"));
+        
+        rules = createRobotRules("bot2", readFile("/robots/format-errors-robots.txt"));
+        assertFalse("no-colon-useragent", rules.isAllowed("http://domain.com/no-colon-useragent/"));
+        
+        rules = createRobotRules("bot3", readFile("/robots/format-errors-robots.txt"));
+        assertTrue("whitespace-before-colon", rules.isAllowed("http://domain.com/whitespace-before-colon/"));
+    }
+    
+    // See http://www.conman.org/people/spc/robots2.html
+    @Test
+    public void testExtendedStandard() throws Exception {
+        SimpleRobotRulesParser robotParser = new SimpleRobotRulesParser();
+        robotParser.parseContent(FAKE_ROBOTS_URL, readFile("/robots/extended-standard-robots.txt"), 
+                        "text/plain", "foobot");
+        assertEquals("Zero warnings with expended directives", 0, robotParser.getNumWarnings());
+    }
+    
+    @Test
+    public void testSitemap() throws Exception {
+        RobotRules rules = createRobotRules("bot1", readFile("/robots/sitemap-robots.txt"));
+        assertEquals("Found sitemap", 2, rules.getSitemaps().size());
+    }
+
+    @Test
+    public void testManyUserAgents() throws Exception {
+        RobotRules rules = createRobotRules("wget", readFile("/robots/many-user-agents.txt"));
+        assertFalse("many-user-agents", rules.isAllowed("http://domain.com/"));
+        
+        rules = createRobotRules("mysuperlongbotnamethatmatchesnothing", readFile("/robots/many-user-agents.txt"));
+        assertTrue("many-user-agents", rules.isAllowed("http://domain.com/"));
+        assertFalse("many-user-agents", rules.isAllowed("http://domain.com/bot-trap/"));
     }
     
     private byte[] readFile(String filename) throws Exception {

@@ -48,6 +48,8 @@ public class SimpleRobotRules extends RobotRules {
     }
     
     public SimpleRobotRules(RobotRulesMode mode) {
+        super();
+        
         _mode = mode;
         _rules = new ArrayList<RobotRule>();
     }
