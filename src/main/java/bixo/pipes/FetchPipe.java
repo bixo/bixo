@@ -5,13 +5,14 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
 
+import bixo.cascading.BaseSplitter;
 import bixo.cascading.NullContext;
 import bixo.cascading.NullSinkTap;
-import bixo.cascading.BaseSplitter;
 import bixo.cascading.SplitterAssembly;
 import bixo.datum.FetchSetDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
+import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
@@ -140,20 +141,22 @@ public class FetchPipe extends SubAssembly {
             Comparable result = entry.get(_fieldPos);
             StatusDatum status;
             
+            // Note: Here we share the payload of the FetchedDatum with the
+            // StatusDatum we're about to emit, but since we let go after we
+            // emit, there shouldn't be an issue with this sharing.
             if (result instanceof String) {
                 UrlStatus urlStatus = UrlStatus.valueOf((String)result);
                 if (urlStatus == UrlStatus.FETCHED) {
-                    status = new StatusDatum(fd.getBaseUrl(), fd.getHeaders(), fd.getHostAddress());
+                    status = new StatusDatum(fd.getBaseUrl(), fd.getHeaders(), fd.getHostAddress(), fd.getPayload());
                 } else {
-                    status = new StatusDatum(fd.getBaseUrl(), urlStatus);
+                    status = new StatusDatum(fd.getBaseUrl(), urlStatus, fd.getPayload());
                 }
             } else if (result instanceof BaseFetchException) {
-                status = new StatusDatum(fd.getBaseUrl(), (BaseFetchException)result);
+                status = new StatusDatum(fd.getBaseUrl(), (BaseFetchException)result, fd.getPayload());
             } else {
                 throw new RuntimeException("Unknown type for fetch status field: " + result.getClass());
             }
             
-            status.setPayload(fd);
             funcCall.getOutputCollector().add(status.getTuple());
         }
     }
@@ -174,7 +177,10 @@ public class FetchPipe extends SubAssembly {
                 throw new RuntimeException("Can't make skipped status for regular grouping key: " + key);
             }
             
-            StatusDatum status = new StatusDatum(sd.getUrl(), GroupingKey.makeUrlStatusFromKey(key));
+            // Note: Here we share the payload of the ScoredUrlDatum with the
+            // StatusDatum we're about to emit, but since we let go after we
+            // emit, there shouldn't be an issue with this sharing.
+            StatusDatum status = new StatusDatum(sd.getUrl(), GroupingKey.makeUrlStatusFromKey(key), sd.getPayload());
             status.setPayload(sd);
             
             funcCall.getOutputCollector().add(status.getTuple());

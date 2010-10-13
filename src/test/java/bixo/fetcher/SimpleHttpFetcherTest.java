@@ -278,12 +278,15 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         HttpServer server = startServer(new RedirectResponseHandler(true), 8089);
         BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         String url = "http://localhost:8089/base";
-        FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
+        ScoredUrlDatum scoredUrl = new ScoredUrlDatum(url);
+        scoredUrl.setPayloadValue("payload-field-1", 1);
+        FetchedDatum result = fetcher.get(scoredUrl);
         server.stop();
 
         assertEquals("Redirected URL", "http://localhost:8089/redirect", result.getFetchedUrl());
         assertEquals("New base URL", "http://localhost:8089/redirect", result.getNewBaseUrl());
         assertEquals(1, result.getNumRedirects());
+        assertEquals(1, result.getPayloadValue("payload-field-1"));
     }
     
     @Test

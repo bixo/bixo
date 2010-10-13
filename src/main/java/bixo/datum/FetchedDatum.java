@@ -77,11 +77,12 @@ public class FetchedDatum extends UrlDatum implements Serializable {
      * 
      * @param url
      *            - Base & redirected url
-     * @param metaData
-     *            - metadata
+     * @param payload
+     *            - User supplied payload
      */
-    public FetchedDatum(String url) {
+    public FetchedDatum(String url, Payload payload) {
         this(url, url, 0, new HttpHeaders(), new ContentBytes(), "", 0);
+        setPayload(payload);
     }
 
     /**
@@ -91,7 +92,10 @@ public class FetchedDatum extends UrlDatum implements Serializable {
      *            Valid datum with url/metadata needed to create FetchedDatum
      */
     public FetchedDatum(final ScoredUrlDatum scoredDatum) {
-        this(scoredDatum.getUrl());
+        // Note: Here we share the payload between the ScoredUrlDatum and the
+        // FetchedDatum we're constructing, but we assume noone is modifying
+        // this data within the subassembly.
+        this(scoredDatum.getUrl(), scoredDatum.getPayload());
     }
 
     /**

@@ -53,21 +53,21 @@ public class StatusDatum extends UrlDatum {
      * @param url URL that we fetched.
      * @param headers Headers returned by server.
      * @param hostAddress Host IP address of server.
-     * @param metaData User-provided meta-data.
+     * @param payload User-provided payload.
      */
-    public StatusDatum(String url, HttpHeaders headers, String hostAddress) {
-        this(url, UrlStatus.FETCHED, headers, null, System.currentTimeMillis(), hostAddress);
+    public StatusDatum(String url, HttpHeaders headers, String hostAddress, Payload payload) {
+        this(url, UrlStatus.FETCHED, headers, null, System.currentTimeMillis(), hostAddress, payload);
     }
     
-    public StatusDatum(String url, BaseFetchException e) {
-        this(url, e.mapToUrlStatus(), null, e, System.currentTimeMillis(), null);
+    public StatusDatum(String url, BaseFetchException e, Payload payload) {
+        this(url, e.mapToUrlStatus(), null, e, System.currentTimeMillis(), null, payload);
     }
     
-    public StatusDatum(String url, UrlStatus status) {
-        this(url, status, null, null, System.currentTimeMillis(), null);
+    public StatusDatum(String url, UrlStatus status, Payload payload) {
+        this(url, status, null, null, System.currentTimeMillis(), null, null);
     }
     
-    public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BaseFetchException e, long statusTime, String hostAddress) {
+    public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BaseFetchException e, long statusTime, String hostAddress, Payload payload) {
         super(FIELDS);
         
         setUrl(url);
@@ -76,6 +76,7 @@ public class StatusDatum extends UrlDatum {
         setException(e);
         setStatusTime(statusTime);
         setHostAddress(hostAddress);
+        setPayload(payload);
     }
 
     public UrlStatus getStatus() {

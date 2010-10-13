@@ -13,6 +13,7 @@ import org.mortbay.http.HttpResponse;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.FetcherPolicy.RedirectMode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
 import bixo.datum.Payload;
@@ -25,6 +26,7 @@ import bixo.exceptions.AbortedFetchReason;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
+import bixo.exceptions.RedirectFetchException;
 import bixo.exceptions.UrlFetchException;
 import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.RandomResponseHandler;
@@ -56,6 +58,30 @@ public class FetchPipeLRTest extends CascadingTestCase {
     
     private static final String DEFAULT_INPUT_PATH = "build/test/FetchPipeLRTest/in";
     private static final String DEFAULT_OUTPUT_PATH = "build/test/FetchPipeLRTest/out";
+
+    @SuppressWarnings("serial")
+    private class RedirectResponseHandler extends AbstractHttpHandler {
+        
+        public static final String REDIRECT_TARGET_URL = "http://localhost:8089/redirect";
+        private boolean _permanent;
+        
+        public RedirectResponseHandler(boolean permanent) {
+            super();
+            _permanent = permanent;
+        }
+        
+        @Override
+        public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+            if (_permanent) {
+                // Can't use sendRedirect, as that forces it to be a temp redirect.
+                response.setStatus(HttpStatus.SC_MOVED_PERMANENTLY);
+                response.addField("Location", REDIRECT_TARGET_URL);
+                request.setHandled(true);
+            } else {
+                response.sendRedirect(REDIRECT_TARGET_URL);
+            }
+        }
+    }
 
     @Test
     public void testHeadersInStatus() throws Exception {
@@ -152,6 +178,76 @@ public class FetchPipeLRTest extends CascadingTestCase {
             StatusDatum sd = new StatusDatum(entry);
             Assert.assertEquals(UrlStatus.FETCHED, sd.getStatus());
             
+            
+            // Verify that we got one of each page
+            String url = sd.getUrl();
+            Assert.assertNotNull(url);
+            int idOffset = url.indexOf(".html") - 1;
+            int pageId = Integer.parseInt(url.substring(idOffset, idOffset + 1));
+            Assert.assertFalse(fetchedPages[pageId]);
+            fetchedPages[pageId] = true;
+        }
+        
+        Assert.assertEquals(numPages, totalEntries);
+    }
+    
+    @Test
+    public void testRedirectException() throws Exception {
+        // System.setProperty("bixo.root.level", "TRACE");
+        
+        final int numPages = 1;
+        final int port = 8089;
+        
+        Payload payload = new Payload();
+        payload.put("payload-field-1", 1);
+        Lfs in = makeInputData("localhost:" + port, numPages, payload);
+
+        Pipe pipe = new Pipe("urlSource");
+        BaseScoreGenerator scorer = new FixedScoreGenerator();
+        FetcherPolicy policy = new FetcherPolicy();
+        policy.setRedirectMode(RedirectMode.FOLLOW_TEMP);
+        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
+        
+        String outputPath = "build/test/FetchPipeTest/testRedirectException";
+        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
+        Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+
+        // Finally we can run it.
+        FlowConnector flowConnector = new FlowConnector();
+        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
+        TestWebServer webServer = null;
+        
+        try {
+            webServer = new TestWebServer(new RedirectResponseHandler(true), port);
+            flow.complete();
+        } finally {
+            webServer.stop();
+        }
+        
+        // Verify numPages fetched and numPages status entries were saved.
+        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        Assert.assertFalse(tupleEntryIterator.hasNext());
+        tupleEntryIterator.close();
+        
+        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
+        tupleEntryIterator = validate.openForRead(new JobConf());
+        int totalEntries = 0;
+        boolean[] fetchedPages = new boolean[numPages];
+        while (tupleEntryIterator.hasNext()) {
+            TupleEntry entry = tupleEntryIterator.next();
+            totalEntries += 1;
+
+            // Verify we can convert properly
+            StatusDatum sd = new StatusDatum(entry);
+            Assert.assertTrue(sd.getException() instanceof RedirectFetchException);
+            RedirectFetchException redirectException =
+                (RedirectFetchException)(sd.getException());
+            Assert.assertEquals(RedirectResponseHandler.REDIRECT_TARGET_URL,
+                                redirectException.getRedirectedUrl());
+            Assert.assertEquals(payload.get("payload-field-1"),
+                                sd.getPayloadValue("payload-field-1"));
             
             // Verify that we got one of each page
             String url = sd.getUrl();
