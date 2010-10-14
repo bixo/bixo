@@ -64,7 +64,7 @@ public class StatusDatum extends UrlDatum {
     }
     
     public StatusDatum(String url, UrlStatus status, Payload payload) {
-        this(url, status, null, null, System.currentTimeMillis(), null, null);
+        this(url, status, null, null, System.currentTimeMillis(), null, payload);
     }
     
     public StatusDatum(String url, UrlStatus status, HttpHeaders headers, BaseFetchException e, long statusTime, String hostAddress, Payload payload) {

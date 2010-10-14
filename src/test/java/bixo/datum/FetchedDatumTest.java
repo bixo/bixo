@@ -64,4 +64,15 @@ public class FetchedDatumTest {
         assertEquals(0, datum.getFetchTime());
     }
     
+    @Test
+    public void testCreatingFromScoredUrlDatum() throws Exception {
+        ScoredUrlDatum sud = new ScoredUrlDatum("url", "groupKey", UrlStatus.UNFETCHED);
+        Payload payload = new Payload();
+        payload.put("key", "value");
+        sud.setPayload(payload);
+        
+        FetchedDatum fd = new FetchedDatum(sud);
+        assertEquals("value", fd.getPayload().get("key"));
+    }
+    
 }
