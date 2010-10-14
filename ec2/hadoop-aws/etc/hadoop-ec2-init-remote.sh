@@ -34,12 +34,16 @@ EXTRA_MAPRED_SITE_PROPERTIES="%EXTRA_MAPRED_SITE_PROPERTIES%"
 
 HADOOP_HOME=`ls -d /usr/local/hadoop-*`
 
-# For m1.small slaves, we only get one virtual core (1 EC2 Compute Unit)
+# For m1.small slaves, we only get one virtual core (1 EC2 Compute Unit).
+# For m1.large slaves, we actually have a second drive which can share the HDFS load.
 #
 if [ "$INSTANCE_TYPE" == "m1.small" ]; then
  NUM_SLAVE_CORES=1
+ HDFS_DATA_DIR="/mnt/hadoop/dfs/data"
 else
  NUM_SLAVE_CORES=2
+ HDFS_DATA_DIR="/mnt/hadoop/dfs/data,/mnt2/hadoop/dfs/data"
+ mkdir -p /mnt2/hadoop
 fi
 
 ################################################################################
@@ -129,6 +133,19 @@ cat > $HADOOP_HOME/conf/hdfs-site.xml <<EOF
     owner or group of files or directories.
     
     TODO CSc Figure out why AWS wants this set to false.
+  </description>
+</property>
+
+<property>
+  <name>dfs.data.dir</name>
+  <value>$HDFS_DATA_DIR</value>
+  <description>Determines where on the local filesystem an DFS data node
+  should store its blocks.  If this is a comma-delimited
+  list of directories, then data will be stored in all named
+  directories, typically on different devices.
+  Directories that do not exist are ignored.
+  
+  The m1.large instances have two drives, so we set this up above dependent on $INSTANCE_TYPE.
   </description>
 </property>
 
