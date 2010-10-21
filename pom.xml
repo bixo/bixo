@@ -48,23 +48,6 @@
 		<!-- Compile time dependencies -->
 		
 		<dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-core</artifactId>
-            <version>0.20.2</version>
-		    <scope>provided</scope>
-		    <exclusions>
-		    	<exclusion>
-		    		<artifactId>jetty</artifactId>
-		    		<groupId>org.mortbay.jetty</groupId>
-		    	</exclusion>
-		    	<exclusion>
-		    		<artifactId>jetty-util</artifactId>
-		    		<groupId>org.mortbay.jetty</groupId>
-		    	</exclusion>
-		    </exclusions>
-		</dependency>
-        
-		<dependency>
             <groupId>cascading</groupId>
             <artifactId>cascading-core</artifactId>
         </dependency>
@@ -217,6 +200,23 @@
 
 		<!-- Provided dependencies -->
 	
+		<dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-core</artifactId>
+            <version>0.20.2</version>
+		    <scope>provided</scope>
+		    <exclusions>
+		    	<exclusion>
+		    		<artifactId>jetty</artifactId>
+		    		<groupId>org.mortbay.jetty</groupId>
+		    	</exclusion>
+		    	<exclusion>
+		    		<artifactId>jetty-util</artifactId>
+		    		<groupId>org.mortbay.jetty</groupId>
+		    	</exclusion>
+		    </exclusions>
+		</dependency>
+        
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>

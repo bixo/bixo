@@ -19,10 +19,10 @@ import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
-import bixo.fetcher.http.IHttpFetcher;
-import bixo.fetcher.http.SimpleHttpFetcher;
-import bixo.fetcher.util.FixedScoreGenerator;
-import bixo.fetcher.util.ScoreGenerator;
+import bixo.fetcher.BaseFetcher;
+import bixo.fetcher.SimpleHttpFetcher;
+import bixo.operations.BaseScoreGenerator;
+import bixo.operations.FixedScoreGenerator;
 import bixo.pipes.FetchPipe;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -83,7 +83,7 @@ public class AnalyzeEmail {
             	// Validate the URL
                 new URL(url);
                 UrlDatum urlDatum = new UrlDatum(url);
-                funcCall.getOutputCollector().add(urlDatum.toTuple());
+                funcCall.getOutputCollector().add(urlDatum.getTuple());
             } catch (MalformedURLException e) {
                 LOGGER.error("Invalid URL in input data file: " + url);
             }
@@ -172,13 +172,13 @@ public class AnalyzeEmail {
             UserAgent userAgent = new UserAgent(options.getAgentName(), EMAIL_ADDRESS, WEB_ADDRESS);
             Pipe importPipe = new Each("url importer", new Fields("line"), new LoadUrlFunction());
             
-            ScoreGenerator scorer = new FixedScoreGenerator();
+            BaseScoreGenerator scorer = new FixedScoreGenerator();
             
-            IHttpFetcher fetcher = new SimpleHttpFetcher(MAX_THREADS, userAgent);
+            BaseFetcher fetcher = new SimpleHttpFetcher(MAX_THREADS, userAgent);
             FetchPipe fetchPagePipe = new FetchPipe(importPipe, scorer, fetcher);
             
             // Here's the pipe that will output UrlDatum tuples, by extracting URLs from the mod_mbox-generated page.
-    		Pipe mboxPagePipe = new Each(fetchPagePipe.getContentTailPipe(), new ParseModMboxPageFunction(new Fields()), Fields.RESULTS);
+    		Pipe mboxPagePipe = new Each(fetchPagePipe.getContentTailPipe(), new ParseModMboxPageFunction(), Fields.RESULTS);
 
     		// Create a named pipe for the status of the mod_mbox-generated pages.
             Pipe mboxPageStatusPipe = new Pipe(MBOX_PAGE_STATUS_PIPE_NAME, fetchPagePipe.getStatusTailPipe());

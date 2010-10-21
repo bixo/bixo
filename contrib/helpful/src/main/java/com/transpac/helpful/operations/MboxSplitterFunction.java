@@ -7,16 +7,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.log4j.Logger;
 
 import bixo.cascading.NullContext;
+import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
-import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
@@ -33,20 +32,13 @@ public class MboxSplitterFunction extends BaseOperation<NullContext> implements 
 	private static final String MBOX_MIME_TYPE = "application/mbox";
 	private static final String MBOX_RECORD_DIVIDER = "From ";
 	
-    private Fields _metaDataFields;
-
     public MboxSplitterFunction() {
-    	this(new Fields());
-    }
-    
-    public MboxSplitterFunction(Fields metaDataFields) {
-        super(FetchedDatum.FIELDS.append(metaDataFields));
-        _metaDataFields = metaDataFields;
+        super(FetchedDatum.FIELDS);
     }
 
     public void operate(FlowProcess flowProcess, FunctionCall<NullContext> functionCall) {
         TupleEntry arguments = functionCall.getArguments();
-        FetchedDatum fetchedDatum = new FetchedDatum(arguments.getTuple(), _metaDataFields);
+        FetchedDatum fetchedDatum = new FetchedDatum(arguments.getTuple());
         
         // Now, if the FetchedDatum mime-type is application/mbox, we want to split it into N FetchedDatum
         // tuples, one per mail message.
@@ -89,12 +81,9 @@ public class MboxSplitterFunction extends BaseOperation<NullContext> implements 
 	}
 	
 	private TupleEntry makeNewTupleEntry(FetchedDatum fetchedDatum, StringBuilder email) {
-		// FUTURE KKr - add clone support to FetchedDatum, use it here.
-		FetchedDatum newDatum = new FetchedDatum(fetchedDatum.getBaseUrl(), fetchedDatum.getFetchedUrl(),
-				fetchedDatum.getFetchTime(), fetchedDatum.getHeaders(),
-				new BytesWritable(safeGetAsciiBytes(email.toString())), MBOX_MIME_TYPE,
-				fetchedDatum.getResponseRate(), fetchedDatum.getMetaDataMap());
-		return new TupleEntry(FetchedDatum.FIELDS.append(fetchedDatum.getMetaDataFields()), newDatum.toTuple());
+	    FetchedDatum newDatum = new FetchedDatum(new TupleEntry(fetchedDatum.getTupleEntry()));
+	    newDatum.setContent(new ContentBytes(safeGetAsciiBytes(email.toString())));
+	    return newDatum.getTupleEntry();
 	}
 
 	private byte[] safeGetAsciiBytes(String string) {
