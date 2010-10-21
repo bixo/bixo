@@ -1,0 +1,135 @@
+#!/bin/bash
+
+# Note: This is a template for creating a project-specific EC2 set up file, extending
+# the settings defined by bixo/ec2/setenv.sh. Edit this file and then rename it
+# <project dir>/ec2/setenv.sh. Once in place, you can set up your EC2 environment
+# (including the Bixo EC2 set up) by executing the following:
+#
+# % cd <project dir>/ec2/
+# % . setenv.sh
+# 
+
+# This bash script must be run before any of the other Amazon EC2 tools,
+# so that the shell variables and other files they depend on will be set up.
+# It sets up any project-specific settings, then executes the main
+# script $BIXO_HOME"/ec2/setenv.sh.
+
+echo "Initializing project-specific settings..."
+
+# The folder containing this Bash script also contains all of the project-specific
+# setup files, including those built by this script (particularly
+# .local.hadoop-ec2-env.sh, which contains the complete EC2 set up).
+#
+export PROJECT_EC2_BASEDIR=`pwd`
+if [ ! -f "$PROJECT_EC2_BASEDIR/setenv.sh" ]; then
+    echo "Error: You must execute this script from within the project's ec2/ directory!"
+    return
+fi
+
+# All projects must define this shell variable somehow so we can find
+# all of the EC2 tools within the Bixo project.
+#
+if [ -z "$BIXO_HOME" ]; then
+    echo '$BIXO_HOME not defined!'
+    if [ -f "$PROJECT_EC2_BASEDIR"/../../bixo/ec2/setenv.sh ]; then
+        SAVE_CWD=`pwd`
+        cd "$PROJECT_EC2_BASEDIR"/../../bixo
+        export BIXO_HOME=`pwd`
+        cd "$SAVE_CWD"
+        echo 'Warning: Setting $BIXO_HOME to '"$BIXO_HOME, but it should be defined explicitly somewhere"
+        echo "(e.g., within your .bash_profile)."
+    else
+        echo 'Error: You must define $BIXO_HOME'" (e.g., within your .bash_profile)!"
+        return
+    fi
+else
+    echo 'BIXO_HOME='$BIXO_HOME
+fi
+
+# ################################################################################
+# BEGIN PROJECT-SPECIFIC SETTINGS
+# ################################################################################
+
+# Note: 
+
+# The Amazon Machine Image to use for all master and slave instances.
+# Unless you always launch using $DEFAULT_INSTANCE_TYPE (or always specify the same
+# instance type when you launch clusters), then it probably makes more sense to
+# set $AMI_IMAGE_M1_SMALL and $AMI_IMAGE_M1_LARGE instead.
+#
+# Example:
+# export AMI_IMAGE=ami-48b54021
+#
+export AMI_IMAGE=
+
+# The Amazon Machine Image to use for master and slave instances that are launched
+# with the m1.small instance type.  The instance type can be specified as a parameter
+# to hadoop-ec2 launch-cluster, but it defaults to $DEFAULT_INSTANCE_TYPE
+# (see hadoop-ec2-env.sh).
+#
+# Example:
+# export AMI_IMAGE_M1_SMALL=ami-48b54021
+#
+export AMI_IMAGE_M1_SMALL=
+
+# The Amazon Machine Image to use for master and slave instances that are launched
+# with the m1.large instance type.
+#
+# Example:
+# export AMI_IMAGE_M1_LARGE=ami-18ec1871
+#
+export AMI_IMAGE_M1_LARGE=
+
+# If $AMI_IMAGE is not specified here, and neither $AMI_IMAGE_M1_SMALL nor
+# $AMI_IMAGE_M1_LARGE is specified and matches the instance type, then launch-cluster
+# will search for an available public AMI.  The default behavior in this case is
+# to grep for such an AMI that also matches the instance architecture and has
+# $HADOOP_VERSION (see hadoop-ec2-env.sh) in its name.  You may override this grep
+# pattern by supplying your own here.
+#
+# Example:
+# export AMI_GREP_PATTERN="ubuntu-7.04"
+#
+export AMI_GREP_PATTERN=
+
+# You may define properties here to be added to any of the Hadoop site 
+# configuration files that get installed on the remote instances.
+# 
+# Note: You can't reliably override properties already defined in Bixo's
+# hadoop-ec2-init-remote.sh script via this method, however. Instead, you'd
+# have to override the entire script by supplying a project-specific copy of
+# that script (see below).
+#
+# Example:
+# EXTRA_CORE_SITE_PROPERTIES=<property><name>hadoop.logfile.count</name><value>10</value></property><property><name>io.file.buffer.size</name><value>4096</value></property>
+#
+
+export EXTRA_CORE_SITE_PROPERTIES=
+export EXTRA_HDFS_SITE_PROPERTIES=
+export EXTRA_MAPRED_SITE_PROPERTIES=
+
+# Note: You may set up a project-specific $AWS_KEYDIR by putting a file named
+# .local.awskey-path (hidden from source control) into $PROJECT_EC2_BASEDIR.
+# It should contain the path to your EC2 keys directory.  These keys are used
+# by the EC2 API Tools to communicate securely with the AWS servers.
+
+# Note: You may override the defaut $HADOOP_AWS_HOME/etc/hadoop-ec2-env.sh
+# template (or one for a special cluster profile) by placing the project-specific
+# copy of that template into $PROJECT_EC2_BASEDIR.
+
+# Note: You may override the defaut HADOOP_AWS_HOME/etc/hadoop-ec2-init-remote.sh
+# template by placing the project-specific copy of that template into
+# $PROJECT_EC2_BASEDIR.
+
+# ################################################################################
+# END PROJECT-SPECIFIC SETTINGS
+# ################################################################################
+
+# Temporarily change the current working directory to the Bixo EC2 tools directory,
+# execute the main setup script there, and then switch back.
+#
+echo ""
+SAVE_CWD=`pwd`
+cd "$BIXO_HOME"/ec2
+. setenv.sh
+cd "$SAVE_CWD"

@@ -1,7 +1,9 @@
-The scripts in this directory can be used to create a Bixo-enabled cluster in EC2
+The scripts in this directory can be used to create a Bixo-enabled 
+cluster in EC2
 
-See also http://bixo.101tec.com/documentation/running-bixo-in-ec2/ for more in-depth
-information about how to set up for running Bixo in EC2.
+See also http://bixo.101tec.com/documentation/running-bixo-in-ec2/
+for more in-depth information about how to set up for running Bixo
+in EC2.
 
 ==================================================================
 Configuring
@@ -9,12 +11,19 @@ Configuring
 
   To use these scripts:
 
-  > cd <Bixo project root>/bin/ec2
+  > cd <Bixo project root>/ec2
   > . setenv.sh
 
-  This sets all the necessary environment variables from <project root>/bin/ec2/etc/hadoop-ec2-env.sh
+  This sets all the necessary environment variables from
+  <Bixo project root>/ec2/etc/hadoop-ec2-env.sh
   
-  The file ".local.awskey-path" must exist in the project dir and contain a path to the keys to use.
+  Note: It is also possible to extend the default Bixo EC2
+  configuration by providing a project-specific setenv.sh
+  file inside <Your project root>/ec2/. A template for doing so
+  is in <Bixo project root>/ec2/setenv.sh.project-template.
+  
+  The file ".local.awskey-path" must exist in the directory
+  <Bixo project root>/ec2/ and contain a path to the keys to use.
 
   They key directory should have the following files:
 
@@ -29,11 +38,18 @@ Configuring
 Starting a cluster
 ==================================================================
 
-  > hadoop-ec2 launch-cluster <cluster-name> N
+  > hadoop-ec2 launch-cluster <cluster-name> <#slaves> [<type> [<price>]]
 
-  Where <cluster-name> is the name you wish to give this cluster instance. You may have many concurrent cluster instances.
-  And where N is the number of SLAVE nodes. Total number of nodes will be N+1.
-
+  Where:
+  <cluster-name> is the name you wish to give this cluster instance.
+  You may have many concurrent cluster instances.
+  <#slaves> is the number of SLAVE nodes. The total number of nodes
+  in the cluster will be <#slaves>+1.
+  <type> is the instance type of the machines in the cluster
+  (defaults to $DEFAULT_INSTANCE_TYPE, which defaults to m1.small).
+  <price> is the maximum spot price/hour/machine for Spot Instances
+  (defaults to On-Demand instances).
+  
 ==================================================================
 terminating a cluster:
 ==================================================================
@@ -54,4 +70,5 @@ Starting a remote job
 Notes
 ==================================================================
 
-  These clusters do not create a secondary namenode, so in theory should be recycled after X jobs.
+  These clusters do not create a secondary namenode, so in theory
+  should be recycled after X jobs.
