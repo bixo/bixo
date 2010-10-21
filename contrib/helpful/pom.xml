@@ -22,10 +22,11 @@
 			<artifactId>bixo-core</artifactId>
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
+		
 		<dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-core</artifactId>
-            <version>0.19.2</version>
+            <version>0.20.2</version>
 		<scope>provided</scope>
 		</dependency>
 	
@@ -48,7 +49,7 @@
 		<dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-test</artifactId>
-            <version>0.19.2</version>
+            <version>0.20.2</version>
             <scope>test</scope>
         </dependency>
 

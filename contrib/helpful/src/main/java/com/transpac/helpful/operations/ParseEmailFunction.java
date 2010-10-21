@@ -85,8 +85,6 @@ public class ParseEmailFunction extends BaseOperation<NullContext> implements Fu
 	};
 	
 
-	private Fields _metaDataFields = new Fields();
-
 	// These aren't easily serializable, so make them transient and do lazy
 	// creation from the operate() call.
 	private transient MboxParser _parser;
@@ -157,7 +155,7 @@ public class ParseEmailFunction extends BaseOperation<NullContext> implements Fu
 		
 		// On input we have a FetchedDatum that holds a single email.
         TupleEntry arguments = functionCall.getArguments();
-        FetchedDatum fetchedDatum = new FetchedDatum(arguments.getTuple(), _metaDataFields);
+        FetchedDatum fetchedDatum = new FetchedDatum(arguments.getTuple());
         
         // Now, if the FetchedDatum mime-type is application/mbox, we want to parse it and
         // output the results

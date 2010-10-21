@@ -17,19 +17,16 @@ import org.xml.sax.helpers.DefaultHandler;
 import bixo.cascading.NullContext;
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
-import bixo.datum.UrlStatus;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
-import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
 public class ParseModMboxPageFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 	private static final Logger LOGGER = Logger.getLogger(ParseModMboxPageFunction.class);
 	
-	private Fields _metaDataFields = new Fields();
 	private List<String> _ids = new ArrayList<String>();
 	
 	// These aren't easily serializable, so make them transient and do lazy
@@ -37,9 +34,8 @@ public class ParseModMboxPageFunction extends BaseOperation<NullContext> impleme
 	private transient HtmlParser _parser;
 	private transient ContentHandler _handler;
 	
-	public ParseModMboxPageFunction(Fields metaDataFields) {
-		super(UrlDatum.FIELDS.append(metaDataFields));
-		_metaDataFields = metaDataFields;
+	public ParseModMboxPageFunction() {
+		super(UrlDatum.FIELDS);
 	}
 
 	private synchronized void init() {
@@ -71,7 +67,7 @@ public class ParseModMboxPageFunction extends BaseOperation<NullContext> impleme
 	@Override
 	public void operate(FlowProcess process, FunctionCall<NullContext> functionCall) {
         TupleEntry arguments = functionCall.getArguments();
-        FetchedDatum fetchedDatum = new FetchedDatum(arguments.getTuple(), _metaDataFields);
+        FetchedDatum fetchedDatum = new FetchedDatum(arguments.getTuple());
 
         if (fetchedDatum.getContentType().startsWith("text/html")) {
         	init();
@@ -85,8 +81,8 @@ public class ParseModMboxPageFunction extends BaseOperation<NullContext> impleme
         		// _ids now has a list of the mailbox IDs that we use to create URLs.
         		for (String id : _ids) {
         			String url = String.format("%s/%s.mbox", fetchedDatum.getBaseUrl(), id);
-        			UrlDatum datum = new UrlDatum(url, 0, 0, UrlStatus.UNFETCHED, fetchedDatum.getMetaDataMap());
-        			functionCall.getOutputCollector().add(datum.toTuple());
+        			UrlDatum datum = new UrlDatum(url);
+        			functionCall.getOutputCollector().add(datum.getTuple());
         		}
         	} catch (Exception e) {
 				LOGGER.error("Exception parsing mod_mbox page", e);
