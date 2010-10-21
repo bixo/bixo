@@ -7,12 +7,16 @@ import java.net.URL;
 import junit.framework.Assert;
 
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
+import bixo.config.UserAgent;
+import bixo.datum.FetchedDatum;
+import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.SimulationWebServerForTests;
 import bixo.utils.ConfigUtils;
@@ -85,5 +89,27 @@ public class RobotUtilsTest {
             server.stop();
         }
     }
+    
+    @Test
+    public void testMatchAgainstEmailAddress() throws Exception {
+        // The "crawler@domain.com" email address shouldn't trigger a match against the
+        // "crawler" user agent name in the robots.txt file.
+        final String simpleRobotsTxt = "User-agent: crawler" + "\r\n"
+        + "Disallow: /";
+
+        BaseFetcher fetcher = Mockito.mock(BaseFetcher.class);
+        FetchedDatum datum = Mockito.mock(FetchedDatum.class);
+        Mockito.when(datum.getContentBytes()).thenReturn(simpleRobotsTxt.getBytes());
+        Mockito.when(fetcher.get(Mockito.any(ScoredUrlDatum.class))).thenReturn(datum);
+        UserAgent userAgent = new UserAgent("testAgent", "crawler@domain.com", "http://www.domain.com");
+        Mockito.when(fetcher.getUserAgent()).thenReturn(userAgent);
+        
+        URL robotsUrl = new URL("http://www.domain.com/robots.txt");
+        SimpleRobotRulesParser parser = new SimpleRobotRulesParser();
+        BaseRobotRules rules = RobotUtils.getRobotRules(fetcher, parser, robotsUrl);
+        
+        Assert.assertTrue(rules.isAllowed("http://www.domain.com/anypage.html"));
+    }
+    
 
 }

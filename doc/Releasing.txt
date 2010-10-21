@@ -13,43 +13,38 @@ little interest to users.
 <add/commit pending changes>
 % git pull
 <resolve any merge issues>
-% bant clean dist - use "bant" since dist can require a lot of memory to package things up
+% ant clean install
 % git push
 
-2. Merge master into release
+2. Tag the master with the target release version
 
-% git checkout release
-% git diff master
-<write up release note from diff>
-% git merge master
+% git tag -am "Tagging version x.y.z" x.y.z
+% git push --tags
 
-3. Edit version number
+3. Update bixo-core in the Bixo Maven repository
 
-% nano pom.xml - set <version>0.x.y</version> in header
-% nano src/build/ant/build.properties - set version=0.x.y
-% git add pom.xml src/build/ant/build.properties
+% rm -rf build/release
+% mkdir build/release
+% cp build/bixo-core-1.0-SNAPSHOT.jar build/release/bixo-core-x.y.z.jar
+% cp pom.xml build/release/bixo-core-x.y.z.pom
+% nano build/release/bixo-core-x.y.z.pom (fix version number)
+% mvn deploy:deploy-file -Dfile=build/release/bixo-core-x.y.z.jar -DpomFile=build/release/bixo-core-x.y.z.pom -Durl=file:///Users/kenkrugler/git/bixo-pages/repo/
+% pushd ../bixo-pages
+% git add repo/
+% git commit -am "Updating bixo-core to x.y.z"
+% git push
+% popd
 
-4. Build the release
+4. Generate/fix references
 
-% bant clean dist
-% git rm release/*.tgz
-% mkdir release
-% cp build/bixo-dist-0.x.y.tgz release/
-% git add release/bixo-dist-0.x.y.tgz
-% git commit -am "Committing 0.x.y release build"
+- update openbixo.org pages
+ * source zipball/tarball
+ * Maven settings, link
 
-5. Tag the release
+- send email to list
 
-% git tag -am "Tagging 0.x.y release" 0.x.y
+5. Future...
 
-6. Updating GitHub (this will take a while)
+- build dist, upload to GitHub
+- script the above
 
-% git push origin release --tags
-<Verify new release tag shows up in GitHub list of tags - http://github.com/emi/bixo>
-<Verify TeamCity is building new release>
-
-7. Switch back to master
-
-% git checkout master
-
-And yes, all of this could and should be scripted :)
