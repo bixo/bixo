@@ -40,7 +40,8 @@ public class FetchSetDatumTest {
         List<ScoredUrlDatum> urls = makeUrls(2, "meta1");
         long fetchTime = System.currentTimeMillis();
         PartitioningKey groupingKey = new PartitioningKey("key", 1);
-        FetchSetDatum pfd1 = new FetchSetDatum(urls, fetchTime, 0, groupingKey.getValue(), groupingKey.getRef(), true);
+        FetchSetDatum pfd1 = new FetchSetDatum(urls, fetchTime, 0, groupingKey.getValue(), groupingKey.getRef());
+        pfd1.setLastList(true);
         
         Tuple t = pfd1.getTuple();
         
@@ -54,7 +55,7 @@ public class FetchSetDatumTest {
         List<ScoredUrlDatum> urls = makeUrls(2, "meta1");
         long fetchTime = System.currentTimeMillis();
         PartitioningKey groupingKey = new PartitioningKey("key", 1);
-        FetchSetDatum pfd1 = new FetchSetDatum(urls, fetchTime, 1000, groupingKey.getValue(), groupingKey.getRef(), false);
+        FetchSetDatum pfd1 = new FetchSetDatum(urls, fetchTime, 1000, groupingKey.getValue(), groupingKey.getRef());
 
         ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(byteArray);
@@ -73,11 +74,13 @@ public class FetchSetDatumTest {
         long fetchTime = System.currentTimeMillis();
         
         PartitioningKey groupingKey1 = new PartitioningKey("key1", 1);
-        FetchSetDatum pfd1 = new FetchSetDatum(urls, fetchTime, 0, groupingKey1.getValue(), groupingKey1.getRef(), true);
+        FetchSetDatum pfd1 = new FetchSetDatum(urls, fetchTime, 0, groupingKey1.getValue(), groupingKey1.getRef());
+        pfd1.setLastList(true);
         Comparable c1 = pfd1.getGroupingKey();
         
         PartitioningKey groupingKey2 = new PartitioningKey("key2", 1);
-        FetchSetDatum pfd2 = new FetchSetDatum(urls, fetchTime, 0, groupingKey2.getValue(), groupingKey2.getRef(), true);
+        FetchSetDatum pfd2 = new FetchSetDatum(urls, fetchTime, 0, groupingKey2.getValue(), groupingKey2.getRef());
+        pfd2.setLastList(true);
         Comparable c2 = pfd2.getGroupingKey();
         
         Assert.assertEquals(0, c1.compareTo(c2));

@@ -3,6 +3,7 @@ package bixo.operations;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.log4j.Logger;
 
@@ -18,9 +19,17 @@ import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
 import cascading.operation.BufferCall;
+import cascading.operation.OperationCall;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
+/**
+ * We get ScoredUrlDatums, grouped by server IP address.
+ * 
+ * We need to generate sets of URLs to fetch, using a kept-alive connection.
+ * Our output thus is one or more FetchSetDatums.
+ *
+ */
 @SuppressWarnings( { "serial", "unchecked" })
 public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
     private static final Logger LOGGER = Logger.getLogger(MakeFetchSetsBuffer.class);
@@ -29,7 +38,8 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
     
     private FetcherPolicy _fetcherPolicy;
     private int _numReduceTasks;
-
+    private transient Random _rand;
+    
     public MakeFetchSetsBuffer(FetcherPolicy fetcherPolicy, int numReduceTasks) {
         super(FetchSetDatum.FIELDS);
 
@@ -37,6 +47,12 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
         _numReduceTasks = numReduceTasks;
     }
 
+    @Override
+    public void prepare(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
+        super.prepare(flowProcess, operationCall);
+        _rand = new Random();
+    }
+    
     @Override
     public void operate(FlowProcess process, BufferCall buffCall) {
         Iterator<TupleEntry> values = buffCall.getArgumentsIterator();
@@ -61,19 +77,16 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
         TupleEntryCollector collector = buffCall.getOutputCollector();
 
         PartitioningKey newKey = new PartitioningKey(key, _numReduceTasks);
-        long curRequestTime = System.currentTimeMillis();
+        
+        // We use the entire range (0...MAX_VALUE) for request time, as all that it's used for
+        // is merge-sorting all of the FetchSetDatums.
+        long curRequestTime = 0;
         long nextRequestTime = curRequestTime;
 
         int targetSize = 0;
-
-        List<ScoredUrlDatum> urls = new LinkedList<ScoredUrlDatum>();
+        final long timeRangeDivisor = 1000;
         
-        // TODO KKr - if we have a crawl duration, use it here to figure out how many URLs we
-        // could process. Read in up to that many URLs and put in a DiskQueue, so we have a count, then
-        // calculate a new crawlDelay that's (remaining time)/<num urls>, and use that in our loop.
-        // This will do a better job of spreading URLs out, because when we sort by target time
-        // the URLs from small domains will be better mingled with URLs from big domains. And this
-        // in turn will improve fetch efficiency or reduce the number of URLs we wind up skipping.
+        List<ScoredUrlDatum> urls = new LinkedList<ScoredUrlDatum>();
         
         boolean skipping = false;
         while (values.hasNext()) {
@@ -86,6 +99,7 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
                     targetSize = URLS_PER_SKIPPED_BATCH;
                     nextRequestTime = curRequestTime;
                 } else {
+                    curRequestTime = randRequestTime(_rand, timeRangeDivisor, curRequestTime);
                     FetchRequest request = _fetcherPolicy.getFetchRequest(curRequestTime, crawlDelay, Integer.MAX_VALUE);
                     targetSize = Math.min(request.getNumUrls(), maxUrls - totalUrls);
                     nextRequestTime = request.getNextRequestTime();
@@ -98,7 +112,10 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
 
             if (urls.size() >= targetSize) {
                 LOGGER.trace(String.format("Added %d urls for ref %s in group %d at %d", urls.size(), newKey.getRef(), newKey.getValue(), curRequestTime));
-                FetchSetDatum datum = new FetchSetDatum(urls, curRequestTime, nextRequestTime - curRequestTime, newKey.getValue(), newKey.getRef(), !values.hasNext());
+                FetchSetDatum datum = new FetchSetDatum(urls, curRequestTime, nextRequestTime - curRequestTime, newKey.getValue(), newKey.getRef());
+                
+                // We're the last real set (for fetching purposes) if either there are no more URLs, or we're skipping URLs.
+                datum.setLastList(!values.hasNext() || skipping);
                 datum.setSkipped(skipping);
                 collector.add(datum.getTuple());
 
@@ -111,10 +128,28 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
         // See if we have another partially built datum to add.
         if (urls.size() > 0) {
             LOGGER.trace(String.format("Added %d urls for ref %s in group %d at %d", urls.size(), newKey.getRef(), newKey.getValue(), curRequestTime));
-            FetchSetDatum datum = new FetchSetDatum(urls, curRequestTime, 0, newKey.getValue(), newKey.getRef(), true);
+            FetchSetDatum datum = new FetchSetDatum(urls, curRequestTime, 0, newKey.getValue(), newKey.getRef());
+            datum.setLastList(true);
             datum.setSkipped(skipping);
             collector.add(datum.getTuple());
         }
+    }
+    
+    /**
+     * Time to move the request time forward. We take some percentage of the remaining range (since we have
+     * no way of knowing how many FetchSetDatums we'll be generating), pick a random number in
+     * this range, add to our current request time, and use that as the new request time.
+     * 
+     * @param rand
+     * @param divisor What slice of remaining time range to consume (randomly)
+     * @param curRequestTime Current time (actually offset)
+     * @return new request time that has been randomly moved forward.
+     */
+    public static long randRequestTime(Random rand, long divisor, long curRequestTime) {
+        
+        // We want to advance by some amount
+        long targetRange = (Math.max(1, Long.MAX_VALUE - curRequestTime) / divisor) - 1;
+        return curRequestTime + 1 + (Math.abs(rand.nextLong()) % targetRange);
     }
 
 }
