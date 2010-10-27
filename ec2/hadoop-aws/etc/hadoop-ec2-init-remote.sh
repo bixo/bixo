@@ -317,6 +317,9 @@ mkdir -p /mnt/hadoop/logs
 # not set on boot
 export USER="root"
 
+# TODO CSc This limits.conf content will only take effect if you log into the machine
+# and then restart the services by hand (i.e., without using these EC2 scripts).
+
 if [ "$IS_MASTER" == "false" ]; then
   # We want to constrain the kernel stack size used for slaves, since we
   # fire up a bunch of threads. We won't need this once Hadoop supports specifying
@@ -324,7 +327,7 @@ if [ "$IS_MASTER" == "false" ]; then
   # needs to be set up before Hadoop starts running.
 
   cat > /etc/security/limits.conf <<EOF
-root	soft	nofile	65535
+root	soft	nofile	32768
 root	hard	nofile	65535
 root	soft	stack	256
 root	hard	stack	256
@@ -346,7 +349,13 @@ if [ "$IS_MASTER" == "true" ]; then
   service gmetad start
   apachectl start
 
-  # Hadoop
+  # Hadoop master processes
+  
+  # Set the file descriptor limit for the namenode and jobtracker processes.
+  # The system-wide file descriptor limit (761408) should be plenty for several processes with
+  # this many files open.
+  ulimit -n 32768
+  
   # only format on first boot
   [ ! -e /mnt/hadoop/dfs ] && "$HADOOP_HOME"/bin/hadoop namenode -format
 
@@ -361,13 +370,20 @@ else
          /etc/gmond.conf
   service gmond start
 
-  # Hadoop
+  # Hadoop slave processes
+  
+  # Set the file descriptor limit for the datanode and tasktracker processes.
+  # The system-wide file descriptor limit (761408) should be plenty for several processes with
+  # this many files open.
+  ulimit -n 32768
+  
   "$HADOOP_HOME"/bin/hadoop-daemon.sh start datanode
   
-  # Set limits for tasktracker - use roughly half of max (65535) since
-  # we'll typically have two trackers per server.
-  ulimit -n 30000
+  # Reduce the stack size for the tasktracker, since crawling jobs can launch a large number
+  # of threads. Note that this ends up getting applied to the NSCD launch immediately below
+  # as well, though it's hard to imagine NSCD needing a ton of stack space.
   ulimit -s 256
+  
   "$HADOOP_HOME"/bin/hadoop-daemon.sh start tasktracker
 fi
 
@@ -390,6 +406,4 @@ fi
 
 # Run this script on next boot
 # 
-# TODO CSc Re-enable this file removal once testing is complete!
-#
-#rm -f /var/ec2/ec2-run-user-data.*
+rm -f /var/ec2/ec2-run-user-data.*
