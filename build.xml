@@ -75,7 +75,7 @@ SOFTWARE.
 			<pom refid="maven.project"/>
 			<localRepository refid="local.repository"/>
 		</artifact:dependencies>
-	</target>
+    </target>
 
 	<target name="mvn-install"  xmlns:artifact="urn:maven-artifact-ant" depends="mvn-init">
         <artifact:install file="${build.dir}/${jar.name}">
@@ -305,7 +305,7 @@ SOFTWARE.
 		         use="true"
 		         windowtitle="${name} ${version} API"
 		         doctitle="${name} ${version} API"
-		         bottom="Copyright &amp;copy; ${javadoc.year} 101tec Inc.">
+		         bottom="Copyright &amp;copy; ${javadoc.year} Bixo Labs">
 			<packageset dir="${main.src.dir}" />
 			<link href="${javadoc.link.java}" />
 			<classpath>
@@ -364,7 +364,7 @@ SOFTWARE.
 	<!-- ================================================================== -->
 
 	<target name="dist"
-	        depends="test-all, jar, doc"
+		    depends="test-all, jar, doc"
 	        description="--> create a tarball distribution">
 
 		<delete dir="${build.dir.dist}" />
@@ -391,8 +391,7 @@ SOFTWARE.
 		
 		<!-- copy libs -->
 		<copy todir="${build.dir.dist}/lib" flatten="true">
-			<fileset dir="${lib.dir}" />
-			<fileset dir="${build.dir}/lib" />
+			<path refid="runtime.classpath" />
 		</copy>
 		
 		<!-- copy src -->
