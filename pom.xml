@@ -205,6 +205,7 @@
             <artifactId>hadoop-core</artifactId>
             <version>0.20.2</version>
 		    <scope>provided</scope>
+		    
 		    <exclusions>
 		    	<exclusion>
 		    		<artifactId>jetty</artifactId>
