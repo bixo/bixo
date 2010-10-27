@@ -235,7 +235,6 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                         LOGGER.error("Fetch pool rejected our fetch list for " + ref);
 
                         finished(ref);
-                        _flowProcess.increment(FetchCounters.URLS_SKIPPED, urls.size());
                         skipUrls(urls, UrlStatus.SKIPPED_DEFERRED, String.format("Execution rejection skipped %d URLs", urls.size()));
                     }
 
@@ -345,6 +344,9 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         }
 
         _flowProcess.increment(FetchCounters.URLS_SKIPPED, urls.size());
+        if (status == UrlStatus.SKIPPED_PER_SERVER_LIMIT) {
+            _flowProcess.increment(FetchCounters.URLS_SKIPPED_PER_SERVER_LIMIT, urls.size());
+        }
 
         if ((traceMsg != null) && LOGGER.isTraceEnabled()) {
             LOGGER.trace(String.format(traceMsg, urls.size()));

@@ -18,10 +18,12 @@ public enum FetchCounters {
     // During URL fetching
     URLS_FETCHING,
     URLS_FETCHED,
-    URLS_SKIPPED,
+    URLS_SKIPPED,           // (incl. URLS_SKIPPED_PER_SERVER_LIMIT)
     URLS_FAILED,
+
+    URLS_SKIPPED_PER_SERVER_LIMIT, // UrlStatus.SKIPPED_PER_SERVER_LIMIT
     
     FETCHED_BYTES,          // Total bytes of fetched content.
-    FETCHED_TIME            // Total time in milliseconds spent fetching
+    FETCHED_TIME,           // Total time in milliseconds spent fetching
 
 }
