@@ -40,7 +40,7 @@ public class FetchSetDatum extends BaseDatum {
         validateFields(tupleEntry, FIELDS);
     }
 
-    public FetchSetDatum(List<ScoredUrlDatum> urls, long fetchTime, long fetchDelay, int groupingKey, String groupingRef, boolean lastList) {
+    public FetchSetDatum(List<ScoredUrlDatum> urls, long fetchTime, long fetchDelay, int groupingKey, String groupingRef) {
         super(FIELDS);
         
         setUrls(urls);
@@ -48,7 +48,7 @@ public class FetchSetDatum extends BaseDatum {
         setFetchDelay(fetchDelay);
         setGroupingKey(groupingKey);
         setGroupingRef(groupingRef);
-        setLastList(lastList);
+        setLastList(false);
         setSkipped(false);
     }
 

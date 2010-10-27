@@ -42,7 +42,7 @@ public class ScoredUrlDatumTest {
         
         long fetchTime = System.currentTimeMillis();
         PartitioningKey groupingKey = new PartitioningKey("key", 1);
-        FetchSetDatum pfd = new FetchSetDatum(urls, fetchTime, 1000, groupingKey.getValue(), groupingKey.getRef(), false);
+        FetchSetDatum pfd = new FetchSetDatum(urls, fetchTime, 1000, groupingKey.getValue(), groupingKey.getRef());
         
         Lfs in = new Lfs(new SequenceFile(FetchSetDatum.FIELDS), "build/test/ScoredUrlDatumTest/testCascadingSerialization/in", true);
         TupleEntryCollector write = in.openForWrite(new JobConf());
