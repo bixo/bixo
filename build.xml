@@ -384,7 +384,11 @@ SOFTWARE.
 			<fileset dir="${basedir}/bin" />
 		</copy>
 		
-		<!-- copy  javadoc to target dir  -->
+        <chmod perm="oug+x">
+          <fileset dir="${build.dir.dist}/bin" />
+        </chmod>
+    
+        <!-- copy  javadoc to target dir  -->
 		<copy todir="${build.dir.dist}/doc/javadoc">
 			<fileset dir="${build.javadoc}" />
 		</copy>
@@ -416,7 +420,13 @@ SOFTWARE.
 		</copy>
 
 		<tar longfile="gnu" compression="gzip" destfile="${build.release.file}">
-			<tarfileset dir="${build.dir.dist}" />
+			<tarfileset dir="${build.dir.dist}">
+			    <include name="**" />
+			    <exclude name="bin/*" />
+			</tarfileset>
+			<tarfileset dir="${build.dir.dist}" mode="755">
+			    <include name="bin/*" />
+			</tarfileset>
 		</tar>
 	</target>
 
