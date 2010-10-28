@@ -60,6 +60,11 @@ if [ "$JAVA_HOME" = "" ]; then
   exit 1
 fi
 
+if [ "$HADOOP_HOME" = "" ]; then
+  echo "Error: HADOOP_HOME is not set."
+  exit 1
+fi
+
 JAVA=$JAVA_HOME/bin/java
 JAVA_HEAP_MAX=-Xmx1000m 
 
@@ -81,13 +86,24 @@ if [ -z BIXO_CORE ]; then
 	echo "Unable to find the bixo-core jar"
 	exit 1
 else 
-	BIXO_LIB_HOME=${BIXO_CORE%/bixo-core-*.jar}/lib
+	BIXO_LIB_HOME=${BIXO_CORE%/bixo-core-*.jar}/runtime
 fi
 
 CLASSPATH=${CLASSPATH}:$BIXO_CORE
 
 # add libs to CLASSPATH
 for f in $BIXO_LIB_HOME/*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+
+# add Hadoop libs to CLASSPATH
+for f in $HADOOP_HOME/hadoop-*-core.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+for f in $HADOOP_HOME/lib/*.jar; do
+  CLASSPATH=${CLASSPATH}:$f;
+done
+for f in $HADOOP_HOME/lib/jsp-2.1/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 
