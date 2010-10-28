@@ -377,6 +377,7 @@ SOFTWARE.
 		<mkdir dir="${build.dir.dist}/doc/javadoc" />
 		<mkdir dir="${build.dir.dist}/doc/reports" />
 		<mkdir dir="${build.dir.dist}/lib" />
+		<mkdir dir="${build.dir.dist}/runtime" />
 		<mkdir dir="${build.dir.dist}/src" />
 
 		<!-- copy launch script to target -->
@@ -395,6 +396,11 @@ SOFTWARE.
 		
 		<!-- copy libs -->
 		<copy todir="${build.dir.dist}/lib" flatten="true">
+			<fileset dir="${basedir}/lib" />
+		</copy>
+		
+		<!-- copy runtime -->
+		<copy todir="${build.dir.dist}/runtime" flatten="true">
 			<path refid="runtime.classpath" />
 		</copy>
 		
@@ -417,6 +423,21 @@ SOFTWARE.
 		</copy>
 		<copy todir="${build.dir.dist}/doc/licenses">
 			<fileset dir="${basedir}/doc/licenses" />
+		</copy>
+		
+		<!-- copy the build file -->
+		<copy todir="${build.dir.dist}">
+			<fileset file="${basedir}/build.xml" />
+		</copy>
+
+		<!-- copy the build properties -->
+		<copy todir="${build.dir.dist}">
+			<fileset file="${basedir}/build.properties" />
+		</copy>
+
+		<!-- copy the pom file -->
+		<copy todir="${build.dir.dist}">
+			<fileset file="${basedir}/pom.xml" />
 		</copy>
 
 		<tar longfile="gnu" compression="gzip" destfile="${build.release.file}">
