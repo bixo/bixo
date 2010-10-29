@@ -52,6 +52,14 @@ fi
 
 # Note: 
 
+# The instance type required by the project, if any (e.g., if there are configuration
+# settings below that assume the instance has at least 7.5GB of RAM).
+#
+# Example:
+# export REQUIRED_INSTANCE_TYPE=m1.large
+#
+export REQUIRED_INSTANCE_TYPE=
+
 # The Amazon Machine Image to use for all master and slave instances.
 # Unless you always launch using $DEFAULT_INSTANCE_TYPE (or always specify the same
 # instance type when you launch clusters), then it probably makes more sense to

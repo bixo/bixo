@@ -155,6 +155,7 @@ echo 'USER_DATA_FILE_TEMPLATE='$USER_DATA_FILE_TEMPLATE
 export EC2_PRIVATE_KEY=`find $AWS_KEYDIR  -path '*/pk*.pem'`
 export EC2_CERT=`find $AWS_KEYDIR -path '*/cert*.pem'`
 export KEY_NAME=`find $AWS_KEYDIR -path '*/id_rsa-*' | sed -e "s|^.*id_rsa-\(.*\)$|\1|"`
+echo 'Using AWS Key-Pair: '$KEY_NAME
 
 # Fill in the values of the account-specific shell variables using the contents of
 # files expected to live inside the EC2 keys directory.
