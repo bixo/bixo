@@ -13,7 +13,7 @@ little interest to users.
 <add/commit pending changes>
 % git pull
 <resolve any merge issues>
-% ant clean install
+% ant clean dist
 % git push
 
 2. Tag the master with the target release version
@@ -37,8 +37,14 @@ little interest to users.
 
 4. Generate/fix references
 
+% cp build/bixo-dist-1.0-SNAPSHOT.tgz build/release/bixo-dist-x.y.z.tgz
+
+Go to http://github.com/bixo/bixo/downloads
+Upload build/release/bixo-dist-x.y.z.tgz (this will take a while)
+Remove the previous release (if minor version change)
+
+
 - update openbixo.org pages
- * source zipball/tarball
  * Maven settings, link
 
 - send email to list
