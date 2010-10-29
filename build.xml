@@ -110,7 +110,8 @@ SOFTWARE.
 		       optimize="${javac.optimize}"
 		       target="${javac.version}"
 		       source="${javac.version}"
-		       deprecation="${javac.deprecation}">
+		       deprecation="${javac.deprecation}"
+		       includeAntRuntime="false">
 			<compilerarg line="${javac.args} ${javac.args.warnings}" />
 			<classpath refid="compile.classpath" />
 		</javac>
@@ -135,7 +136,8 @@ SOFTWARE.
 		       optimize="${javac.optimize}"
 		       target="${javac.version}"
 		       source="${javac.version}"
-		       deprecation="${javac.deprecation}">
+		       deprecation="${javac.deprecation}"
+		       includeAntRuntime="false">
 			<compilerarg line="${javac.args} ${javac.args.warnings}" />
 			<classpath refid="test.classpath" />
 			<classpath refid="test.path" />
@@ -216,7 +218,8 @@ SOFTWARE.
 		       optimize="${javac.optimize}"
 		       target="${javac.version}"
 		       source="${javac.version}"
-		       deprecation="${javac.deprecation}">
+		       deprecation="${javac.deprecation}"
+		       includeAntRuntime="false">
 			<compilerarg line="${javac.args} ${javac.args.warnings}" />
 			<classpath refid="test.classpath" />
 			<classpath refid="test.path" />
