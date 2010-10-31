@@ -9,10 +9,11 @@ import bixo.cascading.BaseSplitter;
 import bixo.cascading.NullContext;
 import bixo.cascading.NullSinkTap;
 import bixo.cascading.SplitterAssembly;
+import bixo.config.BaseFetchJobPolicy;
+import bixo.config.DefaultFetchJobPolicy;
 import bixo.datum.FetchSetDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
-import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
@@ -26,6 +27,7 @@ import bixo.operations.FilterAndScoreByUrlAndRobots;
 import bixo.operations.GroupFunction;
 import bixo.operations.MakeFetchSetsBuffer;
 import bixo.robots.BaseRobotsParser;
+import bixo.robots.RobotUtils;
 import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.GroupingKey;
 import bixo.utils.UrlUtils;
@@ -198,32 +200,19 @@ public class FetchPipe extends SubAssembly {
      * @param metaDataFields
      */
     
-    public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseFetcher fetcher) {
-        this(urlProvider, scorer, fetcher, null, null, 1);
-    }
-
     public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseFetcher fetcher, int numReducers) {
-        this(urlProvider, scorer, fetcher, null, null, numReducers);
+        this(urlProvider, scorer, fetcher, RobotUtils.createFetcher(fetcher),
+                        new SimpleRobotRulesParser(),
+                        new DefaultFetchJobPolicy(fetcher.getFetcherPolicy()),
+                        numReducers);
     }
     
     public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseFetcher fetcher, BaseFetcher robotsFetcher, BaseRobotsParser parser,
-                    int numReducers) {
+                    BaseFetchJobPolicy fetchJobPolicy, int numReducers) {
         
         Pipe robotsPipe = new Each(urlProvider, new GroupFunction(new GroupByDomain()));
         robotsPipe = new GroupBy("Grouping URLs by IP/delay", robotsPipe, GroupedUrlDatum.getGroupingField());
-        
-        if (parser == null) {
-            parser = new SimpleRobotRulesParser();
-        }
-        
-        FilterAndScoreByUrlAndRobots filter;
-        if (robotsFetcher != null) {
-            filter = new FilterAndScoreByUrlAndRobots(robotsFetcher, parser, scorer);
-        } else {
-            filter = new FilterAndScoreByUrlAndRobots(fetcher.getUserAgent(), fetcher.getMaxThreads(), parser, scorer);
-        }
-        
-        robotsPipe = new Every(robotsPipe, filter, Fields.RESULTS);
+        robotsPipe = new Every(robotsPipe, new FilterAndScoreByUrlAndRobots(robotsFetcher, parser, scorer), Fields.RESULTS);
         
         // Split into records for URLs that are special (not fetchable) and regular
         SplitterAssembly splitter = new SplitterAssembly(robotsPipe, new SplitIntoSpecialAndRegularKeys());
@@ -233,7 +222,8 @@ public class FetchPipe extends SubAssembly {
         // based on the hash of the IP address (with a range of values == number of reducers), plus a list of URLs and a target
         // crawl time.
         Pipe prefetchPipe = new GroupBy("Distributing URL sets", splitter.getRHSPipe(), GroupedUrlDatum.getGroupingField(), ScoredUrlDatum.getSortingField(), true);
-        prefetchPipe = new Every(prefetchPipe, new MakeFetchSetsBuffer(fetcher.getFetcherPolicy(), numReducers), Fields.RESULTS);
+        
+        prefetchPipe = new Every(prefetchPipe, new MakeFetchSetsBuffer(fetchJobPolicy, numReducers), Fields.RESULTS);
         Pipe fetchPipe = new GroupBy("Fetching URL sets", prefetchPipe, FetchSetDatum.getGroupingField(), FetchSetDatum.getSortingField());
         fetchPipe = new Every(fetchPipe, new FetchBuffer(fetcher), Fields.RESULTS);
 
@@ -272,6 +262,14 @@ public class FetchPipe extends SubAssembly {
         throw new InvalidParameterException("Invalid pipe name: " + pipeName);
     }
 
+    /**
+     * Utility routine that helps create the Cascading map needed when there are
+     * multiple tails (like with this subassembly) and you need to build the Flow
+     * 
+     * @param statusSink Tap where status will be sent (can be null)
+     * @param fetchedSink Tap where fetched content will be sent (can be null)
+     * @return Map usable in FlowConnector.connect() call.
+     */
     public static Map<String, Tap> makeSinkMap(Tap statusSink, Tap fetchedSink) {
         HashMap<String, Tap> result = new HashMap<String, Tap>(2);
         

@@ -40,6 +40,10 @@ public class RobotUtils {
     // FUTURE KKr - add in time to do the download.
     private static final long MAX_FETCH_TIME = (ROBOTS_CONNECTION_TIMEOUT + ROBOTS_SOCKET_TIMEOUT) * ROBOTS_RETRY_COUNT;
 
+    public static BaseFetcher createFetcher(BaseFetcher fetcher) {
+        return createFetcher(fetcher.getUserAgent(), fetcher.getMaxThreads());
+    }
+
     public static BaseFetcher createFetcher(UserAgent userAgent, int maxThreads) {
         // TODO KKr - add static createRobotsFetcher method somewhere that
         // I can use here, and also in SimpleGroupingKeyGenerator

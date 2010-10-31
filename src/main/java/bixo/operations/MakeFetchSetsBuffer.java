@@ -1,25 +1,21 @@
 package bixo.operations;
 
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
 
 import org.apache.log4j.Logger;
 
 import bixo.cascading.NullContext;
 import bixo.cascading.PartitioningKey;
-import bixo.config.FetcherPolicy;
+import bixo.config.BaseFetchJobPolicy;
+import bixo.config.BaseFetchJobPolicy.FetchSetInfo;
 import bixo.datum.FetchSetDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.FetchRequest;
 import bixo.robots.BaseRobotRules;
 import bixo.utils.GroupingKey;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
 import cascading.operation.BufferCall;
-import cascading.operation.OperationCall;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
@@ -34,25 +30,16 @@ import cascading.tuple.TupleEntryCollector;
 public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
     private static final Logger LOGGER = Logger.getLogger(MakeFetchSetsBuffer.class);
 
-    private static final int URLS_PER_SKIPPED_BATCH = 100;
-    
-    private FetcherPolicy _fetcherPolicy;
     private int _numReduceTasks;
-    private transient Random _rand;
+    private BaseFetchJobPolicy _policy;
     
-    public MakeFetchSetsBuffer(FetcherPolicy fetcherPolicy, int numReduceTasks) {
+    public MakeFetchSetsBuffer(BaseFetchJobPolicy policy, int numReduceTasks) {
         super(FetchSetDatum.FIELDS);
 
-        _fetcherPolicy = fetcherPolicy;
+        _policy = policy;
         _numReduceTasks = numReduceTasks;
     }
 
-    @Override
-    public void prepare(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
-        super.prepare(flowProcess, operationCall);
-        _rand = new Random();
-    }
-    
     @Override
     public void operate(FlowProcess process, BufferCall buffCall) {
         Iterator<TupleEntry> values = buffCall.getArgumentsIterator();
@@ -68,88 +55,40 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
 
         long crawlDelay = GroupingKey.getCrawlDelayFromKey(key);
         if (crawlDelay == BaseRobotRules.UNSET_CRAWL_DELAY) {
-            crawlDelay = _fetcherPolicy.getCrawlDelay();
+            crawlDelay = _policy.getDefaultCrawlDelay();
         }
         
-        int maxUrls = _fetcherPolicy.getMaxUrlsPerServer();
-        int totalUrls = 0;
+        _policy.startFetchSet(key, crawlDelay);
         
         TupleEntryCollector collector = buffCall.getOutputCollector();
 
         PartitioningKey newKey = new PartitioningKey(key, _numReduceTasks);
         
-        // We use the entire range (0...MAX_VALUE) for request time, as all that it's used for
-        // is merge-sorting all of the FetchSetDatums.
-        long curRequestTime = 0;
-        long nextRequestTime = curRequestTime;
-
-        int targetSize = 0;
-        final long timeRangeDivisor = 1000;
-        
-        List<ScoredUrlDatum> urls = new LinkedList<ScoredUrlDatum>();
-        
-        boolean skipping = false;
         while (values.hasNext()) {
-            if (targetSize == 0) {
-                skipping = totalUrls >= maxUrls;
-                // Figure out the max # of URLs that we would want to get.
-                if (skipping) {
-                    // We need to be skipping URLs. Do them in big chunks, and set the time to be
-                    // the same for each (don't care, FetchBuffer has to handle skipping them).
-                    targetSize = URLS_PER_SKIPPED_BATCH;
-                    nextRequestTime = curRequestTime;
-                } else {
-                    curRequestTime = randRequestTime(_rand, timeRangeDivisor, curRequestTime);
-                    FetchRequest request = _fetcherPolicy.getFetchRequest(curRequestTime, crawlDelay, Integer.MAX_VALUE);
-                    targetSize = Math.min(request.getNumUrls(), maxUrls - totalUrls);
-                    nextRequestTime = request.getNextRequestTime();
-                }
-            }
-
             ScoredUrlDatum scoredDatum = new ScoredUrlDatum(new TupleEntry(values.next()));
-            urls.add(scoredDatum);
-            totalUrls += 1;
-
-            if (urls.size() >= targetSize) {
-                LOGGER.trace(String.format("Added %d urls for ref %s in group %d at %d", urls.size(), newKey.getRef(), newKey.getValue(), curRequestTime));
-                FetchSetDatum datum = new FetchSetDatum(urls, curRequestTime, nextRequestTime - curRequestTime, newKey.getValue(), newKey.getRef());
-                
-                // We're the last real set (for fetching purposes) if either there are no more URLs, or we're skipping URLs.
-                datum.setLastList(!values.hasNext() || skipping);
-                datum.setSkipped(skipping);
-                collector.add(datum.getTuple());
-
-                curRequestTime = nextRequestTime;
-                urls.clear();
-                targetSize = 0;
+            FetchSetInfo setInfo = _policy.nextFetchSet(scoredDatum);
+            if (setInfo != null) {
+                FetchSetDatum result = makeFetchSetDatum(setInfo, newKey, values.hasNext());
+                collector.add(result.getTuple());
             }
         }
         
         // See if we have another partially built datum to add.
-        if (urls.size() > 0) {
-            LOGGER.trace(String.format("Added %d urls for ref %s in group %d at %d", urls.size(), newKey.getRef(), newKey.getValue(), curRequestTime));
-            FetchSetDatum datum = new FetchSetDatum(urls, curRequestTime, 0, newKey.getValue(), newKey.getRef());
-            datum.setLastList(true);
-            datum.setSkipped(skipping);
-            collector.add(datum.getTuple());
+        FetchSetInfo setInfo = _policy.endFetchSet();
+        if (setInfo != null) {
+            FetchSetDatum result = makeFetchSetDatum(setInfo, newKey, false);
+            collector.add(result.getTuple());
         }
     }
-    
-    /**
-     * Time to move the request time forward. We take some percentage of the remaining range (since we have
-     * no way of knowing how many FetchSetDatums we'll be generating), pick a random number in
-     * this range, add to our current request time, and use that as the new request time.
-     * 
-     * @param rand
-     * @param divisor What slice of remaining time range to consume (randomly)
-     * @param curRequestTime Current time (actually offset)
-     * @return new request time that has been randomly moved forward.
-     */
-    public static long randRequestTime(Random rand, long divisor, long curRequestTime) {
+
+    private FetchSetDatum makeFetchSetDatum(FetchSetInfo setInfo, PartitioningKey key, boolean hasNext) {
+        LOGGER.trace(String.format("Added %d urls for ref %s in group %d at %d", setInfo.getUrls().size(), key.getRef(), key.getValue(), setInfo.getSortKey()));
         
-        // We want to advance by some amount
-        long targetRange = (Math.max(1, Long.MAX_VALUE - curRequestTime) / divisor) - 1;
-        return curRequestTime + 1 + (Math.abs(rand.nextLong()) % targetRange);
+        FetchSetDatum result = new FetchSetDatum(setInfo.getUrls(), setInfo.getSortKey(), setInfo.getFetchDelay(), key.getValue(), key.getRef());
+        result.setLastList(!hasNext || setInfo.isSkipping());
+        result.setSkipped(setInfo.isSkipping());
+        return result;
     }
+    
 
 }

@@ -12,6 +12,8 @@ import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
+import bixo.config.BaseFetchJobPolicy;
+import bixo.config.DefaultFetchJobPolicy;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
 import bixo.datum.FetchedDatum;
@@ -91,7 +93,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         BaseFetcher fetcher = new FakeHttpFetcher(false, 1);
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
+        BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
         
         String outputPath = DEFAULT_OUTPUT_PATH;
         Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath, true);
@@ -327,7 +330,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         BaseFetcher fetcher = new FakeHttpFetcher(false, 10);
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
+        BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
         
         String outputPath = "build/test/FetchPipeTest/dual";
         Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
@@ -381,7 +385,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         BaseFetcher fetcher = new FakeHttpFetcher(false, 1);
         BaseScoreGenerator scorer = new SkippedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
+        BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
         
         String outputPath = DEFAULT_OUTPUT_PATH;
         Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
@@ -410,7 +415,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         BaseFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
+        BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy(defaultPolicy);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
 
         // Create the output
         String outputPath = DEFAULT_OUTPUT_PATH;
@@ -451,11 +457,11 @@ public class FetchPipeLRTest extends CascadingTestCase {
         // This will limit us to one URL.
         final int maxUrls = 1;
         FetcherPolicy defaultPolicy = new FetcherPolicy();
-        defaultPolicy.setMaxUrlsPerServer(maxUrls);
         BaseFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, 1);
+        BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy(defaultPolicy.getMaxRequestsPerConnection(), maxUrls);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
 
         // Create the output
         String outputPath = DEFAULT_OUTPUT_PATH;

@@ -2,10 +2,16 @@ package bixo.config;
 
 import bixo.fetcher.FetchRequest;
 
+// TODO Re-work as FetchJobPolicy, once that supports the fetch portion of the job.
+
 @SuppressWarnings("serial")
 public class AdaptiveFetcherPolicy extends FetcherPolicy {
     private static final int MAX_REQUESTS_PER_CONNECTION = 100;
     
+    // Interval between batched fetch requests, in milliseconds.
+    private static final long DEFAULT_FETCH_INTERVAL = 5 * 60 * 1000L;
+    
+
     public AdaptiveFetcherPolicy(long crawlEndTime, long crawlDelay) {
         super(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, crawlEndTime, crawlDelay, DEFAULT_MAX_REDIRECTS);
         
@@ -23,7 +29,6 @@ public class AdaptiveFetcherPolicy extends FetcherPolicy {
         return MAX_REQUESTS_PER_CONNECTION;
     }
     
-    @Override
     public FetchRequest getFetchRequest(long now, long crawlDelay, int maxUrls) {
         // we want to fetch maxUrls in the remaining time, but the min delay might constrain us.
         

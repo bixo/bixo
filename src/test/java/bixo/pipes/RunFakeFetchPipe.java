@@ -71,7 +71,7 @@ public class RunFakeFetchPipe {
 
             BaseScoreGenerator scorer = new FixedScoreGenerator();
             BaseFetcher fetcher = new FakeHttpFetcher(true, 10);
-            FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher);
+            FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, 1);
 
             // Create the output, which is a dual file sink tap.
             String outputPath = "build/test/RunFakeFetchPipe/dual";

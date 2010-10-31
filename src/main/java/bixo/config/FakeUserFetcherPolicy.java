@@ -3,6 +3,7 @@ package bixo.config;
 import bixo.config.FetcherPolicy;
 import bixo.fetcher.FetchRequest;
 
+// TODO Re-implement this as a FetchJobPolicy, which is where the support should be
 @SuppressWarnings("serial")
 public class FakeUserFetcherPolicy extends FetcherPolicy {
     
@@ -31,7 +32,6 @@ public class FakeUserFetcherPolicy extends FetcherPolicy {
         return Math.round(baseDelay + delayVariance);
     }
     
-    @Override
     public FetchRequest getFetchRequest(long now, long crawlDelay, int maxUrls) {
         // Ignore crawlDelay, and always use our delay.
         long nextRequestTime = now + getCrawlDelay();

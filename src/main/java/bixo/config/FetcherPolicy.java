@@ -27,8 +27,6 @@ import java.security.InvalidParameterException;
 import java.util.HashSet;
 import java.util.Set;
 
-import bixo.fetcher.FetchRequest;
-
 /**
  * Definition of policy for fetches.
  * 
@@ -36,6 +34,37 @@ import bixo.fetcher.FetchRequest;
 @SuppressWarnings("serial")
 public class FetcherPolicy implements Serializable {
     
+    public static final int NO_MIN_RESPONSE_RATE = Integer.MIN_VALUE;
+    public static final int NO_REDIRECTS = 0;
+    
+    public static final int DEFAULT_MIN_RESPONSE_RATE = NO_MIN_RESPONSE_RATE;
+    public static final int DEFAULT_MAX_CONTENT_SIZE = 64 * 1024;
+    public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 2;
+    public static final int DEFAULT_MAX_REDIRECTS = 20;
+    public static final String DEFAULT_ACCEPT_LANGUAGE = "en-us,en-gb,en;q=0.7,*;q=0.3";
+    
+    // How long to wait before a fetch request gets rejected.
+    // TODO KKr - calculate this based on the fetcher policy's max URLs/request
+    private static final long DEFAULT_REQUEST_TIMEOUT = 100 * 1000L;
+    
+    // TODO Values between here and next dividing line should be moved
+    // into DefaultFetchJobPolicy
+    //
+    // These are all outside of the scope of a fetching a URL
+    //
+    // We could potentially move all of the "fetching a URL" settings into the
+    // BaseHttpFetcher class, and have DefaultHttpFetcher use them when
+    // creating an HttpClient. Then we could call it DefaultFetchPolicy, versus
+    // DefaultFetchJobPolicy and BaseFetchJobPolicy.
+    // =========================================================
+    protected static final int DEFAULT_MAX_REQUESTS_PER_CONNECTION = 50;
+    
+    // Interval between requests, in milliseconds.
+    protected static final long DEFAULT_CRAWL_DELAY = 30 * 1000L;
+
+    public static final long NO_CRAWL_END_TIME = Long.MAX_VALUE;
+    public static final long DEFAULT_CRAWL_END_TIME = NO_CRAWL_END_TIME;
+
     // Possible redirect handling modes. If a redirect is NOT followed because of this
     // setting, then a RedirectFetchException is thrown, which is the same as what happens if
     // too many redirects occur. But RedirectFetchException now has a reason field, which
@@ -53,49 +82,22 @@ public class FetcherPolicy implements Serializable {
         IMPOLITE            // Don't check, just go ahead and process.
     }
 
-    public static final int NO_MIN_RESPONSE_RATE = Integer.MIN_VALUE;
-    public static final long NO_CRAWL_END_TIME = Long.MAX_VALUE;
-    public static final int NO_REDIRECTS = 0;
-    
-    public static final int DEFAULT_MIN_RESPONSE_RATE = NO_MIN_RESPONSE_RATE;
-    public static final int DEFAULT_MAX_CONTENT_SIZE = 64 * 1024;
-    public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 2;
-    public static final long DEFAULT_CRAWL_END_TIME = NO_CRAWL_END_TIME;
-    public static final int DEFAULT_MAX_REDIRECTS = 20;
-    public static final String DEFAULT_ACCEPT_LANGUAGE = "en-us,en-gb,en;q=0.7,*;q=0.3";
-    
-    // How long to wait before a fetch request gets rejected.
-    // TODO KKr - calculate this based on the fetcher policy's max URLs/request
-    private static final long DEFAULT_REQUEST_TIMEOUT = 100 * 1000L;
-    
-    // TODO KKr - why use protected here?
-    // Interval between batched fetch requests, in milliseconds.
-    protected static final long DEFAULT_FETCH_INTERVAL = 5 * 60 * 1000L;
-    
-    protected static final int DEFAULT_MAX_REQUESTS_PER_CONNECTION = 50;
-    
-    public static final int NO_MAX_URLS_PER_SERVER = Integer.MAX_VALUE;
-    public static final int DEFAULT_MAX_URLS_PER_SERVER = NO_MAX_URLS_PER_SERVER;
-    
-    // Interval between requests, in milliseconds.
-    protected static final long DEFAULT_CRAWL_DELAY = 30 * 1000L;
+    protected long _crawlDelay;            // Delay (in milliseconds) between requests
+    private int _maxRequestsPerConnection;  // Max # of URLs to request in any one connection
+    private FetcherMode _fetcherMode;       // Should we skip URLs when they back up for a domain?
+    private long _crawlEndTime;          // When we want the crawl to end
+    private RedirectMode _redirectMode;     // What to do about redirects?
+
+    // =========================================================
 
     private int _minResponseRate;        // lower bounds on bytes-per-second
     private int _maxContentSize;        // Max # of bytes to use.
-    protected long _crawlDelay;            // Delay (in milliseconds) between requests
     private int _maxRedirects;
     private int _maxConnectionsPerHost; // 
     private String _acceptLanguage;    // What to pass for the Accept-Language request header
     private Set<String> _validMimeTypes;    // Set of mime-types that we'll accept.
-    private int _maxRequestsPerConnection;  // Max # of URLs to request in any one connection
     private long _requestTimeout;           // Max time for any given set of URLs (termination timeout is based on this)
 
-    // TODO KKr - move these into a CrawlPolicy class, and call it CrawlMode
-    private FetcherMode _fetcherMode;       // Should we skip URLs when they back up for a domain?
-    private long _crawlEndTime;          // When we want the crawl to end
-    private int _maxUrlsPerServer;          // Max number of URLs to fetch per server
-    private RedirectMode _redirectMode;     // What to do about redirects?
-    
     public FetcherPolicy() {
         this(DEFAULT_MIN_RESPONSE_RATE, DEFAULT_MAX_CONTENT_SIZE, DEFAULT_CRAWL_END_TIME, DEFAULT_CRAWL_DELAY, DEFAULT_MAX_REDIRECTS);
     }
@@ -122,16 +124,11 @@ public class FetcherPolicy implements Serializable {
         _maxConnectionsPerHost = DEFAULT_MAX_CONNECTIONS_PER_HOST;
         _maxRequestsPerConnection = DEFAULT_MAX_REQUESTS_PER_CONNECTION;
         _fetcherMode = FetcherMode.COMPLETE;
-        _maxUrlsPerServer = DEFAULT_MAX_URLS_PER_SERVER;
         _redirectMode = _maxRedirects > 0 ? RedirectMode.FOLLOW_ALL : RedirectMode.FOLLOW_NONE;
         
         _requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     }
 
-    public long getDefaultFetchInterval() {
-        return DEFAULT_FETCH_INTERVAL;
-    }
-    
     public long getDefaultCrawlDelay() {
         return DEFAULT_CRAWL_DELAY;
     }
@@ -246,14 +243,6 @@ public class FetcherPolicy implements Serializable {
         _fetcherMode = mode;
     }
     
-    public int getMaxUrlsPerServer() {
-        return _maxUrlsPerServer;
-    }
-    
-    public void setMaxUrlsPerServer(int maxUrlsPerServer) {
-        _maxUrlsPerServer = maxUrlsPerServer;
-    }
-    
     /**
      * Calculate the maximum number of URLs that could be fetched in the remaining time.
      * 
@@ -264,15 +253,6 @@ public class FetcherPolicy implements Serializable {
             return Integer.MAX_VALUE;
         } else {
             return calcMaxUrls();
-        }
-    }
-    
-    public int getDefaultUrlsPerRequest() {
-        long crawlDelay = getDefaultCrawlDelay();
-        if (crawlDelay > 0) {
-            return (int)(getDefaultFetchInterval() / crawlDelay);
-        } else {
-            return Integer.MAX_VALUE;
         }
     }
     
@@ -288,20 +268,6 @@ public class FetcherPolicy implements Serializable {
                 return 1 + (int)Math.max(0, crawlDuration / _crawlDelay);
             }
         }
-    }
-    
-    public FetchRequest getFetchRequest(long now, long crawlDelay, int maxUrls) {
-        int numUrls;
-        
-        if (crawlDelay > 0) {
-            numUrls = Math.min(maxUrls, (int)(getDefaultFetchInterval() / crawlDelay));
-        } else {
-            numUrls = maxUrls;
-        }
-        
-        numUrls = Math.min(numUrls, getMaxRequestsPerConnection());
-        long nextFetchTime = now + (numUrls * crawlDelay);
-        return new FetchRequest(numUrls, nextFetchTime);
     }
     
     public boolean isTerminateFetch() {
@@ -325,7 +291,6 @@ public class FetcherPolicy implements Serializable {
         result = prime * result + _maxContentSize;
         result = prime * result + _maxRedirects;
         result = prime * result + _maxRequestsPerConnection;
-        result = prime * result + _maxUrlsPerServer;
         result = prime * result + _minResponseRate;
         result = prime * result + ((_redirectMode == null) ? 0 : _redirectMode.hashCode());
         result = prime * result + (int) (_requestTimeout ^ (_requestTimeout >>> 32));
@@ -363,8 +328,6 @@ public class FetcherPolicy implements Serializable {
         if (_maxRedirects != other._maxRedirects)
             return false;
         if (_maxRequestsPerConnection != other._maxRequestsPerConnection)
-            return false;
-        if (_maxUrlsPerServer != other._maxUrlsPerServer)
             return false;
         if (_minResponseRate != other._minResponseRate)
             return false;
