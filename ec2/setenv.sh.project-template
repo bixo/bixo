@@ -108,6 +108,13 @@ export EXTRA_CORE_SITE_PROPERTIES=
 export EXTRA_HDFS_SITE_PROPERTIES=
 export EXTRA_MAPRED_SITE_PROPERTIES=
 
+# The AWS Key Pair Name used to SSH into cluster instances.
+#
+# Example:
+# export KEY_NAME=general
+#
+export KEY_NAME=bixolabs-shared
+
 # Note: You may set up a project-specific $AWS_KEYDIR by putting a file named
 # .local.awskey-path (hidden from source control) into $PROJECT_EC2_BASEDIR.
 # It should contain the path to your EC2 keys directory.  These keys are used

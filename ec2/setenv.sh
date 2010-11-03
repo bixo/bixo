@@ -143,18 +143,16 @@ echo 'USER_DATA_FILE_TEMPLATE='$USER_DATA_FILE_TEMPLATE
 # so that it can be used by the EC2 API Tools to communicate securely with the
 # AWS servers.
 #
-# TODO CSc This method expects there to be only one id_rsa-* file in the folder
-# (i.e., one active Amazon EC2 Key Pair). We either need an easy way to switch
-# active key pairs (parameter to this script?) or we need to all share the same
-# key pair for all of our clusters.
-#
 # TODO CSc Go through scripts documenting what each of these authentication
 # objects is, the term(s) used in the Amazon EC2 documentation to refer to them,
 # links into the Amazon EC2 documentation, etc.
 #
 export EC2_PRIVATE_KEY=`find $AWS_KEYDIR  -path '*/pk*.pem'`
 export EC2_CERT=`find $AWS_KEYDIR -path '*/cert*.pem'`
-export KEY_NAME=`find $AWS_KEYDIR -path '*/id_rsa-*' | sed -e "s|^.*id_rsa-\(.*\)$|\1|"`
+if [ -z "$KEY_NAME" ]; then
+    export KEY_NAME=`find $AWS_KEYDIR -path '*/id_rsa-*' | sed -e "s|^.*id_rsa-\(.*\)$|\1|"`
+fi
+echo 'KEY_NAME='$KEY_NAME
 
 # Fill in the values of the account-specific shell variables using the contents of
 # files expected to live inside the EC2 keys directory.
