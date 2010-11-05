@@ -49,8 +49,8 @@ if [ -n "$MASTER_EC2_HOST" ]; then
   exit 0
 fi
 
-if [ -n $INSTANCE_TYPE ]; then
-  if [ -n $REQUIRED_INSTANCE_TYPE ] && [ "$INSTANCE_TYPE" != "$REQUIRED_INSTANCE_TYPE" ]; then
+if [ -n "$INSTANCE_TYPE" ]; then
+  if [ -n "$REQUIRED_INSTANCE_TYPE" ] && [ "$INSTANCE_TYPE" != "$REQUIRED_INSTANCE_TYPE" ]; then
     echo "This project requires $REQUIRED_INSTANCE_TYPE instances (see REQUIRED_INSTANCE_TYPE in $PROJECT_EC2_BASEDIR/setenv.sh)"
     exit -1
   fi
@@ -140,6 +140,22 @@ sed -e "s|%AWS_ACCESS_KEY_ID%|$AWS_ACCESS_KEY_ID|" \
     -e "s|%EXTRA_HDFS_SITE_PROPERTIES%|$EXTRA_HDFS_SITE_PROPERTIES|" \
     -e "s|%EXTRA_MAPRED_SITE_PROPERTIES%|$EXTRA_MAPRED_SITE_PROPERTIES|" \
        "$USER_DATA_FILE_TEMPLATE" > .user_data_file.master
+
+# Try removing comments from user data file if it exceeds 16K.
+# On each line except for the very first (which has #!/usr/bin/env bash),
+# we remove everything from the first # character to the end of the line,
+# but not if the # has anything but whitespace before it.
+let USER_DATA_SIZE=`wc -c .user_data_file.master | awk '{print $1}'`
+if [ $USER_DATA_SIZE -gt 16384 ]; then
+    echo "Removing comments from master user data file as it exceeds 16K"
+    sed -e "1!s|^#.*||" -e "1!s|[ \t]#.*||" .user_data_file.master > .user_data_file.master.stripped
+    mv -f .user_data_file.master.stripped .user_data_file.master
+    let USER_DATA_SIZE=`wc -c .user_data_file.master | awk '{print $1}'`
+    if [ $USER_DATA_SIZE -gt 16384 ]; then
+        echo "Master user data file still exceeds 16K. Try trimming $USER_DATA_FILE_TEMPLATE (and EXTRA_CORE_SITE_PROPERTIES, etc.) by hand."
+        exit -1
+    fi
+fi
 
 # Launch the master instance
 INSTANCE=`ec2-run-instances $AMI_IMAGE -n 1 -g $CLUSTER_MASTER -k $KEY_NAME -f .user_data_file.master -t $INSTANCE_TYPE $KERNEL_ARG | grep INSTANCE | awk '{print $2}'`

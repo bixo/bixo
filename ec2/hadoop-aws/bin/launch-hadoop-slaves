@@ -44,8 +44,8 @@ if [ ! -f $MASTER_IP_PATH ]; then
   exit -1
 fi
 
-if [ -n $INSTANCE_TYPE ]; then
-  if [ -n $REQUIRED_INSTANCE_TYPE ] && [ "$INSTANCE_TYPE" != "$REQUIRED_INSTANCE_TYPE" ]; then
+if [ -n "$INSTANCE_TYPE" ]; then
+  if [ -n "$REQUIRED_INSTANCE_TYPE" ] && [ "$INSTANCE_TYPE" != "$REQUIRED_INSTANCE_TYPE" ]; then
     echo "This project requires $REQUIRED_INSTANCE_TYPE instances (see REQUIRED_INSTANCE_TYPE in $PROJECT_EC2_BASEDIR/setenv.sh)"
     exit -1
   fi
@@ -103,8 +103,24 @@ sed -e "s|%MASTER_HOST%|$MASTER_HOST|" \
     -e "s|%EXTRA_MAPRED_SITE_PROPERTIES%|$EXTRA_MAPRED_SITE_PROPERTIES|" \
        "$USER_DATA_FILE_TEMPLATE" > .user_data_file.slave
 
+# Try removing comments from user data file if it exceeds 16K.
+# On each line except for the very first (which has #!/usr/bin/env bash),
+# we remove everything from the first # character to the end of the line,
+# but not if the # has anything but whitespace before it.
+let USER_DATA_SIZE=`wc -c .user_data_file.slave | awk '{print $1}'`
+if [ $USER_DATA_SIZE -gt 16384 ]; then
+    echo "Removing comments from slave user data file as it exceeds 16K"
+    sed -e "1!s|^#.*||" -e "1!s|[ \t]#.*||" .user_data_file.slave > .user_data_file.slave.stripped
+    mv -f .user_data_file.slave.stripped .user_data_file.slave
+    let USER_DATA_SIZE=`wc -c .user_data_file.slave | awk '{print $1}'`
+    if [ $USER_DATA_SIZE -gt 16384 ]; then
+        echo "Slave user data file still exceeds 16K. Try trimming $USER_DATA_FILE_TEMPLATE (and EXTRA_CORE_SITE_PROPERTIES, etc.) by hand."
+        exit -1
+    fi
+fi
+
 # Launch all the slave instances
-if [ -z $SPOT_PRICE ]; then
+if [ -z "$SPOT_PRICE" ]; then
     echo "Adding $NUM_SLAVES node(s) to cluster group $CLUSTER with AMI $AMI_IMAGE"
     ec2-run-instances $AMI_IMAGE -n "$NUM_SLAVES" -g "$CLUSTER" -k "$KEY_NAME" -f .user_data_file.slave -t "$INSTANCE_TYPE" -z "$MASTER_ZONE" $KERNEL_ARG | grep INSTANCE | awk '{print $2}'
 else
