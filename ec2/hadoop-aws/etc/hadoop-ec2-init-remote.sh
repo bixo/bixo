@@ -17,7 +17,7 @@ MASTER_HOST=%MASTER_HOST% # Interpolated before being sent to EC2 node
 SECURITY_GROUPS=`wget -q -O - http://169.254.169.254/latest/meta-data/security-groups`
 IS_MASTER=`echo $SECURITY_GROUPS | awk '{ a = match ($0, "-master$"); if (a) print "true"; else print "false"; }'`
 if [ "$IS_MASTER" == "true" ]; then
- MASTER_HOST=`wget -q -O - http://169.254.169.254/latest/meta-data/local-hostname`
+  MASTER_HOST=`wget -q -O - http://169.254.169.254/latest/meta-data/local-hostname`
 fi
 
 # These values get filled in by launch-hadoop-master and launch-hadoop-slaves
@@ -35,15 +35,24 @@ EXTRA_MAPRED_SITE_PROPERTIES="%EXTRA_MAPRED_SITE_PROPERTIES%"
 HADOOP_HOME=`ls -d /usr/local/hadoop-*`
 
 # For m1.small slaves, we only get one virtual core (1 EC2 Compute Unit).
-# For m1.large slaves, we actually have a second drive which can share the HDFS load.
-#
+# For m1.large slaves, we get two (with 2 EC2 Compute Units each),
+# and we also get a second drive which can share the HDFS load.
+# Sometimes there is an overlap between map and reduce tasks on a slave.
+# It seems like this works m1.large instances too hard when we try to
+# run 2 maps and 2 reduces simultaneously. We can also allocate as much as
+# 1.5GB/task, plus 1GB for each of the tasktracker and datanode, so we may
+# may only have enough RAM for 3 tasks on a 7.5GB machine anyway.
 if [ "$INSTANCE_TYPE" == "m1.small" ]; then
- NUM_SLAVE_CORES=1
- HDFS_DATA_DIR="/mnt/hadoop/dfs/data"
+  NUM_SLAVE_CORES=1
+  MAP_TASKS_PER_SLAVE=1
+  REDUCE_TASKS_PER_SLAVE=1
+  HDFS_DATA_DIR="/mnt/hadoop/dfs/data"
 else
- NUM_SLAVE_CORES=2
- HDFS_DATA_DIR="/mnt/hadoop/dfs/data,/mnt2/hadoop/dfs/data"
- mkdir -p /mnt2/hadoop
+  NUM_SLAVE_CORES=2
+  MAP_TASKS_PER_SLAVE=2
+  REDUCE_TASKS_PER_SLAVE=1
+  HDFS_DATA_DIR="/mnt/hadoop/dfs/data,/mnt2/hadoop/dfs/data"
+  mkdir -p /mnt2/hadoop
 fi
 
 ################################################################################
@@ -71,6 +80,18 @@ cat > $HADOOP_HOME/conf/core-site.xml <<EOF
 </property>
 
 <!-- i/o properties -->
+
+<property>
+  <name>io.file.buffer.size</name>
+  <value>65536</value>
+  <description>The size of buffer for use in sequence files.
+  The size of this buffer should probably be a multiple of hardware
+  page size (4096 on Intel x86), and it determines how much data is
+  buffered during read and write operations.
+  
+  InfoChimps, Cloudera and Datameer all suggest increasing this to 64K.
+  </description>
+</property>
 
 <!-- file system properties -->
 
@@ -190,7 +211,7 @@ cat > $HADOOP_HOME/conf/mapred-site.xml <<EOF
 
 <property>
   <name>mapred.tasktracker.map.tasks.maximum</name>
-  <value>$NUM_SLAVE_CORES</value>
+  <value>$MAP_TASKS_PER_SLAVE</value>
   <description>The maximum number of map tasks that will be run
   simultaneously by a task tracker.
   
@@ -200,7 +221,7 @@ cat > $HADOOP_HOME/conf/mapred-site.xml <<EOF
 </property>
 <property>
   <name>mapred.tasktracker.reduce.tasks.maximum</name>
-  <value>$NUM_SLAVE_CORES</value>
+  <value>$REDUCE_TASKS_PER_SLAVE</value>
   <description>The maximum number of reduce tasks that will be run
   simultaneously by a task tracker.
   
@@ -317,18 +338,33 @@ mkdir -p /mnt/hadoop/logs
 # not set on boot
 export USER="root"
 
-# TODO CSc This limits.conf content will only take effect if you log into the machine
-# and then restart the services by hand (i.e., without using these EC2 scripts).
-
-if [ "$IS_MASTER" == "false" ]; then
-  # We want to constrain the kernel stack size used for slaves, since we
-  # fire up a bunch of threads. We won't need this once Hadoop supports specifying
-  # stack size as part of the ulimit settings in the job conf. But for now this
-  # needs to be set up before Hadoop starts running.
+# Increase the default ulimit -n for the root user.
+#
+# NOTE: This limits.conf content will only take effect for subsequent shells
+# (after Hadoop gets running), and therefore would only affect things spawned by the user
+# (e.g., 'hadoop fs' operations on the command line) or when the user restarts
+# the jobtracker/namenode/tasktracker/datanode by hand.
+# I'm not sure about shell commands spawned by Hadoop, but I would imagine
+# the limit in effect when the Hadoop process was launched would apply to them..
+#
+# TODO CSc This could be removed (at least the nofile entries) if our AMI already
+# had this in its limits.conf file.
+if [ "$IS_MASTER" == "true" ]; then
 
   cat > /etc/security/limits.conf <<EOF
 root	soft	nofile	32768
-root	hard	nofile	65535
+root	hard	nofile	65536
+EOF
+
+else
+
+  # We also want to constrain the kernel stack size used for slaves, since we
+  # fire up a bunch of threads. We won't need this once Hadoop supports specifying
+  # stack size as part of the ulimit settings in the job conf. But for now this
+  # needs to be set up before Hadoop starts running.
+  cat > /etc/security/limits.conf <<EOF
+root	soft	nofile	32768
+root	hard	nofile	65536
 root	soft	stack	256
 root	hard	stack	256
 EOF

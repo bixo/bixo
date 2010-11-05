@@ -57,14 +57,17 @@ ENABLE_WEB_PORTS=true
 # variable, but I wonder if any other EC2 scripts use it. Is it worth just writing
 # out its definition here?
 
-# The EC2 instance type to use if $INSTANCE_TYPE is not set
-# Instance type can be set via an optional parameter to
+# The EC2 instance type to use if not specified via the optional parameter to
 # $HADOOP_AWS_HOME/bin/[hadoop-ec2|launch-hadoop-[cluster|master|slaves]] scripts
-DEFAULT_INSTANCE_TYPE="m1.small"
-#DEFAULT_INSTANCE_TYPE="m1.large"
-#DEFAULT_INSTANCE_TYPE="m1.xlarge"
-#DEFAULT_INSTANCE_TYPE="c1.medium"
-#DEFAULT_INSTANCE_TYPE="c1.xlarge"
+if [ -n "$REQUIRED_INSTANCE_TYPE" ]; then
+  DEFAULT_INSTANCE_TYPE="$REQUIRED_INSTANCE_TYPE"
+else
+  DEFAULT_INSTANCE_TYPE="m1.small"
+  #DEFAULT_INSTANCE_TYPE="m1.large"
+  #DEFAULT_INSTANCE_TYPE="m1.xlarge"
+  #DEFAULT_INSTANCE_TYPE="c1.medium"
+  #DEFAULT_INSTANCE_TYPE="c1.xlarge"
+fi
 
 # The EC2 group master name. $CLUSTER is set via parameter passed to
 # $HADOOP_AWS_HOME/bin/[hadoop-ec2|launch-hadoop-[cluster|master|slaves]] scripts
