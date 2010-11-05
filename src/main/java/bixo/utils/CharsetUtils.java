@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 
+// TODO We should be using Tika's CharsetUtils instead.
 @SuppressWarnings("serial")
 public class CharsetUtils {
     private static final Logger LOGGER = Logger.getLogger(CharsetUtils.class);

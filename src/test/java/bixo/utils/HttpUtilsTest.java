@@ -19,6 +19,6 @@ public class HttpUtilsTest {
         assertEquals("", HttpUtils.getCharsetFromContentType("text/plain"));
         assertEquals("UTF-8", HttpUtils.getCharsetFromContentType("text/xml; charset=UTF-8"));
         // TODO KKr - reenable this test when Tika is fixed up
-        // assertEquals("us-ascii", HttpUtils.getCharsetFromContentType("text/xml;CHARSET = us-ascii "));
+         assertEquals("us-ascii", HttpUtils.getCharsetFromContentType("text/xml;CHARSET = us-ascii "));
     }
 }
