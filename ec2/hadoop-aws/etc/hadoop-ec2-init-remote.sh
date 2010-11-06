@@ -21,10 +21,10 @@ if [ "$IS_MASTER" == "true" ]; then
 fi
 
 # These values get filled in by launch-hadoop-master and launch-hadoop-slaves
-# locally to create the version of this file that is set to the remote instance.
-# The variables (and other variables in this script) are then set up and used
-# when the script is run on the instance to set up various configuration files
-# for the master or slave.
+# locally to create the version of this file that is sent to the remote instances.
+# When the script with the filled-in values is run on the remote instance,
+# these variables (and those that depend on them) customize the startup of the
+# Hadoop system and related processes.
 AWS_ACCESS_KEY_ID=%AWS_ACCESS_KEY_ID%
 AWS_SECRET_ACCESS_KEY=%AWS_SECRET_ACCESS_KEY%
 INSTANCE_TYPE=%INSTANCE_TYPE%
@@ -39,9 +39,12 @@ HADOOP_HOME=`ls -d /usr/local/hadoop-*`
 # and we also get a second drive which can share the HDFS load.
 # Sometimes there is an overlap between map and reduce tasks on a slave.
 # It seems like this works m1.large instances too hard when we try to
-# run 2 maps and 2 reduces simultaneously. We can also allocate as much as
+# run 2 maps and 2 reduces simultaneously. We sometimes allocate as much as
 # 1.5GB/task, plus 1GB for each of the tasktracker and datanode, so we may
 # may only have enough RAM for 3 tasks on a 7.5GB machine anyway.
+# For m2.2xlarge slaves, we get 4 (with 3.25 EC2 Compute Units each),
+# 34.2GB of RAM, plus the second drive, so we should be able to run 4 maps
+# and 4 reducers simultaneously.
 if [ "$INSTANCE_TYPE" == "m1.small" ]; then
   NUM_SLAVE_CORES=1
   MAP_TASKS_PER_SLAVE=1
