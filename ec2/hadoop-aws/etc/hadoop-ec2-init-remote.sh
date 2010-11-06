@@ -47,6 +47,12 @@ if [ "$INSTANCE_TYPE" == "m1.small" ]; then
   MAP_TASKS_PER_SLAVE=1
   REDUCE_TASKS_PER_SLAVE=1
   HDFS_DATA_DIR="/mnt/hadoop/dfs/data"
+elif [ "$INSTANCE_TYPE" == "m2.2xlarge" ]; then
+  NUM_SLAVE_CORES=4
+  MAP_TASKS_PER_SLAVE=4
+  REDUCE_TASKS_PER_SLAVE=4
+  HDFS_DATA_DIR="/mnt/hadoop/dfs/data,/mnt2/hadoop/dfs/data"
+  mkdir -p /mnt2/hadoop
 else
   NUM_SLAVE_CORES=2
   MAP_TASKS_PER_SLAVE=2
@@ -442,4 +448,4 @@ fi
 
 # Run this script on next boot
 # 
-rm -f /var/ec2/ec2-run-user-data.*
+# rm -f /var/ec2/ec2-run-user-data.*
