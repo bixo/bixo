@@ -1,8 +1,10 @@
 package bixo.config;
 
 import java.io.Serializable;
+import java.util.Iterator;
 import java.util.List;
 
+import bixo.datum.FetchSetDatum;
 import bixo.datum.ScoredUrlDatum;
 
 @SuppressWarnings("serial")
@@ -56,4 +58,13 @@ public abstract class BaseFetchJobPolicy implements Serializable {
     abstract public FetchSetInfo nextFetchSet(ScoredUrlDatum scoredDatum);
     abstract public FetchSetInfo endFetchSet();
     
+    // ==============================================
+    // Methods used during fetch of FetchSetDatums
+    // ==============================================
+    
+    abstract public void startFetching(Iterator<FetchSetDatum> iter);
+    abstract public boolean keepFetching();
+    abstract public FetchSetDatum nextFetch();
+    abstract public void stopFetching();
+
 }

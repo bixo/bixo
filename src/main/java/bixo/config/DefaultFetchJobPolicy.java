@@ -14,7 +14,6 @@ public class DefaultFetchJobPolicy extends BaseFetchJobPolicy {
     
     private static final int DEFAULT_MAX_URLS_PER_SERVER = Integer.MAX_VALUE;
     
-
     // When we have to skip URLs, how many to return in each set. We
     // want this to be artificially big, so we don't have lots and lots of sets.
     private static final int URLS_PER_SKIPPED_SET = 100;
