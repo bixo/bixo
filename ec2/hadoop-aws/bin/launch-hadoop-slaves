@@ -44,9 +44,14 @@ if [ ! -f $MASTER_IP_PATH ]; then
   exit -1
 fi
 
-if [ -z $INSTANCE_TYPE ]; then
-    echo 'Instance <type> parameter not specified - using $DEFAULT_INSTANCE_TYPE'" ($DEFAULT_INSTANCE_TYPE)"
-    INSTANCE_TYPE=$DEFAULT_INSTANCE_TYPE
+if [ -n $INSTANCE_TYPE ]; then
+  if [ -n $REQUIRED_INSTANCE_TYPE ] && [ "$INSTANCE_TYPE" != "$REQUIRED_INSTANCE_TYPE" ]; then
+    echo "This project requires $REQUIRED_INSTANCE_TYPE instances (see REQUIRED_INSTANCE_TYPE in $PROJECT_EC2_BASEDIR/setenv.sh)"
+    exit -1
+  fi
+else
+  echo 'Instance <type> parameter not specified - using $DEFAULT_INSTANCE_TYPE'" ($DEFAULT_INSTANCE_TYPE)."
+  INSTANCE_TYPE=$DEFAULT_INSTANCE_TYPE
 fi
 
 # Find an appropriate Amazon Machine Image.
