@@ -14,10 +14,10 @@
 		</license>
 	</licenses>
 	<url>http://openbixo.org</url>
-	<description>Bixo is an open source Java web mining toolkit that runs as a series of Cascading pipes. It is designed to be used as a tool for creating customized crawlers and analyzers, thus each Cascading pipe implements a discrete operation.</description>
+	<description>Bixo is an open source Java web mining toolkit built on top of Hadoop, Cascading, HttpClient and Tika.</description>
 	<scm>
 		<connection>scm:git:git://github.com/bixo/bixo.git</connection>
-		<url>scm:git:git://github.com/bixo/bixo.git</url>
+		<url>http://github.com/bixo/bixo</url>
 	</scm>
 	<packaging>jar</packaging>
 	<!-- Must be kept in sync with "version" value in build.properties -->
@@ -35,6 +35,7 @@
 			<name>Apache snapshot repository</name>
 			<url>https://repository.apache.org/content/groups/snapshots-group/</url>
 		</repository>
+		
 		<repository>
 			<id>Apache Releases</id>
 			<name>Apache release repository</name>
