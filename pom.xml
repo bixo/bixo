@@ -85,7 +85,7 @@
 		<dependency>
 			<groupId>org.apache.tika</groupId>
 			<artifactId>tika-parsers</artifactId>
-			<version>0.8-SNAPSHOT</version>
+			<version>0.9-SNAPSHOT</version>
 		</dependency>
 	
 		<dependency>
