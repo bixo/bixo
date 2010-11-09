@@ -451,4 +451,4 @@ fi
 
 # Run this script on next boot
 # 
-# rm -f /var/ec2/ec2-run-user-data.*
+rm -f /var/ec2/ec2-run-user-data.*
