@@ -38,6 +38,16 @@ public class SimpleParser extends BaseParser {
         this(new SimpleContentExtractor(), new SimpleLinkExtractor(), parserPolicy);
     }
     
+    /**
+     * @param contentExtractor to use instead of new {@link SimpleContentExtractor}()
+     * @param linkExtractor to use instead of new {@link SimpleLinkExtractor}()
+     * @param parserPolicy to customize operation of the parser
+     * <BR><BR><B>Note:</B> There is no need to construct your own
+     * {@link SimpleLinkExtractor} simply to control the set of link tags
+     * and attributes it processes. Instead, use {@link ParserPolicy#setLinkTags}
+     * and {@link ParserPolicy#setLinkAttributeTypes}, and then pass this policy
+     * to {@link SimpleParser#SimpleParser(ParserPolicy)}.
+     */
     public SimpleParser(BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, ParserPolicy parserPolicy) {
         super(parserPolicy);
         
