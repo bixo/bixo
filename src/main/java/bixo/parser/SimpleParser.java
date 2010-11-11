@@ -87,7 +87,6 @@ public class SimpleParser extends BaseParser {
         metadata.add(Metadata.RESOURCE_NAME_KEY, fetchedDatum.getBaseUrl());
         metadata.add(Metadata.CONTENT_TYPE, fetchedDatum.getContentType());
         String charset = getCharset(fetchedDatum);
-        metadata.add(Metadata.CONTENT_ENCODING, charset);
         metadata.add(Metadata.CONTENT_LANGUAGE, getLanguage(fetchedDatum, charset));
         
         InputStream is = new ByteArrayInputStream(fetchedDatum.getContentBytes(), 0, fetchedDatum.getContentLength());
@@ -137,7 +136,7 @@ public class SimpleParser extends BaseParser {
 	}
 
     /**
-     * Extract encoding from either explicit header, or from content-type
+     * Extract encoding from content-type
      * 
      * If a charset is returned, then it's a valid/normalized charset name that's
      * supported on this platform.
@@ -146,12 +145,7 @@ public class SimpleParser extends BaseParser {
      * @return charset in response headers, or null
      */
     protected String getCharset(FetchedDatum datum) {
-        String result = CharsetUtils.clean(datum.getHeaders().getFirst(HttpHeaderNames.CONTENT_ENCODING));
-        if (result == null) {
-            result = CharsetUtils.clean(HttpUtils.getCharsetFromContentType(datum.getContentType()));
-        }
-        
-        return result;
+        return CharsetUtils.clean(HttpUtils.getCharsetFromContentType(datum.getContentType()));
     }
 
     /**

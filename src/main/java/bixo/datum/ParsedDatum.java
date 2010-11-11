@@ -12,12 +12,12 @@ import cascading.tuple.TupleEntry;
 @SuppressWarnings("serial")
 public class ParsedDatum extends UrlDatum {
     
-    private static final String HOST_ADDRESS_FN = fieldName(ParsedDatum.class, "hostAddress");
-    private static final String PARSED_TEXT_FN = fieldName(ParsedDatum.class, "parsedText");
-    private static final String LANGUAGE_FN = fieldName(ParsedDatum.class, "language");
-    private static final String TITLE_FN = fieldName(ParsedDatum.class, "title");
-    private static final String OUTLINKS_FN = fieldName(ParsedDatum.class, "outLinks");
-    private static final String PARSED_META_FN = fieldName(ParsedDatum.class, "parsedMeta");
+    public static final String HOST_ADDRESS_FN = fieldName(ParsedDatum.class, "hostAddress");
+    public static final String PARSED_TEXT_FN = fieldName(ParsedDatum.class, "parsedText");
+    public static final String LANGUAGE_FN = fieldName(ParsedDatum.class, "language");
+    public static final String TITLE_FN = fieldName(ParsedDatum.class, "title");
+    public static final String OUTLINKS_FN = fieldName(ParsedDatum.class, "outLinks");
+    public static final String PARSED_META_FN = fieldName(ParsedDatum.class, "parsedMeta");
 
     public static final Fields FIELDS = new Fields(HOST_ADDRESS_FN, PARSED_TEXT_FN, LANGUAGE_FN, 
                     TITLE_FN, OUTLINKS_FN, PARSED_META_FN).append(getSuperFields(ParsedDatum.class));

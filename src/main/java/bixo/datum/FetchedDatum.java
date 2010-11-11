@@ -32,15 +32,15 @@ import cascading.tuple.TupleEntry;
 @SuppressWarnings("serial")
 public class FetchedDatum extends UrlDatum implements Serializable {
     
-    private static final String NEW_BASE_URL_FN = fieldName(FetchedDatum.class, "newBaseUrl");
-    private static final String FETCHED_URL_FN = fieldName(FetchedDatum.class, "fetchedUrl");
-    private static final String FETCH_TIME_FN = fieldName(FetchedDatum.class, "fetchTime");
-    private static final String CONTENT_FN = fieldName(FetchedDatum.class, "content");
-    private static final String CONTENT_TYPE_FN = fieldName(FetchedDatum.class, "contentType");
-    private static final String RESPONSE_RATE_FN = fieldName(FetchedDatum.class, "responseRate");
-    private static final String NUM_REDIRECTS_FN = fieldName(FetchedDatum.class, "numRedirects");
-    private static final String HOST_ADDRESS_FN = fieldName(FetchedDatum.class, "hostAddress");
-    private static final String HTTP_HEADERS_FN = fieldName(FetchedDatum.class, "httpHeaders");
+    public static final String NEW_BASE_URL_FN = fieldName(FetchedDatum.class, "newBaseUrl");
+    public static final String FETCHED_URL_FN = fieldName(FetchedDatum.class, "fetchedUrl");
+    public static final String FETCH_TIME_FN = fieldName(FetchedDatum.class, "fetchTime");
+    public static final String CONTENT_FN = fieldName(FetchedDatum.class, "content");
+    public static final String CONTENT_TYPE_FN = fieldName(FetchedDatum.class, "contentType");
+    public static final String RESPONSE_RATE_FN = fieldName(FetchedDatum.class, "responseRate");
+    public static final String NUM_REDIRECTS_FN = fieldName(FetchedDatum.class, "numRedirects");
+    public static final String HOST_ADDRESS_FN = fieldName(FetchedDatum.class, "hostAddress");
+    public static final String HTTP_HEADERS_FN = fieldName(FetchedDatum.class, "httpHeaders");
 
     public static final Fields FIELDS = new Fields(NEW_BASE_URL_FN,
                     FETCHED_URL_FN, FETCH_TIME_FN, CONTENT_FN, CONTENT_TYPE_FN,
