@@ -12,12 +12,12 @@ import java.util.concurrent.TimeoutException;
 import org.apache.log4j.Logger;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.utils.CharsetUtils;
 
 import bixo.config.ParserPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.fetcher.HttpHeaderNames;
-import bixo.utils.CharsetUtils;
 import bixo.utils.HttpUtils;
 import bixo.utils.IoUtils;
 
