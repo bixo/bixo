@@ -12,12 +12,12 @@ import java.util.concurrent.TimeoutException;
 import org.apache.log4j.Logger;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.utils.CharsetUtils;
 
 import bixo.config.ParserPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.fetcher.HttpHeaderNames;
-import bixo.utils.CharsetUtils;
 import bixo.utils.HttpUtils;
 import bixo.utils.IoUtils;
 
@@ -38,6 +38,16 @@ public class SimpleParser extends BaseParser {
         this(new SimpleContentExtractor(), new SimpleLinkExtractor(), parserPolicy);
     }
     
+    /**
+     * @param contentExtractor to use instead of new {@link SimpleContentExtractor}()
+     * @param linkExtractor to use instead of new {@link SimpleLinkExtractor}()
+     * @param parserPolicy to customize operation of the parser
+     * <BR><BR><B>Note:</B> There is no need to construct your own
+     * {@link SimpleLinkExtractor} simply to control the set of link tags
+     * and attributes it processes. Instead, use {@link ParserPolicy#setLinkTags}
+     * and {@link ParserPolicy#setLinkAttributeTypes}, and then pass this policy
+     * to {@link SimpleParser#SimpleParser(ParserPolicy)}.
+     */
     public SimpleParser(BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, ParserPolicy parserPolicy) {
         super(parserPolicy);
         

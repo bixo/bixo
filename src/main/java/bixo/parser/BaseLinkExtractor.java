@@ -55,10 +55,34 @@ public abstract class BaseLinkExtractor extends DefaultHandler implements Serial
     protected Set<String> _linkTags = DEFAULT_LINK_TAGS;
     protected Set<String> _linkAttributeTypes = DEFAULT_LINK_ATTRIBUTE_TYPES;
 
+    /**
+     * @param linkTags to collect {@link Outlink}s from
+     * (defaults to {@link BaseLinkExtractor#DEFAULT_LINK_TAGS})
+     * <BR><BR><B>Note:</B> There is no need to construct your own
+     * {@link SimpleLinkExtractor} simply to control the set of link tags
+     * it processes. Instead, provide this set of link tags to
+     * {@link ParserPolicy}.
+     * <BR><BR><B>Note:</B> When using {@link SimpleParser} to parse HTML,
+     * this should be a subset of {@link BaseLinkExtractor#ALL_LINK_TAGS},
+     * because the Tika HtmlParser (and its DefaultHtmlMapper) return only
+     * a subset of all HTML elements in the document. 
+     */
     public void setLinkTags(Set<String> linkTags) {
         _linkTags = linkTags;
     }
 
+    /**
+     * @param linkAttributeTypes to collect {@link Outlink}s from
+     * (defaults to {@link BaseLinkExtractor#DEFAULT_ATTRIBUTE_TYPES})
+     * <BR><BR><B>Note:</B> There is no need to construct your own
+     * {@link SimpleLinkExtractor} simply to control the set of link attributes
+     * it processes. Instead, provide this set of attributes to
+     * {@link ParserPolicy}.
+     * <BR><BR><B>Note:</B> When using {@link SimpleParser} to parse HTML,
+     * this should be a subset of {@link BaseLinkExtractor#ALL_LINK_ATTRIBUTE_TYPES},
+     * because the Tika HtmlParser (and its DefaultHtmlMapper) return only
+     * a subset of all HTML elements in the document. 
+     */
     public void setLinkAttributeTypes(Set<String> linkAttributeTypes) {
         _linkAttributeTypes = linkAttributeTypes;
     }
