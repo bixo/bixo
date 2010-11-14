@@ -99,7 +99,7 @@ if [ "$DEFAULT_INSTANCE_TYPE" == "m1.small" -o "$DEFAULT_INSTANCE_TYPE" == "c1.m
   JAVA_BINARY_URL=''
 else
   ARCH='x86_64'
-  BASE_AMI_IMAGE="ami-ba55bfd3"  # bixolabs-public-amis/bixolabs-hadoop-0.20.2-x86_64.manifest.xml
+  BASE_AMI_IMAGE="ami-18ec1871"  # bixolabs-public-amis/bixolabs-hadoop-0.20.2-x86_64.manifest.xml
   JAVA_BINARY_URL=''
 fi
 

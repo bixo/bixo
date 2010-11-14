@@ -25,9 +25,12 @@ To get a list of valid targets:
 % cd <project directory>
 % ant -p
 
-To  clean, run the tests and build a jar:
+To  clean and build a jar (which also runs all tests):
 
-% ant clean test jar
+% ant clean jar
+
+Note that "ant clean test jar" will currently fail, due to a bug in the maven ant task
+plugin used for managing dependencies.
 
 To create Eclipse project files:
 
