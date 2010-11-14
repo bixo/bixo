@@ -1,7 +1,7 @@
 The scripts in this directory can be used to create a Bixo-enabled 
 cluster in EC2
 
-See also http://bixo.101tec.com/documentation/running-bixo-in-ec2/
+See also http://openbixo.org/documentation/running-bixo-in-ec2/
 for more in-depth information about how to set up for running Bixo
 in EC2.
 
