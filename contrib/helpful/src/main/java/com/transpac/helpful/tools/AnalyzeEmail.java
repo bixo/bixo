@@ -61,7 +61,8 @@ public class AnalyzeEmail {
 	private static final int MAX_CONTENT_SIZE = 8 * 1024 * 1024;
 
 	private static final int MAX_THREADS = 1;
-    
+	private static final int NUM_REDUCERS = 1;
+	
 	private static final String MBOX_PAGE_STATUS_PIPE_NAME = "mbox page fetch status pipe";
 	private static final String SPLITTER_PIPE_NAME = "Split emails pipe";
 	private static final String ANALYZER_PIPE_NAME = "Analyze emails pipe";
@@ -175,7 +176,7 @@ public class AnalyzeEmail {
             BaseScoreGenerator scorer = new FixedScoreGenerator();
             
             BaseFetcher fetcher = new SimpleHttpFetcher(MAX_THREADS, userAgent);
-            FetchPipe fetchPagePipe = new FetchPipe(importPipe, scorer, fetcher);
+            FetchPipe fetchPagePipe = new FetchPipe(importPipe, scorer, fetcher, NUM_REDUCERS);
             
             // Here's the pipe that will output UrlDatum tuples, by extracting URLs from the mod_mbox-generated page.
     		Pipe mboxPagePipe = new Each(fetchPagePipe.getContentTailPipe(), new ParseModMboxPageFunction(), Fields.RESULTS);
@@ -190,7 +191,7 @@ public class AnalyzeEmail {
             fetcher = new SimpleHttpFetcher(MAX_THREADS, defaultPolicy, userAgent);
             
             // We can create the fetch pipe, and set up our Mbox splitter to run on content.
-            FetchPipe fetchMboxPipe = new FetchPipe(mboxPagePipe, scorer, fetcher);
+            FetchPipe fetchMboxPipe = new FetchPipe(mboxPagePipe, scorer, fetcher, NUM_REDUCERS);
             SplitEmails splitterPipe = new SplitEmails(fetchMboxPipe);
             
             // Now create the pipe that's going to analyze the emails we get after splitting them up.

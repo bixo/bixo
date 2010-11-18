@@ -555,6 +555,7 @@ SOFTWARE.
 	<!-- ================================================================== -->
 	
 	<target name="compile-contrib"
+			depends="mvn-install"
 	        description="--> compile contrib examples">
 		<subant target="compile">
 			<fileset dir="./contrib" includes="*/build.xml"/>
