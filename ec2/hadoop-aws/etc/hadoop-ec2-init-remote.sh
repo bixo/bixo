@@ -35,13 +35,18 @@ EXTRA_MAPRED_SITE_PROPERTIES="%EXTRA_MAPRED_SITE_PROPERTIES%"
 HADOOP_HOME=`ls -d /usr/local/hadoop-*`
 
 # For m1.small slaves, we only get one virtual core (1 EC2 Compute Unit).
-# For m1.large slaves, we get two (with 2 EC2 Compute Units each),
+#
+# For m1.large slaves, we get two (2 EC2 Compute Units each) plus 7.5GB of RAM,
 # and we also get a second drive which can share the HDFS load.
-# Sometimes there is an overlap between map and reduce tasks on a slave.
-# It seems like this works m1.large instances too hard when we try to
-# run 2 maps and 2 reduces simultaneously. We sometimes allocate as much as
-# 1.5GB/task, plus 1GB for each of the tasktracker and datanode, so we may
-# may only have enough RAM for 3 tasks on a 7.5GB machine anyway.
+# Most of the time you're either mapping or reducing, so it's ideal to use
+# two map slots and two reduce slots on each slave.
+#
+# WARNING: Sometimes there is an overlap between map and reduce tasks on a slave,
+# and four hot JVMs can work m1.large instances pretty hard.
+# You must also be careful with your child JVM heap sizes. With 1GB each for the
+# tasktracker and datanode, you've only got about 1.3GB left for each child JVM,
+# and you'll want an AMI with swap space to protect you from exec JVMs, etc.
+#
 # For m2.2xlarge slaves, we get 4 (with 3.25 EC2 Compute Units each),
 # 34.2GB of RAM, plus the second drive, so we should be able to run 4 maps
 # and 4 reducers simultaneously.
@@ -59,7 +64,7 @@ elif [ "$INSTANCE_TYPE" == "m2.2xlarge" ]; then
 else
   NUM_SLAVE_CORES=2
   MAP_TASKS_PER_SLAVE=2
-  REDUCE_TASKS_PER_SLAVE=1
+  REDUCE_TASKS_PER_SLAVE=2
   HDFS_DATA_DIR="/mnt/hadoop/dfs/data,/mnt2/hadoop/dfs/data"
   mkdir -p /mnt2/hadoop
 fi
