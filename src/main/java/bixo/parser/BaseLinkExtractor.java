@@ -33,6 +33,7 @@ public abstract class BaseLinkExtractor extends DefaultHandler implements Serial
             add("q");
             add("ins");
             add("del");
+            add("embed");
         }};
         
         public static final Set<String> DEFAULT_LINK_ATTRIBUTE_TYPES =
@@ -62,15 +63,15 @@ public abstract class BaseLinkExtractor extends DefaultHandler implements Serial
      * {@link SimpleLinkExtractor} simply to control the set of link tags
      * it processes. Instead, provide this set of link tags to
      * {@link ParserPolicy}.
-     * <BR><BR><B>Note:</B> When using {@link SimpleParser} to parse HTML,
-     * this should be a subset of {@link BaseLinkExtractor#ALL_LINK_TAGS},
-     * because the Tika HtmlParser (and its DefaultHtmlMapper) return only
-     * a subset of all HTML elements in the document. 
      */
     public void setLinkTags(Set<String> linkTags) {
         _linkTags = linkTags;
     }
 
+    public Set<String> getLinkTags() {
+        return _linkTags;
+    }
+    
     /**
      * @param linkAttributeTypes to collect {@link Outlink}s from
      * (defaults to {@link BaseLinkExtractor#DEFAULT_ATTRIBUTE_TYPES})
@@ -78,15 +79,15 @@ public abstract class BaseLinkExtractor extends DefaultHandler implements Serial
      * {@link SimpleLinkExtractor} simply to control the set of link attributes
      * it processes. Instead, provide this set of attributes to
      * {@link ParserPolicy}.
-     * <BR><BR><B>Note:</B> When using {@link SimpleParser} to parse HTML,
-     * this should be a subset of {@link BaseLinkExtractor#ALL_LINK_ATTRIBUTE_TYPES},
-     * because the Tika HtmlParser (and its DefaultHtmlMapper) return only
-     * a subset of all HTML elements in the document. 
      */
     public void setLinkAttributeTypes(Set<String> linkAttributeTypes) {
         _linkAttributeTypes = linkAttributeTypes;
     }
 
+    public Set<String> getLinkAttributeTypes() {
+        return _linkAttributeTypes;
+    }
+    
     public void reset() {
         _inAnchorTag = null;
     }

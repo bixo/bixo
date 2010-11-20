@@ -6,6 +6,7 @@ package bixo.parser;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,6 +17,8 @@ import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.html.DefaultHtmlMapper;
+import org.apache.tika.parser.html.HtmlMapper;
 import org.apache.tika.sax.TeeContentHandler;
 
 import bixo.datum.ParsedDatum;
@@ -23,6 +26,39 @@ import bixo.datum.ParsedDatum;
 class TikaCallable implements Callable<ParsedDatum> {
     private static final Logger LOGGER = Logger.getLogger(TikaCallable.class);
     
+    private static class CustomHtmlMapper extends DefaultHtmlMapper {
+        
+        private Set<String> _validTags;
+        private Set<String> _validAttributes;
+        
+        public CustomHtmlMapper(Set<String> validTags, Set<String> validAttributes) {
+            _validTags = validTags;
+            _validAttributes = validAttributes;
+        }
+
+        @Override
+        public String mapSafeElement(String name) {
+            if (_validTags.contains(name.toLowerCase())) {
+                return name.toLowerCase();
+            } else {
+                return super.mapSafeElement(name);
+            }
+        }
+        
+        @Override
+        public String mapSafeAttribute(String elementName, String attributeName) {
+            // TODO KKr - really the _validAttributes should be a map from element name
+            // to a list of valid attributes, but that's not how it's implemented currently.
+            // So we blindly assume that if the attribute exists, it's valid.
+            
+            if (_validAttributes.contains(attributeName)) {
+                return attributeName;
+            } else {
+                return super.mapSafeAttribute(elementName, attributeName);
+            }
+        }
+    }
+
     // Simplistic language code pattern used when there are more than one languages specified
     // FUTURE KKr - improve this to handle en-US, and "eng" for those using old-style language codes.
     private static final Pattern LANGUAGE_CODE_PATTERN = Pattern.compile("([a-z]{2})([,;-]).*");
@@ -59,7 +95,7 @@ class TikaCallable implements Callable<ParsedDatum> {
             } else {
                 teeContentHandler = new TeeContentHandler(_contentExtractor, _linkExtractor);
             }
-            _parser.parse(_input, teeContentHandler, _metadata, new ParseContext());
+            _parser.parse(_input, teeContentHandler, _metadata, makeParseContext());
             
             String lang = _extractLanguage ? detectLanguage(_metadata, profilingHandler) : "";
             return new ParsedDatum(_metadata.get(Metadata.RESOURCE_NAME_KEY), null, _contentExtractor.getContent(), lang,
@@ -76,6 +112,27 @@ class TikaCallable implements Callable<ParsedDatum> {
         }
     }
     
+    /**
+     * Decide if we need to set up our own HtmlMapper, because the link extractor has tags that
+     * aren't part of the default set.
+     * 
+     * @return
+     */
+    private ParseContext makeParseContext() {
+        ParseContext result = new ParseContext();
+
+        Set<String> validTags = _linkExtractor.getLinkTags();
+        HtmlMapper defaultMapper = DefaultHtmlMapper.INSTANCE;
+        for (String tag : validTags) {
+            if (defaultMapper.mapSafeElement(tag) == null) {
+                result.set(HtmlMapper.class, new CustomHtmlMapper(validTags, _linkExtractor.getLinkAttributeTypes()));
+                break;
+            }
+        }
+        
+        return result;
+    }
+
     /**
      * See if a language was set by the parser, from meta tags.
      * As a last resort falls back to the result from the ProfilingHandler.
