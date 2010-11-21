@@ -32,40 +32,32 @@ public class HadoopUtils {
     	}
     }
     
+    @SuppressWarnings("deprecation")
     public static JobConf getDefaultJobConf() throws IOException {
     	return getDefaultJobConf(DEFAULT_STACKSIZE);
     }
     
-    public static int getTaskTrackers(JobConf conf) throws IOException, InterruptedException {
-        // Don't go into painful delay loop if we're running locally.
-        if (isJobLocal(conf)) {
-            return 1;
-        }
-        
-        JobClient jobClient = new JobClient(conf);
-        int numTaskTrackers = -1;
-        
-        while (true) {
-            ClusterStatus status = jobClient.getClusterStatus();
-            if (status.getJobTrackerState() == State.RUNNING) {
-                int curTaskTrackers = status.getTaskTrackers();
-                if (curTaskTrackers == numTaskTrackers) {
-                    return numTaskTrackers;
-                } else {
-                    // Things are still settling down, so keep looping.
-                    if (numTaskTrackers != -1) {
-                        LOGGER.trace(String.format("Got incremental update to number of task trackers (%d to %d)", numTaskTrackers, curTaskTrackers));
-                    }
-                    
-                    numTaskTrackers = curTaskTrackers;
-                }
-            }
-            
-            LOGGER.trace("Sleeping during status check");
-            Thread.sleep(STATUS_CHECK_INTERVAL);
-        }
+    /**
+     * Return the number of reducers, and thus the max number of parallel reduce tasks.
+     * 
+     * @param conf
+     * @return number of reducers
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @SuppressWarnings("deprecation")
+    public static int getNumReducers(JobConf conf) throws IOException, InterruptedException {
+        ClusterStatus status = safeGetClusterStatus(conf);
+        return status.getMaxReduceTasks();
     }
     
+    @SuppressWarnings("deprecation")
+    public static int getTaskTrackers(JobConf conf) throws IOException, InterruptedException {
+        ClusterStatus status = safeGetClusterStatus(conf);
+        return status.getTaskTrackers();
+    }
+    
+    @SuppressWarnings("deprecation")
     public static JobConf getDefaultJobConf(int stackSizeInKB) throws IOException {
         JobConf conf = new JobConf();
         
@@ -99,7 +91,7 @@ public class HadoopUtils {
     	props.put("log4j.logger", String.format("cascading=%s,bixo=%s", cascadingLevel, bixoLevel));
     }
     
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "deprecation" })
 	public static Properties getDefaultProperties(Class appJarClass, boolean debugging, JobConf conf) {
         Properties properties = new Properties();
 
@@ -120,8 +112,47 @@ public class HadoopUtils {
         return properties;
     }
     
+    @SuppressWarnings("deprecation")
     public static boolean isJobLocal(JobConf conf) {
         return conf.get( "mapred.job.tracker" ).equalsIgnoreCase( "local" );
     }
+    
+    /**
+     * Utility routine that tries to ensure the cluster is "stable" (slaves have reported in) so
+     * that it's safe to call things like maxReduceTasks.
+     * 
+     * @param conf
+     * @return
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @SuppressWarnings("deprecation")
+    private static ClusterStatus safeGetClusterStatus(JobConf conf) throws IOException, InterruptedException {
+        JobClient jobClient = new JobClient(conf);
+        int numTaskTrackers = -1;
+        
+        while (true) {
+            ClusterStatus status = jobClient.getClusterStatus();
+            if (status.getJobTrackerState() == State.RUNNING) {
+                int curTaskTrackers = status.getTaskTrackers();
+                if (curTaskTrackers == numTaskTrackers) {
+                    return status;
+                } else {
+                    // Things are still settling down, so keep looping.
+                    if (numTaskTrackers != -1) {
+                        LOGGER.trace(String.format("Got incremental update to number of task trackers (%d to %d)", numTaskTrackers, curTaskTrackers));
+                    }
+                    
+                    numTaskTrackers = curTaskTrackers;
+                }
+            }
+            
+            if (!isJobLocal(conf)) {
+                LOGGER.trace("Sleeping during status check");
+                Thread.sleep(STATUS_CHECK_INTERVAL);
+            }
+        }
+    }
+
 
 }
