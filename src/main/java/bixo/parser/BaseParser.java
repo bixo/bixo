@@ -2,6 +2,9 @@ package bixo.parser;
 
 import java.io.Serializable;
 
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.Parser;
+
 import bixo.config.ParserPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
@@ -18,6 +21,8 @@ public abstract class BaseParser implements Serializable {
     public ParserPolicy getParserPolicy() {
         return _policy;
     }
+
+    public abstract Parser getTikaParser();
 
     public abstract ParsedDatum parse(FetchedDatum fetchedDatum) throws Exception;
 

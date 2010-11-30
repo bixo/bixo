@@ -12,6 +12,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.log4j.Logger;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.CharsetUtils;
 
 import bixo.config.ParserPolicy;
@@ -28,7 +29,7 @@ public class SimpleParser extends BaseParser {
     private boolean _extractLanguage = true;
     protected BaseContentExtractor _contentExtractor;
     protected BaseLinkExtractor _linkExtractor;
-    private transient AutoDetectParser _parser;
+    private transient Parser _parser;
     
     public SimpleParser() {
         this(new ParserPolicy());
@@ -57,13 +58,18 @@ public class SimpleParser extends BaseParser {
     
     protected synchronized void init() {
         if (_parser == null) {
-            _parser = new AutoDetectParser();
+            _parser = getTikaParser();
         }
         
         _contentExtractor.reset();
         _linkExtractor.setLinkTags(getParserPolicy().getLinkTags());
         _linkExtractor.setLinkAttributeTypes(getParserPolicy().getLinkAttributeTypes());
         _linkExtractor.reset();
+    }
+
+    @Override
+    public Parser getTikaParser() {
+        return new AutoDetectParser();
     }
 
     public void setExtractLanguage(boolean extractLanguage) {

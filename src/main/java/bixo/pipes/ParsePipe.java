@@ -87,6 +87,12 @@ public class ParsePipe extends SubAssembly {
                 // TODO KKr - don't lose datums for documents that couldn't be parsed
             }
         }
+        
+        @Override
+        public void cleanup(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
+            _flowProcess.dumpCounters();
+            super.cleanup(flowProcess, operationCall);
+        }
     }
 
     public ParsePipe(Pipe fetcherPipe) {
