@@ -82,11 +82,26 @@ MASTER_PRIVATE_IP_PATH=~/.hadooop-private-$CLUSTER_MASTER
 MASTER_IP_PATH=~/.hadooop-$CLUSTER_MASTER
 MASTER_ZONE_PATH=~/.hadooop-zone-$CLUSTER_MASTER
 
-#
 # NOTE: Most of the following variables are only used when *creating* a new AMI.
 # The exception is $KERNEL_ARG, which is passed to ec2-run-instances by
 # launch-hadoop-master and launch-hadoop-slaves.
 #
+# TODO CSc Since $AMI_KERNEL is based on $DEFAULT_INSTANCE_TYPE, we can't currently use
+# our hadoop-ec2 launch-cluster if we specify some other instance type on the command line
+# and that instance type (like c1.medium and c1.xlarge) requires a special kernel.
+# We really need to do this by defining $AMI_KERNEL_C1_MEDIUM and $AMI_KERNEL_C1_XLARGE
+# (in the setenv.sh?) instead, then have launch-hadoop-master and launch-hadoop-slaves
+# use these guys whenever appropriate given $INSTANCE_TYPE.
+#
+# TODO CSc Define an optional set of variables in the (project-specific) setenv.sh
+# for building AMIs, then have create-hadoop-image use those guys instead of these?
+# That wouldn't make much sense, as you'd still have to edit the image building script
+# in bixo (i.e., bixo/ec2/hadoop-aws/bin/image/create-hadoop-image-remote).
+# I think it makes more sense to just define these variables within create-hadoop-image
+# itself. Note that I must hit that script anyway, as it assumes that it can scp a copy
+# of this script from ${HADOOP_EC2_ENV:-$bin/hadoop-ec2-env.sh} to the remote AMI-building
+# instance, $HADOOP_EC2_ENV is now the project-specific hidden file, and this script has
+# moved to bixo/ec2/hadoop-aws/etc/ anyway.
 
 # The version number of the installed JDK.
 JAVA_VERSION=1.6.0_10

@@ -103,7 +103,6 @@ CT_PROFILE_NAME=${1:+.$1}
 # The account-specific variables are left blank in the template.
 # The sed command executed later in this script fills in the values of these
 # account-specific variables with the values this script sets up,
-# and places the resulting script into the (hidden) script file
 # $PROJECT_EC2_BASEDIR/.local${CT_PROFILE_NAME}.hadoop-ec2-env.sh
 # and then we execute this script.  By collecting all of these environment
 # variables within a single script, we record the complete EC2 configuration.
@@ -111,6 +110,7 @@ CT_PROFILE_NAME=${1:+.$1}
 # Note: You may overrride this entire template by placing a project-specific
 # copy inside $PROJECT_EC2_BASEDIR (but *NOT* inside any etc/ folder).
 #
+# and places the resulting script into the (hidden) script file
 # Note: You need a separate template for any cluster profiles you define.
 # 
 if [ -f "$PROJECT_EC2_BASEDIR/hadoop-ec2-env${CT_PROFILE_NAME}.sh" ]; then
