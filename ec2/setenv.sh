@@ -143,6 +143,14 @@ echo 'USER_DATA_FILE_TEMPLATE='$USER_DATA_FILE_TEMPLATE
 # so that it can be used by the EC2 API Tools to communicate securely with the
 # AWS servers.
 #
+# TODO CSc The $EC2_PRIVATE_KEY and $EC2_CERT files seem like they should be
+# AWS Account-specific, but they're apparently not. We need to figure out why.
+# These variables do need to get set up, even though I don't see any Bash scripts
+# that actually use them (besides bixo/ec2/hadoop-aws/etc/hadoop-ec2-env.sh,
+# which I modified to use $AWS_KEYDIR instead). The AWS documentation
+# says they're needed to support SOAP requests, so the EC2 support tools
+# (e.g., ec2-describe-group) must be making SOAP requests.
+#
 # TODO CSc Go through scripts documenting what each of these authentication
 # objects is, the term(s) used in the Amazon EC2 documentation to refer to them,
 # links into the Amazon EC2 documentation, etc.

@@ -27,17 +27,13 @@ AWS_ACCESS_KEY_ID=
 # Your Amazon AWS secret access key.
 AWS_SECRET_ACCESS_KEY=
 
-# Location of EC2 keys.
-# The default setting is probably OK if you set up EC2 following the Amazon Getting Started guide.
-EC2_KEYDIR=`dirname "$EC2_PRIVATE_KEY"`
-
 # The EC2 key name used to launch instances.
 # The default is the value used in the Amazon Getting Started guide.
 KEY_NAME=
 
 # Where your EC2 private key is stored (created when following the Amazon Getting Started guide).
 # You need to change this if you don't store this with your other EC2 keys.
-PRIVATE_KEY_PATH=`echo "$EC2_KEYDIR"/"id_rsa-$KEY_NAME"`
+PRIVATE_KEY_PATH=`echo "$AWS_KEYDIR"/"id_rsa-$KEY_NAME"`
 
 # SSH options used when connecting to EC2 instances.
 SSH_OPTS=`echo -i "$PRIVATE_KEY_PATH" -o StrictHostKeyChecking=no -o ServerAliveInterval=30`
@@ -114,7 +110,7 @@ if [ "$DEFAULT_INSTANCE_TYPE" == "m1.small" -o "$DEFAULT_INSTANCE_TYPE" == "c1.m
   JAVA_BINARY_URL=''
 else
   ARCH='x86_64'
-  BASE_AMI_IMAGE="ami-18ec1871"  # bixolabs-public-amis/bixolabs-hadoop-0.20.2-x86_64.manifest.xml
+  BASE_AMI_IMAGE="ami-827c8beb"  # bixolabs-public-amis/bixolabs-temp-hadoop-0.20.2-x86_64.manifest.xml
   JAVA_BINARY_URL=''
 fi
 
