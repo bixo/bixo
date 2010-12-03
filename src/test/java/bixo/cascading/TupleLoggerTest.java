@@ -10,24 +10,24 @@ public class TupleLoggerTest {
 
     @Test
     public void testLimitStringLength() {
-        assertEquals("abc", TupleLogger.printComparable("abcdefg", 3));
+        assertEquals("abc", TupleLogger.printObject("abcdefg", 3));
     }
     
     @Test
     public void testLimitBytesWritable() {
         BytesWritable bw = new BytesWritable("0123".getBytes());
         
-        assertEquals("30 31 32", TupleLogger.printComparable(bw, 10));
+        assertEquals("30 31 32", TupleLogger.printObject(bw, 10));
     }
     
     @Test
     public void testRemovingCRLF() {
-        assertEquals("ab cd", TupleLogger.printComparable("ab\rcd", 10));
+        assertEquals("ab cd", TupleLogger.printObject("ab\rcd", 10));
     }
     
     @Test
     public void testEmptyBytesWritable() {
-        assertEquals("", TupleLogger.printComparable(new BytesWritable(), 10));
+        assertEquals("", TupleLogger.printObject(new BytesWritable(), 10));
     }
     
     @Test
