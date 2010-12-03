@@ -158,7 +158,7 @@ echo 'USER_DATA_FILE_TEMPLATE='$USER_DATA_FILE_TEMPLATE
 export EC2_PRIVATE_KEY=`find $AWS_KEYDIR  -path '*/pk*.pem'`
 export EC2_CERT=`find $AWS_KEYDIR -path '*/cert*.pem'`
 if [ -z "$KEY_NAME" ]; then
-    export KEY_NAME=`find $AWS_KEYDIR -path '*/id_rsa-*' | sed -e "s|^.*id_rsa-\(.*\)$|\1|"`
+    export KEY_NAME=`find $AWS_KEYDIR -maxdepth 1 -path '*/id_rsa-*' | sed -e "s|^.*id_rsa-\(.*\)$|\1|"`
 fi
 echo 'Using AWS Key-Pair: '$KEY_NAME
 
