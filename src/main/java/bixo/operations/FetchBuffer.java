@@ -44,14 +44,28 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         
         private DiskQueue<FetchSetDatum> _queue;
         private Iterator<TupleEntry> _values;
+        private boolean _iteratorDone;
         
         public QueuedValues(Iterator<TupleEntry> values) {
             _values = values;
+            _iteratorDone = false;
             _queue = new DiskQueue<FetchSetDatum>(MAX_ELEMENTS_IN_MEMORY);
         }
         
+        /**
+         * Return true if the iterator has another Tuple. This avoids calling
+         * the hasNext() method after it returns false, as doing so with
+         * Cascading 1.2 will trigger a NPE.
+         * 
+         * @return true if there's another Tuple waiting to be read.
+         */
+        private boolean safeHasNext() {
+            _iteratorDone = _iteratorDone || !_values.hasNext();
+            return !_iteratorDone;
+        }
+        
         public boolean isEmpty() {
-            return _queue.isEmpty() && !_values.hasNext();
+            return _queue.isEmpty() && !safeHasNext();
         }
         
         public FetchSetDatum nextOrNull(FetcherMode mode) {
@@ -93,7 +107,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 }
                 
                 // Nothing ready in the queue, let's see about the iterator.
-                if (_values.hasNext()) {
+                if (safeHasNext()) {
                     datum = new FetchSetDatum(new TupleEntry(_values.next()));
                     if (datum.isSkipped()) {
                         List<ScoredUrlDatum> urls = datum.getUrls();
