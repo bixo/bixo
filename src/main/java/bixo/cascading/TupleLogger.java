@@ -172,13 +172,13 @@ public class TupleLogger extends BaseOperation<Long> implements Filter<Long> {
     public StringBuilder printTuple(StringBuilder buffer, Tuple tuple) {
         buffer.append( "[" );
         for (int i = 0; i < tuple.size(); i++) {
-            Comparable element = tuple.get( i );
+            Object element = tuple.getObject( i );
 
             if (element instanceof Tuple) {
                 printTuple(buffer, (Tuple)element);
             } else {
                 buffer.append("\'");
-                buffer.append(printComparable(element, _maxPrintLength));
+                buffer.append(printObject(element, _maxPrintLength));
                 buffer.append( "\'" );
             }
 
@@ -192,7 +192,7 @@ public class TupleLogger extends BaseOperation<Long> implements Filter<Long> {
     }
     
     @SuppressWarnings({ "unchecked", "deprecation" })
-    public static String printComparable(Comparable element, int maxLength) {
+    public static String printObject(Object element, int maxLength) {
         StringBuilder result = new StringBuilder();
         
         if (element == null) {
