@@ -68,8 +68,15 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
             ScoredUrlDatum scoredDatum = new ScoredUrlDatum(new TupleEntry(values.next()));
             FetchSetInfo setInfo = _policy.nextFetchSet(scoredDatum);
             if (setInfo != null) {
-                FetchSetDatum result = makeFetchSetDatum(setInfo, newKey, values.hasNext());
+                boolean hasNext = values.hasNext();
+                FetchSetDatum result = makeFetchSetDatum(setInfo, newKey, hasNext);
                 collector.add(result.getTuple());
+                
+                // Avoid bug in Cascading 1.2, where calling hasNext after it's returned false will
+                // throw a NPE.
+                if (!hasNext) {
+                    break;
+                }
             }
         }
         
