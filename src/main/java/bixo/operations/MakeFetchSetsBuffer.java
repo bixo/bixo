@@ -33,6 +33,9 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
     private int _numReduceTasks;
     private BaseFetchJobPolicy _policy;
     
+    private boolean _iteratorDone;
+    private Iterator<TupleEntry> _values;
+    
     public MakeFetchSetsBuffer(BaseFetchJobPolicy policy, int numReduceTasks) {
         super(FetchSetDatum.FIELDS);
 
@@ -44,6 +47,9 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
     public void operate(FlowProcess process, BufferCall buffCall) {
         Iterator<TupleEntry> values = buffCall.getArgumentsIterator();
         TupleEntry group = buffCall.getGroup();
+        
+        _values = values;
+        _iteratorDone = false;
 
         // <key> is the output of the IGroupingKeyGenerator used. This should
         // be <IP address>-<crawl delay in ms>
@@ -64,19 +70,12 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
 
         PartitioningKey newKey = new PartitioningKey(key, _numReduceTasks);
         
-        while (values.hasNext()) {
+        while (safeHasNext()) {
             ScoredUrlDatum scoredDatum = new ScoredUrlDatum(new TupleEntry(values.next()));
             FetchSetInfo setInfo = _policy.nextFetchSet(scoredDatum);
             if (setInfo != null) {
-                boolean hasNext = values.hasNext();
-                FetchSetDatum result = makeFetchSetDatum(setInfo, newKey, hasNext);
+                FetchSetDatum result = makeFetchSetDatum(setInfo, newKey, safeHasNext());
                 collector.add(result.getTuple());
-                
-                // Avoid bug in Cascading 1.2, where calling hasNext after it's returned false will
-                // throw a NPE.
-                if (!hasNext) {
-                    break;
-                }
             }
         }
         
@@ -95,6 +94,19 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
         result.setLastList(!hasNext || setInfo.isSkipping());
         result.setSkipped(setInfo.isSkipping());
         return result;
+    }
+    
+    
+    /**
+     * Return true if the iterator has another Tuple. This avoids calling
+     * the hasNext() method after it returns false, as doing so with
+     * Cascading 1.2 will trigger a NPE.
+     * 
+     * @return true if there's another Tuple waiting to be read.
+     */
+    private boolean safeHasNext() {
+        _iteratorDone = _iteratorDone || !_values.hasNext();
+        return !_iteratorDone;
     }
     
 
