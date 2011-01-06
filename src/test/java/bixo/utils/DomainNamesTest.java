@@ -27,11 +27,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 
-import org.junit.Test;
-
-import bixo.utils.DomainNames;
-
 import junit.framework.TestCase;
+
+import org.junit.Test;
 
 public class DomainNamesTest extends TestCase {
     
@@ -61,11 +59,35 @@ public class DomainNamesTest extends TestCase {
         assertEquals("xxx.biz", DomainNames.getPLD("www.xxx.biz"));
     }
 
-    // Japan (and uk) have shortened gTLDs before the country code.
+    // Japan (and others like uk) have shortened gTLDs before the country code.
     public final void testJapaneseDomains() {
         assertEquals("xxx.co.jp", DomainNames.getPLD("xxx.co.jp"));
         assertEquals("xxx.co.jp", DomainNames.getPLD("www.xxx.co.jp"));
         assertEquals("xxx.ne.jp", DomainNames.getPLD("www.xxx.ne.jp"));
+        
+        assertEquals("xxx.co.uk", DomainNames.getPLD("xxx.co.uk"));
+        assertEquals("xxx.co.uk", DomainNames.getPLD("www.xxx.co.uk"));
+        assertEquals("xxx.ne.uk", DomainNames.getPLD("www.xxx.ne.uk"));
+    }
+    
+    // Some country codes have no 2nd-level TLDs (even the standard global TLDs)
+    // so you could conceivably register even a global TLD within them.
+    public final void testAlwaysTLDs() {
+        assertEquals("ch.to", DomainNames.getPLD("xxx.ch.to"));
+        assertEquals("ch.to", DomainNames.getPLD("www.xxx.ch.to"));
+        assertEquals("ne.to", DomainNames.getPLD("www.xxx.ne.to"));
+        assertEquals("co.to", DomainNames.getPLD("www.xxx.co.to"));
+        assertEquals("com.to", DomainNames.getPLD("www.xxx.com.to"));
+    }
+
+    // Some country codes are completely subdivided into 2nd-level TLDs,
+    // so they'll never register a domain that isn't within one.
+    public final void testNeverTLDs() {
+        assertEquals("xxx.ch.cr", DomainNames.getPLD("xxx.ch.cr"));
+        assertEquals("xxx.ch.cr", DomainNames.getPLD("www.xxx.ch.cr"));
+        assertEquals("xxx.co.cr", DomainNames.getPLD("www.xxx.co.cr"));
+        assertEquals("xxx.com.cr", DomainNames.getPLD("www.xxx.com.cr"));
+        assertEquals("xxx.ibm.cr", DomainNames.getPLD("xxx.ibm.cr"));
     }
 
     // In Germany you can have xxx.de.com
@@ -84,6 +106,10 @@ public class DomainNamesTest extends TestCase {
         assertEquals("domain.com", DomainNames.safeGetHost("http://domain.com"));
         assertTrue(!DomainNames.safeGetHost("mailto:ken@domain.com").equals("domain.com"));
     }
+    
+    public final void testAeroDomains() {
+        assertEquals("arts.aero", DomainNames.getPLD("www.arts.aero"));
+    }
 
     public final void testGetSuperDomain() {
         assertEquals("domain.com", DomainNames.getSuperDomain("www.domain.com"));
@@ -93,7 +119,7 @@ public class DomainNamesTest extends TestCase {
         assertNull(DomainNames.getSuperDomain("xxx.com.it"));
     }
     
-    public final void testIsUrlWithinSubdomain() {
+    public final void testIsUrlWithinDomain() {
         assertTrue(DomainNames.isUrlWithinDomain("http://domain.com", "domain.com"));
         assertFalse(DomainNames.isUrlWithinDomain("http://domain.ru", "domain.com"));
         assertTrue(DomainNames.isUrlWithinDomain("http://www.domain.com", "domain.com"));
