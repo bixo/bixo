@@ -56,9 +56,9 @@ public class Outlink {
     public boolean isNoFollow() {
         String relAttributesString = getRelAttributes();
         if (relAttributesString != null) {
-            String[] relAttributes = relAttributesString.split("[, ]");
+            String[] relAttributes = relAttributesString.split("[, \t]");
             for (String relAttribute : relAttributes) {
-                if (relAttribute.trim().equalsIgnoreCase(NO_FOLLOW_REL_ATTRIBUTE)) {
+                if (relAttribute.equalsIgnoreCase(NO_FOLLOW_REL_ATTRIBUTE)) {
                     return true;
                 }
             }
