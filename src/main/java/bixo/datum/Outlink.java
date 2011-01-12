@@ -20,6 +20,8 @@ package bixo.datum;
 /* An outgoing link from a page. */
 public class Outlink {
 
+    private static final String NO_FOLLOW_REL_ATTRIBUTE = "nofollow";
+
     private String toUrl;
     private String _anchorText;
     private String _relAttributes;
@@ -49,6 +51,19 @@ public class Outlink {
 
     public String getRelAttributes() {
         return _relAttributes;
+    }
+    
+    public boolean isNoFollow() {
+        String relAttributesString = getRelAttributes();
+        if (relAttributesString != null) {
+            String[] relAttributes = relAttributesString.split("[, ]");
+            for (String relAttribute : relAttributes) {
+                if (relAttribute.trim().equalsIgnoreCase(NO_FOLLOW_REL_ATTRIBUTE)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
     
     @Override
