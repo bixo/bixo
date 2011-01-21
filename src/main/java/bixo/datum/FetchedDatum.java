@@ -206,7 +206,7 @@ public class FetchedDatum extends UrlDatum implements Serializable {
 
         _tupleEntry.set(HTTP_HEADERS_FN, headers.toTuple());
     }
-    
+
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder("[base URL] ");

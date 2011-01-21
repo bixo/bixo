@@ -170,10 +170,12 @@ public class FetcherPolicy implements Serializable {
         _minResponseRate = minResponseRate;
     }
 
+    @Deprecated
     public int getMaxContentSize() {
         return _maxContentSize;
     }
 
+    @Deprecated
     public void setMaxContentSize(int maxContentSize) {
         _maxContentSize = maxContentSize;
     }

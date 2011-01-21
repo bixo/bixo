@@ -430,6 +430,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
         int numRedirects = 0;
         boolean needAbort = true;
         String contentType = "";
+        String mimeType = "";
         String hostAddress = null;
         
         // Create a local instance of cookie store, and bind to local context
@@ -484,7 +485,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
             // mime-types from the server to be processed, set "" as one of the valid mime-types in FetcherPolicy.
             Set<String> mimeTypes = _fetcherPolicy.getValidMimeTypes();
             if ((mimeTypes != null) && (mimeTypes.size() > 0)) {
-                String mimeType = HttpUtils.getMimeTypeFromContentType(contentType);
+                mimeType = HttpUtils.getMimeTypeFromContentType(contentType);
                 if (!mimeTypes.contains(mimeType)) {
                     throw new AbortedFetchException(url, "Invalid mime-type: " + mimeType, AbortedFetchReason.INVALID_MIMETYPE);
                 }
@@ -541,7 +542,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
         }
         
         // Figure out how much data we want to try to fetch.
-        int targetLength = _fetcherPolicy.getMaxContentSize();
+        int targetLength = getMaxContentSize(mimeType);
         boolean truncated = false;
         String contentLengthStr = headerMap.getFirst(HttpHeaderNames.CONTENT_LENGTH);
         if (contentLengthStr != null) {
