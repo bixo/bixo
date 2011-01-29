@@ -36,17 +36,32 @@ public class SimpleUrlNormalizer extends BaseUrlNormalizer {
     // Match against default pages such as /index.html, etc. 
     private static final Pattern DEFAULT_PAGE_PATTERN = Pattern.compile("/((?i)index|default)\\.((?i)js[pf]{1}?[afx]?|cgi|cfm|asp[x]?|[psx]?htm[l]?|php[3456]?)(\\?|&|#|$)");
     
+    // Remove things that look like the (invalid) jsession ids prefixing or suffixing the query portion of a URL.
+    private static final Pattern JSESSION_ID_PATTERN = Pattern.compile("(?:;jsessionid=.*?)(\\?|&|#|$)");
+    
     // Remove things that look like session ids from the query portion of a URL.
-    private static final Pattern SESSION_ID_PATTERN = Pattern.compile("([;_]?((?i)l|j|bv_)?((?i)sid|phpsessid|sessionid|session_id)=.*?)(\\?|&|#|$)");
+    private static final Pattern SESSION_ID_PATTERN = Pattern.compile("(\\?|&)(?:(?i)sid|phpsessid|sessionid|session_id|bv_sessionid|jsessionid|-session|session|session_key)=.*?(&|#|$)");
+    
+    // Remove other common unwanted parameters from the query portion of a URL.
+    private static final Pattern OTHER_IGNORED_QUERY_PARAMETERS_PATTERN = Pattern.compile("(\\?|&)(?:(?i)width|format|country|height|src|user|username|uname|return_url|returnurl|sort|sort_by|sortby|sort_direction|sort_key|order_by|orderby|sortorder|collate)=.*?(&|#|$)");
+    
+    // Remove even more common unwanted parameters from the query portion of a URL.
+    private static final Pattern AGGRESSIVE_IGNORED_QUERY_PARAMETERS_PATTERN = Pattern.compile("(\\?|&)(?:(?i)user|usr|user_id|userid|memberid)=.*?(&|#|$)");
     
     private boolean _treatRefAsQuery;
+    private boolean _isAggressive;
     
     public SimpleUrlNormalizer() {
-    	this(false);
+    	this(false, false);
     }
     
     public SimpleUrlNormalizer(boolean treatRefAsQuery) {
-    	_treatRefAsQuery = treatRefAsQuery;
+        this(treatRefAsQuery, false);
+    }
+    
+    public SimpleUrlNormalizer(boolean treatRefAsQuery, boolean isAggressive) {
+        _treatRefAsQuery = treatRefAsQuery;
+        _isAggressive = isAggressive;
     }
     
     private String encodeCodePoint(int codepoint) {
@@ -226,9 +241,26 @@ public class SimpleUrlNormalizer extends BaseUrlNormalizer {
         // Danger, hack! Some sites have session ids that look like http://domain.com/page.html;jsessionid=xxx,
         // or even http://domain.com/page.html;jsessionid=xxx&q=z. So we always want to try to get rid of
         // session ids first, before doing any other processing.
-        Matcher matcher = SESSION_ID_PATTERN.matcher(result);
+        Matcher matcher = JSESSION_ID_PATTERN.matcher(result);
         if (matcher.find()) {
-            result = result.substring(0, matcher.start()) + matcher.group(4) + result.substring(matcher.end());
+            result = result.substring(0, matcher.start()) + matcher.group(1) + result.substring(matcher.end());
+        }
+        
+        matcher = SESSION_ID_PATTERN.matcher(result);
+        if (matcher.find()) {
+            result = result.substring(0, matcher.start()) + matcher.group(1) + matcher.group(2) + result.substring(matcher.end());
+        }
+        
+        matcher = OTHER_IGNORED_QUERY_PARAMETERS_PATTERN.matcher(result);
+        if (matcher.find()) {
+            result = result.substring(0, matcher.start()) + matcher.group(1) + matcher.group(2) + result.substring(matcher.end());
+        }
+        
+        if (_isAggressive) {
+            matcher = AGGRESSIVE_IGNORED_QUERY_PARAMETERS_PATTERN.matcher(result);
+            if (matcher.find()) {
+                result = result.substring(0, matcher.start()) + matcher.group(1) + matcher.group(2) + result.substring(matcher.end());
+            }
         }
         
         URL testUrl;

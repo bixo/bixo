@@ -155,128 +155,183 @@ public class SimpleUrlNormalizerTest {
         normalizeTest(  "http://www.foo.com/foo.php?x=1&sid=xyz&something=1",
                         "http://www.foo.com/foo.php?x=1&something=1",
                         "Remove sid session id in middle of valid query parameters");
+        normalizeTest(  "http://www.foo.com/foo.php?x=1&-session=xyz&something=1",
+                        "http://www.foo.com/foo.php?x=1&something=1",
+                        "Remove -sessionid session id in middle of valid query parameters");
+    }
+    
+    @Test
+    public void testOtherIgnoredQueryParametersRemoval() {
+        normalizeTest(  "http://www.foo.com/foo.php?country=usa",
+                        "http://www.foo.com/foo.php",
+                        "Remove single country query parameter");
+        normalizeTest(  "http://www.foo.com/foo.php?format=xyz&x=1&something=1",
+                        "http://www.foo.com/foo.php?x=1&something=1",
+                        "Remove format before valid query parameters");
+        normalizeTest(  "http://www.foo.com/foo.php?x=1&width=7&something=1",
+                        "http://www.foo.com/foo.php?x=1&something=1",
+                        "Remove width in middle of valid query parameters");
+        normalizeTest(  "http://www.foo.com/foo.php?x=1&something=1&height=7",
+                        "http://www.foo.com/foo.php?x=1&something=1",
+                        "Remove height after valid query parameters");
+    }
+    
+    @Test
+    public void testAggressive() {
+        normalizeTest(  "http://www.foo.com/foo.php?x=1&user_id=7&something=1",
+                        "http://www.foo.com/foo.php?x=1&user_id=7&something=1",
+                        "Leave user_id in middle of valid query parameters");
+        SimpleUrlNormalizer aggresiveNormalizer = new SimpleUrlNormalizer(false, true);
+        normalizeTest(  aggresiveNormalizer,
+                        "http://www.foo.com/foo.php?user=usa",
+                        "http://www.foo.com/foo.php",
+                        "Remove single user query parameter");
+        normalizeTest(  aggresiveNormalizer,
+                        "http://www.foo.com/foo.php?usr=xyz&x=1&something=1",
+                        "http://www.foo.com/foo.php?x=1&something=1",
+                        "Remove usr before valid query parameters");
+        normalizeTest(  aggresiveNormalizer,
+                        "http://www.foo.com/foo.php?x=1&user_id=7&something=1",
+                        "http://www.foo.com/foo.php?x=1&something=1",
+                        "Remove user_id in middle of valid query parameters");
+        normalizeTest(  aggresiveNormalizer,
+                        "http://www.foo.com/foo.php?x=1&something=1&userid=7",
+                        "http://www.foo.com/foo.php?x=1&something=1",
+                        "Remove userid after valid query parameters");
+        normalizeTest(  aggresiveNormalizer,
+                        "http://www.foo.com/foo.html?param=1&another=2;jsessionid=1E6FEC0D14D044541DD84D2D013D29ED",
+                        "http://www.foo.com/foo.html?param=1&another=2",
+                        "Remove jsession id with leading ';' after valid query parameters");
+        normalizeTest(  aggresiveNormalizer,
+                        "http://www.foo.com/foo.html;jsessionid=1E6FEC0D14D044541DD84D2D013D29ED?param=1&another=2",
+                        "http://www.foo.com/foo.html?param=1&another=2",
+                        "Remove jsession id with leading ';'");
+        normalizeTest(  aggresiveNormalizer,
+                        "http://www.foo.com/foo.php?x=1&width=7&something=1",
+                        "http://www.foo.com/foo.php?x=1&something=1",
+                        "Remove width in middle of valid query parameters");
     }
     
     @Test
     public void testDefaultPageRemoval() {
-        normalizeTest("http://www.foo.com/home/index.html",
+        normalizeTest(  "http://www.foo.com/home/index.html",
                         "http://www.foo.com/home/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.html",
+        normalizeTest(  "http://www.foo.com/index.html",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.htm",
+        normalizeTest(  "http://www.foo.com/index.htm",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.asp",
+        normalizeTest(  "http://www.foo.com/index.asp",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.aspx",
+        normalizeTest(  "http://www.foo.com/index.aspx",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.php",
+        normalizeTest(  "http://www.foo.com/index.php",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.php3",
+        normalizeTest(  "http://www.foo.com/index.php3",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/default.html",
+        normalizeTest(  "http://www.foo.com/default.html",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/default.htm",
+        normalizeTest(  "http://www.foo.com/default.htm",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/default.asp",
+        normalizeTest(  "http://www.foo.com/default.asp",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/default.aspx",
+        normalizeTest(  "http://www.foo.com/default.aspx",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/default.php",
+        normalizeTest(  "http://www.foo.com/default.php",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/default.php3",
+        normalizeTest(  "http://www.foo.com/default.php3",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/something.php3",
+        normalizeTest(  "http://www.foo.com/something.php3",
                         "http://www.foo.com/something.php3",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/something.html",
+        normalizeTest(  "http://www.foo.com/something.html",
                         "http://www.foo.com/something.html",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/something.asp",
+        normalizeTest(  "http://www.foo.com/something.asp",
                         "http://www.foo.com/something.asp",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.phtml",
+        normalizeTest(  "http://www.foo.com/index.phtml",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.cfm",
+        normalizeTest(  "http://www.foo.com/index.cfm",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.cgi",
+        normalizeTest(  "http://www.foo.com/index.cgi",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.HTML",
+        normalizeTest(  "http://www.foo.com/index.HTML",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.Htm",
+        normalizeTest(  "http://www.foo.com/index.Htm",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.ASP",
+        normalizeTest(  "http://www.foo.com/index.ASP",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.jsp",
+        normalizeTest(  "http://www.foo.com/index.jsp",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.jsf",
+        normalizeTest(  "http://www.foo.com/index.jsf",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.jspx",
+        normalizeTest(  "http://www.foo.com/index.jspx",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.jspfx",
+        normalizeTest(  "http://www.foo.com/index.jspfx",
                         "http://www.foo.com/index.jspfx",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.jspa",
+        normalizeTest(  "http://www.foo.com/index.jspa",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.jsps",
+        normalizeTest(  "http://www.foo.com/index.jsps",
                         "http://www.foo.com/index.jsps",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.aspX",
+        normalizeTest(  "http://www.foo.com/index.aspX",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.PhP",
+        normalizeTest(  "http://www.foo.com/index.PhP",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.PhP4",
+        normalizeTest(  "http://www.foo.com/index.PhP4",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/default.HTml",
+        normalizeTest(  "http://www.foo.com/default.HTml",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/default.HTm",
+        normalizeTest(  "http://www.foo.com/default.HTm",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/default.ASp",
+        normalizeTest(  "http://www.foo.com/default.ASp",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/default.AspX",
+        normalizeTest(  "http://www.foo.com/default.AspX",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/default.PHP",
+        normalizeTest(  "http://www.foo.com/default.PHP",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/default.PHP3",
+        normalizeTest(  "http://www.foo.com/default.PHP3",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.phtml",
+        normalizeTest(  "http://www.foo.com/index.phtml",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.cfm",
+        normalizeTest(  "http://www.foo.com/index.cfm",
                         "http://www.foo.com/",
                         "Remove default page");
-          normalizeTest("http://www.foo.com/index.cgi",
+        normalizeTest(  "http://www.foo.com/index.cgi",
                         "http://www.foo.com/",
                         "Remove default page");
     }
