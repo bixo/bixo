@@ -248,13 +248,13 @@
 			<dependency>
 				<groupId>cascading</groupId>
 				<artifactId>cascading-core</artifactId>
-				<version>1.1.1</version>
+				<version>1.2.1</version>
 			</dependency>
 			
 			<dependency>
 				<groupId>cascading</groupId>
 				<artifactId>cascading-test</artifactId>
-				<version>1.1.1</version>
+				<version>1.2.1</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
