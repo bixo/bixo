@@ -122,6 +122,13 @@ public class CrawlDirUtils {
 		return result;
 	}
 
+	/**
+	 * Given a "crawl dir" style input path, extract the loop number from the path.
+	 * 
+	 * @param inputPath
+	 * @return Loop number for the directory
+	 * @throws InvalidParameterException
+	 */
 	public static int extractLoopNumber(Path inputPath)
 			throws InvalidParameterException {
 		String dirName = inputPath.getName();
@@ -134,9 +141,16 @@ public class CrawlDirUtils {
 		}
 	}
 	
-	// Return an array of paths to all of the subdirs in crawl dirs found
-	// inside of <crawlPath>, where the subdir name == <subdirName>.
-	public static Path[] findAllSubdirs(FileSystem fs, Path outputPath,
+	/**
+	 * Return an array of paths to all of the subdirs in crawl dirs found
+     * inside of <crawlPath>, where the subdir name == <subdirName>
+	 * @param fs
+	 * @param outputPath
+	 * @param subdirName
+	 * @return Array of directory paths that contain <subdirName>
+	 * @throws IOException
+	 */
+    public static Path[] findAllSubdirs(FileSystem fs, Path outputPath,
 			String subdirName) throws IOException {
 		ArrayList<Path> result = new ArrayList<Path>();
 
@@ -149,12 +163,12 @@ public class CrawlDirUtils {
 			try {
 				// Verify crawl dir name is valid.
 				extractLoopNumber(status.getPath());
-
+				
 				Path subdirPath = new Path(status.getPath(), subdirName);
-				FileStatus[] subdirStatus = listStatus(fs, subdirPath);
-				if ((subdirStatus.length == 1) && (subdirStatus[0].isDir())) {
-					result.add(subdirPath);
-				}
+				// isDirectory has been un-depracated in 0.21...
+	            if (fs.exists(subdirPath) && fs.isDirectory(subdirPath)) {
+	                result.add(subdirPath);
+	            }
 			} catch (InvalidParameterException e) {
 				// ignore, though we shouldn't have random sub-dirs in the
 				// output directory.

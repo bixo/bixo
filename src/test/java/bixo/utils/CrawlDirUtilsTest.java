@@ -14,7 +14,7 @@ import org.junit.Test;
 
 import bixo.hadoop.HadoopUtils;
 
-public class FsUtilsTest {
+public class CrawlDirUtilsTest {
     
     JobConf _conf;
     FileSystem _fileSystem;
@@ -83,5 +83,25 @@ public class FsUtilsTest {
         Assert.assertEquals(7, CrawlDirUtils.extractLoopNumber(path7));
         Assert.assertEquals(11, CrawlDirUtils.extractLoopNumber(path11));
     }
-    
+ 
+    @Test
+    public void testFindAllSubdirs() throws IOException {
+        // Make a loop dir with a subdir
+        String subdirName = "bogus";
+        Path path0 = CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 0);
+        Path subdirPath0 = new Path(path0, subdirName);
+        _fileSystem.mkdirs(subdirPath0);
+        
+        // And another one without the subdir
+        Path path1 = CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 1);
+
+        Path[] allSubdirPathsArr = CrawlDirUtils.findAllSubdirs(_fileSystem, _outputPath, subdirName);
+        Assert.assertEquals(1, allSubdirPathsArr.length);
+
+        // Now add a subdir to path1 as well
+        Path subdirPath1 = new Path(path1, subdirName);
+        _fileSystem.mkdirs(subdirPath1);
+        Path[] strictSubdirPathsArr = CrawlDirUtils.findAllSubdirs(_fileSystem, _outputPath, subdirName);
+        Assert.assertEquals(2, strictSubdirPathsArr.length);
+    }
 }
