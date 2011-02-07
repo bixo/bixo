@@ -50,6 +50,8 @@ public interface HttpHeaderNames {
 
     public static final String ACCEPT_CHARSET = "Accept-Charset";
 
+    public static final String ACCEPT_ENCODING = "Accept-Encoding";
+
     public static final String ACCEPT = "Accept";
     
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010 TransPac Software, Inc.
+ * Copyright (c) 2010-2011 TransPac Software, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy 
  * of this software and associated documentation files (the "Software"), to deal
@@ -103,6 +103,7 @@ import bixo.exceptions.IOFetchException;
 import bixo.exceptions.RedirectFetchException;
 import bixo.exceptions.UrlFetchException;
 import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
+import bixo.utils.EncodingUtils;
 import bixo.utils.HttpUtils;
 
 @SuppressWarnings("serial")
@@ -127,12 +128,11 @@ public class SimpleHttpFetcher extends BaseFetcher {
     
     private static final int DEFAULT_BYTEARRAY_SIZE = 32 * 1024;
     
-    // TODO KKr - figure out best value for this.
-    // This is what Firefox uses (below)
-    // Nutch has text/html,application/xml;q=0.9,application/xhtml+xml,text/xml;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+    // Use the same values as Firefox
     private static final String DEFAULT_ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
     private static final String DEFAULT_ACCEPT_CHARSET = "utf-8,ISO-8859-1;q=0.7,*;q=0.7";
-    
+    private static final String DEFAULT_ACCEPT_ENCODING = "x-gzip, gzip, deflate";
+
     // Keys used to access data in the Http execution context.
     private static final String PERM_REDIRECT_CONTEXT_KEY = "perm-redirect";
 	private static final String REDIRECT_COUNT_CONTEXT_KEY = "redirect-count";
@@ -143,6 +143,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
         "Default",
         "SSL",
     };
+
 
     private HttpVersion _httpVersion;
     private int _socketTimeout;
@@ -439,6 +440,11 @@ public class SimpleHttpFetcher extends BaseFetcher {
         CookieStore cookieStore = new BasicCookieStore();
         localContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
 
+        StringBuilder fetchTrace = null;
+        if (LOGGER.isTraceEnabled()) {
+            fetchTrace = new StringBuilder("Fetched url: " + url);
+        }
+        
         try {
             request.setURI(new URI(url));
             
@@ -451,6 +457,17 @@ public class SimpleHttpFetcher extends BaseFetcher {
             }
 
             int httpStatus = response.getStatusLine().getStatusCode();
+            if (LOGGER.isTraceEnabled()) {
+                fetchTrace.append("; status code: " + httpStatus);
+                if (headerMap.getFirst(HttpHeaderNames.CONTENT_LENGTH) != null) {
+                    fetchTrace.append("; Content-Length: " + headerMap.getFirst(HttpHeaderNames.CONTENT_LENGTH));
+                }
+
+                if (headerMap.getFirst(HttpHeaderNames.LOCATION) != null) {
+                    fetchTrace.append("; Location: " + headerMap.getFirst(HttpHeaderNames.LOCATION));
+                }
+            }
+            
             if ((httpStatus < 200) || (httpStatus >= 300)) {
                 // We can't just check against SC_OK, as some wackos return 201, 202, etc
                 throw new HttpFetchException(url, "Error fetching " + url, httpStatus, headerMap);
@@ -598,7 +615,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
                     if ((readRequests > 1) && (totalRead < targetLength) && (readRate < minResponseRate)) {
                         throw new AbortedFetchException(url, "Slow response rate of " + readRate + " bytes/sec", AbortedFetchReason.SLOW_RESPONSE_RATE);
                     }
-                    
+
                     // Check to see if we got interrupted.
                     if (Thread.interrupted()) {
                         throw new AbortedFetchException(url, AbortedFetchReason.INTERRUPTED);
@@ -616,6 +633,36 @@ public class SimpleHttpFetcher extends BaseFetcher {
             }
         }
 
+
+        // Now see if we need to uncompress the content.
+        String contentEncoding = headerMap.getFirst(HttpHeaderNames.CONTENT_ENCODING);
+        if (contentEncoding != null) {
+            if (LOGGER.isTraceEnabled()) {
+                fetchTrace.append("; Content-Encoding: " + contentEncoding);
+            }
+
+            try {
+                if ("gzip".equals(contentEncoding) || "x-gzip".equals(contentEncoding)) {
+                    content = EncodingUtils.processGzipEncoded(content);
+                    if (LOGGER.isTraceEnabled()) {
+                        fetchTrace.append("; unzipped to " + content.length + " bytes");
+                    }
+                } else if ("deflate".equals(contentEncoding)) {
+                    content = EncodingUtils.processDeflateEncoded(content);
+                    if (LOGGER.isTraceEnabled()) {
+                        fetchTrace.append("; inflated to " + content.length + " bytes");
+                    }
+                }
+            } catch (IOException e) {
+                throw new IOFetchException(url, e);
+            }
+        }
+
+        // Finally dump out the trace msg we've been building.
+        if (LOGGER.isTraceEnabled()) {
+            LOGGER.trace(fetchTrace.toString());
+        }
+        
         return new FetchedResult(   url,
                                     redirectedUrl,
                                     System.currentTimeMillis(), 
@@ -754,6 +801,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
             HashSet<Header> defaultHeaders = new HashSet<Header>();
             defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT_LANGUAGE, _fetcherPolicy.getAcceptLanguage()));
             defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT_CHARSET, DEFAULT_ACCEPT_CHARSET));
+            defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT_ENCODING, DEFAULT_ACCEPT_ENCODING));
             defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT, DEFAULT_ACCEPT));
             
             clientParams.setDefaultHeaders(defaultHeaders);
