@@ -3,8 +3,8 @@ package bixo.utils;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import bixo.config.BaseFetchJobPolicy;
 import bixo.datum.UrlStatus;
-import bixo.robots.BaseRobotRules;
 
 
 public class GroupingKey {
@@ -38,7 +38,7 @@ public class GroupingKey {
     }
     
     public static String makeGroupingKey(String domain, long crawlDelay) {
-        if (crawlDelay == BaseRobotRules.UNSET_CRAWL_DELAY) {
+        if (crawlDelay == BaseFetchJobPolicy.UNSET_CRAWL_DELAY) {
             return String.format("%s-%s", domain, UNSET_DURATION);
         } else {
             return String.format("%s-%d", domain, crawlDelay);
@@ -63,7 +63,7 @@ public class GroupingKey {
         String durationString = m.group(2);
         // If we have <domain>-unset, then the crawl delay wasn't set.
         if (durationString.equals(UNSET_DURATION)) {
-            return BaseRobotRules.UNSET_CRAWL_DELAY;
+            return BaseFetchJobPolicy.UNSET_CRAWL_DELAY;
         }
 
         try {

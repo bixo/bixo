@@ -10,7 +10,6 @@ import bixo.config.BaseFetchJobPolicy;
 import bixo.config.BaseFetchJobPolicy.FetchSetInfo;
 import bixo.datum.FetchSetDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.robots.BaseRobotRules;
 import bixo.utils.GroupingKey;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
@@ -35,7 +34,7 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
     
     private boolean _iteratorDone;
     private Iterator<TupleEntry> _values;
-    
+
     public MakeFetchSetsBuffer(BaseFetchJobPolicy policy, int numReduceTasks) {
         super(FetchSetDatum.FIELDS);
 
@@ -60,7 +59,7 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
         }
 
         long crawlDelay = GroupingKey.getCrawlDelayFromKey(key);
-        if (crawlDelay == BaseRobotRules.UNSET_CRAWL_DELAY) {
+        if (crawlDelay == BaseFetchJobPolicy.UNSET_CRAWL_DELAY) {
             crawlDelay = _policy.getDefaultCrawlDelay();
         }
         

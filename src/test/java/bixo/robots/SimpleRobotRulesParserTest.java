@@ -16,6 +16,8 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import bixo.config.BaseFetchJobPolicy;
+
 
 public class SimpleRobotRulesParserTest {
     private static final String LF = "\n";
@@ -429,7 +431,7 @@ public class SimpleRobotRulesParserTest {
         rules = createRobotRules("Mozilla denybot 99.9", heritrixRobotsTxt.getBytes());
         assertFalse(rules.isAllowed("http://www.domain.com/path"));
         assertFalse(rules.isAllowed("http://www.domain.com/"));
-        assertEquals(BaseRobotRules.UNSET_CRAWL_DELAY, rules.getCrawlDelay());
+        assertEquals(BaseFetchJobPolicy.UNSET_CRAWL_DELAY, rules.getCrawlDelay());
         
         rules = createRobotRules("Mozilla anonbot 99.9", heritrixRobotsTxt.getBytes());
         assertTrue(rules.isAllowed("http://www.domain.com/path"));
@@ -592,7 +594,7 @@ public class SimpleRobotRulesParserTest {
         
         rules = createRobotRules("bixo", delayRules2RobotsTxt.getBytes());
         crawlDelay = rules.getCrawlDelay();
-        assertEquals("testing crawl delay for agent bixo - rule 2", BaseRobotRules.UNSET_CRAWL_DELAY, crawlDelay);
+        assertEquals("testing crawl delay for agent bixo - rule 2", BaseFetchJobPolicy.UNSET_CRAWL_DELAY, crawlDelay);
       }
 
     @Test

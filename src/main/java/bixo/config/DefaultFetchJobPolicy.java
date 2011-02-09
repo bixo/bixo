@@ -14,7 +14,6 @@ public class DefaultFetchJobPolicy extends BaseFetchJobPolicy {
     
     private static final int DEFAULT_MAX_URLS_PER_SERVER = Integer.MAX_VALUE;
     
-
     // When we have to skip URLs, how many to return in each set. We
     // want this to be artificially big, so we don't have lots and lots of sets.
     private static final int URLS_PER_SKIPPED_SET = 100;
@@ -36,16 +35,17 @@ public class DefaultFetchJobPolicy extends BaseFetchJobPolicy {
     }
     
     public DefaultFetchJobPolicy(FetcherPolicy policy) {
-        this(policy.getMaxRequestsPerConnection(), DEFAULT_MAX_URLS_PER_SERVER);
+        this(policy.getMaxRequestsPerConnection(), DEFAULT_MAX_URLS_PER_SERVER, policy.getDefaultCrawlDelay());
     }
 
-    public DefaultFetchJobPolicy(int maxUrlsPerSet, int maxUrlsPerServer) {
+    public DefaultFetchJobPolicy(int maxUrlsPerSet, int maxUrlsPerServer, long defaultCrawlDelay) {
         if ((maxUrlsPerSet <= 0) || (maxUrlsPerServer <= 0)) {
             throw new IllegalArgumentException("Max URLs per set an per server must be > 0");
         }
         
         _maxUrlsPerSet = maxUrlsPerSet;
         _maxUrlsPerServer = maxUrlsPerServer;
+        setDefaultCrawlDelay(defaultCrawlDelay);
     }
 
     @Override

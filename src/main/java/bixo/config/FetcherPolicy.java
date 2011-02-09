@@ -60,7 +60,8 @@ public class FetcherPolicy implements Serializable {
     protected static final int DEFAULT_MAX_REQUESTS_PER_CONNECTION = 50;
     
     // Interval between requests, in milliseconds.
-    protected static final long DEFAULT_CRAWL_DELAY = 30 * 1000L;
+    @Deprecated
+    protected static final long DEFAULT_CRAWL_DELAY = BaseFetchJobPolicy.DEFAULT_CRAWL_DELAY;
 
     public static final long NO_CRAWL_END_TIME = Long.MAX_VALUE;
     public static final long DEFAULT_CRAWL_END_TIME = NO_CRAWL_END_TIME;

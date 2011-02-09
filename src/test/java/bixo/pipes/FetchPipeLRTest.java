@@ -460,7 +460,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         BaseFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
-        BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy(defaultPolicy.getMaxRequestsPerConnection(), maxUrls);
+        BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy(defaultPolicy.getMaxRequestsPerConnection(), maxUrls, BaseFetchJobPolicy.DEFAULT_CRAWL_DELAY);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
 
         // Create the output

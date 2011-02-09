@@ -18,7 +18,7 @@ public class DefaultFetchJobPolicyTest {
         final int maxUrlsPerSet = 2;
         final int maxUrlsPerServer = 3;
         
-        BaseFetchJobPolicy policy = new DefaultFetchJobPolicy(maxUrlsPerSet, maxUrlsPerServer);
+        BaseFetchJobPolicy policy = new DefaultFetchJobPolicy(maxUrlsPerSet, maxUrlsPerServer, BaseFetchJobPolicy.DEFAULT_CRAWL_DELAY);
         
         final int crawlDelay = 10000;
         policy.startFetchSet("groupingKey", crawlDelay);
@@ -48,7 +48,7 @@ public class DefaultFetchJobPolicyTest {
         final int maxUrlsPerSet = 1;
         final int maxUrlsPerServer = 1;
         
-        BaseFetchJobPolicy policy = new DefaultFetchJobPolicy(maxUrlsPerSet, maxUrlsPerServer);
+        BaseFetchJobPolicy policy = new DefaultFetchJobPolicy(maxUrlsPerSet, maxUrlsPerServer, BaseFetchJobPolicy.DEFAULT_CRAWL_DELAY);
         
         final int crawlDelay = 10000;
         policy.startFetchSet("groupingKey", crawlDelay);
@@ -74,7 +74,7 @@ public class DefaultFetchJobPolicyTest {
         final int maxUrlsPerSet = 1;
         final int maxUrlsPerServer = 100;
         
-        BaseFetchJobPolicy policy = new DefaultFetchJobPolicy(maxUrlsPerSet, maxUrlsPerServer);
+        BaseFetchJobPolicy policy = new DefaultFetchJobPolicy(maxUrlsPerSet, maxUrlsPerServer, BaseFetchJobPolicy.DEFAULT_CRAWL_DELAY);
         
         final int crawlDelay = 10000;
         policy.startFetchSet("groupingKey", crawlDelay);

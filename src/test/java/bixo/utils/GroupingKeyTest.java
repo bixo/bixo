@@ -5,13 +5,13 @@ import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
-import bixo.robots.BaseRobotRules;
+import bixo.config.BaseFetchJobPolicy;
 
 public class GroupingKeyTest {
 
     @Test
     public void testFormattingKey() {
-        assertEquals("domain.com-unset", GroupingKey.makeGroupingKey("domain.com", BaseRobotRules.UNSET_CRAWL_DELAY));
+        assertEquals("domain.com-unset", GroupingKey.makeGroupingKey("domain.com", BaseFetchJobPolicy.UNSET_CRAWL_DELAY));
         assertEquals("domain.com-30000", GroupingKey.makeGroupingKey("domain.com", 30000));
     }
     
@@ -23,7 +23,7 @@ public class GroupingKeyTest {
     
     @Test
     public void testExtractingCrawlDelay() {
-        assertEquals(BaseRobotRules.UNSET_CRAWL_DELAY, GroupingKey.getCrawlDelayFromKey("000001-domain.com-unset"));
+        assertEquals(BaseFetchJobPolicy.UNSET_CRAWL_DELAY, GroupingKey.getCrawlDelayFromKey("000001-domain.com-unset"));
         assertEquals(30000, GroupingKey.getCrawlDelayFromKey("domain.com-30000"));
     }
     
