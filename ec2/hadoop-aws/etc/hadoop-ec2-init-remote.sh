@@ -50,18 +50,21 @@ HADOOP_HOME=`ls -d /usr/local/hadoop-*`
 # For m2.2xlarge slaves, we get 4 (with 3.25 EC2 Compute Units each),
 # 34.2GB of RAM, plus the second drive, so we should be able to run 4 maps
 # and 4 reducers simultaneously.
+JOBTRACKER_HEAPSIZE=$HADOOP_HEAPSIZE
 if [ "$INSTANCE_TYPE" == "m1.small" ]; then
   NUM_SLAVE_CORES=1
   MAP_TASKS_PER_SLAVE=1
   REDUCE_TASKS_PER_SLAVE=1
   HDFS_DATA_DIR="/mnt/hadoop/dfs/data"
 elif [ "$INSTANCE_TYPE" == "m2.2xlarge" ]; then
+  JOBTRACKER_HEAPSIZE=2000
   NUM_SLAVE_CORES=4
   MAP_TASKS_PER_SLAVE=4
   REDUCE_TASKS_PER_SLAVE=4
   HDFS_DATA_DIR="/mnt/hadoop/dfs/data,/mnt2/hadoop/dfs/data"
   mkdir -p /mnt2/hadoop
-else
+else # m1.large, etc.
+  JOBTRACKER_HEAPSIZE=1500
   NUM_SLAVE_CORES=2
   MAP_TASKS_PER_SLAVE=2
   REDUCE_TASKS_PER_SLAVE=2
@@ -410,7 +413,15 @@ if [ "$IS_MASTER" == "true" ]; then
   [ ! -e /mnt/hadoop/dfs ] && "$HADOOP_HOME"/bin/hadoop namenode -format
 
   "$HADOOP_HOME"/bin/hadoop-daemon.sh start namenode
+  
+  # Temporarily set $HADOOP_HEAPSIZE to the value calculated above while we launch
+  # the JobTracker.
+  #
+  SAVE_HADOOP_HEAPSIZE=$HADOOP_HEAPSIZE
+  export HADOOP_HEAPSIZE=$JOBTRACKER_HEAPSIZE
   "$HADOOP_HOME"/bin/hadoop-daemon.sh start jobtracker
+  export HADOOP_HEAPSIZE=$SAVE_HADOOP_HEAPSIZE
+  
 else
   # SLAVE
   # Prep Ganglia
