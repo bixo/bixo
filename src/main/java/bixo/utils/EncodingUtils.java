@@ -68,6 +68,11 @@ public class EncodingUtils {
         return outStream.toByteArray();
     }
 
+    // TODO KKr The following routines are designed to support the deflate
+    // compression standard (RFC 1250) for HTTP 1.1 (RFC 2616). However,
+    // I was unable to verify that they really work correctly, so I've
+    // removed deflate from SimpleHttpFetcher.DEFAULT_ACCEPT_ENCODING.
+    
     public static byte[] processDeflateEncoded(byte[] content) throws IOException {
         return processDeflateEncoded(content, Integer.MAX_VALUE);
     }

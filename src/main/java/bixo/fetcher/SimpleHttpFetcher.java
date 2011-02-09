@@ -128,10 +128,12 @@ public class SimpleHttpFetcher extends BaseFetcher {
     
     private static final int DEFAULT_BYTEARRAY_SIZE = 32 * 1024;
     
-    // Use the same values as Firefox
+    // Use the same values as Firefox (except that we don't accept deflate,
+    // which we're not sure is implemented correctly - see the notes in
+    // EncodingUtils/EncodingUtilsTest for more details).
     private static final String DEFAULT_ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
     private static final String DEFAULT_ACCEPT_CHARSET = "utf-8,ISO-8859-1;q=0.7,*;q=0.7";
-    private static final String DEFAULT_ACCEPT_ENCODING = "x-gzip, gzip, deflate";
+    private static final String DEFAULT_ACCEPT_ENCODING = "x-gzip, gzip";
 
     // Keys used to access data in the Http execution context.
     private static final String PERM_REDIRECT_CONTEXT_KEY = "perm-redirect";
