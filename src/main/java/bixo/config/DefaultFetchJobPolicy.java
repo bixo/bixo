@@ -75,7 +75,9 @@ public class DefaultFetchJobPolicy extends BaseFetchJobPolicy {
                 _targetUrlCount = URLS_PER_SKIPPED_SET;
             } else {
                 // Limit to default number per set, or number until we switch into skip mode.
-                _targetUrlCount = Math.min(_maxUrlsPerSet, getMaxUrlsPerServer(scoredDatum) - _totalUrls);
+                _targetUrlCount = 
+                    Math.min(   getMaxUrlsPerSet(scoredDatum), 
+                                getMaxUrlsPerServer(scoredDatum) - _totalUrls);
             }
         }
         
@@ -120,6 +122,16 @@ public class DefaultFetchJobPolicy extends BaseFetchJobPolicy {
      */
     protected int getMaxUrlsPerServer(ScoredUrlDatum scoredDatum) {
         return _maxUrlsPerServer;
+    }
+    
+    /**
+     * Return max URLs per fetch set for the server indicated by the URL in <scoredDatum>.
+     * 
+     * @param scoredDatum datum containing URL to server
+     * @return max number of URLs to fetch from the server within a single connection
+     */
+    protected int getMaxUrlsPerSet(ScoredUrlDatum scoredDatum) {
+        return _maxUrlsPerSet;
     }
     
     /**
