@@ -1,10 +1,16 @@
 package bixo.fetcher;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import junit.framework.Assert;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.conn.HttpHostConnectException;
@@ -16,6 +22,7 @@ import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
+import bixo.config.DefaultFetchJobPolicy;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
 import bixo.datum.FetchedDatum;
@@ -25,9 +32,6 @@ import bixo.exceptions.AbortedFetchReason;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.RedirectFetchException;
 import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
-import bixo.fetcher.BaseFetcher;
-import bixo.fetcher.HttpHeaderNames;
-import bixo.fetcher.SimpleHttpFetcher;
 import bixo.fetcher.simulation.SimulationWebServer;
 import bixo.utils.ConfigUtils;
 
@@ -212,20 +216,33 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         HttpServer server = startServer(new ResourcesResponseHandler(), 8089);
 
         FetcherPolicy policy = new FetcherPolicy();
-        policy.setMaxContentSize(1000);
         BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
-        
+        fetcher.setDefaultMaxContentSize(1000);
+        fetcher.setMaxContentSize("image/png", 5000);
         ScoredUrlDatum datumToFetch = new ScoredUrlDatum("http://localhost:8089/karlie.html");
         
         FetchedDatum result1 = fetcher.get(datumToFetch);
         FetchedDatum result2 = fetcher.get(datumToFetch);
-
+        
         // Verify that we got the same data from each fetch request.
-        assertEquals(result1.getContentLength(), result2.getContentLength());
+        assertEquals(1000, result1.getContentLength());
+        assertEquals(1000, result2.getContentLength());
         byte[] bytes1 = result1.getContentBytes();
         byte[] bytes2 = result2.getContentBytes();
         for (int i = 0; i < bytes1.length; i++) {
             assertEquals(bytes1[i], bytes2[i]);
+        }
+
+        datumToFetch = new ScoredUrlDatum("http://localhost:8089/bixolabs_mining.png");
+        FetchedDatum result3 = fetcher.get(datumToFetch);
+        assertTrue(result3.getContentLength() > 1000);
+        
+        fetcher.setMaxContentSize("image/png", 1500);
+        try {
+            fetcher.get(datumToFetch);
+            fail("Aborted fetch exception not thrown");
+        } catch (AbortedFetchException e) {
+            Assert.assertEquals(AbortedFetchReason.CONTENT_SIZE, e.getAbortReason());
         }
 
         server.stop();

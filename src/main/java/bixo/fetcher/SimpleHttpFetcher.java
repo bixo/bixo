@@ -86,6 +86,10 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.html.HtmlParser;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
@@ -105,6 +109,7 @@ import bixo.exceptions.UrlFetchException;
 import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
 import bixo.utils.EncodingUtils;
 import bixo.utils.HttpUtils;
+import bixo.utils.EncodingUtils.ExpandedResult;
 
 @SuppressWarnings("serial")
 public class SimpleHttpFetcher extends BaseFetcher {
@@ -144,6 +149,13 @@ public class SimpleHttpFetcher extends BaseFetcher {
         "TLS",
         "Default",
         "SSL",
+    };
+    
+    private static final String TEXT_MIME_TYPES[] = {
+        "text/html",
+        "application/x-asp",
+        "application/xhtml+xml",
+        "application/vnd.wap.xhtml+xml",
     };
 
 
@@ -502,9 +514,9 @@ public class SimpleHttpFetcher extends BaseFetcher {
             // used when only a subset of parsers are installed/enabled, so we don't want the auto-detect
             // code in Tika to get triggered & try to process an unsupported type. If you want unknown
             // mime-types from the server to be processed, set "" as one of the valid mime-types in FetcherPolicy.
+            mimeType = HttpUtils.getMimeTypeFromContentType(contentType);
             Set<String> mimeTypes = _fetcherPolicy.getValidMimeTypes();
             if ((mimeTypes != null) && (mimeTypes.size() > 0)) {
-                mimeType = HttpUtils.getMimeTypeFromContentType(contentType);
                 if (!mimeTypes.contains(mimeType)) {
                     throw new AbortedFetchException(url, "Invalid mime-type: " + mimeType, AbortedFetchReason.INVALID_MIMETYPE);
                 }
@@ -561,7 +573,8 @@ public class SimpleHttpFetcher extends BaseFetcher {
         }
         
         // Figure out how much data we want to try to fetch.
-        int targetLength = getMaxContentSize(mimeType);
+        int maxContentSize = getMaxContentSize(mimeType);
+        int targetLength = maxContentSize;
         boolean truncated = false;
         String contentLengthStr = headerMap.getFirst(HttpHeaderNames.CONTENT_LENGTH);
         if (contentLengthStr != null) {
@@ -634,7 +647,12 @@ public class SimpleHttpFetcher extends BaseFetcher {
                 safeClose(in);
             }
         }
-
+        
+        // Toss truncated image content.
+        if  (   (truncated)
+            &&  (!isTextMimeType(mimeType))) {
+            throw new AbortedFetchException(url, "Truncated image", AbortedFetchReason.CONTENT_SIZE);
+        }
 
         // Now see if we need to uncompress the content.
         String contentEncoding = headerMap.getFirst(HttpHeaderNames.CONTENT_ENCODING);
@@ -643,16 +661,33 @@ public class SimpleHttpFetcher extends BaseFetcher {
                 fetchTrace.append("; Content-Encoding: " + contentEncoding);
             }
 
+            // TODO KKr We might want to just decompress a truncated gzip
+            // containing text (since we have a max content size to save us
+            // from any gzip corruption). We might want to break the following 
+            // out into a separate method, by the way (if not refactor this 
+            // entire monolithic method).
+            //
             try {
                 if ("gzip".equals(contentEncoding) || "x-gzip".equals(contentEncoding)) {
-                    content = EncodingUtils.processGzipEncoded(content);
-                    if (LOGGER.isTraceEnabled()) {
-                        fetchTrace.append("; unzipped to " + content.length + " bytes");
-                    }
-                } else if ("deflate".equals(contentEncoding)) {
-                    content = EncodingUtils.processDeflateEncoded(content);
-                    if (LOGGER.isTraceEnabled()) {
-                        fetchTrace.append("; inflated to " + content.length + " bytes");
+                    if (truncated) {
+                        throw new AbortedFetchException(url, "Truncated compressed data", AbortedFetchReason.CONTENT_SIZE);
+                    } else {
+                        ExpandedResult expandedResult = EncodingUtils.processGzipEncoded(content, maxContentSize);
+                        truncated = expandedResult.isTruncated();
+                        if  (   (truncated)
+                            &&  (!isTextMimeType(mimeType))) {
+                            throw new AbortedFetchException(url, "Truncated decompressed image", AbortedFetchReason.CONTENT_SIZE);
+                        } else {
+                            content = expandedResult.getExpanded();
+                            if (LOGGER.isTraceEnabled()) {
+                                fetchTrace.append("; unzipped to " + content.length + " bytes");
+                            }
+                        }
+//                    } else if ("deflate".equals(contentEncoding)) {
+//                        content = EncodingUtils.processDeflateEncoded(content);
+//                        if (LOGGER.isTraceEnabled()) {
+//                            fetchTrace.append("; inflated to " + content.length + " bytes");
+//                        }
                     }
                 }
             } catch (IOException e) {
@@ -665,6 +700,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
             LOGGER.trace(fetchTrace.toString());
         }
         
+        // TODO KKr - Save truncated flag in FetchedResult/FetchedDatum.
         return new FetchedResult(   url,
                                     redirectedUrl,
                                     System.currentTimeMillis(), 
@@ -678,6 +714,15 @@ public class SimpleHttpFetcher extends BaseFetcher {
                                     hostAddress);
     }
     
+    private boolean isTextMimeType(String mimeType) {
+        for (String textContentType : TEXT_MIME_TYPES) {
+            if (textContentType.equals(mimeType)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private String extractRedirectedUrl(String url, HttpContext localContext) {
         // This was triggered by HttpClient with the redirect count was exceeded.
         HttpHost host = (HttpHost)localContext.getAttribute(ExecutionContext.HTTP_TARGET_HOST);

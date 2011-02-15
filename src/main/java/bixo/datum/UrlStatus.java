@@ -18,7 +18,7 @@ public enum UrlStatus {
     SKIPPED_INTERRUPTED,        // Fetch process was interrupted.
     SKIPPED_INEFFICIENT,        // Skipped because we were blocked on domain (running with skip-blocked fetch policy)
     ABORTED_SLOW_RESPONSE,      // Response rate < min set in fetch policy
-    ABORTED_INVALID_MIMETYPE,   // Response type != valid types set in fetch policy
+    ABORTED_FETCHER_POLICY,     // Mime type != policy's valid types, content length exceeds policy's max length, etc.
     
     // Not fetched during fetch operation, due to HTTP status code error
     HTTP_REDIRECTION_ERROR,

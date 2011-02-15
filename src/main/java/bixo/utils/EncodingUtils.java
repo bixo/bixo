@@ -32,16 +32,44 @@ public class EncodingUtils {
     private static final int EXPECTED_GZIP_COMPRESSION_RATIO= 5;
     private static final int EXPECTED_DEFLATE_COMPRESSION_RATIO= 5;
     private static final int BUF_SIZE= 4096;
+    
+    public static class ExpandedResult {
+        private byte[] _expanded;
+        private boolean _isTruncated;
+        
+        public ExpandedResult(byte[] expanded, boolean isTruncated) {
+            super();
+            _expanded = expanded;
+            _isTruncated = isTruncated;
+        }
 
-    public static byte[] processGzipEncoded(byte[] compressed) throws IOException {
-        return processGzipEncoded(compressed, Integer.MAX_VALUE);
+        public byte[] getExpanded() {
+            return _expanded;
+        }
+        
+        public void setExpanded(byte[] expanded) {
+            _expanded = expanded;
+        }
+        
+        public boolean isTruncated() {
+            return _isTruncated;
+        }
+        
+        public void setTruncated(boolean isTruncated) {
+            _isTruncated = isTruncated;
+        }
     }
 
-    public static byte[] processGzipEncoded(byte[] compressed, int sizeLimit) throws IOException {
+    public static byte[] processGzipEncoded(byte[] compressed) throws IOException {
+        return processGzipEncoded(compressed, Integer.MAX_VALUE).getExpanded();
+    }
+
+    public static ExpandedResult processGzipEncoded(byte[] compressed, int sizeLimit) throws IOException {
 
         ByteArrayOutputStream outStream =  new ByteArrayOutputStream(EXPECTED_GZIP_COMPRESSION_RATIO * compressed.length);
         GZIPInputStream inStream = new GZIPInputStream (new ByteArrayInputStream(compressed));
 
+        boolean isTruncated = false;
         byte[] buf = new byte[BUF_SIZE];
         int written = 0;
         while (true) {
@@ -52,6 +80,7 @@ public class EncodingUtils {
                 }
 
                 if ((written + size) > sizeLimit) {
+                    isTruncated = true;
                     outStream.write(buf, 0, sizeLimit - written);
                     break;
                 }
@@ -65,7 +94,7 @@ public class EncodingUtils {
         }
 
         IoUtils.safeClose(outStream);
-        return outStream.toByteArray();
+        return new ExpandedResult(outStream.toByteArray(), isTruncated);
     }
 
     // TODO KKr The following routines are designed to support the deflate

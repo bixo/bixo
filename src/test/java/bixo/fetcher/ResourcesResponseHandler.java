@@ -43,7 +43,11 @@ public class ResourcesResponseHandler extends AbstractHttpHandler {
             in.readFully(bytes);
             
             response.setContentLength(bytes.length);
-            response.setContentType("text/html");
+            if (file.getName().endsWith(".png")) {
+                response.setContentType("image/png");
+            } else {
+                response.setContentType("text/html");
+            }
             response.setStatus(200);
             
             OutputStream os = response.getOutputStream();
