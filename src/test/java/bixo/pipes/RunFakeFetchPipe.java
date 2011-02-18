@@ -6,7 +6,6 @@ import java.net.URL;
 
 import org.apache.log4j.Logger;
 
-import bixo.cascading.NullContext;
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.BaseFetcher;
@@ -26,6 +25,8 @@ import cascading.tap.Hfs;
 import cascading.tap.Lfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
+
+import com.bixolabs.cascading.NullContext;
 
 public class RunFakeFetchPipe {
     private static final Logger LOGGER = Logger.getLogger(RunFakeFetchPipe.class);

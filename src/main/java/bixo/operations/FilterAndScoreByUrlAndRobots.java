@@ -5,9 +5,6 @@ import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.log4j.Logger;
 
-import bixo.cascading.BixoFlowProcess;
-import bixo.cascading.LoggingFlowReporter;
-import bixo.cascading.NullContext;
 import bixo.config.UserAgent;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
@@ -24,6 +21,10 @@ import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
 import cascading.operation.BufferCall;
 import cascading.tuple.TupleEntry;
+
+import com.bixolabs.cascading.LoggingFlowProcess;
+import com.bixolabs.cascading.LoggingFlowReporter;
+import com.bixolabs.cascading.NullContext;
 
 /**
  * Filter out URLs by either domain (not popular enough) or if they're blocked by robots.txt
@@ -44,7 +45,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
 	private BaseRobotsParser _parser;
 	
     private transient ThreadedExecutor _executor;
-    private transient BixoFlowProcess _flowProcess;
+    private transient LoggingFlowProcess _flowProcess;
 
     public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, BaseRobotsParser parser, BaseScoreGenerator scorer) {
         super(ScoredUrlDatum.FIELDS);
@@ -69,7 +70,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         
         // FUTURE KKr - use Cascading process vs creating our own, once it
         // supports logging in local mode, and a setStatus() call.
-        _flowProcess = new BixoFlowProcess((HadoopFlowProcess)flowProcess);
+        _flowProcess = new LoggingFlowProcess((HadoopFlowProcess)flowProcess);
         _flowProcess.addReporter(new LoggingFlowReporter());
     }
     

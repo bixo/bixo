@@ -24,7 +24,6 @@ package bixo.examples;
 
 import org.apache.log4j.Logger;
 
-import bixo.cascading.NullContext;
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.datum.UrlDatum;
@@ -34,6 +33,8 @@ import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 import cascading.operation.OperationCall;
 import cascading.tuple.TupleEntryCollector;
+
+import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("serial")
 public class CreateUrlDatumFromOutlinksFunction extends BaseOperation<NullContext> implements Function<NullContext> {

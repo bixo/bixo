@@ -33,10 +33,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 
-import bixo.cascading.BaseSplitter;
-import bixo.cascading.NullContext;
-import bixo.cascading.SplitterAssembly;
-import bixo.cascading.TupleLogger;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
@@ -71,6 +67,11 @@ import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
+
+import com.bixolabs.cascading.BaseSplitter;
+import com.bixolabs.cascading.NullContext;
+import com.bixolabs.cascading.SplitterAssembly;
+import com.bixolabs.cascading.TupleLogger;
 
 
 public class SimpleCrawlWorkflow {

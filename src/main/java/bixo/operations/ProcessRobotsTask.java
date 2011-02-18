@@ -8,7 +8,6 @@ import java.util.Queue;
 
 import org.apache.log4j.Logger;
 
-import bixo.cascading.BixoFlowProcess;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
@@ -22,6 +21,8 @@ import bixo.utils.DomainNames;
 import bixo.utils.GroupingKey;
 import cascading.tuple.TupleEntryCollector;
 
+import com.bixolabs.cascading.LoggingFlowProcess;
+
 public class ProcessRobotsTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ProcessRobotsTask.class);
 
@@ -31,10 +32,10 @@ public class ProcessRobotsTask implements Runnable {
     private BaseFetcher _fetcher;
     private TupleEntryCollector _collector;
     private BaseRobotsParser _parser;
-    private BixoFlowProcess _flowProcess;
+    private LoggingFlowProcess _flowProcess;
 
     public ProcessRobotsTask(String protocolAndDomain, BaseScoreGenerator scorer, Queue<GroupedUrlDatum> urls, BaseFetcher fetcher, 
-                    BaseRobotsParser parser, TupleEntryCollector collector, BixoFlowProcess flowProcess) {
+                    BaseRobotsParser parser, TupleEntryCollector collector, LoggingFlowProcess flowProcess) {
         _protocolAndDomain = protocolAndDomain;
         _scorer = scorer;
         _urls = urls;

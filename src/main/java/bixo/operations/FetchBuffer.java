@@ -8,14 +8,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
-import bixo.cascading.BixoFlowProcess;
-import bixo.cascading.BaseDatum;
-import bixo.cascading.LoggingFlowReporter;
-import bixo.cascading.NullContext;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
-import bixo.datum.FetchedDatum;
 import bixo.datum.FetchSetDatum;
+import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.BaseFetcher;
@@ -34,6 +30,11 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
+
+import com.bixolabs.cascading.BaseDatum;
+import com.bixolabs.cascading.LoggingFlowProcess;
+import com.bixolabs.cascading.LoggingFlowReporter;
+import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings( { "serial", "unchecked" })
 public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<NullContext>, IFetchMgr {
@@ -166,7 +167,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     private FetcherMode _fetcherMode;
 
     private transient ThreadedExecutor _executor;
-    private transient BixoFlowProcess _flowProcess;
+    private transient LoggingFlowProcess _flowProcess;
     private transient TupleEntryCollector _collector;
 
     private transient Object _refLock;
@@ -196,7 +197,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     public void prepare(FlowProcess flowProcess, OperationCall operationCall) {
         super.prepare(flowProcess, operationCall);
 
-        _flowProcess = new BixoFlowProcess((HadoopFlowProcess) flowProcess);
+        _flowProcess = new LoggingFlowProcess((HadoopFlowProcess) flowProcess);
         _flowProcess.addReporter(new LoggingFlowReporter());
 
         _executor = new ThreadedExecutor(_fetcher.getMaxThreads(), _fetcher.getFetcherPolicy().getRequestTimeout());
@@ -345,7 +346,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     }
 
     @Override
-    public BixoFlowProcess getProcess() {
+    public LoggingFlowProcess getProcess() {
         return _flowProcess;
     }
     

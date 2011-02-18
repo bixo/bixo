@@ -5,13 +5,14 @@ import java.net.URL;
 
 import org.apache.log4j.Logger;
 
-import bixo.cascading.NullContext;
 import bixo.datum.UrlDatum;
 import bixo.hadoop.ImportCounters;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
+
+import com.bixolabs.cascading.NullContext;
 
 // TODO KKr - combine/resolve delta with UrlImporter
 @SuppressWarnings("serial")

@@ -26,7 +26,6 @@ import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
-import bixo.cascading.NullContext;
 import bixo.datum.UrlDatum;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
@@ -34,6 +33,8 @@ import cascading.operation.Buffer;
 import cascading.operation.BufferCall;
 import cascading.operation.OperationCall;
 import cascading.tuple.TupleEntry;
+
+import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("serial")
 public class LatestUrlDatumBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {

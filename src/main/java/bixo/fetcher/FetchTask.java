@@ -29,7 +29,6 @@ import java.util.List;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import bixo.cascading.BixoFlowProcess;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
@@ -39,6 +38,8 @@ import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.hadoop.FetchCounters;
 import cascading.tuple.Tuple;
+
+import com.bixolabs.cascading.LoggingFlowProcess;
 
 /**
  * Runnable instance for fetching a set of URLs from the same server, using keep-alive.
@@ -62,7 +63,7 @@ public class FetchTask implements Runnable {
     @SuppressWarnings("unchecked")
     @Override
     public void run() {
-        BixoFlowProcess process = _fetchMgr.getProcess();
+        LoggingFlowProcess process = _fetchMgr.getProcess();
         process.increment(FetchCounters.DOMAINS_PROCESSING, 1);
 
         try {

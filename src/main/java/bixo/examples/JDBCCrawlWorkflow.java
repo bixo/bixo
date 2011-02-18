@@ -31,7 +31,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 
-import bixo.cascading.NullContext;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
@@ -66,6 +65,8 @@ import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
+
+import com.bixolabs.cascading.NullContext;
 
 public class JDBCCrawlWorkflow {
     private static final Logger LOGGER = Logger.getLogger(JDBCCrawlWorkflow.class);

@@ -5,10 +5,6 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
 
-import bixo.cascading.BaseSplitter;
-import bixo.cascading.NullContext;
-import bixo.cascading.NullSinkTap;
-import bixo.cascading.SplitterAssembly;
 import bixo.config.BaseFetchJobPolicy;
 import bixo.config.DefaultFetchJobPolicy;
 import bixo.datum.FetchSetDatum;
@@ -44,6 +40,11 @@ import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
+
+import com.bixolabs.cascading.BaseSplitter;
+import com.bixolabs.cascading.NullContext;
+import com.bixolabs.cascading.NullSinkTap;
+import com.bixolabs.cascading.SplitterAssembly;
 
 @SuppressWarnings("serial")
 public class FetchPipe extends SubAssembly {

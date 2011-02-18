@@ -24,9 +24,6 @@ package bixo.pipes;
 
 import org.apache.log4j.Logger;
 
-import bixo.cascading.BixoFlowProcess;
-import bixo.cascading.LoggingFlowReporter;
-import bixo.cascading.NullContext;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.parser.BaseParser;
@@ -43,6 +40,10 @@ import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
 import cascading.tuple.Fields;
 
+import com.bixolabs.cascading.LoggingFlowProcess;
+import com.bixolabs.cascading.LoggingFlowReporter;
+import com.bixolabs.cascading.NullContext;
+
 @SuppressWarnings("serial")
 public class ParsePipe extends SubAssembly {
     private static final Logger LOGGER = Logger.getLogger(ParsePipe.class);
@@ -51,7 +52,7 @@ public class ParsePipe extends SubAssembly {
 
     private static class ParseFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
-        private transient BixoFlowProcess _flowProcess;
+        private transient LoggingFlowProcess _flowProcess;
         private BaseParser _parser;
 
         public ParseFunction(BaseParser parser) {
@@ -63,7 +64,7 @@ public class ParsePipe extends SubAssembly {
         public void prepare(FlowProcess flowProcess,
                             OperationCall<NullContext> operationCall) {
             super.prepare(flowProcess, operationCall);
-            _flowProcess = new BixoFlowProcess((HadoopFlowProcess)flowProcess);
+            _flowProcess = new LoggingFlowProcess((HadoopFlowProcess)flowProcess);
             _flowProcess.addReporter(new LoggingFlowReporter());
         }
 

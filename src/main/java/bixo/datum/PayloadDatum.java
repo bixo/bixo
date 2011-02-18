@@ -5,10 +5,11 @@
  */
 package bixo.datum;
 
-import bixo.cascading.BaseDatum;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
+
+import com.bixolabs.cascading.BaseDatum;
 
 /**
  * Subclasses can hide fields inside the payload field tuple,

@@ -7,11 +7,12 @@ import org.apache.hadoop.mapred.JobConf;
 import org.junit.Assert;
 import org.junit.Test;
 
-import bixo.cascading.PartitioningKey;
 import bixo.utils.DiskQueue;
 import cascading.scheme.SequenceFile;
 import cascading.tap.Lfs;
 import cascading.tuple.TupleEntryCollector;
+
+import com.bixolabs.cascading.PartitioningKey;
 
 
 public class ScoredUrlDatumTest {

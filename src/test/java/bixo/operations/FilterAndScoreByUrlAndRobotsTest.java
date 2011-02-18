@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 
-import bixo.cascading.NullContext;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.RandomResponseHandler;
@@ -26,6 +25,8 @@ import cascading.operation.OperationCall;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
+
+import com.bixolabs.cascading.NullContext;
 
 public class FilterAndScoreByUrlAndRobotsTest {
     private static final String CRLF = "\r\n";

@@ -11,8 +11,9 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
-import bixo.cascading.PartitioningKey;
 import cascading.tuple.Tuple;
+
+import com.bixolabs.cascading.PartitioningKey;
 
 
 public class FetchSetDatumTest {

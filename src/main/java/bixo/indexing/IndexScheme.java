@@ -23,7 +23,6 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 
-import bixo.cascading.BaseDatum;
 import cascading.scheme.Scheme;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
@@ -31,6 +30,8 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.Tuples;
 import cascading.util.Util;
+
+import com.bixolabs.cascading.BaseDatum;
 
 @SuppressWarnings("serial")
 public class IndexScheme extends Scheme {
