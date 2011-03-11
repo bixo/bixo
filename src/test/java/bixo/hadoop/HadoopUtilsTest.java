@@ -8,7 +8,8 @@ import junit.framework.Assert;
 import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 
-import bixo.hadoop.HadoopUtils;
+import com.bixolabs.cascading.HadoopUtils;
+
 
 
 public class HadoopUtilsTest {

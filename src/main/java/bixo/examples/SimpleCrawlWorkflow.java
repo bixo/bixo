@@ -40,7 +40,6 @@ import bixo.datum.ParsedDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.SimpleHttpFetcher;
-import bixo.hadoop.HadoopUtils;
 import bixo.operations.BaseScoreGenerator;
 import bixo.operations.FixedScoreGenerator;
 import bixo.operations.NormalizeUrlFunction;
@@ -69,6 +68,7 @@ import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 
 import com.bixolabs.cascading.BaseSplitter;
+import com.bixolabs.cascading.HadoopUtils;
 import com.bixolabs.cascading.NullContext;
 import com.bixolabs.cascading.SplitterAssembly;
 import com.bixolabs.cascading.TupleLogger;

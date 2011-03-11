@@ -12,7 +12,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import bixo.hadoop.HadoopUtils;
+import com.bixolabs.cascading.HadoopUtils;
+
 
 public class CrawlDirUtilsTest {
     

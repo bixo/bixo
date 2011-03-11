@@ -10,10 +10,11 @@ import java.util.Random;
 
 import org.junit.Test;
 
+import com.bixolabs.cascading.Payload;
+
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
-import bixo.datum.Payload;
 
 public class DiskQueueTest {
 

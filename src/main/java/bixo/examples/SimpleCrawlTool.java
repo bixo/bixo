@@ -35,12 +35,13 @@ import org.apache.log4j.PatternLayout;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
+import com.bixolabs.cascading.HadoopUtils;
+
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.hadoop.HadoopUtils;
 import bixo.urls.BaseUrlFilter;
 import bixo.urls.SimpleUrlNormalizer;
 import bixo.utils.CrawlDirUtils;

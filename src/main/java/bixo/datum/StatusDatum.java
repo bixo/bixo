@@ -22,6 +22,8 @@
  */
 package bixo.datum;
 
+import com.bixolabs.cascading.Payload;
+
 import bixo.exceptions.BaseFetchException;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;

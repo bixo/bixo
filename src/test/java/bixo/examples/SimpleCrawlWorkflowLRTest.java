@@ -18,12 +18,13 @@ import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
+import com.bixolabs.cascading.HadoopUtils;
+
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.hadoop.HadoopUtils;
 import bixo.urls.BaseUrlFilter;
 import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;

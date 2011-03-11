@@ -30,7 +30,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 import org.hsqldb.Server;
 
-import bixo.hadoop.HadoopUtils;
+import com.bixolabs.cascading.HadoopUtils;
+
 import cascading.jdbc.JDBCScheme;
 import cascading.jdbc.JDBCTap;
 import cascading.jdbc.TableDesc;

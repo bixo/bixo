@@ -29,11 +29,12 @@ import java.util.Random;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
+import com.bixolabs.cascading.Payload;
+
 import bixo.config.FetcherPolicy;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
-import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;

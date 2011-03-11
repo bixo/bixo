@@ -38,7 +38,6 @@ import bixo.datum.ParsedDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.SimpleHttpFetcher;
-import bixo.hadoop.HadoopUtils;
 import bixo.operations.BaseScoreGenerator;
 import bixo.operations.FixedScoreGenerator;
 import bixo.operations.NormalizeUrlFunction;
@@ -66,6 +65,7 @@ import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 
+import com.bixolabs.cascading.HadoopUtils;
 import com.bixolabs.cascading.NullContext;
 
 public class JDBCCrawlWorkflow {

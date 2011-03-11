@@ -2,8 +2,9 @@ package bixo.fetcher;
 
 import java.security.InvalidParameterException;
 
+import com.bixolabs.cascading.Payload;
+
 import bixo.datum.HttpHeaders;
-import bixo.datum.Payload;
 
 public class FetchedResult {
     private final String _baseUrl;

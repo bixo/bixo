@@ -12,13 +12,14 @@ import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 import org.mortbay.http.handler.AbstractHttpHandler;
 
+import com.bixolabs.cascading.Payload;
+
 import bixo.config.BaseFetchJobPolicy;
 import bixo.config.DefaultFetchJobPolicy;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
-import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;

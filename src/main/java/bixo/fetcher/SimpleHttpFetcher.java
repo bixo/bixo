@@ -91,13 +91,14 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlParser;
 
+import com.bixolabs.cascading.Payload;
+
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.RedirectMode;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
-import bixo.datum.Payload;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.AbortedFetchException;
 import bixo.exceptions.AbortedFetchReason;
