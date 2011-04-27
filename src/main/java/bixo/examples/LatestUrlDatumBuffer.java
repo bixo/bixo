@@ -74,7 +74,7 @@ public class LatestUrlDatumBuffer extends BaseOperation<NullContext> implements 
         while (iter.hasNext()) {
             UrlDatum datum = new UrlDatum(iter.next());
             if (bestDatum == null) {
-                bestDatum = datum;
+                bestDatum = new UrlDatum(datum);
                 bestFetched = (Long) bestDatum.getPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD);
             } else if ((Long) datum.getPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD) > bestFetched) {
                 if (bestFetched != 0) {
@@ -83,8 +83,8 @@ public class LatestUrlDatumBuffer extends BaseOperation<NullContext> implements 
                     LOGGER.warn("Using URL with later fetch time: " + datum.getUrl());
                 }
 
-                // last fetched time will be 0 for never-fetched
-                bestDatum = datum;
+                bestDatum.setUrl(datum.getUrl());   // There's really no need to set the url since it should be same
+                bestDatum.setPayload(datum.getPayload());
                 bestFetched = (Long) bestDatum.getPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD);
             } else {
                 ignoredUrls += 1;
