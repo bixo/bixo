@@ -11,7 +11,6 @@ import java.io.UnsupportedEncodingException;
 import org.junit.Before;
 import org.junit.Test;
 
-import bixo.cascading.NullContext;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
@@ -19,6 +18,8 @@ import cascading.flow.FlowProcess;
 import cascading.operation.FunctionCall;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
+
+import com.bixolabs.cascading.NullContext;
 
 public class MboxSplitterFunctionTest {
 

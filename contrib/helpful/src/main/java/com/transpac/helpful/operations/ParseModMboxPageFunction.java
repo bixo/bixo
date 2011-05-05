@@ -14,7 +14,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import bixo.cascading.NullContext;
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
 import cascading.flow.FlowProcess;
@@ -22,6 +21,8 @@ import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 import cascading.tuple.TupleEntry;
+
+import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("serial")
 public class ParseModMboxPageFunction extends BaseOperation<NullContext> implements Function<NullContext> {

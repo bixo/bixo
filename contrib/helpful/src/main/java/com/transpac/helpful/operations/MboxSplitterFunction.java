@@ -9,7 +9,6 @@ import java.io.UnsupportedEncodingException;
 
 import org.apache.log4j.Logger;
 
-import bixo.cascading.NullContext;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import cascading.flow.FlowProcess;
@@ -18,6 +17,8 @@ import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
+
+import com.bixolabs.cascading.NullContext;
 
 /**
  * Cascading function to split a single mbox file into N entries, one per each email. This then

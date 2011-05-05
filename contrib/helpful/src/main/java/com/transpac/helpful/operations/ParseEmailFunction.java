@@ -16,7 +16,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import bixo.cascading.NullContext;
 import bixo.datum.FetchedDatum;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
@@ -25,6 +24,8 @@ import cascading.operation.FunctionCall;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
+
+import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("serial")
 public class ParseEmailFunction extends BaseOperation<NullContext> implements Function<NullContext> {

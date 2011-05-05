@@ -13,7 +13,6 @@ import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
-import bixo.cascading.NullContext;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
@@ -44,6 +43,7 @@ import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
+import com.bixolabs.cascading.NullContext;
 import com.transpac.helpful.operations.CalcMessageScoreBuffer;
 import com.transpac.helpful.operations.FieldNames;
 import com.transpac.helpful.operations.MboxSplitterFunction;

@@ -4,7 +4,6 @@ import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
-import bixo.cascading.NullContext;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
@@ -13,6 +12,8 @@ import cascading.operation.OperationCall;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
+
+import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("serial")
 public class CalcMessageScoreBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
