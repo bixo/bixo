@@ -3,6 +3,9 @@ package bixo.datum;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,30 +19,6 @@ import org.apache.hadoop.io.Writable;
 import cascading.tuple.Tuple;
 
 public class HttpHeaders implements Writable {
-    
-    // Patterns used when encoding/decoding header strings
-    // These musst match the strings in REPLACEMENT_PATTERNS, and vice versa.
-    private static final Pattern CHARS_TO_ENCODE_PATTERN = Pattern.compile("[,\t\n\r\\\\]");
-    private static final Pattern CHARS_TO_DECODE_PATTERN = Pattern.compile("(\\,|\\t|\\n|\\r|\\\\)");
-    
-    private static final String VALUES_DELIMITER = ", ";
-    
-    private static final String[] REPLACEMENT_PATTERNS = {
-        // Convert "\" to "\\"
-        "\\\\", "\\\\\\\\",
-        
-        // Convert , to \,
-        ",", "\\\\,",
-        
-        // Convert <tab> to "\t"
-        "\t", "\\\\t",
-        
-        // Convert <newline> to "\n"
-        "\n", "\\\\n",
-        
-        // Convert <return> to "\r"
-        "\r", "\\\\r"
-    };
     
     private Map<String, List<String>> _headers;
     
@@ -116,19 +95,22 @@ public class HttpHeaders implements Writable {
         StringBuilder result = new StringBuilder();
         
         for (String key : getNames()) {
+            if (result.length() > 0) {
+                result.append("; ");
+            }
+
             List<String> values = getAll(key);
-            
-            String encodedKey = encodeString(key);
+            result.append(encodeString(key));
+            result.append(": ");
+
+            int numValues = 0;
             for (String value : values) {
-                if (result.length() > 0) {
-                    result.append(VALUES_DELIMITER);
+                if (numValues > 0) {
+                    result.append(",");
                 }
 
-                result.append(encodedKey);
-                // TODO KKr - use ":" instead of tab, to avoid problems
-                // with parsing output of TextLine cascading tap (uses tabs)
-                result.append(": ");
                 result.append(encodeString(value));
+                numValues += 1;
             }
         }
 
@@ -139,7 +121,7 @@ public class HttpHeaders implements Writable {
         StringBuilder result  = new StringBuilder();
         for (String value : values) {
             if (result.length() > 0) {
-                result.append(VALUES_DELIMITER);
+                result.append(',');
             }
             
             result.append(encodeString(value));
@@ -149,23 +131,20 @@ public class HttpHeaders implements Writable {
     }
 
     private static String encodeString(String value) {
-        Matcher charMatcher = CHARS_TO_ENCODE_PATTERN.matcher(value);
-
-        // Common case is nothing to replace, so don't worry about performance if we do have anything
-        // that we need to convert.
-        if (charMatcher.find()) {
-            for (int i = 0; i < REPLACEMENT_PATTERNS.length; i += 2) {
-                value = value.replaceAll(REPLACEMENT_PATTERNS[i], REPLACEMENT_PATTERNS[i + 1]);
-            }
+        // We know that tabs and commas (our special chars) will be encoded
+        // by URLEncoder.
+        
+        try {
+            return URLEncoder.encode(value, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Impossible exception", e);
         }
-
-        return value;
     }
     
     private static List<String> decodeValues(String valuesString) {
         List<String> result = new ArrayList<String>();
         
-        String[] values = valuesString.split(VALUES_DELIMITER);
+        String[] values = valuesString.split(",");
         for (String value : values) {
             result.add(decodeString(value));
         }
@@ -174,14 +153,11 @@ public class HttpHeaders implements Writable {
     }
     
     private static String decodeString(String value) {
-        Matcher charMatcher = CHARS_TO_DECODE_PATTERN.matcher(value);
-        if (charMatcher.find()) {
-            for (int i = 0; i < REPLACEMENT_PATTERNS.length; i += 2) {
-                value = value.replaceAll(REPLACEMENT_PATTERNS[i + 1], REPLACEMENT_PATTERNS[i]);
-            }
+        try {
+            return URLDecoder.decode(value, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Impossible exception", e);
         }
-
-        return value;
     }
 
     @Override

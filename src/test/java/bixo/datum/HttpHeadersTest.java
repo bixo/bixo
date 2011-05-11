@@ -54,6 +54,27 @@ public class HttpHeadersTest {
         assertEquals(2, newHeaders.getNames().size());
         assertEquals(value1, newHeaders.getFirst(key1));
         assertEquals(value2, newHeaders.getFirst(key2));
+        
+        String key3 = "date";
+        String value3 = "Wed, 11 May 2011 18:26:45 GMT";
+        headers.add(key3, value3);
+        
+        t = headers.toTuple();
+        newHeaders = new HttpHeaders(t);
+        assertEquals(value3, newHeaders.getFirst(key3));
+    }
+    
+    @Test
+    public void testToString() throws Exception {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("key1", "value1");
+        headers.add("key1", "value2");
+        headers.add("key2", "value3,value4");
+
+        String result = headers.toString();
+        System.out.println(result);
+        assertTrue(result.contains("key1:"));
+        assertTrue(result.contains("key2:"));
     }
     
     @Test
