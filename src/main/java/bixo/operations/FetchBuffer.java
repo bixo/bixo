@@ -270,9 +270,14 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             
             while (!values.isEmpty()) {
                 FetchSetDatum datum = values.nextOrNull(FetcherMode.IMPOLITE);
-                List<ScoredUrlDatum> urls = datum.getUrls();
-                trace("Skipping %d urls from %s (e.g. %s) ", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
-                skipUrls(datum.getUrls(), status, null);
+                
+                // datum could be null if the URLs were set to be skipped, as then
+                // nextOrNull() will return null even with impolite mode.
+                if (datum != null) {
+                    List<ScoredUrlDatum> urls = datum.getUrls();
+                    trace("Skipping %d urls from %s (e.g. %s) ", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
+                    skipUrls(datum.getUrls(), status, null);
+                }
             }
         }
     }
