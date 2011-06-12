@@ -100,6 +100,9 @@ public class RobotUtils {
         } catch (Exception e) {
             LOGGER.error("Unexpected exception fetching robots.txt: " + robotsUrl, e);
             return parser.failedFetch(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        } catch (Throwable t) {
+            LOGGER.error("Unexpected throwable caught while fetching robots.tx: " + robotsUrl , t);
+            return parser.failedFetch(HttpStatus.SC_INTERNAL_SERVER_ERROR);
         }
     }
 

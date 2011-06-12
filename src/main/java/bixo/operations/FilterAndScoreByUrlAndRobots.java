@@ -85,6 +85,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
             // FUTURE What's the right thing to do here? E.g. do I need to worry about
             // losing URLs still to be processed?
             LOGGER.warn("Interrupted while waiting for termination");
+            Thread.currentThread().interrupt();
         }
         
         _flowProcess.dumpCounters();
@@ -110,7 +111,12 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, urls.size());
             ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector());
-        }
+        } catch (Throwable t) {
+           LOGGER.error("Caught an unexpected throwable - robots handling rejected our request for " + protocolAndDomain, t);
+           _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
+           _flowProcess.increment(FetchCounters.URLS_REJECTED, urls.size());
+           ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector());
+      } 
 	}
 
 	
