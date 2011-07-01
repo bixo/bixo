@@ -150,12 +150,12 @@ public class FetchPipe extends SubAssembly {
             if (result instanceof String) {
                 UrlStatus urlStatus = UrlStatus.valueOf((String)result);
                 if (urlStatus == UrlStatus.FETCHED) {
-                    status = new StatusDatum(fd.getBaseUrl(), fd.getHeaders(), fd.getHostAddress(), fd.getPayload());
+                    status = new StatusDatum(fd.getUrl(), fd.getHeaders(), fd.getHostAddress(), fd.getPayload());
                 } else {
-                    status = new StatusDatum(fd.getBaseUrl(), urlStatus, fd.getPayload());
+                    status = new StatusDatum(fd.getUrl(), urlStatus, fd.getPayload());
                 }
             } else if (result instanceof BaseFetchException) {
-                status = new StatusDatum(fd.getBaseUrl(), (BaseFetchException)result, fd.getPayload());
+                status = new StatusDatum(fd.getUrl(), (BaseFetchException)result, fd.getPayload());
             } else {
                 throw new RuntimeException("Unknown type for fetch status field: " + result.getClass());
             }
@@ -239,7 +239,7 @@ public class FetchPipe extends SubAssembly {
         // TODO KKr You're already setting the group name here (so that the
         // tail pipe gets the same name), so I wasn't able to pass in a
         // group name here for BaseTool.nameFlowSteps to use for the job name.
-        Pipe joinedStatus = new GroupBy(STATUS_PIPE_NAME, Pipe.pipes(skippedStatus, fetchedStatus), StatusDatum.getGroupingField());
+        Pipe joinedStatus = new GroupBy(STATUS_PIPE_NAME, Pipe.pipes(skippedStatus, fetchedStatus), new Fields(StatusDatum.URL_FN));
 
         setTails(fetchedContent, joinedStatus);
     }

@@ -157,7 +157,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
             // Verify we can convert properly
             FetchedDatum datum = new FetchedDatum(entry);
-            String url = datum.getBaseUrl();
+            String url = datum.getUrl();
             Assert.assertNotNull(url);
             
             // Verify that we got one of each page

@@ -85,12 +85,12 @@ public class SimpleParser extends BaseParser {
         init();
 
         if (LOGGER.isTraceEnabled()) {
-        	LOGGER.trace(String.format("Parsing %s", fetchedDatum.getBaseUrl()));
+        	LOGGER.trace(String.format("Parsing %s", fetchedDatum.getUrl()));
         }
         
         // Provide clues to the parser about the format of the content.
         Metadata metadata = new Metadata();
-        metadata.add(Metadata.RESOURCE_NAME_KEY, fetchedDatum.getBaseUrl());
+        metadata.add(Metadata.RESOURCE_NAME_KEY, fetchedDatum.getUrl());
         metadata.add(Metadata.CONTENT_TYPE, fetchedDatum.getContentType());
         String charset = getCharset(fetchedDatum);
         metadata.add(Metadata.CONTENT_LANGUAGE, getLanguage(fetchedDatum, charset));

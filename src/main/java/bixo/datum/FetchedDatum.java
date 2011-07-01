@@ -26,14 +26,16 @@ import java.io.Serializable;
 import java.security.InvalidParameterException;
 
 import com.bixolabs.cascading.Payload;
+import com.bixolabs.cascading.PayloadDatum;
 
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
-public class FetchedDatum extends UrlDatum implements Serializable {
+public class FetchedDatum extends PayloadDatum implements Serializable {
     
+    public static final String URL_FN = fieldName(FetchedDatum.class, "url");
     public static final String NEW_BASE_URL_FN = fieldName(FetchedDatum.class, "newBaseUrl");
     public static final String FETCHED_URL_FN = fieldName(FetchedDatum.class, "fetchedUrl");
     public static final String FETCH_TIME_FN = fieldName(FetchedDatum.class, "fetchTime");
@@ -44,7 +46,7 @@ public class FetchedDatum extends UrlDatum implements Serializable {
     public static final String HOST_ADDRESS_FN = fieldName(FetchedDatum.class, "hostAddress");
     public static final String HTTP_HEADERS_FN = fieldName(FetchedDatum.class, "httpHeaders");
 
-    public static final Fields FIELDS = new Fields(NEW_BASE_URL_FN,
+    public static final Fields FIELDS = new Fields(URL_FN, NEW_BASE_URL_FN,
                     FETCHED_URL_FN, FETCH_TIME_FN, CONTENT_FN, CONTENT_TYPE_FN,
                     RESPONSE_RATE_FN, NUM_REDIRECTS_FN, HOST_ADDRESS_FN,
                     HTTP_HEADERS_FN).append(getSuperFields(FetchedDatum.class));
@@ -62,7 +64,7 @@ public class FetchedDatum extends UrlDatum implements Serializable {
                     ContentBytes content, String contentType, int responseRate) {
         super(FIELDS);
 
-        setBaseUrl(baseUrl);
+        setUrl(baseUrl);
         setFetchedUrl(fetchedUrl);
         setFetchTime(fetchTime);
         setContent(content);
@@ -101,20 +103,21 @@ public class FetchedDatum extends UrlDatum implements Serializable {
     }
 
     /**
-     * Return the original URL - use the UrlDatum support for this.
+     * Return the original base URL.
      * 
      * @return original URL we tried to fetch
      */
-    public String getBaseUrl() {
-        return getUrl();
+    public String getUrl() {
+        
+        return _tupleEntry.getString(URL_FN);
     }
 
-    public void setBaseUrl(String baseUrl) {
+    public void setUrl(String baseUrl) {
         if (baseUrl == null) {
             throw new InvalidParameterException("baseUrl cannot be null");
         }
 
-        setUrl(baseUrl);
+        _tupleEntry.set(URL_FN, baseUrl);
     }
     
     public String getNewBaseUrl() {
@@ -212,13 +215,13 @@ public class FetchedDatum extends UrlDatum implements Serializable {
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder("[base URL] ");
-        result.append(getBaseUrl());
+        result.append(getUrl());
         if (getNewBaseUrl() != null) {
             result.append(" | [perm redir URL] ");
             result.append(getNewBaseUrl());
         }
 
-        if (!getBaseUrl().equals(getFetchedUrl())) {
+        if (!getUrl().equals(getFetchedUrl())) {
             result.append(" | [final URL] ");
             result.append(getFetchedUrl());
         }

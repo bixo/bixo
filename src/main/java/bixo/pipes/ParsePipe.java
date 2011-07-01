@@ -83,7 +83,7 @@ public class ParsePipe extends SubAssembly {
                 _flowProcess.increment(ParserCounters.DOCUMENTS_PARSED, 1);
                 functionCall.getOutputCollector().add(parseResult.getTuple());
             } catch (Exception e) {
-                LOGGER.warn("Error processing " + fetchedDatum.getBaseUrl(), e);
+                LOGGER.warn("Error processing " + fetchedDatum.getUrl(), e);
                 _flowProcess.increment(ParserCounters.DOCUMENTS_FAILED, 1);
                 // TODO KKr - don't lose datums for documents that couldn't be parsed
             }

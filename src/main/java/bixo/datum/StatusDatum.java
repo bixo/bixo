@@ -22,23 +22,25 @@
  */
 package bixo.datum;
 
-import com.bixolabs.cascading.Payload;
-
 import bixo.exceptions.BaseFetchException;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
+import com.bixolabs.cascading.Payload;
+import com.bixolabs.cascading.PayloadDatum;
+
 @SuppressWarnings("serial")
-public class StatusDatum extends UrlDatum {
+public class StatusDatum extends PayloadDatum {
     
+    public static final String URL_FN = fieldName(StatusDatum.class, "url");
     public static final String STATUS_FN = fieldName(StatusDatum.class, "status");
     public static final String HEADERS_FN = fieldName(StatusDatum.class, "headers");
     public static final String EXCEPTION_FN = fieldName(StatusDatum.class, "exception");
     public static final String STATUS_TIME_FN = fieldName(StatusDatum.class, "statusTime");
     public static final String HOST_ADDRESS_FN = fieldName(StatusDatum.class, "hostAddress");
         
-    public static final Fields FIELDS = new Fields(STATUS_FN, HEADERS_FN, EXCEPTION_FN, STATUS_TIME_FN, HOST_ADDRESS_FN).append(getSuperFields(StatusDatum.class));
+    public static final Fields FIELDS = new Fields(URL_FN, STATUS_FN, HEADERS_FN, EXCEPTION_FN, STATUS_TIME_FN, HOST_ADDRESS_FN).append(getSuperFields(StatusDatum.class));
 
     public StatusDatum() {
         super(FIELDS);
@@ -79,6 +81,14 @@ public class StatusDatum extends UrlDatum {
         setStatusTime(statusTime);
         setHostAddress(hostAddress);
         setPayload(payload);
+    }
+
+    public String getUrl() {
+        return _tupleEntry.getString(URL_FN);
+    }
+
+    public void setUrl(String url) {
+        _tupleEntry.set(URL_FN, url);
     }
 
     public UrlStatus getStatus() {
@@ -123,10 +133,6 @@ public class StatusDatum extends UrlDatum {
     
     public void setHostAddress(String hostAddress) {
         _tupleEntry.set(HOST_ADDRESS_FN, hostAddress);
-    }
-
-    public static Fields getGroupingField() {
-        return new Fields(UrlDatum.URL_FN);
     }
 
 }

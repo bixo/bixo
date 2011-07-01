@@ -103,7 +103,7 @@ public class FetchAndParseTool {
 
             	System.out.println("Fetching " + url);
         		FetchedDatum result = fetcher.get(new ScoredUrlDatum(url));
-        		System.out.println(String.format("Fetched %s: headers = %s", result.getBaseUrl(), result.getHeaders()));
+        		System.out.println(String.format("Fetched %s: headers = %s", result.getUrl(), result.getHeaders()));
         		System.out.flush();
         		
         		// System.out.println("Result = " + result.toString());

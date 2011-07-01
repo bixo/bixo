@@ -9,9 +9,12 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
+import com.bixolabs.cascading.PayloadDatum;
+
 @SuppressWarnings("serial")
-public class ParsedDatum extends UrlDatum {
+public class ParsedDatum extends PayloadDatum {
     
+    public static final String URL_FN = fieldName(ParsedDatum.class, "url");
     public static final String HOST_ADDRESS_FN = fieldName(ParsedDatum.class, "hostAddress");
     public static final String PARSED_TEXT_FN = fieldName(ParsedDatum.class, "parsedText");
     public static final String LANGUAGE_FN = fieldName(ParsedDatum.class, "language");
@@ -19,7 +22,7 @@ public class ParsedDatum extends UrlDatum {
     public static final String OUTLINKS_FN = fieldName(ParsedDatum.class, "outLinks");
     public static final String PARSED_META_FN = fieldName(ParsedDatum.class, "parsedMeta");
 
-    public static final Fields FIELDS = new Fields(HOST_ADDRESS_FN, PARSED_TEXT_FN, LANGUAGE_FN, 
+    public static final Fields FIELDS = new Fields(URL_FN, HOST_ADDRESS_FN, PARSED_TEXT_FN, LANGUAGE_FN, 
                     TITLE_FN, OUTLINKS_FN, PARSED_META_FN).append(getSuperFields(ParsedDatum.class));
 
     /**
@@ -44,6 +47,14 @@ public class ParsedDatum extends UrlDatum {
         setTitle(title);
         setOutlinks(outlinks);
         setParsedMeta(parsedMeta);
+    }
+
+    public String getUrl() {
+        return _tupleEntry.getString(URL_FN);
+    }
+
+    public void setUrl(String url) {
+        _tupleEntry.set(URL_FN, url);
     }
 
     public String getHostAddress() {
@@ -132,7 +143,7 @@ public class ParsedDatum extends UrlDatum {
     @SuppressWarnings("unchecked")
     private Map<String, String> convertTupleToMap(Tuple tuple) {
         Map<String, String> result = new HashMap<String, String>();
-        Iterator<Comparable> iter = tuple.iterator();
+        Iterator<Comparable<?>> iter = tuple.iterator();
         while (iter.hasNext()) {
             String key = (String)iter.next();
             String value = (String)iter.next();

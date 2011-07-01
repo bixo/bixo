@@ -62,7 +62,7 @@ public class FetchedDatumTest {
                         new ContentBytes(),
                         "text/html",
                         0);
-        assertEquals("baseUrl", datum.getBaseUrl());
+        assertEquals("baseUrl", datum.getUrl());
         assertEquals(0, datum.getFetchTime());
     }
     
