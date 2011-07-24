@@ -7,7 +7,7 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 @SuppressWarnings("serial")
-public class GroupedUrlDatum extends UrlDatum implements Serializable {
+public class GroupedUrlDatum extends UrlDatum implements Serializable, Comparable<GroupedUrlDatum> {
 
     private static final String GROUP_KEY_FN = fieldName(GroupedUrlDatum.class, "groupKey");
     public static final Fields FIELDS = new Fields(GROUP_KEY_FN).append(getSuperFields(GroupedUrlDatum.class));
@@ -57,5 +57,11 @@ public class GroupedUrlDatum extends UrlDatum implements Serializable {
     
     public static Fields getGroupingField() {
         return new Fields(GROUP_KEY_FN);
+    }
+
+    @Override
+    public int compareTo(GroupedUrlDatum o) {
+        // We don't care how these get ordered in the DiskQueue
+        return 0;
     }
 }

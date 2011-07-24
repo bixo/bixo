@@ -6,18 +6,37 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Random;
 
 import org.junit.Test;
 
-import com.bixolabs.cascading.Payload;
-
-import bixo.datum.ContentBytes;
-import bixo.datum.FetchedDatum;
-import bixo.datum.HttpHeaders;
+import bixo.datum.FetchSetDatum;
+import bixo.datum.ScoredUrlDatum;
+import bixo.datum.UrlStatus;
 
 public class DiskQueueTest {
 
+    private static class FetchSetComparator implements Comparator<FetchSetDatum> {
+        
+        @Override
+        public int compare(FetchSetDatum o1, FetchSetDatum o2) {
+            if (o1.getFetchTime() < o2.getFetchTime()) {
+                return -1;
+            } else if (o1.getFetchTime() > o2.getFetchTime()) {
+                return 1;
+            } else if (o1.getUrls().size() > o2.getUrls().size()) {
+                return -1;
+            } else if (o1.getUrls().size() < o2.getUrls().size()) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    }
+    
     @Test
     public void testQueue() {
         DiskQueue<String> queue = new DiskQueue<String>(1);
@@ -85,10 +104,10 @@ public class DiskQueueTest {
         // We'll repeatedly overflow to disk, and then drain the queue,
         // thus forcing file creation/deletion.
         for (int i = 0; i < 100; i++) {
-            assertTrue(queue.offer(new Integer(666)));
             assertTrue(queue.offer(new Integer(333)));
-            assertEquals(666, queue.remove().intValue());
+            assertTrue(queue.offer(new Integer(666)));
             assertEquals(333, queue.remove().intValue());
+            assertEquals(666, queue.remove().intValue());
             assertNull(queue.poll());
         }
     }
@@ -150,33 +169,31 @@ public class DiskQueueTest {
     @Test
     public void testGettingBackWhatWasWritten() {
         final int numElements = 100;
-        DiskQueue<FetchedDatum> queue = new DiskQueue<FetchedDatum>(numElements/10);
+        DiskQueue<FetchSetDatum> queue = new DiskQueue<FetchSetDatum>(numElements/10, new FetchSetComparator());
         
-        FetchedDatum datums[] = new FetchedDatum[numElements];
+        final long fetchStartTime = System.currentTimeMillis();
+        final long fetchDelay = 30000;
+        FetchSetDatum datums[] = new FetchSetDatum[numElements];
         for (int i = 0; i < numElements; i++) {
-            String baseUrl = "http://domain-" + i + "+.com/index.html";
-            String redirectedUrl = "http://www.domain-" + i + ".com/index.html";
-            long fetchTime = System.currentTimeMillis();
-            HttpHeaders headers = new HttpHeaders();
-            headers.add("key", "value-" + i);
-            ContentBytes content = new ContentBytes(new String("content-" + i).getBytes());
-            String contentType = "text/plain";
-            int responseRate = (i + 1) * 1000;
-            Payload payload = new Payload();
-            payload.put("key", "value-" + i);
-            FetchedDatum datum = new FetchedDatum(baseUrl, redirectedUrl, fetchTime, headers, content, contentType, responseRate);
-            datum.setPayload(payload);
+            long fetchTime = fetchStartTime + (i * 10);
+            int groupingKey = 100;
+            String groupingRef = "groupingRef";
+            List<ScoredUrlDatum> scoredUrls = new ArrayList<ScoredUrlDatum>();
+            String url = String.format("http://domain-%03d.com/index.html", i);
+            scoredUrls.add(new ScoredUrlDatum(url, groupingRef, UrlStatus.UNFETCHED, 0.0));
+            FetchSetDatum datum = new FetchSetDatum(scoredUrls, fetchTime, fetchDelay, groupingKey, groupingRef);
             datums[i] = datum;
             assertTrue(queue.offer(datum));
         }
         
         for (int i = 0; i < numElements; i++) {
-            FetchedDatum datum = queue.poll();
+            FetchSetDatum datum = queue.poll();
             assertNotNull(datum);
             assertEquals(datums[i], datum);
         }
         
         assertNull(queue.poll());
+        
     }
 
     @Test
@@ -204,30 +221,19 @@ public class DiskQueueTest {
     
     @Test
     public void testPeekingAndGetting() throws Exception {
-        DiskQueue<Integer> queue = new DiskQueue<Integer>(2);
+        DiskQueue<Integer> queue = new DiskQueue<Integer>(3);
         
         assertTrue(queue.offer(new Integer(666)));
         assertTrue(queue.offer(new Integer(999)));
         assertTrue(queue.offer(new Integer(333)));
-        assertEquals(666, queue.peek().intValue());
-        assertEquals(666, queue.peek(0).intValue());
-        assertEquals(999, queue.peek(1).intValue());
-        
-        // We only have space for two items in memory, so
-        // indexes past that will throw exceptions.
-        try {
-            queue.peek(2);
-            fail("Should have throw exception");
-        } catch (IndexOutOfBoundsException e) {
-            // valid
-        }
-        
-        assertEquals(999, queue.remove(1).intValue());
+        assertEquals(333, queue.remove().intValue());
         assertEquals(2, queue.size());
-        assertNull(queue.peek(1));
 
-        assertEquals(666, queue.remove(0).intValue());
+        assertEquals(666, queue.remove().intValue());
         assertEquals(1, queue.size());
+
+        assertEquals(999, queue.remove().intValue());
+        assertEquals(0, queue.size());
     }
     
 }

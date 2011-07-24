@@ -10,8 +10,9 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.security.InvalidParameterException;
 import java.util.AbstractQueue;
+import java.util.Comparator;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.PriorityQueue;
 
 import org.apache.log4j.Logger;
 
@@ -29,14 +30,24 @@ import org.apache.log4j.Logger;
 public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
     private static final Logger LOGGER = Logger.getLogger(DiskQueue.class);
 
+    public static final float DEFAULT_REFILL_RATIO = 0.75f;
+    
     private static class IndexQueue<E> extends AbstractQueue<E> {
 
+        private PriorityQueue<E> _queue;
         private int _capacity;
-        private LinkedList<E> _queue;
         
         public IndexQueue(int capacity) {
+            this(capacity, null);
+        }
+        
+        public IndexQueue(int capacity, Comparator<? super E> comparator) {
             _capacity = capacity;
-            _queue = new LinkedList<E>();
+            if (comparator != null) {
+                _queue = new PriorityQueue<E>(capacity, comparator);
+            } else {
+                _queue = new PriorityQueue<E>(capacity);
+            }
         }
         
         @Override
@@ -67,17 +78,7 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
 
         @Override
         public E peek() {
-            return peek(0);
-        }
-
-        public E peek(int index) throws IndexOutOfBoundsException {
-            if (index >= _capacity) {
-                throw new IndexOutOfBoundsException("Can't peek past end of memory queue");
-            } else if (index >= _queue.size()) {
-                return null;
-            } else {
-                return _queue.get(index);
-            }
+            return _queue.peek();
         }
 
         @Override
@@ -89,124 +90,18 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
             }
         }
         
-        public E remove(int index) throws IndexOutOfBoundsException {
-            return _queue.remove(index);
+        public E remove() {
+            return _queue.remove();
         }
         
-        /**
-        private final E[] _items;
-        private transient int _takeIndex;
-        private transient int _putIndex;
-        private int _numItems;
-
-        @SuppressWarnings("unchecked")
-        public IndexQueue(int capacity) {
-            _items = (E[]) new Object[capacity];
-        }
-
-        @Override
-        public Iterator<E> iterator() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int size() {
-            return _numItems;
-        }
-
-        @Override
-        public boolean offer(E o) {
-            if (o == null) {
-                throw new NullPointerException();
-            }
-
-            if (_numItems == _items.length) {
-                return false;
-            } else {
-                insert(o);
-                return true;
-            }
-        }
-
-        @Override
-        public E peek() {
-            return (_numItems == 0) ? null : _items[_takeIndex];
-        }
-
-        public E peek(int index) {
-            if (index >= _numItems) {
-                return null;
-            } else {
-                return _items[(index + _takeIndex) % _items.length];
-            }
-        }
-        
-        public E get(int index) {
-            if ((index >= _numItems) || (index < 0)) {
-                throw new IndexOutOfBoundsException("Index passed to get is invalid");
-            }
-
-            // Now for the tricky part. We need to pull out the item at <index>, and shift
-            // things to fill in the gap. But there are three cases to consider, based on
-            // the relative ordering of the take, put, and index positions. Note that in
-            // these diagrams, <index> has been adjusted to absolute, versus an offset
-            // relative to <put> (and t = take, p = put, i = index)
-            // [  t..i..p  ] = easy, shift i+1 to p down
-            // [..i..p  t..] = easy, shift i+1 to p down
-            // [..p  t..i..] = hard, shift i+1 to end down, move 0 to end, shift 0 to p down
-            // TODO make it so
-            throw new UnsupportedOperationException();
-        }
-        
-        @Override
-        public E poll() {
-            if (_numItems == 0) {
-                return null;
-            } else {
-                E x = extract();
-                return x;
-            }
-        }
-
-        @Override
-        public void clear() {
-            final E[] items = _items;
-            int i = _takeIndex;
-            int k = _numItems;
-            while (k-- > 0) {
-                items[i] = null;
-                i = inc(i);
-            }
-
-            _numItems = 0;
-            _putIndex = 0;
-            _takeIndex = 0; 
-        }
-
-        private int inc(int i) {
-            return (++i == _items.length)? 0 : i;
-        }
-
-        private void insert(E x) {
-            _items[_putIndex] = x;
-            _putIndex = inc(_putIndex);
-            ++_numItems;
-        }
-
-        private E extract() {
-            final E[] items = _items;
-            E x = items[_takeIndex];
-            items[_takeIndex] = null;
-            _takeIndex = inc(_takeIndex);
-            --_numItems;
-            return x;
-        } 
-        **/
     }
     
     // The _memoryQueue represents the head of the queue. It can also be the tail, if
     // nothing has spilled over onto the disk.
     private IndexQueue<E> _memoryQueue;
+    
+    // Percentage of memory queue used/capacity that triggers a refill from disk.
+    private float _refillMemoryRatio;
     
     // Number of elements in the backing store file on disk.
     private int _fileElements;
@@ -232,17 +127,22 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
     /**
      * Construct a disk-backed queue that keeps at most <maxSize> elements in memory.
      * 
-     * @param maxSize Maximum number of elements to keep in memory.
+     * @param maxInMemorySize Maximum number of elements to keep in memory.
      */
-    public DiskQueue(int maxSize) {
-        if (maxSize < 1) {
-            throw new InvalidParameterException("DiskQueue max size must be at least one");
-        }
-
-        _memoryQueue = new IndexQueue<E>(maxSize);
+    public DiskQueue(int maxInMemorySize) {
+        this(maxInMemorySize, null);
     }
 
+    public DiskQueue(int maxInMemorySize, Comparator<? super E> comparator) {
+        if (maxInMemorySize < 1) {
+            throw new InvalidParameterException("DiskQueue max in-memory size must be at least one");
+        }
 
+        _memoryQueue = new IndexQueue<E>(maxInMemorySize, comparator);
+        _refillMemoryRatio = DEFAULT_REFILL_RATIO;
+    }
+
+    
     /* (non-Javadoc)
      * @see java.lang.Object#finalize()
      * 
@@ -339,16 +239,10 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
         return _memoryQueue.peek();
     }
 
-    public E peek(int index) throws IndexOutOfBoundsException {
+    public E remove() {
         loadMemoryQueue();
 
-        return _memoryQueue.peek(index);
-    }
-
-    public E remove(int index) {
-        loadMemoryQueue();
-
-        return _memoryQueue.remove(index);
+        return _memoryQueue.remove();
     }
     
     @Override
@@ -372,8 +266,8 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
     
     @SuppressWarnings("unchecked")
     private void loadMemoryQueue() {
-        // use the memory queue as our buffer, so only load it up when it's empty
-        if (!_memoryQueue.isEmpty()) {
+        // use the memory queue as our buffer, so only load it up when it's below capacity.
+        if ((float)_memoryQueue.size()/(float)_memoryQueue.getCapacity() >= _refillMemoryRatio) {
             return;
         }
 

@@ -1,5 +1,6 @@
 package bixo.operations;
 
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,8 +41,46 @@ import com.bixolabs.cascading.NullContext;
 public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<NullContext>, IFetchMgr {
     private static Logger LOGGER = Logger.getLogger(FetchBuffer.class);
 
+    private class QueuedFetchSetsComparator implements Comparator<FetchSetDatum> {
+
+        private long getFetchTime(String groupingRef) {
+            if (_activeRefs.get(groupingRef) == null) {
+                Long nextFetchTime = _pendingRefs.get(groupingRef);
+                if (nextFetchTime == null) {
+                    return(0);
+                } else {
+                    return(nextFetchTime);
+                }
+            } else {
+                // fetch set is active, so sort at end
+                return(Long.MAX_VALUE);
+            }
+        }
+        
+        @Override
+        public int compare(FetchSetDatum o1, FetchSetDatum o2) {
+            long o1FetchTime = getFetchTime(o1.getGroupingRef());
+            long o2FetchTime = getFetchTime(o2.getGroupingRef());
+            
+            // The entry that's ready sooner sorts sooner. If both
+            // are ready, return the one with the bigger fetch set.
+            if (o1FetchTime < o2FetchTime) {
+                return -1;
+            } else if (o1FetchTime > o2FetchTime) {
+                return 1;
+            } else if (o1.getUrls().size() > o2.getUrls().size()) {
+                return -1;
+            } else if (o1.getUrls().size() < o2.getUrls().size()) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+        
+    }
+    
     private class QueuedValues {
-        private static final int MAX_ELEMENTS_IN_MEMORY = 1000;
+        private static final int MAX_ELEMENTS_IN_MEMORY = 10000;
         
         private DiskQueue<FetchSetDatum> _queue;
         private Iterator<TupleEntry> _values;
@@ -50,7 +89,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         public QueuedValues(Iterator<TupleEntry> values) {
             _values = values;
             _iteratorDone = false;
-            _queue = new DiskQueue<FetchSetDatum>(MAX_ELEMENTS_IN_MEMORY);
+            _queue = new DiskQueue<FetchSetDatum>(MAX_ELEMENTS_IN_MEMORY, new QueuedFetchSetsComparator());
         }
         
         /**
