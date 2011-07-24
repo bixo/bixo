@@ -116,7 +116,9 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 // to be processed.
                 FetchSetDatum datum = _queue.peek();
                 if (datum != null) {
+                    List<ScoredUrlDatum> urls = datum.getUrls();
                     String ref = datum.getGroupingRef();
+                    trace("Queue returned %d urls from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
                     if (_activeRefs.get(ref) == null) {
                         Long nextFetchTime = _pendingRefs.get(ref);
                         if ((nextFetchTime == null) || (nextFetchTime <= System.currentTimeMillis())) {
@@ -149,13 +151,15 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 // Nothing ready in the queue, let's see about the iterator.
                 if (safeHasNext()) {
                     datum = new FetchSetDatum(new TupleEntry(_values.next()));
+                    List<ScoredUrlDatum> urls = datum.getUrls();
+                    trace("Iterator returned %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
+                    
                     if (datum.isSkipped()) {
-                        List<ScoredUrlDatum> urls = datum.getUrls();
                         trace("Skipping %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
                         skipUrls(urls, UrlStatus.SKIPPED_PER_SERVER_LIMIT, null);
                         continue;
                     }
-                    
+
                     String ref = datum.getGroupingRef();
                     if (_activeRefs.get(ref) == null) {
                         Long nextFetchTime = _pendingRefs.get(ref);
@@ -164,31 +168,23 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                         }
                     }
 
-                    if (datum != null) {
-                        switch (mode) {
-                            case COMPLETE:
-                                trace("Queuing next iter item %s (domain still active or pending)", datum.getGroupingRef());
-                                _queue.add(datum);
-                                break;
+                    // We've got a datum from the iterator that's not ready to be processed.
+                    switch (mode) {
+                        case COMPLETE:
+                            trace("Queuing next iter item %s (domain still active or pending)", datum.getGroupingRef());
+                            _queue.add(datum);
+                            break;
 
-                            case IMPOLITE:
-                                return datum;
-                                
+                        case IMPOLITE:
+                            return datum;
+
                             // In efficient fetching, we punt on items that aren't ready.
-                            case EFFICIENT:
-                                List<ScoredUrlDatum> urls = datum.getUrls();
-                                trace("Skipping %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
-                                skipUrls(urls, UrlStatus.SKIPPED_INEFFICIENT, null);
-                                break;
-                        }
+                        case EFFICIENT:
+                            trace("Skipping %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
+                            skipUrls(urls, UrlStatus.SKIPPED_INEFFICIENT, null);
+                            break;
                     }
                 } else {
-                    // TODO KKr - have a peek(index) and a remove(index) call for the DiskQueue,
-                    // where index < number of elements in memory. That way we don't get stuck on having
-                    // a top-most element that's taking a long time, but there are following elements that
-                    // would be ready to go. Or we could just make sure that the DiskQueue orders
-                    // elements by a comparator (for the in memory set), so top-most is always the
-                    // one that's closest to being ready (or biggest, if more than one is ready)
                     return null;
                 }
             }

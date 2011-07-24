@@ -124,8 +124,8 @@ public class FetchTask implements Runnable {
         } catch (Throwable t) {
             LOGGER.error("Exception while fetching", t);
         } finally {
-            process.decrement(FetchCounters.DOMAINS_PROCESSING, 1);
             _fetchMgr.finished(_ref);
+            process.decrement(FetchCounters.DOMAINS_PROCESSING, 1);
         }
     }
 
