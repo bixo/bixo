@@ -140,7 +140,7 @@ public class SimpleCrawlWorkflow {
     
     public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, SimpleCrawlToolOptions options) throws Throwable {
         JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
-        int numReducers = conf.getNumReduceTasks() * HadoopUtils.getTaskTrackers(conf);
+        int numReducers = HadoopUtils.getNumReducers(conf);
         Properties props = HadoopUtils.getDefaultProperties(SimpleCrawlWorkflow.class, options.isDebugLogging(), conf);
         FileSystem fs = curWorkingDirPath.getFileSystem(conf);
 
