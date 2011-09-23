@@ -81,7 +81,7 @@ CLASSPATH=$JAVA_HOME/lib/tools.jar
 # so that filenames w/ spaces are handled correctly in loops below
 IFS=
 
-BIXO_CORE=`find "$BIXO_HOME" -name "bixo-core-*.jar"`
+BIXO_CORE=`find "$BIXO_HOME/" -name "bixo-core-*.jar"`
 if [ -z BIXO_CORE ]; then
 	echo "Unable to find the bixo-core jar"
 	exit 1
