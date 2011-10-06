@@ -12,6 +12,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.log4j.Logger;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.CharsetUtils;
 
@@ -29,6 +30,7 @@ public class SimpleParser extends BaseParser {
     private boolean _extractLanguage = true;
     protected BaseContentExtractor _contentExtractor;
     protected BaseLinkExtractor _linkExtractor;
+    protected ParseContext _parseContext;
     private transient Parser _parser;
     
     public SimpleParser() {
@@ -36,7 +38,7 @@ public class SimpleParser extends BaseParser {
     }
     
     public SimpleParser(ParserPolicy parserPolicy) {
-        this(new SimpleContentExtractor(), new SimpleLinkExtractor(), parserPolicy);
+        this(new SimpleContentExtractor(), new SimpleLinkExtractor(), parserPolicy, null);
     }
     
     /**
@@ -50,12 +52,28 @@ public class SimpleParser extends BaseParser {
      * to {@link SimpleParser#SimpleParser(ParserPolicy)}.
      */
     public SimpleParser(BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, ParserPolicy parserPolicy) {
+        this(contentExtractor, linkExtractor, parserPolicy, null);
+    }
+    
+    /**
+     * @param contentExtractor to use instead of new {@link SimpleContentExtractor}()
+     * @param linkExtractor to use instead of new {@link SimpleLinkExtractor}()
+     * @param parserPolicy to customize operation of the parser
+     * @param parseContext used to pass context info to the parser
+     * <BR><BR><B>Note:</B> There is no need to construct your own
+     * {@link SimpleLinkExtractor} simply to control the set of link tags
+     * and attributes it processes. Instead, use {@link ParserPolicy#setLinkTags}
+     * and {@link ParserPolicy#setLinkAttributeTypes}, and then pass this policy
+     * to {@link SimpleParser#SimpleParser(ParserPolicy)}.
+     */
+    public SimpleParser(BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, ParserPolicy parserPolicy, ParseContext parseContext) {
         super(parserPolicy);
         
         _contentExtractor = contentExtractor;
         _linkExtractor = linkExtractor;
+        _parseContext = parseContext;
     }
-    
+
     protected synchronized void init() {
         if (_parser == null) {
             _parser = getTikaParser();
@@ -101,7 +119,7 @@ public class SimpleParser extends BaseParser {
         	URL baseUrl = getContentLocation(fetchedDatum);
         	metadata.add(Metadata.CONTENT_LOCATION, baseUrl.toExternalForm());
 
-            Callable<ParsedDatum> c = new TikaCallable(_parser, _contentExtractor, _linkExtractor, is, metadata, isExtractLanguage());
+            Callable<ParsedDatum> c = new TikaCallable(_parser, _contentExtractor, _linkExtractor, is, metadata, isExtractLanguage(), _parseContext);
             FutureTask<ParsedDatum> task = new FutureTask<ParsedDatum>(c);
             Thread t = new Thread(task);
             t.start();

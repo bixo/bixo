@@ -69,18 +69,25 @@ class TikaCallable implements Callable<ParsedDatum> {
     private InputStream _input;
     private Metadata _metadata;
     private boolean _extractLanguage;
+    private ParseContext _parseContext;
     
     public TikaCallable(Parser parser, BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, InputStream input, Metadata metadata) {
         this(parser, contentExtractor, linkExtractor, input, metadata, true);
     }
-    
+
     public TikaCallable(Parser parser, BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, InputStream input, Metadata metadata, boolean extractLanguage) {
+        this(parser, contentExtractor, linkExtractor, input, metadata, true, null);
+ 
+    }
+    
+    public TikaCallable(Parser parser, BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, InputStream input, Metadata metadata, boolean extractLanguage, ParseContext parseContext) {
         _parser = parser;
         _contentExtractor = contentExtractor;
         _linkExtractor = linkExtractor;
         _input = input;
         _metadata = metadata;
         _extractLanguage = extractLanguage;
+        _parseContext = parseContext;
     }
     
     @Override
@@ -95,7 +102,11 @@ class TikaCallable implements Callable<ParsedDatum> {
             } else {
                 teeContentHandler = new TeeContentHandler(_contentExtractor, _linkExtractor);
             }
-            _parser.parse(_input, teeContentHandler, _metadata, makeParseContext());
+
+            if (_parseContext == null) {
+                _parseContext = makeParseContext();
+            }
+            _parser.parse(_input, teeContentHandler, _metadata, _parseContext);
             
             String lang = _extractLanguage ? detectLanguage(_metadata, profilingHandler) : "";
             return new ParsedDatum(_metadata.get(Metadata.RESOURCE_NAME_KEY), null, _contentExtractor.getContent(), lang,
