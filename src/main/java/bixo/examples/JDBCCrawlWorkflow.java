@@ -122,7 +122,9 @@ public class JDBCCrawlWorkflow {
     public static Flow createFlow(Path inputDir, Path curLoopDirPath, UserAgent userAgent, FetcherPolicy fetcherPolicy,
                     BaseUrlFilter urlFilter, int maxThreads, boolean debug, String persistentDbLocation) throws Throwable {
         JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
-        int numReducers = conf.getNumReduceTasks() * HadoopUtils.getTaskTrackers(conf);
+        int numReducers = HadoopUtils.getNumReducers(conf);
+        conf.setNumReduceTasks(numReducers);
+
         FileSystem fs = curLoopDirPath.getFileSystem(conf);
 
         if (!fs.exists(inputDir)) {
