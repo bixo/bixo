@@ -48,6 +48,9 @@ HADOOP_VERSION=0.20.2
 # Enable public access to JobTracker and TaskTracker web interfaces
 ENABLE_WEB_PORTS=true
 
+# User account on the cluster
+USER=root
+
 # TODO CSc I renamed $USER_DATA_FILE to be $USER_DATA_FILE_TEMPLATE, and put the whole
 # path into this variable. I changed launch-master and launch-slaves to use the new
 # variable, but I wonder if any other EC2 scripts use it. Is it worth just writing

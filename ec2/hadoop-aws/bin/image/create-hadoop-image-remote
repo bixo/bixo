@@ -73,20 +73,20 @@ sed -i -e "s|# export JAVA_HOME=.*|export JAVA_HOME=/usr/local/jdk${JAVA_VERSION
 chmod +x /etc/init.d/ec2-run-user-data
 echo "/etc/init.d/ec2-run-user-data" >> /etc/rc.d/rc.local
 
-# Setup root user bash environment
-echo "export JAVA_HOME=/usr/local/jdk${JAVA_VERSION}" >> /root/.bash_profile
-echo "export HADOOP_HOME=/usr/local/hadoop-${HADOOP_VERSION}" >> /root/.bash_profile
-echo "export KATTA_HOME=/usr/local/katta-core-${KATTA_VERSION}" >> /root/.bash_profile
-echo 'export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$KATTA_HOME/bin:$PATH' >> /root/.bash_profile
+# Setup user bash environment
+echo "export JAVA_HOME=/usr/local/jdk${JAVA_VERSION}" >> ~$USER/.bash_profile
+echo "export HADOOP_HOME=/usr/local/hadoop-${HADOOP_VERSION}" >> ~$USER/.bash_profile
+echo "export KATTA_HOME=/usr/local/katta-core-${KATTA_VERSION}" >> ~$USER/.bash_profile
+echo 'export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$KATTA_HOME/bin:$PATH' >> ~$USER/.bash_profile
 
 # Configure networking.
 # Delete SSH authorized_keys since it includes the key it was launched with. (Note that it is re-populated when an instance starts.)
-rm -f /root/.ssh/authorized_keys
+rm -f ~$USER/.ssh/authorized_keys
 # Ensure logging in to new hosts is seamless.
 echo '    StrictHostKeyChecking no' >> /etc/ssh/ssh_config
 
 # Bundle and upload image
-cd ~root
+cd ~$USER
 # Don't need to delete .bash_history since it isn't written until exit.
 df -h
 ec2-bundle-vol -d /mnt -k /mnt/pk*.pem -c /mnt/cert*.pem -u $AWS_ACCOUNT_ID -s 3072 -p hadoop-$HADOOP_VERSION-$ARCH${HADOOP_EC2_PROFILE:+-$HADOOP_EC2_PROFILE} -r $ARCH

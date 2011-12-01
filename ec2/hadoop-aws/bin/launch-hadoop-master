@@ -139,6 +139,7 @@ sed -e "s|%AWS_ACCESS_KEY_ID%|$AWS_ACCESS_KEY_ID|" \
     -e "s|%EXTRA_CORE_SITE_PROPERTIES%|$EXTRA_CORE_SITE_PROPERTIES|" \
     -e "s|%EXTRA_HDFS_SITE_PROPERTIES%|$EXTRA_HDFS_SITE_PROPERTIES|" \
     -e "s|%EXTRA_MAPRED_SITE_PROPERTIES%|$EXTRA_MAPRED_SITE_PROPERTIES|" \
+    -e "s|%USER%|$USER|" \
        "$USER_DATA_FILE_TEMPLATE" > .user_data_file.master
 
 # Try removing comments from user data file if it exceeds 16K.
@@ -186,7 +187,7 @@ MASTER_EC2_ZONE=`ec2-describe-instances $INSTANCE | grep INSTANCE | grep running
 echo $MASTER_EC2_ZONE > $MASTER_ZONE_PATH
 
 while true; do
-  REPLY=`ssh $SSH_OPTS "root@$MASTER_EC2_HOST" 'echo "hello"'`
+  REPLY=`ssh $SSH_OPTS "$USER@$MASTER_EC2_HOST" 'echo "hello"'`
   if [ -n "$REPLY" ]; then
    break;
   fi
@@ -194,8 +195,8 @@ while true; do
 done
 
 echo "Copying private key to master..."
-scp $SSH_OPTS $PRIVATE_KEY_PATH "root@$MASTER_EC2_HOST:/root/.ssh/id_rsa"
-ssh $SSH_OPTS "root@$MASTER_EC2_HOST" "chmod 600 /root/.ssh/id_rsa"
+scp $SSH_OPTS $PRIVATE_KEY_PATH "$USER@$MASTER_EC2_HOST:~$USER/.ssh/id_rsa"
+ssh $SSH_OPTS "$USER@$MASTER_EC2_HOST" "chmod 600 ~$USER/.ssh/id_rsa"
 
 MASTER_IP=`dig +short $MASTER_EC2_HOST`
 echo "Master is $MASTER_EC2_HOST, ip is $MASTER_IP, zone is $MASTER_EC2_ZONE."

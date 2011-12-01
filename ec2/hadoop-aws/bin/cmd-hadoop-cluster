@@ -50,20 +50,20 @@ fi
 
 if [ "$COMMAND" = "login" ] ; then
   echo "Logging in to host $HOST."
-  ssh $SSH_OPTS "root@$HOST"
+  ssh $SSH_OPTS "$USER@$HOST"
 elif [ "$COMMAND" = "proxy" ] ; then
   echo "Proxying to host $HOST via local port 6666"
   echo "Ganglia:    http://$HOST/ganglia"
   echo "JobTracker: http://$HOST:50030/"
   echo "NameNode:   http://$HOST:50070/"
-  ssh $SSH_OPTS -D 6666 -N "root@$HOST"
+  ssh $SSH_OPTS -D 6666 -N "$USER@$HOST"
 elif [ "$COMMAND" = "push" ] ; then
   echo "Pushing $1 to host $HOST."
-  scp $SSH_OPTS -r $1 "root@$HOST:"
+  scp $SSH_OPTS -r $1 "$USER@$HOST:"
 elif [ "$COMMAND" = "screen" ] ; then
   echo "Logging in and attaching screen on host $HOST."
-  ssh $SSH_OPTS -t "root@$HOST" 'screen -s -$SHELL -D -R'
+  ssh $SSH_OPTS -t "$USER@$HOST" 'screen -s -$SHELL -D -R'
 else
   echo "Executing command on host $HOST."
-  ssh $SSH_OPTS -t "root@$HOST" "$COMMAND"
+  ssh $SSH_OPTS -t "$USER@$HOST" "$COMMAND"
 fi

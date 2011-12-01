@@ -101,6 +101,7 @@ sed -e "s|%MASTER_HOST%|$MASTER_HOST|" \
     -e "s|%EXTRA_CORE_SITE_PROPERTIES%|$EXTRA_CORE_SITE_PROPERTIES|" \
     -e "s|%EXTRA_HDFS_SITE_PROPERTIES%|$EXTRA_HDFS_SITE_PROPERTIES|" \
     -e "s|%EXTRA_MAPRED_SITE_PROPERTIES%|$EXTRA_MAPRED_SITE_PROPERTIES|" \
+    -e "s|%USER%|$USER|" \
        "$USER_DATA_FILE_TEMPLATE" > .user_data_file.slave
 
 # Try removing comments from user data file if it exceeds 16K.

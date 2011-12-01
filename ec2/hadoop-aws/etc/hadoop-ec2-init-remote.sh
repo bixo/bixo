@@ -31,6 +31,9 @@ INSTANCE_TYPE=%INSTANCE_TYPE%
 EXTRA_CORE_SITE_PROPERTIES="%EXTRA_CORE_SITE_PROPERTIES%"
 EXTRA_HDFS_SITE_PROPERTIES="%EXTRA_HDFS_SITE_PROPERTIES%"
 EXTRA_MAPRED_SITE_PROPERTIES="%EXTRA_MAPRED_SITE_PROPERTIES%"
+USER="%USER%"
+# not set on boot
+export USER
 
 HADOOP_HOME=`ls -d /usr/local/hadoop-*`
 
@@ -314,7 +317,7 @@ EOF
 # s3cmd configuration
 ################################################################################
 
-cat > /root/.s3cfg <<EOF
+cat > ~$USER/.s3cfg <<EOF
 [default]
 access_key = $AWS_ACCESS_KEY_ID
 acl_public = False
@@ -352,8 +355,6 @@ EOF
 
 mkdir -p /mnt/hadoop/logs
 
-# not set on boot
-export USER="root"
 
 # Increase the default ulimit -n for the root user.
 #
@@ -464,6 +465,7 @@ if [ "$IS_MASTER" == "false" ]; then
 
   service nscd start
 fi
+
 
 # Run this script on next boot
 # 
