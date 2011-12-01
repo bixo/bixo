@@ -140,6 +140,7 @@ sed -e "s|%AWS_ACCESS_KEY_ID%|$AWS_ACCESS_KEY_ID|" \
     -e "s|%EXTRA_HDFS_SITE_PROPERTIES%|$EXTRA_HDFS_SITE_PROPERTIES|" \
     -e "s|%EXTRA_MAPRED_SITE_PROPERTIES%|$EXTRA_MAPRED_SITE_PROPERTIES|" \
     -e "s|%USER%|$USER|" \
+    -e "s|%EXTRA_INIT_CMDS%|$EXTRA_INIT_CMDS|" \
        "$USER_DATA_FILE_TEMPLATE" > .user_data_file.master
 
 # Try removing comments from user data file if it exceeds 16K.

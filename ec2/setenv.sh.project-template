@@ -135,6 +135,12 @@ export EXTRA_MAPRED_SITE_PROPERTIES=
 # template by placing the project-specific copy of that template into
 # $PROJECT_EC2_BASEDIR.
 
+
+# You can specify additional commands to run while the init is being run on the
+# server. Examples of these commands are doing "yum installs" of components that
+# aren't available on the default AMI.
+export EXTRA_INIT_CMDS=
+
 # ################################################################################
 # END PROJECT-SPECIFIC SETTINGS
 # ################################################################################
