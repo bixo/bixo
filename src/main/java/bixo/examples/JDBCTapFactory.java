@@ -22,7 +22,6 @@
  */
 package bixo.examples;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -30,13 +29,14 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 import org.hsqldb.Server;
 
-import com.bixolabs.cascading.HadoopUtils;
-
 import cascading.jdbc.JDBCScheme;
 import cascading.jdbc.JDBCTap;
 import cascading.jdbc.TableDesc;
 import cascading.tap.Tap;
 
+import com.bixolabs.cascading.HadoopUtils;
+
+@SuppressWarnings("deprecation")
 public class JDBCTapFactory {
 
     private static final Logger LOGGER = Logger.getLogger(JDBCTapFactory.class);
@@ -91,9 +91,10 @@ public class JDBCTapFactory {
             JobConf jobConf;
             try {
                 jobConf = HadoopUtils.getDefaultJobConf();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 throw new RuntimeException("Unable to get default job conf: " + e);
             }
+            
             String db = IN_MEM_DB;
             if (dbLocation != null) {
                 String separator = "";

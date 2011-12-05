@@ -15,13 +15,13 @@ import com.bixolabs.cascading.HadoopUtils;
 public class HadoopUtilsTest {
 
 	@Test
-	public void testStackSizeSetup() throws IOException {
+	public void testStackSizeSetup() throws IOException, InterruptedException {
 		JobConf conf = HadoopUtils.getDefaultJobConf(512);
 		Assert.assertTrue(conf.get("mapred.child.java.opts").contains("-Xss512k"));
 	}
 	
 	@Test
-	public void testDebugLevel() throws IOException {
+	public void testDebugLevel() throws IOException, InterruptedException {
 		JobConf conf = HadoopUtils.getDefaultJobConf(512);
 		Properties props = HadoopUtils.getDefaultProperties(HadoopUtilsTest.class, true, conf);
 		Assert.assertTrue(props.getProperty("log4j.logger").contains("bixo=TRACE"));
