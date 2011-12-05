@@ -468,7 +468,7 @@ if [ "$IS_MASTER" == "false" ]; then
   service nscd start
 fi
 
-$EXTRA_INIT_CMDS
+eval $EXTRA_INIT_CMDS
 
 
 # Run this script on next boot
