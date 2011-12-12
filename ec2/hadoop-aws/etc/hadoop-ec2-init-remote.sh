@@ -54,26 +54,44 @@ HADOOP_HOME=`ls -d /usr/local/hadoop-*`
 #
 # For m2.2xlarge slaves, we get 4 (with 3.25 EC2 Compute Units each),
 # 34.2GB of RAM, plus the second drive, so we should be able to run 4 maps
+# and 2 reducers simultaneously.
+# For m2.4xlarge slaves, we get 8 (with 3.25 EC2 Compute Units each),
+# 68.4GB of RAM, plus the second drive, so we should easily be able to run 8 maps
 # and 4 reducers simultaneously.
-JOBTRACKER_HEAPSIZE=$HADOOP_HEAPSIZE
 if [ "$INSTANCE_TYPE" == "m1.small" ]; then
+  JOBTRACKER_HEAPSIZE=1000
+  MAPRED_CHILD_JAVA_OPTS="-server -Xmx512m"
   NUM_SLAVE_CORES=1
   MAP_TASKS_PER_SLAVE=1
   REDUCE_TASKS_PER_SLAVE=1
   HDFS_DATA_DIR="/mnt/hadoop/dfs/data"
+  MAPRED_LOCAL_DIR="/mnt/hadoop/mapred/local"
 elif [ "$INSTANCE_TYPE" == "m2.2xlarge" ]; then
-  JOBTRACKER_HEAPSIZE=2000
+  JOBTRACKER_HEAPSIZE=4000
+  MAPRED_CHILD_JAVA_OPTS="-server -Xmx4g"
   NUM_SLAVE_CORES=4
   MAP_TASKS_PER_SLAVE=4
+  REDUCE_TASKS_PER_SLAVE=2
+  HDFS_DATA_DIR="/mnt/hadoop/dfs/data,/mnt2/hadoop/dfs/data"
+  MAPRED_LOCAL_DIR="/mnt/hadoop/mapred/local"
+  mkdir -p /mnt2/hadoop
+elif [ "$INSTANCE_TYPE" == "m2.4xlarge" ]; then
+  JOBTRACKER_HEAPSIZE=4000
+  MAPRED_CHILD_JAVA_OPTS="-server -Xmx4g"
+  NUM_SLAVE_CORES=8
+  MAP_TASKS_PER_SLAVE=8
   REDUCE_TASKS_PER_SLAVE=4
   HDFS_DATA_DIR="/mnt/hadoop/dfs/data,/mnt2/hadoop/dfs/data"
+  MAPRED_LOCAL_DIR="/mnt/hadoop/mapred/local"
   mkdir -p /mnt2/hadoop
 else # m1.large, etc.
-  JOBTRACKER_HEAPSIZE=1500
+  JOBTRACKER_HEAPSIZE=4000
+  MAPRED_CHILD_JAVA_OPTS="-server -Xmx1312m"
   NUM_SLAVE_CORES=2
   MAP_TASKS_PER_SLAVE=2
   REDUCE_TASKS_PER_SLAVE=2
   HDFS_DATA_DIR="/mnt/hadoop/dfs/data,/mnt2/hadoop/dfs/data"
+  MAPRED_LOCAL_DIR="/mnt/hadoop/mapred/local,/mnt2/hadoop/mapred/local"
   mkdir -p /mnt2/hadoop
 fi
 
@@ -221,6 +239,18 @@ cat > $HADOOP_HOME/conf/mapred-site.xml <<EOF
 </property>
 
 <property>
+  <name>mapred.local.dir</name>
+  <value>$MAPRED_LOCAL_DIR</value>
+  <description>The local directory where MapReduce stores intermediate
+  data files.  May be a comma-separated list of
+  directories on different devices in order to spread disk i/o.
+  Directories that do not exist are ignored.
+  
+  The m1.large instances have two drives, so we set this up above dependent on $INSTANCE_TYPE.
+  </description>
+</property>
+
+<property>
   <name>mapred.task.timeout</name>
   <value>1200000</value>
   <description>The number of milliseconds before a task will be
@@ -289,6 +319,12 @@ cat > $HADOOP_HOME/conf/mapred-site.xml <<EOF
                
   The maps often generate huge files outside DFS, so it's better to compress them.
   </description>
+</property>
+
+<property>
+  <name>mapred.child.java.opts</name>
+  <value>$MAPRED_CHILD_JAVA_OPTS</value>
+  <description>Java opts for the task tracker child processes.</description>
 </property>
 
 $EXTRA_MAPRED_SITE_PROPERTIES
