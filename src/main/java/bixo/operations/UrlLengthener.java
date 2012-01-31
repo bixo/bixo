@@ -85,11 +85,11 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
         return result;
     }
     
-    public UrlLengthener(BaseFetcher fetcher, int maxThreads) throws IOException {
-        this(fetcher, maxThreads, DEFAULT_FIELD);
+    public UrlLengthener(BaseFetcher fetcher) throws IOException {
+        this(fetcher, DEFAULT_FIELD);
     }
 
-    public UrlLengthener(BaseFetcher fetcher, int maxThreads, Fields resultField) throws IOException {
+    public UrlLengthener(BaseFetcher fetcher, Fields resultField) throws IOException {
         super(resultField);
         
         if (resultField.size() != 1) {
@@ -97,7 +97,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
         }
         
         _fetcher = fetcher;
-        _maxThreads = maxThreads;
+        _maxThreads = fetcher.getMaxThreads();
         
         _urlShorteners = loadUrlShorteners();
     }

@@ -84,7 +84,7 @@ public class LengthenUrlsTool {
             BaseFetcher fetcher = UrlLengthener.makeFetcher(10, ConfigUtils.BIXO_TOOL_AGENT);
 
             Pipe pipe = new Pipe("urls");
-            pipe = new Each(pipe, new UrlLengthener(fetcher, 10));
+            pipe = new Each(pipe, new UrlLengthener(fetcher));
             pipe = new Each(pipe, new Debug());
 
             Lfs sourceTap = new Lfs(new TextLine(new Fields("url")), filename);
