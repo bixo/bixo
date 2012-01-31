@@ -75,7 +75,7 @@ public class EncodingUtils {
         while (true) {
             try {
                 int size = inStream.read(buf);
-                if (size <= 0) {
+                if (size == -1) {
                     break;
                 }
 
