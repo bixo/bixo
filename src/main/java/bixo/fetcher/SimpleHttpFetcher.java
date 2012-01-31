@@ -31,7 +31,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -60,6 +63,7 @@ import org.apache.http.client.RedirectException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.ClientParamBean;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.params.HttpClientParams;
@@ -72,6 +76,11 @@ import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.AbstractVerifier;
 import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.cookie.CookieOrigin;
+import org.apache.http.cookie.CookieSpec;
+import org.apache.http.cookie.CookieSpecFactory;
+import org.apache.http.cookie.MalformedCookieException;
 import org.apache.http.cookie.params.CookieSpecParamBean;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -159,11 +168,11 @@ public class SimpleHttpFetcher extends BaseFetcher {
         "application/vnd.wap.xhtml+xml",
     };
 
-
-    private HttpVersion _httpVersion;
-    private int _socketTimeout;
-    private int _connectionTimeout;
-    private int _maxRetryCount;
+    private HttpVersion _httpVersion = HttpVersion.HTTP_1_1;
+    private int _socketTimeout = DEFAULT_SOCKET_TIMEOUT;
+    private int _connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
+    private int _maxRetryCount = DEFAULT_MAX_RETRY_COUNT;
+    private String _acceptEncoding = DEFAULT_ACCEPT_ENCODING;
     
     transient private DefaultHttpClient _httpClient;
     
@@ -324,11 +333,6 @@ public class SimpleHttpFetcher extends BaseFetcher {
     public SimpleHttpFetcher(int maxThreads, FetcherPolicy fetcherPolicy, UserAgent userAgent) {
         super(maxThreads, fetcherPolicy, userAgent);
 
-        _httpVersion = HttpVersion.HTTP_1_1;
-        _socketTimeout = DEFAULT_SOCKET_TIMEOUT;
-        _connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
-        _maxRetryCount = DEFAULT_MAX_RETRY_COUNT;
-
         // Just to be explicit, we rely on lazy initialization of this so that
         // we don't have to worry about serializing it.
         _httpClient = null;
@@ -376,6 +380,23 @@ public class SimpleHttpFetcher extends BaseFetcher {
     
     public void setMaxRetryCount(int maxRetryCount) {
         _maxRetryCount = maxRetryCount;
+    }
+    
+    /**
+     * Return the current value used for the ACCEPT-ENCODING request parameter.
+     * 
+     * @return value, or null if none is set.
+     */
+    public String getAcceptEncoding() {
+        return _acceptEncoding;
+    }
+    
+    public void setAcceptEncoding(String acceptEncoding) {
+        if (_httpClient == null) {
+            _acceptEncoding = acceptEncoding;
+        } else {
+            throw new IllegalStateException("Can't change accept encoding after HttpClient has been initialized");
+        }
     }
     
     private static FetchedDatum convert(FetchedResult result) {
@@ -832,10 +853,49 @@ public class SimpleHttpFetcher extends BaseFetcher {
             _httpClient.setRedirectHandler(new MyRedirectHandler(_fetcherPolicy.getRedirectMode()));
             _httpClient.addRequestInterceptor(new MyRequestInterceptor());
             
+            CookieSpecFactory csf = new CookieSpecFactory() {
+                public CookieSpec newInstance(HttpParams params) {
+                    return new CookieSpec() {
+                        
+                        @Override
+                        public void validate(Cookie arg0, CookieOrigin arg1) throws MalformedCookieException {
+                        }
+                        
+                        @Override
+                        public List<Cookie> parse(Header arg0, CookieOrigin arg1) throws MalformedCookieException {
+                            return new ArrayList<Cookie>();
+                        }
+                        
+                        @Override
+                        public boolean match(Cookie arg0, CookieOrigin arg1) {
+                            return false;
+                        }
+                        
+                        @Override
+                        public Header getVersionHeader() {
+                            return null;
+                        }
+                        
+                        @Override
+                        public int getVersion() {
+                            return 0;
+                        }
+                        
+                        @Override
+                        public List<Header> formatCookies(List<Cookie> arg0) {
+                            return null;
+                        }
+                    };
+                }
+            };
+            
+            _httpClient.getCookieSpecs().register("ignoreCookies", csf);
+
             params = _httpClient.getParams();
             // FUTURE KKr - support authentication
             HttpClientParams.setAuthenticating(params, false);
-            HttpClientParams.setCookiePolicy(params, CookiePolicy.BEST_MATCH);
+            // We're ignoring cookies, since we don't use them for requests.
+            HttpClientParams.setCookiePolicy(params, "ignoreCookies");
             
             ClientParamBean clientParams = new ClientParamBean(params);
             if (_fetcherPolicy.getMaxRedirects() == 0) {
@@ -849,7 +909,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
             HashSet<Header> defaultHeaders = new HashSet<Header>();
             defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT_LANGUAGE, _fetcherPolicy.getAcceptLanguage()));
             defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT_CHARSET, DEFAULT_ACCEPT_CHARSET));
-            defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT_ENCODING, DEFAULT_ACCEPT_ENCODING));
+            defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT_ENCODING, _acceptEncoding));
             defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT, DEFAULT_ACCEPT));
             
             clientParams.setDefaultHeaders(defaultHeaders);
