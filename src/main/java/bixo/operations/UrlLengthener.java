@@ -53,6 +53,8 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     private static final long TERMINATE_TIMEOUT = COMMAND_TIMEOUT * 2;
 
     private static final Pattern HOSTNAME_PATTERN = Pattern.compile("^http://([^/:?]{3,})");
+
+    private static final Fields DEFAULT_FIELD = new Fields(URL_FN);
     
     private BaseFetcher _fetcher;
     private int _maxThreads;
@@ -62,6 +64,13 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     private transient TupleEntryCollector _collector;
     private transient ThreadedExecutor _executor;
 
+    /**
+     * Return a SimpleHttpFetcher that's appropriate for lengthening URLs.
+     * 
+     * @param maxThreads - number of requests to make in parallel. Should be 1 to 100?
+     * @param userAgent - what to use when making requests.
+     * @return BaseFetcher that can be passed to the UrlLengthener constructor.
+     */
     public static BaseFetcher makeFetcher(int maxThreads, UserAgent userAgent) {
         FetcherPolicy policy = new FetcherPolicy();
         policy.setRedirectMode(RedirectMode.FOLLOW_NONE);
@@ -77,7 +86,15 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     }
     
     public UrlLengthener(BaseFetcher fetcher, int maxThreads) throws IOException {
-        super(new Fields(URL_FN));
+        this(fetcher, maxThreads, DEFAULT_FIELD);
+    }
+
+    public UrlLengthener(BaseFetcher fetcher, int maxThreads, Fields resultField) throws IOException {
+        super(resultField);
+        
+        if (resultField.size() != 1) {
+            throw new IllegalArgumentException("resultField must contain a single field");
+        }
         
         _fetcher = fetcher;
         _maxThreads = maxThreads;
