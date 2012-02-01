@@ -31,10 +31,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -63,7 +60,6 @@ import org.apache.http.client.RedirectException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.ClientParamBean;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.params.HttpClientParams;
@@ -76,11 +72,6 @@ import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.AbstractVerifier;
 import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.cookie.CookieOrigin;
-import org.apache.http.cookie.CookieSpec;
-import org.apache.http.cookie.CookieSpecFactory;
-import org.apache.http.cookie.MalformedCookieException;
 import org.apache.http.cookie.params.CookieSpecParamBean;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -95,16 +86,10 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.html.HtmlParser;
-
-import com.bixolabs.cascading.Payload;
 
 import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.RedirectMode;
+import bixo.config.UserAgent;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
@@ -115,11 +100,13 @@ import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.RedirectFetchException;
-import bixo.exceptions.UrlFetchException;
 import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
+import bixo.exceptions.UrlFetchException;
 import bixo.utils.EncodingUtils;
-import bixo.utils.HttpUtils;
 import bixo.utils.EncodingUtils.ExpandedResult;
+import bixo.utils.HttpUtils;
+
+import com.bixolabs.cascading.Payload;
 
 @SuppressWarnings("serial")
 public class SimpleHttpFetcher extends BaseFetcher {
@@ -150,7 +137,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
     private static final String DEFAULT_ACCEPT_CHARSET = "utf-8,ISO-8859-1;q=0.7,*;q=0.7";
     private static final String DEFAULT_ACCEPT_ENCODING = "x-gzip, gzip";
 
-    // Keys used to access data in the Http execution context.
+    // Keys used to access data in the HTTP execution context.
     private static final String PERM_REDIRECT_CONTEXT_KEY = "perm-redirect";
 	private static final String REDIRECT_COUNT_CONTEXT_KEY = "redirect-count";
 	private static final String HOST_ADDRESS = "host-address";
@@ -790,6 +777,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
             // TODO KKr - w/4.1, switch to new api (ThreadSafeClientConnManager)
             // cm.setMaxTotalConnections(_maxThreads);
             // cm.setDefaultMaxPerRoute(Math.max(10, _maxThreads/10));
+            // And get rid of deprecation warnings here.
             ConnManagerParams.setMaxTotalConnections(params, _maxThreads);
             
             // Set the maximum time we'll wait for a spare connection in the connection pool. We
@@ -853,49 +841,11 @@ public class SimpleHttpFetcher extends BaseFetcher {
             _httpClient.setRedirectHandler(new MyRedirectHandler(_fetcherPolicy.getRedirectMode()));
             _httpClient.addRequestInterceptor(new MyRequestInterceptor());
             
-            CookieSpecFactory csf = new CookieSpecFactory() {
-                public CookieSpec newInstance(HttpParams params) {
-                    return new CookieSpec() {
-                        
-                        @Override
-                        public void validate(Cookie arg0, CookieOrigin arg1) throws MalformedCookieException {
-                        }
-                        
-                        @Override
-                        public List<Cookie> parse(Header arg0, CookieOrigin arg1) throws MalformedCookieException {
-                            return new ArrayList<Cookie>();
-                        }
-                        
-                        @Override
-                        public boolean match(Cookie arg0, CookieOrigin arg1) {
-                            return false;
-                        }
-                        
-                        @Override
-                        public Header getVersionHeader() {
-                            return null;
-                        }
-                        
-                        @Override
-                        public int getVersion() {
-                            return 0;
-                        }
-                        
-                        @Override
-                        public List<Header> formatCookies(List<Cookie> arg0) {
-                            return null;
-                        }
-                    };
-                }
-            };
-            
-            _httpClient.getCookieSpecs().register("ignoreCookies", csf);
-
             params = _httpClient.getParams();
             // FUTURE KKr - support authentication
             HttpClientParams.setAuthenticating(params, false);
             // We're ignoring cookies, since we don't use them for requests.
-            HttpClientParams.setCookiePolicy(params, "ignoreCookies");
+            HttpClientParams.setCookiePolicy(params, CookiePolicy.IGNORE_COOKIES);
             
             ClientParamBean clientParams = new ClientParamBean(params);
             if (_fetcherPolicy.getMaxRedirects() == 0) {
