@@ -307,7 +307,7 @@ cat > $HADOOP_HOME/conf/mapred-site.xml <<EOF
   <description>If the job outputs are to compressed as SequenceFiles, how should
                they be compressed? Should be one of NONE, RECORD or BLOCK.
                
-  Compressing on a record basis is probably better for Cascading jobs.
+  Compressing on a BLOCK basis seems better for both text and sequence files.
   </description>
 </property>
 
