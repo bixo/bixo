@@ -66,6 +66,8 @@ if [ "$INSTANCE_TYPE" == "m1.small" ]; then
   REDUCE_TASKS_PER_SLAVE=1
   HDFS_DATA_DIR="/mnt/hadoop/dfs/data"
   MAPRED_LOCAL_DIR="/mnt/hadoop/mapred/local"
+  IO_SORT_MB=100
+  IO_SORT_FACTOR=10
 elif [ "$INSTANCE_TYPE" == "m2.2xlarge" ]; then
   JOBTRACKER_HEAPSIZE=4000
   MAPRED_CHILD_JAVA_OPTS="-server -Xmx4g"
@@ -75,6 +77,8 @@ elif [ "$INSTANCE_TYPE" == "m2.2xlarge" ]; then
   HDFS_DATA_DIR="/mnt/hadoop/dfs/data,/mnt2/hadoop/dfs/data"
   MAPRED_LOCAL_DIR="/mnt/hadoop/mapred/local"
   mkdir -p /mnt2/hadoop
+  IO_SORT_MB=1000
+  IO_SORT_FACTOR=100
 elif [ "$INSTANCE_TYPE" == "m2.4xlarge" ]; then
   JOBTRACKER_HEAPSIZE=4000
   MAPRED_CHILD_JAVA_OPTS="-server -Xmx4g"
@@ -84,6 +88,8 @@ elif [ "$INSTANCE_TYPE" == "m2.4xlarge" ]; then
   HDFS_DATA_DIR="/mnt/hadoop/dfs/data,/mnt2/hadoop/dfs/data"
   MAPRED_LOCAL_DIR="/mnt/hadoop/mapred/local"
   mkdir -p /mnt2/hadoop
+  IO_SORT_MB=1000
+  IO_SORT_FACTOR=100
 else # m1.large, etc.
   JOBTRACKER_HEAPSIZE=4000
   MAPRED_CHILD_JAVA_OPTS="-server -Xmx1312m"
@@ -93,6 +99,8 @@ else # m1.large, etc.
   HDFS_DATA_DIR="/mnt/hadoop/dfs/data,/mnt2/hadoop/dfs/data"
   MAPRED_LOCAL_DIR="/mnt/hadoop/mapred/local,/mnt2/hadoop/mapred/local"
   mkdir -p /mnt2/hadoop
+  IO_SORT_MB=1000
+  IO_SORT_FACTOR=100
 fi
 
 ################################################################################
@@ -133,6 +141,15 @@ cat > $HADOOP_HOME/conf/core-site.xml <<EOF
   </description>
 </property>
 
+<property>
+  <name>io.sort.mb</name>
+  <value>$IO_SORT_MB</value>
+</property>
+
+<property>
+  <name> io.sort.factor</name>
+  <value>$IO_SORT_FACTOR</value>
+</property>
 <!-- file system properties -->
 
 <property>

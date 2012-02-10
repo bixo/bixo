@@ -86,16 +86,10 @@ import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.html.HtmlParser;
-
-import com.bixolabs.cascading.Payload;
 
 import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.RedirectMode;
+import bixo.config.UserAgent;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
@@ -106,11 +100,13 @@ import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.RedirectFetchException;
-import bixo.exceptions.UrlFetchException;
 import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
+import bixo.exceptions.UrlFetchException;
 import bixo.utils.EncodingUtils;
-import bixo.utils.HttpUtils;
 import bixo.utils.EncodingUtils.ExpandedResult;
+import bixo.utils.HttpUtils;
+
+import com.bixolabs.cascading.Payload;
 
 @SuppressWarnings("serial")
 public class SimpleHttpFetcher extends BaseFetcher {
@@ -141,7 +137,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
     private static final String DEFAULT_ACCEPT_CHARSET = "utf-8,ISO-8859-1;q=0.7,*;q=0.7";
     private static final String DEFAULT_ACCEPT_ENCODING = "x-gzip, gzip";
 
-    // Keys used to access data in the Http execution context.
+    // Keys used to access data in the HTTP execution context.
     private static final String PERM_REDIRECT_CONTEXT_KEY = "perm-redirect";
 	private static final String REDIRECT_COUNT_CONTEXT_KEY = "redirect-count";
 	private static final String HOST_ADDRESS = "host-address";
@@ -159,11 +155,11 @@ public class SimpleHttpFetcher extends BaseFetcher {
         "application/vnd.wap.xhtml+xml",
     };
 
-
-    private HttpVersion _httpVersion;
-    private int _socketTimeout;
-    private int _connectionTimeout;
-    private int _maxRetryCount;
+    private HttpVersion _httpVersion = HttpVersion.HTTP_1_1;
+    private int _socketTimeout = DEFAULT_SOCKET_TIMEOUT;
+    private int _connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
+    private int _maxRetryCount = DEFAULT_MAX_RETRY_COUNT;
+    private String _acceptEncoding = DEFAULT_ACCEPT_ENCODING;
     
     transient private DefaultHttpClient _httpClient;
     
@@ -324,11 +320,6 @@ public class SimpleHttpFetcher extends BaseFetcher {
     public SimpleHttpFetcher(int maxThreads, FetcherPolicy fetcherPolicy, UserAgent userAgent) {
         super(maxThreads, fetcherPolicy, userAgent);
 
-        _httpVersion = HttpVersion.HTTP_1_1;
-        _socketTimeout = DEFAULT_SOCKET_TIMEOUT;
-        _connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
-        _maxRetryCount = DEFAULT_MAX_RETRY_COUNT;
-
         // Just to be explicit, we rely on lazy initialization of this so that
         // we don't have to worry about serializing it.
         _httpClient = null;
@@ -376,6 +367,23 @@ public class SimpleHttpFetcher extends BaseFetcher {
     
     public void setMaxRetryCount(int maxRetryCount) {
         _maxRetryCount = maxRetryCount;
+    }
+    
+    /**
+     * Return the current value used for the ACCEPT-ENCODING request parameter.
+     * 
+     * @return value, or null if none is set.
+     */
+    public String getAcceptEncoding() {
+        return _acceptEncoding;
+    }
+    
+    public void setAcceptEncoding(String acceptEncoding) {
+        if (_httpClient == null) {
+            _acceptEncoding = acceptEncoding;
+        } else {
+            throw new IllegalStateException("Can't change accept encoding after HttpClient has been initialized");
+        }
     }
     
     private static FetchedDatum convert(FetchedResult result) {
@@ -769,6 +777,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
             // TODO KKr - w/4.1, switch to new api (ThreadSafeClientConnManager)
             // cm.setMaxTotalConnections(_maxThreads);
             // cm.setDefaultMaxPerRoute(Math.max(10, _maxThreads/10));
+            // And get rid of deprecation warnings here.
             ConnManagerParams.setMaxTotalConnections(params, _maxThreads);
             
             // Set the maximum time we'll wait for a spare connection in the connection pool. We
@@ -835,7 +844,8 @@ public class SimpleHttpFetcher extends BaseFetcher {
             params = _httpClient.getParams();
             // FUTURE KKr - support authentication
             HttpClientParams.setAuthenticating(params, false);
-            HttpClientParams.setCookiePolicy(params, CookiePolicy.BEST_MATCH);
+            // We're ignoring cookies, since we don't use them for requests.
+            HttpClientParams.setCookiePolicy(params, CookiePolicy.IGNORE_COOKIES);
             
             ClientParamBean clientParams = new ClientParamBean(params);
             if (_fetcherPolicy.getMaxRedirects() == 0) {
@@ -849,7 +859,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
             HashSet<Header> defaultHeaders = new HashSet<Header>();
             defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT_LANGUAGE, _fetcherPolicy.getAcceptLanguage()));
             defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT_CHARSET, DEFAULT_ACCEPT_CHARSET));
-            defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT_ENCODING, DEFAULT_ACCEPT_ENCODING));
+            defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT_ENCODING, _acceptEncoding));
             defaultHeaders.add(new BasicHeader(HttpHeaderNames.ACCEPT, DEFAULT_ACCEPT));
             
             clientParams.setDefaultHeaders(defaultHeaders);

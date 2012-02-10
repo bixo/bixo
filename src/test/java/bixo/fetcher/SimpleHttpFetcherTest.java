@@ -432,4 +432,16 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         assertEquals("127.0.0.1", hostAddress);
     }
     
+    @Test
+    public final void testAcceptEncoding() throws Exception {
+        FetcherPolicy policy = new FetcherPolicy();
+        SimpleHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        
+        System.out.println(fetcher.getAcceptEncoding());
+        
+        final String acceptEncoding = "bogus";
+        fetcher.setAcceptEncoding(acceptEncoding);
+        assertEquals(acceptEncoding, fetcher.getAcceptEncoding());
+    }
+    
 }
