@@ -28,6 +28,7 @@ public class CrawlConfig {
     public static final String CONTENT_SUBDIR_NAME = "content";
     public static final String STATUS_SUBDIR_NAME = "status";
     public static final String PARSE_SUBDIR_NAME = "parse";
+    public static final String PRODUCTS_SUBDIR_NAME = "products";
 
 
 
@@ -36,7 +37,7 @@ public class CrawlConfig {
 
     // Fetcher policy constants
     public static final int CRAWL_STACKSIZE_KB = 128;
-    public static final int MAX_CONTENT_SIZE = 128 * 1024;
+    public static final int MAX_CONTENT_SIZE = 512 * 1024;
     public static final long DEFAULT_CRAWL_DELAY = 10 * 1000L; // in millisecond
 //    public static final int MAX_CONNECTIONS_PER_HOST = 30;
 //    public static final int MAX_REQUESTS_PER_CONNECTION = 10;
