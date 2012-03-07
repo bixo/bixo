@@ -217,13 +217,8 @@ public class SimpleCrawlWorkflow {
         parser.setExtractLanguage(false);
         ParsePipe parsePipe = new ParsePipe(contentPipe, parser);
 
-        Pipe productsPipe = new Pipe("products pipe", parsePipe.getTailPipe());
-        // PRECIOUS Pipe productsPipe = new Pipe("products pipe", fetchPipe.getContentTailPipe());
-        String regex = "[a-z]+@[a-z]+.[a-z]+";
-        // WAS: String regex = "[\\w\\-]([\\.\\w])+[\\w]+@([\\w\\-]+\\.)+[A-Z]{2,4}";
-        Function emailExtractor = new RegexGenerator(new Fields("email"), regex);
-        productsPipe = new Each(productsPipe, emailExtractor);
-        // PRECIOUS productsPipe = new Each(productsPipe, new CreateProductDatumsFunction());
+        Pipe productsPipe = new Pipe("products pipe", fetchPipe.getContentTailPipe());
+        productsPipe = new Each(productsPipe, new CreateProductDatumsFunction());
         productsPipe = TupleLogger.makePipe(productsPipe, true);
 
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
