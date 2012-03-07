@@ -217,7 +217,7 @@ public class SimpleCrawlWorkflow {
         parser.setExtractLanguage(false);
         ParsePipe parsePipe = new ParsePipe(contentPipe, parser);
 
-        Pipe productsPipe = new Pipe("products pipe", parsePipe);
+        Pipe productsPipe = new Pipe("products pipe", parsePipe.getTailPipe());
         // PRECIOUS Pipe productsPipe = new Pipe("products pipe", fetchPipe.getContentTailPipe());
         String regex = "[a-z]+@[a-z]+.[a-z]+";
         // WAS: String regex = "[\\w\\-]([\\.\\w])+[\\w]+@([\\w\\-]+\\.)+[A-Z]{2,4}";
@@ -263,7 +263,7 @@ public class SimpleCrawlWorkflow {
         sinkMap.put(productsPipe.getName(), productsSink);
 
         FlowConnector flowConnector = new FlowConnector(props);
-        Flow flow = flowConnector.connect(inputSource, sinkMap, statusPipe, contentPipe, parsePipe.getTailPipe(), outputPipe);
+        Flow flow = flowConnector.connect(inputSource, sinkMap, statusPipe, contentPipe, parsePipe.getTailPipe(), outputPipe, productsPipe);
 
         return flow;
     }
