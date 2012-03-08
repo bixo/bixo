@@ -248,7 +248,7 @@ public class SimpleCrawlTool {
                 flow.complete();
                 
                 // Writing out .dot files is a good way to verify your flows.
-//              flow.writeDOT("build/valid-flow.dot");
+                flow.writeDOT("build/valid-flow.dot");
 
                 // Update crawlDbPath to point to the latest crawl db
                 crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
