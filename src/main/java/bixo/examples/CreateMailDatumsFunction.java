@@ -52,7 +52,11 @@ public class CreateMailDatumsFunction extends BaseOperation<NullContext> impleme
         for (Element element : elements) {
             if (element.attr("href").startsWith("mailto:")) {
                 MailDatum mailDatum = new MailDatum();
-                mailDatum.setName(element.text());
+                String name = element.text();
+                if (name == null || name.isEmpty() || name.trim().isEmpty()) {
+                    name = "*** missing name ***";
+                }
+                mailDatum.setName(name);
                 mailDatum.setEmail(element.attr("href").substring(7));
                 collector.add(mailDatum.getTuple());
                 _numCreated++;
