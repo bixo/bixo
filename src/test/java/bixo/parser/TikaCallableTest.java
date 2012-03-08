@@ -35,11 +35,6 @@ public class TikaCallableTest {
         }
         
         @Override
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException {
-            parse(stream, handler, metadata, new ParseContext());
-        }
-
-        @Override
         public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
             _active = true;
             while (_delay) {

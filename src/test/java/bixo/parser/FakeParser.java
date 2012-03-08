@@ -1,7 +1,5 @@
 package bixo.parser;
 
-import org.apache.tika.parser.Parser;
-
 import bixo.config.ParserPolicy;
 import bixo.datum.FetchedDatum;
 import bixo.datum.Outlink;
@@ -21,8 +19,4 @@ public class FakeParser extends BaseParser {
         return parsedDatum;
     }
 
-    @Override
-    public Parser getTikaParser() {
-        return null;
-    }
 }

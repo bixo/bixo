@@ -13,7 +13,10 @@ import junit.framework.Assert;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.html.DefaultHtmlMapper;
+import org.apache.tika.parser.html.HtmlMapper;
+import org.apache.tika.parser.html.IdentityHtmlMapper;
 import org.junit.Test;
 
 import bixo.config.ParserPolicy;
@@ -447,12 +450,12 @@ public class SimpleParserTest {
     }
 
     @Test
-    public void testExtractingEmbedTag() throws Exception {
+    public void testExtractingObjectTag() throws Exception {
         final String html = "<html><head><title>Title</title></head>" +
-            "<body><embed src=\"http://domain.com/song.mid\" /></body></html>";
+            "<body><object data=\"http://domain.com/song.mid\" /></body></html>";
         
         // Create FetchedDatum using data
-        String url = "http://domain.com/embed.html";
+        String url = "http://domain.com/music.html";
         String contentType = "text/html; charset=utf-8";
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
@@ -463,7 +466,7 @@ public class SimpleParserTest {
         ParserPolicy policy = new ParserPolicy( ParserPolicy.NO_MAX_PARSE_DURATION,
                                                 BaseLinkExtractor.ALL_LINK_TAGS,
                                                 BaseLinkExtractor.ALL_LINK_ATTRIBUTE_TYPES);
-        SimpleParser parser = new SimpleParser(policy);
+        SimpleParser parser = new SimpleParser(policy, true);
         ParsedDatum parsedDatum = parser.parse(fetchedDatum);
         
         // Verify outlinks are correct
