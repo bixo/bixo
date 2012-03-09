@@ -2,18 +2,18 @@ package bixo.fetcher;
 
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.http.HttpStatus;
-import org.mortbay.http.HttpException;
-import org.mortbay.http.HttpRequest;
-import org.mortbay.http.HttpResponse;
-import org.mortbay.http.handler.AbstractHttpHandler;
+import org.mortbay.jetty.HttpException;
+import org.mortbay.jetty.handler.AbstractHandler;
 
 /**
  * Reponse handler that always returns a 404.
  *
  */
-@SuppressWarnings("serial")
-public class RedirectResponseHandler extends AbstractHttpHandler {
+public class RedirectResponseHandler extends AbstractHandler {
     
     private String _originalPath;
     private String _redirectUrl;
@@ -24,7 +24,7 @@ public class RedirectResponseHandler extends AbstractHttpHandler {
     }
     
     @Override
-    public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+    public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
         if (pathInContext.equalsIgnoreCase(_originalPath)) {
             response.sendRedirect(_redirectUrl);
         } else if (_redirectUrl.contains(pathInContext)) {

@@ -3,13 +3,14 @@ package bixo.fetcher;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.mortbay.http.HttpException;
-import org.mortbay.http.HttpRequest;
-import org.mortbay.http.HttpResponse;
-import org.mortbay.http.handler.AbstractHttpHandler;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-@SuppressWarnings("serial")
-public class StringResponseHandler extends AbstractHttpHandler {
+import org.mortbay.jetty.HttpException;
+import org.mortbay.jetty.handler.AbstractHandler;
+
+
+public class StringResponseHandler extends AbstractHandler {
     
     private String _contentType;
     private String _response;
@@ -24,7 +25,7 @@ public class StringResponseHandler extends AbstractHttpHandler {
     }
     
     @Override
-    public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+    public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
         try {
             byte[] bytes = _response.getBytes("UTF-8");
             response.setContentLength(bytes.length);

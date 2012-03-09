@@ -2,17 +2,18 @@ package bixo.fetcher;
 
 import java.io.IOException;
 
-import org.mortbay.http.HttpException;
-import org.mortbay.http.HttpRequest;
-import org.mortbay.http.HttpResponse;
-import org.mortbay.http.handler.AbstractHttpHandler;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.mortbay.jetty.HttpException;
+import org.mortbay.jetty.handler.AbstractHandler;
+
 
 /**
  * Reponse handler that always returns a 404.
  *
  */
-@SuppressWarnings("serial")
-public class FixedStatusResponseHandler extends AbstractHttpHandler {
+public class FixedStatusResponseHandler extends AbstractHandler {
     private int _status;
     
     public FixedStatusResponseHandler(int status) {
@@ -20,7 +21,7 @@ public class FixedStatusResponseHandler extends AbstractHttpHandler {
     }
     
     @Override
-    public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+    public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
         throw new HttpException(_status, "Pre-defined error fetching: " + pathInContext);
     }
 }

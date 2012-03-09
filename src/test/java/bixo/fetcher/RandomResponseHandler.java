@@ -4,13 +4,14 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Random;
 
-import org.mortbay.http.HttpException;
-import org.mortbay.http.HttpRequest;
-import org.mortbay.http.HttpResponse;
-import org.mortbay.http.handler.AbstractHttpHandler;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-@SuppressWarnings("serial")
-public class RandomResponseHandler extends AbstractHttpHandler {
+import org.mortbay.jetty.HttpException;
+import org.mortbay.jetty.handler.AbstractHandler;
+
+
+public class RandomResponseHandler extends AbstractHandler {
     private static final long DEFAULT_DURATION = 1000L;
     
     private int _length;
@@ -39,7 +40,7 @@ public class RandomResponseHandler extends AbstractHttpHandler {
     }
     
     @Override
-    public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+    public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
         response.setContentLength(_length);
         response.setContentType("text/html");
         response.setStatus(200);

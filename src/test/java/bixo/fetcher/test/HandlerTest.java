@@ -26,12 +26,13 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.junit.Test;
-import org.mortbay.http.HttpException;
-import org.mortbay.http.HttpRequest;
-import org.mortbay.http.HttpResponse;
-import org.mortbay.http.HttpServer;
-import org.mortbay.http.handler.AbstractHttpHandler;
+import org.mortbay.jetty.HttpException;
+import org.mortbay.jetty.Server;
+import org.mortbay.jetty.handler.AbstractHandler;
 
 import bixo.fetcher.simulation.SimulationWebServer;
 
@@ -40,7 +41,7 @@ public class HandlerTest extends SimulationWebServer {
     @Test
     public void testSimpleOpen() throws Exception {
 
-        HttpServer server = startServer(new EndlessRedirect(), 8089);
+        Server server = startServer(new EndlessRedirect(), 8089);
 
         HttpURLConnection.setFollowRedirects(false);
 
@@ -61,10 +62,9 @@ public class HandlerTest extends SimulationWebServer {
         server.stop();
     }
 
-    @SuppressWarnings("serial")
-    private class EndlessRedirect extends AbstractHttpHandler {
+    private class EndlessRedirect extends AbstractHandler {
         @Override
-        public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
             String location = pathInContext + "/something";
             response.sendRedirect(location);
         }

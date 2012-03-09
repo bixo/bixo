@@ -22,17 +22,15 @@
  */
 package bixo.fetcher.simulation;
 
-import org.mortbay.http.HttpContext;
-import org.mortbay.http.HttpHandler;
-import org.mortbay.http.HttpServer;
+import org.mortbay.jetty.Handler;
+import org.mortbay.jetty.Server;
+
 
 public abstract class SimulationWebServer {
 
-    public HttpServer startServer(HttpHandler handler, int port) throws Exception {
-        HttpServer server = new HttpServer();
-        server.addListener(":" + port);
-        HttpContext context = server.getContext("/");
-        context.addHandler(handler);
+    public Server startServer(Handler handler, int port) throws Exception {
+        Server server = new Server(port);
+        server.setHandler(handler);
         server.start();
         return server;
     }

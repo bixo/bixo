@@ -7,13 +7,14 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
 
-import org.mortbay.http.HttpException;
-import org.mortbay.http.HttpRequest;
-import org.mortbay.http.HttpResponse;
-import org.mortbay.http.handler.AbstractHttpHandler;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-@SuppressWarnings("serial")
-public class ResourcesResponseHandler extends AbstractHttpHandler {
+import org.mortbay.jetty.HttpException;
+import org.mortbay.jetty.handler.AbstractHandler;
+
+
+public class ResourcesResponseHandler extends AbstractHandler {
     private String _testContext = "";
     
     /**
@@ -29,7 +30,7 @@ public class ResourcesResponseHandler extends AbstractHttpHandler {
     }
     
     @Override
-    public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+    public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
         // Get the resource.
         URL path = ResourcesResponseHandler.class.getResource(_testContext + pathInContext);
         if (path == null) {

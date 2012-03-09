@@ -3,14 +3,17 @@ package bixo.pipes;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mortbay.http.HttpException;
-import org.mortbay.http.HttpRequest;
-import org.mortbay.http.HttpResponse;
-import org.mortbay.http.handler.AbstractHttpHandler;
+import org.mortbay.jetty.HttpException;
+import org.mortbay.jetty.Request;
+import org.mortbay.jetty.Response;
+import org.mortbay.jetty.handler.AbstractHandler;
 
 import com.bixolabs.cascading.Payload;
 
@@ -57,13 +60,13 @@ import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 
 // Long-running test
+@SuppressWarnings("deprecation")
 public class FetchPipeLRTest extends CascadingTestCase {
     
     private static final String DEFAULT_INPUT_PATH = "build/test/FetchPipeLRTest/in";
     private static final String DEFAULT_OUTPUT_PATH = "build/test/FetchPipeLRTest/out";
 
-    @SuppressWarnings("serial")
-    private class RedirectResponseHandler extends AbstractHttpHandler {
+    private class RedirectResponseHandler extends AbstractHandler {
         
         public static final String REDIRECT_TARGET_URL = "http://localhost:8089/redirect";
         private boolean _permanent;
@@ -74,12 +77,18 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
         
         @Override
-        public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
             if (_permanent) {
                 // Can't use sendRedirect, as that forces it to be a temp redirect.
-                response.setStatus(HttpStatus.SC_MOVED_PERMANENTLY);
-                response.addField("Location", REDIRECT_TARGET_URL);
-                request.setHandled(true);
+                if (response instanceof  Response) {
+                    Response jettyResponse = (Response) response;
+                    jettyResponse.setStatus(HttpStatus.SC_MOVED_PERMANENTLY);
+                    jettyResponse.setHeader("Location", REDIRECT_TARGET_URL);
+                }
+                if (request instanceof Request) {
+                    Request jettyRequest = (Request) request;
+                    jettyRequest.setHandled(true);
+                }
             } else {
                 response.sendRedirect(REDIRECT_TARGET_URL);
             }
@@ -632,7 +641,6 @@ public class FetchPipeLRTest extends CascadingTestCase {
         return url.getTuple();
     }
     
-    @SuppressWarnings("serial")
     private static class NoRobotsResponseHandler extends RandomResponseHandler {
 
         public NoRobotsResponseHandler() {
@@ -644,20 +652,20 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
         
         @Override
-        public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
             if (pathInContext.endsWith("/robots.txt")) {
                 throw new HttpException(HttpStatus.SC_NOT_FOUND, "No robots.txt");
             } else {
-                super.handle(pathInContext, pathParams, request, response);
+                super.handle(pathInContext, request, response, dispatch);
             }
         }
     }
     
-    @SuppressWarnings("serial")
-    private static class NoRobotsHtmlResponseHandler extends AbstractHttpHandler {
+    @SuppressWarnings("unused")
+    private static class NoRobotsHtmlResponseHandler extends AbstractHandler {
 
         @Override
-        public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
             if (pathInContext.endsWith("/robots.txt")) {
                 throw new HttpException(HttpStatus.SC_NOT_FOUND, "No robots.txt");
             } else {

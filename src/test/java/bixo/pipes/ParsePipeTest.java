@@ -25,6 +25,7 @@ import cascading.scheme.SequenceFile;
 import cascading.tap.Lfs;
 import cascading.tuple.TupleEntryCollector;
 
+@SuppressWarnings("deprecation")
 public class ParsePipeTest extends CascadingTestCase {
 
     @SuppressWarnings("unchecked")
