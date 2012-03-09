@@ -24,6 +24,18 @@
 		</dependency>
 		
 		<dependency>
+            <groupId>cascading</groupId>
+            <artifactId>cascading-11-jdbc</artifactId>
+            <version>0.0.4</version>
+        </dependency>
+
+		<dependency>
+            <groupId>hsqldb</groupId>
+            <artifactId>hsqldb</artifactId>
+            <version>1.8.0.7</version>
+        </dependency>
+
+		<dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-core</artifactId>
             <version>0.20.2</version>
@@ -34,7 +46,20 @@
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
         </dependency>
+  
+  		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-analyzers</artifactId>
+			<version>2.9.1</version>
+		</dependency>
+
         
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.5.8</version>
+		</dependency>
 
 		<!-- Test dependencies -->
 
@@ -58,12 +83,6 @@
             <version>0.20.2</version>
             <scope>test</scope>
         </dependency>
-
-		<dependency>
-			<groupId>org.apache.lucene</groupId>
-			<artifactId>lucene-analyzers</artifactId>
-			<version>2.9.1</version>
-		</dependency>
 
         <dependency>
             <groupId>org.mortbay.jetty</groupId>

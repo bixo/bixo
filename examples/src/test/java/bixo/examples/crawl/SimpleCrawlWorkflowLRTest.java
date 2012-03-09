@@ -40,7 +40,7 @@ import cascading.scheme.SequenceFile;
 import cascading.tap.Hfs;
 import cascading.tuple.TupleEntryIterator;
 
-@SuppressWarnings("serial")
+@SuppressWarnings({ "serial", "deprecation" })
 public class SimpleCrawlWorkflowLRTest implements Serializable {
 
     public static class FakeWebSiteHandler extends AbstractHandler {
@@ -194,7 +194,9 @@ public class SimpleCrawlWorkflowLRTest implements Serializable {
         } catch (Throwable t) {
             fail(t.getMessage());
         } finally {
-            server.stop();
+            if (server != null) {
+                server.stop();
+            }
         }
 
     }
