@@ -1,4 +1,4 @@
-package com.transpac.helpful.tools;
+package com.scaleunlimited.helpful.tools;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -44,12 +44,12 @@ import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
 import com.bixolabs.cascading.NullContext;
-import com.transpac.helpful.operations.CalcMessageScoreBuffer;
-import com.transpac.helpful.operations.FieldNames;
-import com.transpac.helpful.operations.MboxSplitterFunction;
-import com.transpac.helpful.operations.ParseEmailFunction;
-import com.transpac.helpful.operations.ParseModMboxPageFunction;
-import com.transpac.helpful.operations.SumScoresBuffer;
+import com.scaleunlimited.helpful.operations.CalcMessageScoreBuffer;
+import com.scaleunlimited.helpful.operations.FieldNames;
+import com.scaleunlimited.helpful.operations.MboxSplitterFunction;
+import com.scaleunlimited.helpful.operations.ParseEmailFunction;
+import com.scaleunlimited.helpful.operations.ParseModMboxPageFunction;
+import com.scaleunlimited.helpful.operations.SumScoresBuffer;
 
 public class AnalyzeEmail {
 	private static final Logger LOGGER = Logger.getLogger(AnalyzeEmail.class);

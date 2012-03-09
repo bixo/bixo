@@ -1,4 +1,4 @@
-package com.transpac.helpful.operations;
+package com.scaleunlimited.helpful.operations;
 
 import java.util.HashSet;
 import java.util.Iterator;

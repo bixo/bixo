@@ -1,4 +1,4 @@
-package com.transpac.helpful.operations;
+package com.scaleunlimited.helpful.operations;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

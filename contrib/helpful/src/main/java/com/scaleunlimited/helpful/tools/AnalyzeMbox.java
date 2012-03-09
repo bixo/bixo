@@ -1,4 +1,4 @@
-package com.transpac.helpful.tools;
+package com.scaleunlimited.helpful.tools;
 
 
 import java.io.IOException;
@@ -10,10 +10,10 @@ import org.apache.hadoop.mapred.JobConf;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
-import com.transpac.helpful.operations.CalcMessageScoreBuffer;
-import com.transpac.helpful.operations.FieldNames;
-import com.transpac.helpful.operations.ParseEmailFunction;
-import com.transpac.helpful.operations.SumScoresBuffer;
+import com.scaleunlimited.helpful.operations.CalcMessageScoreBuffer;
+import com.scaleunlimited.helpful.operations.FieldNames;
+import com.scaleunlimited.helpful.operations.ParseEmailFunction;
+import com.scaleunlimited.helpful.operations.SumScoresBuffer;
 
 import bixo.datum.FetchedDatum;
 import cascading.flow.Flow;

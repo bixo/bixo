@@ -1,4 +1,4 @@
-package com.transpac.helpful.operations;
+package com.scaleunlimited.helpful.operations;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -20,6 +20,7 @@ import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
 import com.bixolabs.cascading.NullContext;
+import com.scaleunlimited.helpful.operations.MboxSplitterFunction;
 
 public class MboxSplitterFunctionTest {
 

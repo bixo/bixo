@@ -1,4 +1,4 @@
-package com.transpac.helpful.operations;
+package com.scaleunlimited.helpful.operations;
 
 public interface FieldNames {
 	public static final String MESSAGE_ID = "message-id";

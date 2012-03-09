@@ -1,10 +1,10 @@
-package com.transpac.helpful.pipes;
+package com.scaleunlimited.helpful.pipes;
 
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
 
-import com.transpac.helpful.operations.ParseModMboxPageFunction;
+import com.scaleunlimited.helpful.operations.ParseModMboxPageFunction;
 
 @SuppressWarnings("serial")
 public class ModMboxPipe extends SubAssembly {
