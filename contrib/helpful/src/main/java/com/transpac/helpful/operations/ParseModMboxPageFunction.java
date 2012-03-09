@@ -81,7 +81,7 @@ public class ParseModMboxPageFunction extends BaseOperation<NullContext> impleme
 
         		// _ids now has a list of the mailbox IDs that we use to create URLs.
         		for (String id : _ids) {
-        			String url = String.format("%s/%s.mbox", fetchedDatum.getBaseUrl(), id);
+        			String url = String.format("%s/%s.mbox", fetchedDatum.getUrl(), id);
         			UrlDatum datum = new UrlDatum(url);
         			functionCall.getOutputCollector().add(datum.getTuple());
         		}
