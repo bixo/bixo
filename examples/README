@@ -1,0 +1,16 @@
+The "examples" folder contains a set of examples to showcase Bixo.
+
+<fill in more details here>
+
+To build this code:
+
+% cd <path to Bixo>/examples
+% ant clean compile
+
+To create an Eclipse project:
+
+% cd <path to Bixo>/examples
+% ant eclipse
+
+after which you would import the project into your Eclipse workspace.
+

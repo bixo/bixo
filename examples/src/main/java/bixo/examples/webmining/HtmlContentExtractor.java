@@ -1,0 +1,117 @@
+/*
+ * Copyright (c) 2009-2012 Scale Unlimited
+ *
+ * All rights reserved.
+ *
+ */
+package bixo.examples.webmining;
+
+import java.io.StringWriter;
+
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import bixo.parser.BaseContentExtractor;
+
+/*
+ * HtmlcontentExtractor is a content extractor that returns as content the 
+ * raw (cleaned) HTML.
+ */
+@SuppressWarnings("serial")
+public class HtmlContentExtractor extends BaseContentExtractor {
+    
+    private  ContentHandler _contentHandler = null;
+    private transient StringWriter _stringWriter = null;
+    private String _method;
+    
+    public HtmlContentExtractor(String method) {
+        _method = method;
+    }
+    
+    @Override
+    public void startDocument() throws SAXException {
+        try {
+            init();
+        } catch (TransformerConfigurationException e) {
+            throw new SAXException("Error initializing transform handler: " + e.getMessage());
+        }
+        _contentHandler.startDocument();
+    }
+    
+    @Override
+    public void endDocument() throws SAXException {
+        _contentHandler.endDocument();
+        _stringWriter.flush();
+    }
+
+    @Override
+    public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
+        _contentHandler.startElement(uri, localName, qName, atts);
+    }    
+    
+    @Override
+    public void characters(char[] ch, int start, int length) throws SAXException {
+        _contentHandler.characters(ch, start, length);
+    }
+    
+    @Override
+    public void endElement(String uri, String localName, String qName) throws SAXException {
+        _contentHandler.endElement(uri, localName, qName);
+    }
+    
+    @Override
+    public String getContent() {
+        return _stringWriter.toString();
+    }
+
+    @Override
+    public void reset() {
+        if (_stringWriter != null) {
+            _stringWriter.flush();
+            _stringWriter.getBuffer().setLength(0);
+        }
+    }
+    /**
+     * Returns a transformer handler that serializes incoming SAX events
+     * to XHTML or HTML (depending the given method) using the given output
+     * encoding.
+     *
+     * @param method "xml" or "html"
+     * @param encoding output encoding,
+     *                 or <code>null</code> for the platform default
+     * @return {@link System#out} transformer handler
+     * @throws TransformerConfigurationException
+     *         if the transformer can not be created
+     */
+    private static TransformerHandler getTransformerHandler(
+            String method, String encoding)
+            throws TransformerConfigurationException {
+        SAXTransformerFactory factory = (SAXTransformerFactory)
+                SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, method);
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+        if (encoding != null) {
+            handler.getTransformer().setOutputProperty(
+                    OutputKeys.ENCODING, encoding);
+        }
+        return handler;
+    }
+
+    protected synchronized void init() throws TransformerConfigurationException {
+        if (_contentHandler == null) {
+            _stringWriter = new StringWriter();
+            TransformerHandler handler = getTransformerHandler(_method, "UTF-8");
+            handler.setResult(new StreamResult(_stringWriter));
+            _contentHandler = handler;
+
+        }
+    }
+}
