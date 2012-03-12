@@ -214,8 +214,11 @@ public class SimpleCrawlWorkflow {
         ParsePipe parsePipe = new ParsePipe(contentPipe, parser);
 
         // MICO: this is where the useful work is done
-        Pipe productsPipe = new Pipe("products pipe", fetchPipe.getContentTailPipe());
-        productsPipe = new Each(productsPipe, new CreateMailDatumsFunction());
+        Pipe productsPipe = new Pipe("products pipe", parsePipe.getTailPipe());
+        //productsPipe = new Each(productsPipe, new CreateMailDatumsFunction());
+        String regex = "[_A-Za-z0-9-]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})";
+        Function function = new RegexGenerator( new Fields( "email" ), regex );
+        productsPipe = new Each(productsPipe, new Fields( "ParsedDatum-parsedText" ), function );
         productsPipe = TupleLogger.makePipe(productsPipe, true);
 
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
