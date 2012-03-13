@@ -15,19 +15,10 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
-import org.mockito.Mockito;
 
 import bixo.datum.UrlDatum;
-import bixo.datum.UrlStatus;
-import bixo.examples.CrawlDbDatum;
-import bixo.examples.LatestUrlDatumBuffer;
-import bixo.exceptions.BaseFetchException;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
-import cascading.flow.hadoop.HadoopFlowProcess;
-import cascading.operation.BufferCall;
-import cascading.operation.OperationCall;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
@@ -35,14 +26,13 @@ import cascading.scheme.SequenceFile;
 import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
-import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 
 import com.bixolabs.cascading.HadoopUtils;
-import com.bixolabs.cascading.NullContext;
 
+@SuppressWarnings("deprecation")
 public class LatestUrlDatumBufferTest {
 
     private static final String WORKINGDIR = "build/test/LatestUrlDatumBufferTest";

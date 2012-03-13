@@ -74,6 +74,7 @@ import com.bixolabs.cascading.SplitterAssembly;
 import com.bixolabs.cascading.TupleLogger;
 
 
+@SuppressWarnings("deprecation")
 public class SimpleCrawlWorkflow {
 
     private static final Logger LOGGER = Logger.getLogger(SimpleCrawlWorkflow.class);

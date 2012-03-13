@@ -41,6 +41,7 @@ import cascading.tap.Tap;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 
+@SuppressWarnings("deprecation")
 public class SimpleStatusTool {
 	private static final Logger LOGGER = Logger.getLogger(SimpleStatusTool.class);
 	

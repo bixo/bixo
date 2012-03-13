@@ -68,6 +68,7 @@ import cascading.tuple.TupleEntry;
 import com.bixolabs.cascading.HadoopUtils;
 import com.bixolabs.cascading.NullContext;
 
+@SuppressWarnings("deprecation")
 public class JDBCCrawlWorkflow {
     private static final Logger LOGGER = Logger.getLogger(JDBCCrawlWorkflow.class);
 

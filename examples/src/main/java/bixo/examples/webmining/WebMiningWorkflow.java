@@ -21,8 +21,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.html.HtmlMapper;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.ParserPolicy;
@@ -33,7 +31,6 @@ import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.SimpleHttpFetcher;
 import bixo.operations.BaseScoreGenerator;
-import bixo.parser.SimpleLinkExtractor;
 import bixo.parser.SimpleParser;
 import bixo.pipes.FetchPipe;
 import bixo.pipes.ParsePipe;
@@ -176,7 +173,6 @@ public class WebMiningWorkflow {
                 throw new FileNotFoundException("The seed urls file doesn't exist");
             }
 
-            @SuppressWarnings("unchecked")
             List<String> lines = IOUtils.readLines(is);
             for (String line : lines) {
                 line = line.trim();

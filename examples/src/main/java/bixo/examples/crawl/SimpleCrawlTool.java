@@ -52,6 +52,7 @@ import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 
+@SuppressWarnings("deprecation")
 public class SimpleCrawlTool {
 
     private static final Logger LOGGER = Logger.getLogger(SimpleCrawlTool.class);

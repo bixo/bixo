@@ -53,6 +53,7 @@ import cascading.tuple.TupleEntryCollector;
  *  
  * 
  */
+@SuppressWarnings("deprecation")
 public class JDBCCrawlTool {
 
     private static void printUsageAndExit(CmdLineParser parser) {
