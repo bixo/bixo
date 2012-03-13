@@ -163,9 +163,9 @@ fi
 
 # figure out which class to run
 if [ "$COMMAND" = "crawl" ] ; then
-  CLASS=bixo.examples.SimpleCrawlTool
+  CLASS=bixo.examples.crawl.SimpleCrawlTool
 elif [ "$COMMAND" = "status" ] ; then
-  CLASS=bixo.examples.SimpleStatusTool
+  CLASS=bixo.examples.crawl.SimpleStatusTool
 else
   CLASS=$COMMAND
 fi
