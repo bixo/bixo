@@ -164,7 +164,7 @@
 		<jar jarfile="${build.dir}/${jar.name}"
 		     basedir="${build.dir.main-classes}">
 			<manifest>
-				<section name="iacquire">
+				<section name="examples">
 					<attribute name="Implementation-Vendor"
 					           value="openbixo.org" />
 					<attribute name="Implementation-Title"
