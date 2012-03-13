@@ -4,7 +4,7 @@
  * All rights reserved.
  *
  */
-package bixo.examples.webmining;
+package bixo.parser;
 
 import java.io.StringWriter;
 
@@ -30,6 +30,10 @@ public class HtmlContentExtractor extends BaseContentExtractor {
     private  ContentHandler _contentHandler = null;
     private transient StringWriter _stringWriter = null;
     private String _method;
+    
+    public HtmlContentExtractor() {
+        this("html");
+    }
     
     public HtmlContentExtractor(String method) {
         _method = method;

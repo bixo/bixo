@@ -1,0 +1,3 @@
+# List of negative phrases - maximum length of a phrase is two words.
+
+golf

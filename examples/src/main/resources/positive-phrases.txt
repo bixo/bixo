@@ -1,0 +1,5 @@
+# List of postive phrases - maximum length of a phrase is two words.
+
+ultimate
+ultimate frisbee
+sport

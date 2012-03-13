@@ -13,9 +13,8 @@ public class CrawlConfig {
     public static final String STATUS_SUBDIR_NAME = "status";
     public static final String RESULTS_SUBDIR_NAME = "results";
 
-    public static final String SPIDER_NAME = "strata-web-miner";
-    public static final String WEB_ADDRESS = "http://www.scaleunlimited.com/crawler/strata-web-miner-spider/";
-    public static final String EMAIL_ADDRESS = "crawler@scaleunlimited.com";
+    public static final String WEB_ADDRESS = "http://wiki.github.com/bixo/bixo/bixocrawler";
+    public static final String EMAIL_ADDRESS = "bixo-dev@yahoogroups.com";
 
     public static final String SEED_URLS_FILENAME = "/seed-urls.txt";
     

@@ -46,9 +46,9 @@ public abstract class DOMParser extends BaseOperation<NullContext> implements Fu
         
         try {
             Document parsedContent = _reader.read(is);
-            process(parsedContent, funcCall.getOutputCollector());
+            process(_input, parsedContent, funcCall.getOutputCollector());
         } catch (DocumentException e) {
-            handleException(e, funcCall.getOutputCollector());
+            handleException(_input, e, funcCall.getOutputCollector());
         } finally {
             IoUtils.safeClose(is);
         }
@@ -60,18 +60,20 @@ public abstract class DOMParser extends BaseOperation<NullContext> implements Fu
      * at this point you would typically emit one or more output tuples (with
      * appropriate fields), using the collector.
      * 
+     * @param datum Input datum, which wraps a Cascading Tuple.
      * @param doc Result of converting incoming XML document to a Dom4J Document
      * @param collector Collector to use if you want to emit tuples.
      */
-    protected abstract void process(Document doc, TupleEntryCollector collector);
+    protected abstract void process(ParsedDatum datum, Document doc, TupleEntryCollector collector);
     
     /**
      * An exception occurred while parsing the _input ParsedDatum. Options are to
      * ignore it, emit a tuple (with appropriate fields), or throw a RuntimeException
      * to kill the job.
      * 
+     * @param datum Input datum, which wraps a Cascading Tuple.
      * @param e Exception while parsing document
      * @param collector Collector to use if you want to emit a tuple.
      */
-    protected abstract void handleException(DocumentException e, TupleEntryCollector collector);
+    protected abstract void handleException(ParsedDatum datum, DocumentException e, TupleEntryCollector collector);
 }

@@ -108,22 +108,6 @@ public class WebMiningWorkflow {
         
     }
     
-    // TODO - why do we need this function?
-    @SuppressWarnings("serial")
-    private static class ConvertTextDelimitedToCrawlDbDatum extends BaseOperation<Limit.Context> implements Function<Limit.Context> {
-
-        public ConvertTextDelimitedToCrawlDbDatum() {
-            super(CrawlDbDatum.FIELDS);
-        }
-        
-        @Override
-        public void operate(FlowProcess flowProcess, FunctionCall<Limit.Context> funcCall) {
-            CrawlDbDatum datum = new CrawlDbDatum(new TupleEntry(funcCall.getArguments()));
-            funcCall.getOutputCollector().add(datum.getTuple());
-        }
-    }
-
-    
     @SuppressWarnings("serial")
     private static class CreateUrlDatumFromCrawlDbDatum extends BaseOperation<Limit.Context> implements Function<Limit.Context> {
 
@@ -244,9 +228,6 @@ public class WebMiningWorkflow {
         Tap inputSource = new Hfs(new TextDelimited(CrawlDbDatum.FIELDS, "\t", CrawlDbDatum.TYPES), crawlDbPath.toString());
         Pipe importPipe = new Pipe("import pipe");
 
-        // Since UrlStatus is a String, we need to convert it first.
-        importPipe = new Each(importPipe, new ConvertTextDelimitedToCrawlDbDatum());
-        
         // Split into tuples that are to be fetched and that have already been fetched
         SplitterAssembly splitter = new SplitterAssembly(importPipe, new SplitFetchedUnfetchedSSCrawlDatums());
 
@@ -270,24 +251,21 @@ public class WebMiningWorkflow {
         fetcher.setSocketTimeout(CrawlConfig.SOCKET_TIMEOUT);
         fetcher.setConnectionTimeout(CrawlConfig.CONNECTION_TIMEOUT);
 
-
         FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, numReducers);
         Pipe statusPipe = new Pipe("status pipe", fetchPipe.getStatusTailPipe());
         Pipe contentPipe = new Pipe("content pipe", fetchPipe.getContentTailPipe());
         contentPipe = TupleLogger.makePipe(contentPipe, true);
 
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(HtmlMapper.class, new LowercaseIdentityHtmlMapper());
-        SimpleParser parser = new SimpleParser(new HtmlContentExtractor("html"), new SimpleLinkExtractor(), new ParserPolicy(), parseContext);
-        
+        // Create a parser that returns back the raw HTML (cleaned up by Tika) as the parsed content.
+        SimpleParser parser = new SimpleParser(new ParserPolicy(), true);
         ParsePipe parsePipe = new ParsePipe(fetchPipe.getContentTailPipe(), parser);
+        
         Pipe analyzerPipe = new Pipe("analyzer pipe");
-        analyzerPipe = new Each(parsePipe.getTailPipe(), new AnalyzeHtmlFunction(options.getAnalyzer()));
-        Pipe outlinksPipe = new Pipe("outlinks pipe", analyzerPipe);
+        analyzerPipe = new Each(parsePipe.getTailPipe(), new AnalyzeHtml());
+        
+        Pipe outlinksPipe = new Pipe("outlinks pipe", parsePipe);
         outlinksPipe = new Each(outlinksPipe, new CreateLinkDatumFromOutlinksFunction());
 
-        String username = options.getUsername();
-        
         Pipe resultsPipe = new Pipe("results pipe", analyzerPipe);
         resultsPipe = new Each(resultsPipe, new CreateResultsFunction());
         
@@ -321,11 +299,6 @@ public class WebMiningWorkflow {
 
         FlowConnector flowConnector = new FlowConnector(props);
         Flow flow = flowConnector.connect(inputSource, sinkMap, updatePipe, statusPipe, contentPipe, resultsPipe);
-
-        List<FlowStep> flowSteps = flow.getSteps();
-        for (FlowStep step : flowSteps) {
-            step.setParentFlowName(username + ": " + getFlowStepName(step));
-        }
 
         return flow;
     }

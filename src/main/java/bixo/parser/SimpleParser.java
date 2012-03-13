@@ -79,12 +79,15 @@ public class SimpleParser extends BaseParser {
     public SimpleParser(ParserPolicy parserPolicy, boolean saveRawHtml) {
         super(parserPolicy);
         
-        _contentExtractor = new SimpleContentExtractor();
         _linkExtractor = new SimpleLinkExtractor();
 
         if (saveRawHtml) {
+            _contentExtractor = new HtmlContentExtractor();
+
             _parseContext = new ParseContext();
             _parseContext.set(HtmlMapper.class, FixedIdentityHtmlMapper.INSTANCE);
+        } else {
+            _contentExtractor = new SimpleContentExtractor();
         }
     }
 

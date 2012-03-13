@@ -14,6 +14,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.html.HtmlParser;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
@@ -22,8 +25,6 @@ import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.config.UserAgent;
 import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
-
-import com.bixolabs.cascading.HadoopUtils;
 
 @SuppressWarnings("deprecation")
 public class WebMiningTool {
@@ -75,16 +76,10 @@ public class WebMiningTool {
         }
 
         // Build and run the flow.
+        
         try {
-            String username = options.getUsername();
             
-            // If we're running on the real cluster, ignore the working dir and use a directory in S3
-            Path workingDirPath;
-            if (HadoopUtils.isJobLocal(new JobConf())) {
-                workingDirPath = new Path(options.getWorkingDir());
-            } else {
-                workingDirPath = new Path("s3n://strata-web-mining-students/" + username + "/working/");
-            }
+            Path workingDirPath = new Path(options.getWorkingDir());
 
             JobConf conf = new JobConf();
             FileSystem fs = workingDirPath.getFileSystem(conf);
@@ -97,17 +92,20 @@ public class WebMiningTool {
             
             Path crawlDbPath = new Path(latestDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
             
-            UserAgent userAgent = new UserAgent(CrawlConfig.SPIDER_NAME, CrawlConfig.EMAIL_ADDRESS, CrawlConfig.WEB_ADDRESS);
+            UserAgent userAgent = new UserAgent(options.getAgentName(), CrawlConfig.EMAIL_ADDRESS, CrawlConfig.WEB_ADDRESS);
             
             FetcherPolicy fetcherPolicy = new FetcherPolicy();
             fetcherPolicy.setCrawlDelay(CrawlConfig.DEFAULT_CRAWL_DELAY);
             fetcherPolicy.setMaxContentSize(CrawlConfig.MAX_CONTENT_SIZE);
             fetcherPolicy.setFetcherMode(FetcherMode.EFFICIENT);
-            // You can also provide a set of mime types you want to restrict what content type you 
-            // want to deal with - for now keep it simple.
+            
+            // We only care about mime types that the Tika HTML parser can handle,
+            // so restrict it to the same.
             Set<String> validMimeTypes = new HashSet<String>();
-            validMimeTypes.add("text/plain");
-            validMimeTypes.add("text/html");
+            Set<MediaType> supportedTypes = new HtmlParser().getSupportedTypes(new ParseContext());
+            for (MediaType supportedType : supportedTypes) {
+                validMimeTypes.add(String.format("%s/%s", supportedType.getType(), supportedType.getSubtype()));
+            }
             fetcherPolicy.setValidMimeTypes(validMimeTypes);
 
             // Let's limit our crawl to two loops 

@@ -60,6 +60,12 @@
             <artifactId>cascading-core</artifactId>
         </dependency>
         
+        <dependency>
+            <groupId>com.bixolabs</groupId>
+            <artifactId>cascading.utils</artifactId>
+            <version>1.1</version>
+        </dependency>
+        
 		<dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
@@ -217,13 +223,8 @@
             <groupId>ant-eclipse</groupId>
             <artifactId>ant-eclipse-jvm1.2</artifactId>
             <version>1.0</version>
-            <scope>eclipse</scope>
+            <scope>provided</scope>
         </dependency>
-		<dependency>
-			<groupId>com.bixolabs</groupId>
-			<artifactId>cascading.utils</artifactId>
-			<version>1.1</version>
-		</dependency>
         
 	</dependencies>
 	
