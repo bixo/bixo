@@ -1,7 +1,17 @@
 /*
- * Copyright (c) 2009-2012 Scale Unlimited
+ * Copyright 2009-2012 Scale Unlimited
  *
- * All rights reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 package bixo.examples.webmining;
@@ -9,13 +19,10 @@ package bixo.examples.webmining;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FileSystem;
@@ -39,19 +46,16 @@ import bixo.utils.IoUtils;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
-import cascading.flow.FlowStep;
 import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
-import cascading.operation.Operation;
 import cascading.operation.OperationCall;
 import cascading.operation.filter.Limit;
 import cascading.operation.filter.Limit.Context;
 import cascading.pipe.CoGroup;
 import cascading.pipe.Each;
 import cascading.pipe.Every;
-import cascading.pipe.Group;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.pipe.cogroup.OuterJoin;
@@ -201,8 +205,7 @@ public class WebMiningWorkflow {
                     WebMiningOptions options, boolean resetSolr) throws IOException, InterruptedException {
         
         // Fetch at most 200 pages, max size of 128K, complete mode, from the current dir.
-        // HTML only. Custom useragent for Strata web mining tutorial (I can set up page on SU site)
-        // e.g. "Strata web miner"
+        // HTML only.
         
         // We want to extract the cleaned up HTML, and pass that to the parser, which will
         // be specified via options.getAnalyzer. From this we'll get outlinks, page score, and
@@ -297,34 +300,6 @@ public class WebMiningWorkflow {
         Flow flow = flowConnector.connect(inputSource, sinkMap, updatePipe, statusPipe, contentPipe, resultsPipe);
 
         return flow;
-    }
-    
-    @SuppressWarnings("rawtypes")
-    private static String getFlowStepName(FlowStep step) {
-        final Pattern DEFAULT_OPERATION_NAME_PATTERN = Pattern.compile("(.+)\\[.+\\]");
-
-        Group group = step.getGroup();
-        
-        String stepName = "";
-        if (group == null) {
-            Collection<Operation> operations = step.getAllOperations();
-            for (Operation operation : operations) {
-                String operationName = operation.toString();
-                Matcher defaultNameMatcher = DEFAULT_OPERATION_NAME_PATTERN.matcher(operationName);
-                if (defaultNameMatcher.matches()) {
-                    operationName = defaultNameMatcher.group(1);
-                }
-                stepName = stepName + operationName + "+";
-            }
-            
-            if (operations.size() > 0) {
-                stepName = stepName.substring(0, stepName.length()-1);
-            }
-        } else {
-            stepName = group.getName();
-        }
-        
-        return stepName;
     }
 
 }

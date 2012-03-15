@@ -4,7 +4,7 @@ The SimpleCrawlTool demonstrates a simple web crawler. You provide
 it with a starting domain name (e.g. cnn.com) and a user agent name,
 and it will crawl for the specified number of loops.
 
-The WebMinintTool demonstrates a focused crawler with xx
+The WebMiningTool demonstrates a focused crawler with xx
 
 <fill in more details here>
 
