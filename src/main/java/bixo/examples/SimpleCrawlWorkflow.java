@@ -224,6 +224,10 @@ public class SimpleCrawlWorkflow {
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction());
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new UrlFilter(urlFilter));
+        
+        // Skip the URL filter if we are crawling a site list
+        if (options.getSiteList() == null || options.getSiteList().isEmpty())
+            urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new UrlFilter(urlFilter));
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new NormalizeUrlFunction(new SimpleUrlNormalizer()));
         urlFromOutlinksPipe = TupleLogger.makePipe(urlFromOutlinksPipe, true);
 
