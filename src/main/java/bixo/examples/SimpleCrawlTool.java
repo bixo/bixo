@@ -40,6 +40,7 @@ import com.bixolabs.cascading.HadoopUtils;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.FetcherMode;
+import bixo.config.UserAgent;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.urls.BaseUrlFilter;
@@ -52,6 +53,7 @@ import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 
+import com.bixolabs.cascading.HadoopUtils;
 public class SimpleCrawlTool {
 
     private static final Logger LOGGER = Logger.getLogger(SimpleCrawlTool.class);
@@ -138,6 +140,15 @@ public class SimpleCrawlTool {
         }
     }
 
+    public static void importDomainList(String domainList, Path crawlDbPath, JobConf conf) throws Exception {
+        try {
+            UrlImporter ui = new UrlImporter(new Path(domainList), crawlDbPath);
+            ui.importUrls(System.getProperty("bixo.root.level").equals("TRUE"));
+        } catch (Exception e) {
+            HadoopUtils.safeRemove(crawlDbPath.getFileSystem(conf), crawlDbPath);
+            throw e;
+        }
+    }
 
     public static void main(String[] args) {
         SimpleCrawlToolOptions options = new SimpleCrawlToolOptions();
@@ -179,7 +190,6 @@ public class SimpleCrawlTool {
             Path outputPath = new Path(outputDirName);
             FileSystem fs = outputPath.getFileSystem(conf);
 
-            // See if the user isn't starting from scratch then set up the 
             // output directory and create an initial urls subdir.
             if (!fs.exists(outputPath)) {
                 fs.mkdirs(outputPath);
@@ -193,8 +203,18 @@ public class SimpleCrawlTool {
 
                 Path crawlDbPath = new Path(curLoopDir, CrawlConfig.CRAWLDB_SUBDIR_NAME);
                 importOneDomain(domain, crawlDbPath, conf);
+                String siteList = options.getSiteList();
+                if (siteList != null) {
+                    if (fs.exists(new Path(siteList))) {
+                        importDomainList(siteList, crawlDbPath, conf);
+                    } else {
+                        System.err.println("The site list has not been found at: " + siteList);
+                        printUsageAndExit(parser);
+                    }
+                } else {
+                    importOneDomain(domain, crawlDbPath, conf);
+                }
             }
-            
             Path latestDirPath = CrawlDirUtils.findLatestLoopDir(fs, outputPath);
 
             if (latestDirPath == null) {
@@ -216,20 +236,12 @@ public class SimpleCrawlTool {
             defaultPolicy.setCrawlDelay(CrawlConfig.DEFAULT_CRAWL_DELAY);
             defaultPolicy.setMaxContentSize(CrawlConfig.MAX_CONTENT_SIZE);
             defaultPolicy.setFetcherMode(FetcherMode.EFFICIENT);
-            
-            // It is a good idea to set up a crawl duration when running long crawls as you may 
-            // end up in situations where the fetch slows down due to a 'long tail' and by 
-            // specifying a crawl duration you know exactly when the crawl will end.
             int crawlDurationInMinutes = options.getCrawlDuration();
             boolean hasEndTime = crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION;
-            long targetEndTime = hasEndTime ? System.currentTimeMillis()
-                            + (crawlDurationInMinutes * CrawlConfig.MILLISECONDS_PER_MINUTE) : FetcherPolicy.NO_CRAWL_END_TIME;
 
-            // By setting up a url filter we only deal with urls that we want to 
             // instead of all the urls that we extract.
             BaseUrlFilter urlFilter = new DomainUrlFilter(domain);
 
-            // OK, now we're ready to start looping, since we've got our current settings
             for (int curLoop = startLoop + 1; curLoop <= endLoop; curLoop++) {
 
                 // Adjust target end time, if appropriate.
@@ -244,9 +256,7 @@ public class SimpleCrawlTool {
                 String curLoopDirName = curLoopDirPath.toUri().toString();
                 setLoopLoggerFile(curLoopDirName, curLoop);
 
-                Flow flow = SimpleCrawlWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, options); 
                 flow.complete();
-                
                 // Writing out .dot files is a good way to verify your flows.
                 flow.writeDOT("build/valid-flow.dot");
 
@@ -264,6 +274,4 @@ public class SimpleCrawlTool {
             System.exit(-1);
         }
     }
-
-
 }
