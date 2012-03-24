@@ -48,11 +48,10 @@
 			<url>http://conjars.org/repo</url>
 		</repository>
 		
-        <!-- For args4j -->
-        <repository>
-			<id>glassfish.org</id>
-			<name>Glassfish Maven2 Repository</name>
-			<url>http://maven.glassfish.org/content/groups/public/</url>
+    <!-- For args4j -->
+		<repository>
+			<id>repo.jenkins-ci.org</id>
+			<url>http://repo.jenkins-ci.org/public</url>
 		</repository>
 		
 	</repositories>
@@ -269,6 +268,19 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-	
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.5</source>
+					<target>1.5</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 		
 </project>
