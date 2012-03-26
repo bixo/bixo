@@ -10,7 +10,7 @@ using Bixo that fetches web content, parses, analyzes, and publishes the results
 Bixo borrows heavily from the Apache Nutch project, as well as many other open source
 projects at Apache and elsewhere.
 
-Bixo is released under the MIT license.
+Bixo is released under the Apache License, Version 2.0.
 
 ===============================
 Building
