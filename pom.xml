@@ -215,6 +215,10 @@
 		    		<artifactId>jetty-util</artifactId>
 		    		<groupId>org.mortbay.jetty</groupId>
 		    	</exclusion>
+		    	<exclusion>
+		    		<artifactId>ant</artifactId>
+		    		<groupId>ant</groupId>
+		    	</exclusion>
 		    </exclusions>
 		</dependency>
         
