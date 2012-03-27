@@ -104,8 +104,14 @@ if [ -z BIXO_CORE ]; then
 else 
 	BIXO_LIB_HOME=${BIXO_CORE%/bixo-core-*.jar}/runtime
 fi
-
 CLASSPATH=${CLASSPATH}:$BIXO_CORE
+
+BIXO_EXAMPLES=`find "$BIXO_HOME/" -name "bixo-examples-*.jar"`
+if [ -z BIXO_EXAMPLES ]; then
+	echo "Unable to find the bixo-examples jar"
+	exit 1
+fi
+CLASSPATH=${CLASSPATH}:$BIXO_EXAMPLES
 
 # add libs to CLASSPATH
 for f in $BIXO_LIB_HOME/*.jar; do
