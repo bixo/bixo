@@ -214,7 +214,7 @@ public class FetchPipe extends SubAssembly {
      * @param urlProvider
      * @param scorer
      * @param fetcher
-     * @param metaDataFields
+     * @param numReducers
      */
     
     public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseFetcher fetcher, int numReducers) {

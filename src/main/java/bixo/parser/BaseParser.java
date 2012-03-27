@@ -20,8 +20,6 @@ import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.CharsetUtils;
 
 import bixo.config.ParserPolicy;
@@ -73,7 +71,7 @@ public abstract class BaseParser implements Serializable {
      * Figure out the right base URL to use, for when we need to resolve relative URLs.
      * 
      * @param fetchedDatum
-     * @return
+     * @return the base URL
      * @throws MalformedURLException
      */
     protected URL getContentLocation(FetchedDatum fetchedDatum) throws MalformedURLException {

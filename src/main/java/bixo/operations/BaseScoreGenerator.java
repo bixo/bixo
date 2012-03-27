@@ -60,7 +60,7 @@ public abstract class BaseScoreGenerator implements Serializable {
      * @param domain hostname
      * @param pld paid-level domain (derived from domain()
      * @param url URL, or null for scoring domain/pld
-     * @return
+     * @return the generated score for the URL
      */
     abstract public double generateScore(String domain, String pld, String url);
 

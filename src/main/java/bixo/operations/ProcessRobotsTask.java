@@ -68,7 +68,7 @@ public class ProcessRobotsTask implements Runnable {
      * 
      * @param urls Queue of URLs to empty out
      * @param groupingKey grouping key to use for all entries.
-     * @param outputCollector
+     * @param collector tuple output collector
      */
     public static void emptyQueue(Queue<GroupedUrlDatum> urls, String groupingKey, TupleEntryCollector collector) {
         GroupedUrlDatum datum;
