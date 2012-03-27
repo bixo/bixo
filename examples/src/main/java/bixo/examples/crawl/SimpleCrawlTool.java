@@ -116,6 +116,19 @@ public class SimpleCrawlTool {
         }
     }
     
+    private static void validateDomain(String domain, CmdLineParser parser) {
+        if (domain.startsWith("http")) {
+            System.err.println("The target domain should be specified as just the host, without the http protocol: " + domain);
+            printUsageAndExit(parser);
+        }
+        
+        if (!domain.equals("localhost") && (domain.split("\\.").length < 2)) {
+            System.err.println("The target domain should be a valid paid-level domain or subdomain of the same: " + domain);
+            printUsageAndExit(parser);
+        }
+        
+    }
+
     public static void importOneDomain(String targetDomain, Path crawlDbPath, JobConf conf) throws Exception {
         
         try {
@@ -133,6 +146,11 @@ public class SimpleCrawlTool {
         }
     }
 
+    private static void importUrls(String urlsFile, Path crawlDbPath) throws Exception {
+        Path urlsPath = new Path(urlsFile);
+        UrlImporter urlImporter = new UrlImporter(urlsPath, crawlDbPath);
+        urlImporter.importUrls(false);
+    }
 
     public static void main(String[] args) {
         SimpleCrawlToolOptions options = new SimpleCrawlToolOptions();
@@ -147,14 +165,18 @@ public class SimpleCrawlTool {
 
         // Before we get too far along, see if the domain looks valid.
         String domain = options.getDomain();
-        if (domain.startsWith("http")) {
-            System.err.println("The target domain should be specified as just the host, without the http protocol: " + domain);
-            printUsageAndExit(parser);
+        String urlsFile = options.getUrlsFile();
+        if (domain != null) {
+            validateDomain(domain, parser);
+        } else {
+            if (urlsFile == null) {
+                System.err.println("Either a target domain should be specified or a file with a list of urls needs to be provided");
+                printUsageAndExit(parser);
+            }
         }
         
-        if (!domain.equals("localhost") && (domain.split("\\.").length < 2)) {
-            System.err.println("The target domain should be a valid paid-level domain or subdomain of the same: " + domain);
-            printUsageAndExit(parser);
+        if (domain != null && urlsFile != null) {
+            System.out.println("Warning: Both domain and urls file list provided - using domain");
         }
         
         String outputDirName = options.getOutputDir();
@@ -187,7 +209,12 @@ public class SimpleCrawlTool {
                 setLoopLoggerFile(curLoopDirName, 0);
 
                 Path crawlDbPath = new Path(curLoopDir, CrawlConfig.CRAWLDB_SUBDIR_NAME);
-                importOneDomain(domain, crawlDbPath, conf);
+                
+                if (domain != null) {
+                    importOneDomain(domain, crawlDbPath, conf);
+                } else {
+                    importUrls(urlsFile, crawlDbPath);
+                }
             }
             
             Path latestDirPath = CrawlDirUtils.findLatestLoopDir(fs, outputPath);
@@ -217,14 +244,18 @@ public class SimpleCrawlTool {
             // specifying a crawl duration you know exactly when the crawl will end.
             int crawlDurationInMinutes = options.getCrawlDuration();
             boolean hasEndTime = crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION;
-            long targetEndTime = hasEndTime ? System.currentTimeMillis()
-                            + (crawlDurationInMinutes * CrawlConfig.MILLISECONDS_PER_MINUTE) : FetcherPolicy.NO_CRAWL_END_TIME;
+            long targetEndTime = hasEndTime ? System.currentTimeMillis() + (crawlDurationInMinutes * CrawlConfig.MILLISECONDS_PER_MINUTE) : 
+                FetcherPolicy.NO_CRAWL_END_TIME;
 
-            // By setting up a url filter we only deal with urls that we want to 
+            // By setting up a url filter we only deal with urls that we want to
             // instead of all the urls that we extract.
-            BaseUrlFilter urlFilter = new DomainUrlFilter(domain);
+            BaseUrlFilter urlFilter = null;
+            if (domain != null) {
+                urlFilter = new DomainUrlFilter(domain);
+            }
 
-            // OK, now we're ready to start looping, since we've got our current settings
+            // OK, now we're ready to start looping, since we've got our current
+            // settings
             for (int curLoop = startLoop + 1; curLoop <= endLoop; curLoop++) {
 
                 // Adjust target end time, if appropriate.
