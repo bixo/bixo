@@ -371,7 +371,6 @@
 		<mkdir dir="${build.dir.dist}" />
 		<mkdir dir="${build.dir.dist}/bin" />
 		<mkdir dir="${build.dir.dist}/doc" />
-		<mkdir dir="${build.dir.dist}/doc/licenses" />
 		<mkdir dir="${build.dir.dist}/doc/javadoc" />
 		<mkdir dir="${build.dir.dist}/doc/reports" />
 		<mkdir dir="${build.dir.dist}/lib" />
@@ -422,9 +421,6 @@
 		</copy>
 		<copy todir="${build.dir.dist}/doc">
 			<fileset file="${basedir}/doc/eclipse-formatter.properties" />
-		</copy>
-		<copy todir="${build.dir.dist}/doc/licenses">
-			<fileset dir="${basedir}/doc/licenses" />
 		</copy>
 		
 		<!-- copy the build file, build properties and pom file -->
