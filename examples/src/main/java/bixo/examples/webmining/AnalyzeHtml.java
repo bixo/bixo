@@ -21,11 +21,16 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.dom4j.Document;
+import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.io.SAXWriter;
 
@@ -43,6 +48,9 @@ public class AnalyzeHtml extends DOMParser {
     
     private static final Logger LOGGER = Logger.getLogger(AnalyzeHtml.class);
 
+    private static final Pattern IMG_SUFFIX_EXCLUSION_PATTERN =
+        Pattern.compile("(?i)\\.(gif|jpg|jpeg|bmp|png|ico)$");
+
     private static final int MAX_WORDS_PER_PHRASE = 2;
 
     // These are all transient since we don't want to serialize them when the
@@ -59,6 +67,8 @@ public class AnalyzeHtml extends DOMParser {
     
     @Override
     public void prepare(FlowProcess process, OperationCall<NullContext> opCall) {
+        super.prepare(process, opCall);
+        
         // Load the positive and negative phrases.
         // Analyze them using the standard analyzer (no stopwords)
         // TODO Maybe figure out the max # of words, for shingling? For now use a constant.
@@ -73,17 +83,19 @@ public class AnalyzeHtml extends DOMParser {
     protected void process(ParsedDatum datum, Document doc, TupleEntryCollector collector) throws Exception {
         // Get all of the text from doc, and pass it to getScore()
         BodyContentHandler bodyContentHandler = new BodyContentHandler();
-        SAXWriter writer = new SAXWriter(bodyContentHandler);
+        XHTMLContentHandler xhtmlContentHandler =  new XHTMLContentHandler(bodyContentHandler, new Metadata());
+        SAXWriter writer = new SAXWriter(xhtmlContentHandler);
         writer.write(doc);
-        
+        LOGGER.info("Document text: " + doc.asXML());
+
+        LOGGER.info("Body text: " + bodyContentHandler.toString());
         float pageScore = getScore(bodyContentHandler.toString());
         
-        // Extract all of the images, and use them as page results.
-        // TODO VMa - make it so
-        PageResult[] pageResults = new PageResult[0];
-        
         // Get the outlinks.
-        Outlink[] outlinks = getOutlinks(datum, doc);
+        Outlink[] outlinks = getOutlinks(doc);
+
+        // Extract all of the images, and use them as page results.
+        PageResult[] pageResults = extractImages(datum.getUrl(), doc, outlinks);
         
         _result.setUrl(datum.getUrl());
         _result.setPageScore(pageScore);
@@ -93,24 +105,61 @@ public class AnalyzeHtml extends DOMParser {
         collector.add(_result.getTuple());
     }
 
-    private Outlink[] getOutlinks(ParsedDatum datum, Document doc) {
+    @Override
+    protected void handleException(ParsedDatum datum, Exception e, TupleEntryCollector collector) {
+        // We'll just log it here, though normally we'd want to rethrow the exception, and
+        // have our workflow set up to trap it.
+        LOGGER.error("Exception parsing/processing " + datum.getUrl(), e);
+        
+    }
+
+    private Outlink[] getOutlinks(Document doc) {
         ArrayList<Outlink> outlinkList = new ArrayList<Outlink>();
         List<Node> aNodes = getNodes(doc, "//a");
-
+        
+        
         for (Node node : aNodes) {
-            String url = getAttributeFromNode(node, ".", "href");
-            String anchor = getAttributeFromNode(node, ".", "name");
-            String rel = getAttributeFromNode(node, ".", "rel");
+            String url = getAttributeFromNode(node, "href");
+            String anchor = getAttributeFromNode(node, "name");
+            String rel = getAttributeFromNode(node, "rel");
             Outlink link = new Outlink(url, anchor, rel);
             outlinkList.add(link);
         }
-
+    
         return outlinkList.toArray(new Outlink[outlinkList.size()]);
     }
 
-    private String getAttributeFromNode(Node node, String string, String string2) {
-        // TODO VMa - Auto-generated method stub
-        return null;
+    private PageResult[] extractImages(String sourceUrl, Document doc, Outlink[] outlinks) {
+        ArrayList<PageResult> pageResults = new ArrayList<PageResult>();
+        // Find if we have image links that may have extracted as an Outlink
+        for (Outlink outlink : outlinks) {
+            String outlinkUrl = outlink.getToUrl();
+            if (isImgSuffix(outlinkUrl)) {
+                // TODO Maybe set description to any words found in image name? Change '-' and '_' to spaces?
+                PageResult result = new PageResult(sourceUrl, outlinkUrl, "");
+                pageResults.add(result);
+
+            }
+        }
+        // Next extract all img 
+        List<Node> imgNodes = getNodes(doc, "//img");
+        for (Node node : imgNodes) {
+            String src = getAttributeFromNode(node, "src");
+            String alt = getAttributeFromNode(node, "alt");
+            PageResult result = new PageResult(sourceUrl, src, alt);
+            pageResults.add(result);
+        }
+
+        return pageResults.toArray(new PageResult[pageResults.size()]);
+    }
+
+    private String getAttributeFromNode(Node node, String attribute) {
+        String attributeValue = null;
+        if (node.getNodeType() == Node.ELEMENT_NODE) {
+            Element e = (Element)node;
+            attributeValue = e.attributeValue(attribute);
+        } 
+        return  (attributeValue == null ? "" : attributeValue);
     }
 
     /**
@@ -122,8 +171,8 @@ public class AnalyzeHtml extends DOMParser {
      * @throws ExtractionException
      */
     @SuppressWarnings("unchecked")
-    public List<Node> getNodes(Document doc, String xPath) {
-        List<Node> result = doc.selectNodes(xPath);
+    private List<Node> getNodes(Node node, String xPath) {
+        List<Node> result = node.selectNodes(xPath);
         if (result == null) {
             result = new ArrayList<Node>();
         }
@@ -131,16 +180,15 @@ public class AnalyzeHtml extends DOMParser {
         return result;
     }
     
-
-
-    @Override
-    protected void handleException(ParsedDatum datum, Exception e, TupleEntryCollector collector) {
-        // We'll just log it here, though normally we'd want to rethrow the exception, and
-        // have our workflow set up to trap it.
-        LOGGER.error("Exception parsing/processing " + datum.getUrl(), e);
-        
+    private static boolean isImgSuffix(String url) {
+        Matcher m = IMG_SUFFIX_EXCLUSION_PATTERN.matcher(url);
+       if (m.find()) {
+           return true;
+       }
+       return false;
     }
-    
+
+
     /* Calculate the positive term ratio (positive term count/total term count)
      * Do the same thing for the negative terms.
      * The score is the positive ratio - the negative ratio
@@ -162,8 +210,13 @@ public class AnalyzeHtml extends DOMParser {
             }
         }
         
-        float positiveRatio = (float)positiveCount/(float)(positiveCount + negativeCount + neutralCount);
-        float negativeRatio = (float)negativeCount/(float)(positiveCount + negativeCount + neutralCount);
+        float totalCount = (float)(positiveCount + negativeCount + neutralCount);
+        float positiveRatio = 0;
+        float negativeRatio = 0;
+        if (totalCount > 0) {
+            positiveRatio = (float)positiveCount/totalCount;
+            negativeRatio = (float)negativeCount/totalCount;
+        }
         
         return positiveRatio - negativeRatio;
     }
