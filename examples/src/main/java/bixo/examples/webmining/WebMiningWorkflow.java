@@ -201,7 +201,7 @@ public class WebMiningWorkflow {
 
     }
     
-    public static Flow createFetchWorkflow(Path crawlDbPath, Path curLoopDirPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, 
+    public static Flow createWebMiningWorkflow(Path crawlDbPath, Path curLoopDirPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, 
                     WebMiningOptions options, boolean resetSolr) throws IOException, InterruptedException {
         
         // Fetch at most 200 pages, max size of 128K, complete mode, from the current dir.

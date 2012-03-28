@@ -121,7 +121,7 @@ public class WebMiningTool {
             // Let's limit our crawl to two loops 
             for (int curLoop = 1; curLoop <= 2; curLoop++) {
                 Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, workingDirPath, curLoop);
-                Flow flow = WebMiningWorkflow.createFetchWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options, curLoop == 1);
+                Flow flow = WebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options, curLoop == 1);
                 flow.complete();
 
                 // Update crawlDbPath to point to the latest crawl db
