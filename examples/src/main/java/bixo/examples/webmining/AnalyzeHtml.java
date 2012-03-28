@@ -86,9 +86,7 @@ public class AnalyzeHtml extends DOMParser {
         XHTMLContentHandler xhtmlContentHandler =  new XHTMLContentHandler(bodyContentHandler, new Metadata());
         SAXWriter writer = new SAXWriter(xhtmlContentHandler);
         writer.write(doc);
-        LOGGER.info("Document text: " + doc.asXML());
 
-        LOGGER.info("Body text: " + bodyContentHandler.toString());
         float pageScore = getScore(bodyContentHandler.toString());
         
         // Get the outlinks.
