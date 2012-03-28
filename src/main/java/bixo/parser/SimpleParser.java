@@ -18,6 +18,7 @@ package bixo.parser;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.net.URL;
 import java.util.Locale;
 import java.util.concurrent.Callable;
@@ -45,7 +46,7 @@ public class SimpleParser extends BaseParser {
     /**
      * Fixed version of Tika 1.0's IdentityHtmlMapper
      */
-    private static class FixedIdentityHtmlMapper extends IdentityHtmlMapper {
+    private static class FixedIdentityHtmlMapper extends IdentityHtmlMapper implements Serializable {
 
         public static final HtmlMapper INSTANCE = new FixedIdentityHtmlMapper();
 
