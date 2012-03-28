@@ -32,7 +32,7 @@ import bixo.parser.BaseContentExtractor;
 
 /*
  * HtmlcontentExtractor is a content extractor that returns as content the 
- * raw (cleaned) HTML.
+ * raw (cleaned) HTML, with all of the tags.
  */
 @SuppressWarnings("serial")
 public class HtmlContentExtractor extends BaseContentExtractor {

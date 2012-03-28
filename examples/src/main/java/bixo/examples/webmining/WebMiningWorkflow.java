@@ -262,7 +262,7 @@ public class WebMiningWorkflow {
         Pipe analyzerPipe = new Pipe("analyzer pipe");
         analyzerPipe = new Each(parsePipe.getTailPipe(), new AnalyzeHtml());
         
-        Pipe outlinksPipe = new Pipe("outlinks pipe", parsePipe);
+        Pipe outlinksPipe = new Pipe("outlinks pipe", analyzerPipe);
         outlinksPipe = new Each(outlinksPipe, new CreateLinkDatumFromOutlinksFunction());
 
         Pipe resultsPipe = new Pipe("results pipe", analyzerPipe);

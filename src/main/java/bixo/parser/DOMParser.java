@@ -20,7 +20,6 @@ import java.io.InputStream;
 
 import org.ccil.cowan.tagsoup.Parser;
 import org.dom4j.Document;
-import org.dom4j.DocumentException;
 import org.dom4j.io.SAXReader;
 import org.hsqldb.lib.StringInputStream;
 
@@ -56,6 +55,13 @@ public abstract class DOMParser extends BaseOperation<NullContext> implements Fu
     }
     
     @Override
+    public boolean isSafe() {
+        // Parsing is computationally intensive, so we don't want to get run
+        // multiple times.
+        return false;
+    }
+    
+    @Override
     public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
         _input.setTupleEntry(funcCall.getArguments());
         InputStream is = new StringInputStream(_input.getParsedText());
@@ -63,7 +69,7 @@ public abstract class DOMParser extends BaseOperation<NullContext> implements Fu
         try {
             Document parsedContent = _reader.read(is);
             process(_input, parsedContent, funcCall.getOutputCollector());
-        } catch (DocumentException e) {
+        } catch (Exception e) {
             handleException(_input, e, funcCall.getOutputCollector());
         } finally {
             IoUtils.safeClose(is);
@@ -80,16 +86,16 @@ public abstract class DOMParser extends BaseOperation<NullContext> implements Fu
      * @param doc Result of converting incoming XML document to a Dom4J Document
      * @param collector Collector to use if you want to emit tuples.
      */
-    protected abstract void process(ParsedDatum datum, Document doc, TupleEntryCollector collector);
+    protected abstract void process(ParsedDatum datum, Document doc, TupleEntryCollector collector) throws Exception;
     
     /**
-     * An exception occurred while parsing the _input ParsedDatum. Options are to
+     * An exception occurred while parsing or processing the _input ParsedDatum. Options are to
      * ignore it, emit a tuple (with appropriate fields), or throw a RuntimeException
      * to kill the job.
      * 
      * @param datum Input datum, which wraps a Cascading Tuple.
-     * @param e Exception while parsing document
+     * @param e Exception while parsing or processing document
      * @param collector Collector to use if you want to emit a tuple.
      */
-    protected abstract void handleException(ParsedDatum datum, DocumentException e, TupleEntryCollector collector);
+    protected abstract void handleException(ParsedDatum datum, Exception e, TupleEntryCollector collector);
 }

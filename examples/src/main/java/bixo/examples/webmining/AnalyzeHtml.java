@@ -17,15 +17,19 @@
 package bixo.examples.webmining;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.apache.tika.sax.BodyContentHandler;
 import org.dom4j.Document;
-import org.dom4j.DocumentException;
+import org.dom4j.Node;
+import org.dom4j.io.SAXWriter;
 
+import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.parser.DOMParser;
 import cascading.flow.FlowProcess;
@@ -47,6 +51,8 @@ public class AnalyzeHtml extends DOMParser {
     private transient Set<String> _positivePhrases;
     private transient Set<String> _negativePhrases;
 
+    private transient AnalyzedDatum _result;
+    
     public AnalyzeHtml() {
         super(AnalyzedDatum.FIELDS); 
     }
@@ -59,20 +65,79 @@ public class AnalyzeHtml extends DOMParser {
         _analyzer = new PhraseShingleAnalyzer(MAX_WORDS_PER_PHRASE);
         _positivePhrases = loadAnalyzedPhrases("/positive-phrases.txt", _analyzer);
         _negativePhrases = loadAnalyzedPhrases("/negative-phrases.txt", _analyzer);
+        
+        _result = new AnalyzedDatum("", 0.0f, new PageResult[0], new Outlink[0]);
     }
     
     @Override
-    protected void process(ParsedDatum datum, Document doc, TupleEntryCollector collector) {
-        // TODO get all of the text from doc, and pass it to getScore()
-        // TODO we need to add the outlinks to the AnalyzedDatum, so that we can use the score
-        // from the page, divided among the links - or set the score on a per-link bases in
-        // a new type of structure, and use that in the main workflow.
+    protected void process(ParsedDatum datum, Document doc, TupleEntryCollector collector) throws Exception {
+        // Get all of the text from doc, and pass it to getScore()
+        BodyContentHandler bodyContentHandler = new BodyContentHandler();
+        SAXWriter writer = new SAXWriter(bodyContentHandler);
+        writer.write(doc);
         
+        float pageScore = getScore(bodyContentHandler.toString());
+        
+        // Extract all of the images, and use them as page results.
+        // TODO VMa - make it so
+        PageResult[] pageResults = new PageResult[0];
+        
+        // Get the outlinks.
+        Outlink[] outlinks = getOutlinks(datum, doc);
+        
+        _result.setUrl(datum.getUrl());
+        _result.setPageScore(pageScore);
+        _result.setOutlinks(outlinks);
+        _result.setPageResults(pageResults);
+        
+        collector.add(_result.getTuple());
     }
 
+    private Outlink[] getOutlinks(ParsedDatum datum, Document doc) {
+        ArrayList<Outlink> outlinkList = new ArrayList<Outlink>();
+        List<Node> aNodes = getNodes(doc, "//a");
+
+        for (Node node : aNodes) {
+            String url = getAttributeFromNode(node, ".", "href");
+            String anchor = getAttributeFromNode(node, ".", "name");
+            String rel = getAttributeFromNode(node, ".", "rel");
+            Outlink link = new Outlink(url, anchor, rel);
+            outlinkList.add(link);
+        }
+
+        return outlinkList.toArray(new Outlink[outlinkList.size()]);
+    }
+
+    private String getAttributeFromNode(Node node, String string, String string2) {
+        // TODO VMa - Auto-generated method stub
+        return null;
+    }
+
+    /**
+     * Utility routine to get back a list of nodes from the HTML page document,
+     * which match the provided XPath expression.
+     * 
+     * @param xPath expression to match
+     * @return array of matching nodes, or an empty array if nothing matches
+     * @throws ExtractionException
+     */
+    @SuppressWarnings("unchecked")
+    public List<Node> getNodes(Document doc, String xPath) {
+        List<Node> result = doc.selectNodes(xPath);
+        if (result == null) {
+            result = new ArrayList<Node>();
+        }
+        
+        return result;
+    }
+    
+
+
     @Override
-    protected void handleException(ParsedDatum datum, DocumentException e, TupleEntryCollector collector) {
-        // TODO Auto-generated method stub
+    protected void handleException(ParsedDatum datum, Exception e, TupleEntryCollector collector) {
+        // We'll just log it here, though normally we'd want to rethrow the exception, and
+        // have our workflow set up to trap it.
+        LOGGER.error("Exception parsing/processing " + datum.getUrl(), e);
         
     }
     

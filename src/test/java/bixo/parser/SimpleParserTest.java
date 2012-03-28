@@ -482,7 +482,7 @@ public class SimpleParserTest {
         ParserPolicy policy = new ParserPolicy( ParserPolicy.NO_MAX_PARSE_DURATION,
                                                 BaseLinkExtractor.ALL_LINK_TAGS,
                                                 BaseLinkExtractor.ALL_LINK_ATTRIBUTE_TYPES);
-        SimpleParser parser = new SimpleParser(policy, true);
+        SimpleParser parser = new SimpleParser(new SimpleContentExtractor(), new SimpleLinkExtractor(), policy, true);
         ParsedDatum parsedDatum = parser.parse(fetchedDatum);
         
         // Verify outlinks are correct

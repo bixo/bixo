@@ -5,15 +5,22 @@ it with a starting domain name (e.g. cnn.com) and a user agent name,
 and it will crawl for the specified number of loops.
 
 The WebMiningTool demonstrates a focused crawler with a focus on 
-extracting (un)structured data from web pages. It demonstrateds how 
+extracting (un)structured data from web pages. It demonstrates how 
 to analyze the fetched data from a page using a DOM parser.  
 
 
-
-To build this code:
+To build a job jar:
 
 % cd <path to Bixo>/examples
-% ant clean compile
+% ant clean job
+
+To run the job jar:
+
+% hadoop jar build/bixo-examples-job-1.0-SNAPSHOT.jar bixo.examples.crawl.SimpleCrawlTool \
+	-agentname <your agent name> -domain <target domain> -numloops <number of loops> -outputdir <results dir>
+
+Note that you should pick a number of loops > 1, so that it crawls more than just the top-level
+page of your target domain.
 
 To create an Eclipse project:
 

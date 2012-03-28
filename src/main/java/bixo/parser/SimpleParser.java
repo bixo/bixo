@@ -93,17 +93,29 @@ public class SimpleParser extends BaseParser {
      * to {@link SimpleParser#SimpleParser(ParserPolicy)}.
      */
     public SimpleParser(ParserPolicy parserPolicy, boolean saveRawHtml) {
+        this(saveRawHtml ? new HtmlContentExtractor() : new SimpleContentExtractor(),
+             saveRawHtml ? NullLinkExtractor.INSTANCE : new SimpleLinkExtractor(),
+             parserPolicy, saveRawHtml);
+    }
+
+    /**
+     * @param parserPolicy to customize operation of the parser
+     * @param saveRawHtml true if output should be raw HTML, versus extracted text
+     * <BR><BR><B>Note:</B> There is no need to construct your own
+     * {@link SimpleLinkExtractor} simply to control the set of link tags
+     * and attributes it processes. Instead, use {@link ParserPolicy#setLinkTags}
+     * and {@link ParserPolicy#setLinkAttributeTypes}, and then pass this policy
+     * to {@link SimpleParser#SimpleParser(ParserPolicy)}.
+     */
+    public SimpleParser(BaseContentExtractor contentExtractor, BaseLinkExtractor linkExtractor, ParserPolicy parserPolicy, boolean saveRawHtml) {
         super(parserPolicy);
-        
-        _linkExtractor = new SimpleLinkExtractor();
+
+        _contentExtractor = contentExtractor;
+        _linkExtractor = linkExtractor;
 
         if (saveRawHtml) {
-            _contentExtractor = new HtmlContentExtractor();
-
             _parseContext = new ParseContext();
             _parseContext.set(HtmlMapper.class, FixedIdentityHtmlMapper.INSTANCE);
-        } else {
-            _contentExtractor = new SimpleContentExtractor();
         }
     }
 
