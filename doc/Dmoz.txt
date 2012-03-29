@@ -6,11 +6,3 @@ which are free for all to use. See http://rdf.dmoz.org/ for details.
 Bixo has some tools, located in the bixo.tools package, that can process
 the dmoz.xml file (1.9GB) to extract links (ExtractDmozLinks) and
 unique domains (ExtractDmozDomains).
-
-In addition, the links extracted from a recent DMOZ database are
-available from the Bixo Nexus server at:
-
-http://oss.101tec.com/nexus/content/repositories/releases/bixo/dmoz-links/
-
-See also doc/licenses/open-directory-license.txt for licence information
-related to the DMOZ data.

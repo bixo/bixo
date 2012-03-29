@@ -1,3 +1,19 @@
+/*
+ * Copyright 2009-2012 Scale Unlimited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 package bixo.operations;
 
 import java.util.Comparator;
@@ -37,7 +53,7 @@ import com.bixolabs.cascading.LoggingFlowProcess;
 import com.bixolabs.cascading.LoggingFlowReporter;
 import com.bixolabs.cascading.NullContext;
 
-@SuppressWarnings( { "serial", "unchecked" })
+@SuppressWarnings( { "serial" })
 public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<NullContext>, IFetchMgr {
     private static Logger LOGGER = Logger.getLogger(FetchBuffer.class);
 
@@ -229,7 +245,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     }
 
     @Override
-    public void prepare(FlowProcess flowProcess, OperationCall operationCall) {
+    public void prepare(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
         super.prepare(flowProcess, operationCall);
 
         _flowProcess = new LoggingFlowProcess((HadoopFlowProcess) flowProcess);
@@ -318,7 +334,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     }
 
     @Override
-    public void cleanup(FlowProcess process, OperationCall operationCall) {
+    public void cleanup(FlowProcess process, OperationCall<NullContext> operationCall) {
         try {
             // We don't know worst-case for amount of time a worker thread will effectively
             // "sleep" waiting for a FetchTask to be queued up, but we'll add in a bit of

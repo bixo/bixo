@@ -1,3 +1,19 @@
+/*
+ * Copyright 2009-2012 Scale Unlimited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 package bixo.parser;
 
 import java.io.DataInputStream;
@@ -13,7 +29,6 @@ import junit.framework.Assert;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.tika.parser.html.DefaultHtmlMapper;
 import org.junit.Test;
 
 import bixo.config.ParserPolicy;
@@ -447,12 +462,12 @@ public class SimpleParserTest {
     }
 
     @Test
-    public void testExtractingEmbedTag() throws Exception {
+    public void testExtractingObjectTag() throws Exception {
         final String html = "<html><head><title>Title</title></head>" +
-            "<body><embed src=\"http://domain.com/song.mid\" /></body></html>";
+            "<body><object data=\"http://domain.com/song.mid\" /></body></html>";
         
         // Create FetchedDatum using data
-        String url = "http://domain.com/embed.html";
+        String url = "http://domain.com/music.html";
         String contentType = "text/html; charset=utf-8";
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
@@ -463,7 +478,7 @@ public class SimpleParserTest {
         ParserPolicy policy = new ParserPolicy( ParserPolicy.NO_MAX_PARSE_DURATION,
                                                 BaseLinkExtractor.ALL_LINK_TAGS,
                                                 BaseLinkExtractor.ALL_LINK_ATTRIBUTE_TYPES);
-        SimpleParser parser = new SimpleParser(policy);
+        SimpleParser parser = new SimpleParser(new SimpleContentExtractor(), new SimpleLinkExtractor(), policy, true);
         ParsedDatum parsedDatum = parser.parse(fetchedDatum);
         
         // Verify outlinks are correct

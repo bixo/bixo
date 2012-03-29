@@ -1,5 +1,21 @@
 #!/bin/sh
 # 
+#
+# Copyright 2009-2012 Scale Unlimited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#	
+#
 # The Bixo command script
 #
 # Environment Variables
@@ -88,8 +104,14 @@ if [ -z BIXO_CORE ]; then
 else 
 	BIXO_LIB_HOME=${BIXO_CORE%/bixo-core-*.jar}/runtime
 fi
-
 CLASSPATH=${CLASSPATH}:$BIXO_CORE
+
+BIXO_EXAMPLES=`find "$BIXO_HOME/" -name "bixo-examples-*.jar"`
+if [ -z BIXO_EXAMPLES ]; then
+	echo "Unable to find the bixo-examples jar"
+	exit 1
+fi
+CLASSPATH=${CLASSPATH}:$BIXO_EXAMPLES
 
 # add libs to CLASSPATH
 for f in $BIXO_LIB_HOME/*.jar; do
@@ -163,9 +185,9 @@ fi
 
 # figure out which class to run
 if [ "$COMMAND" = "crawl" ] ; then
-  CLASS=bixo.examples.SimpleCrawlTool
+  CLASS=bixo.examples.crawl.SimpleCrawlTool
 elif [ "$COMMAND" = "status" ] ; then
-  CLASS=bixo.examples.SimpleStatusTool
+  CLASS=bixo.examples.crawl.SimpleStatusTool
 else
   CLASS=$COMMAND
 fi

@@ -1,10 +1,9 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+/*
+ * Copyright 2009-2012 Scale Unlimited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -13,16 +12,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
-
 package bixo.datum;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import org.apache.hadoop.io.Writable;
+
 /* An outgoing link from a page. */
-public class Outlink {
+public class Outlink implements Writable {
 
     private static final String NO_FOLLOW_REL_ATTRIBUTE = "nofollow";
 
-    private String toUrl;
+    private String _toUrl;
     private String _anchorText;
     private String _relAttributes;
 
@@ -30,7 +35,7 @@ public class Outlink {
     }
 
     public Outlink(String toUrl, String anchorText, String relAttributes) {
-        this.toUrl = toUrl;
+        this._toUrl = toUrl;
         if (anchorText == null)
             anchorText = "";
         _anchorText = anchorText;
@@ -42,7 +47,7 @@ public class Outlink {
     }
 
     public String getToUrl() {
-        return toUrl;
+        return _toUrl;
     }
 
     public String getAnchor() {
@@ -68,7 +73,7 @@ public class Outlink {
     
     @Override
 	public String toString() {
-        return "toUrl: " + toUrl + " anchor: " + _anchorText; // removed "\n".
+        return "toUrl: " + _toUrl + " anchor: " + _anchorText; // removed "\n".
         // toString, not
         // printLine... WD.
     }
@@ -78,7 +83,7 @@ public class Outlink {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((_anchorText == null) ? 0 : _anchorText.hashCode());
-		result = prime * result + ((toUrl == null) ? 0 : toUrl.hashCode());
+		result = prime * result + ((_toUrl == null) ? 0 : _toUrl.hashCode());
 		return result;
 	}
 
@@ -96,14 +101,27 @@ public class Outlink {
 				return false;
 		} else if (!_anchorText.equals(other._anchorText))
 			return false;
-		if (toUrl == null) {
-			if (other.toUrl != null)
+		if (_toUrl == null) {
+			if (other._toUrl != null)
 				return false;
-		} else if (!toUrl.equals(other.toUrl))
+		} else if (!_toUrl.equals(other._toUrl))
 			return false;
 		return true;
 	}
     
-    
+    @Override
+    public void readFields(DataInput in) throws IOException {
+        _toUrl = in.readUTF();
+        _anchorText = in.readUTF();
+        _relAttributes = in.readUTF();
+    }
+
+    @Override
+    public void write(DataOutput out) throws IOException {
+        out.writeUTF(_toUrl);
+        out.writeUTF(_anchorText);
+        out.writeUTF(_relAttributes);
+    }
+
 
 }

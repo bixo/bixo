@@ -1,25 +1,20 @@
-<!--
-Copyright (c) 2009-2010 Bixo Labs.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy 
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights 
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
-copies of the Software, and to permit persons to whom the Software is 
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in 
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
--->
 <project name="bixo-core" default="compile">
+
+	<!--
+	 Copyright 2009-2012 Scale Unlimited
+
+	 Licensed under the Apache License, Version 2.0 (the "License");
+	 you may not use this file except in compliance with the License.
+	 You may obtain a copy of the License at
+
+	     http://www.apache.org/licenses/LICENSE-2.0
+
+	 Unless required by applicable law or agreed to in writing, software
+	 distributed under the License is distributed on an "AS IS" BASIS,
+	 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 See the License for the specific language governing permissions and
+	 limitations under the License.
+	-->
 
 	<property name="root.dir" value="${basedir}" />
 	<property file="${root.dir}/build.properties" />
@@ -358,7 +353,7 @@ SOFTWARE.
 	<!-- ================================================================== -->
 
 	<target name="deploy"
-			depends="install, test-contrib, mvn-deploy"
+			depends="install, test-examples, test-contrib, mvn-deploy"
 			description="--> deploy SNAPSHOT jar to shared repository">
 	</target>
 	
@@ -367,7 +362,7 @@ SOFTWARE.
 	<!-- ================================================================== -->
 
 	<target name="dist"
-		    depends="test-all, jar, doc"
+		    depends="test-all, jar, doc, jar-examples"
 	        description="--> create a tarball distribution">
 
 		<delete dir="${build.dir.dist}" />
@@ -376,12 +371,15 @@ SOFTWARE.
 		<mkdir dir="${build.dir.dist}" />
 		<mkdir dir="${build.dir.dist}/bin" />
 		<mkdir dir="${build.dir.dist}/doc" />
-		<mkdir dir="${build.dir.dist}/doc/licenses" />
 		<mkdir dir="${build.dir.dist}/doc/javadoc" />
 		<mkdir dir="${build.dir.dist}/doc/reports" />
 		<mkdir dir="${build.dir.dist}/lib" />
 		<mkdir dir="${build.dir.dist}/runtime" />
 		<mkdir dir="${build.dir.dist}/src" />
+		<mkdir dir="${build.dir.dist}/examples" />
+		<mkdir dir="${build.dir.dist}/examples/src" />
+		<mkdir dir="${build.dir.dist}/examples/lib" />
+		<mkdir dir="${build.dir.dist}/examples/doc" />
 
 		<!-- copy launch script to target -->
 		<copy todir="${build.dir.dist}/bin">
@@ -424,25 +422,36 @@ SOFTWARE.
 		<copy todir="${build.dir.dist}/doc">
 			<fileset file="${basedir}/doc/eclipse-formatter.properties" />
 		</copy>
-		<copy todir="${build.dir.dist}/doc/licenses">
-			<fileset dir="${basedir}/doc/licenses" />
-		</copy>
 		
-		<!-- copy the build file -->
+		<!-- copy the build file, build properties and pom file -->
 		<copy todir="${build.dir.dist}">
 			<fileset file="${basedir}/build.xml" />
-		</copy>
-
-		<!-- copy the build properties -->
-		<copy todir="${build.dir.dist}">
 			<fileset file="${basedir}/build.properties" />
-		</copy>
-
-		<!-- copy the pom file -->
-		<copy todir="${build.dir.dist}">
 			<fileset file="${basedir}/pom.xml" />
 		</copy>
 
+		<!-- copy the examples files -->
+		<copy todir="${build.dir.dist}/examples">
+			<fileset file="${basedir}/examples/pom.xml" />
+			<fileset file="${basedir}/examples/build.properties" />
+			<fileset file="${basedir}/examples/build.xml" />
+			<fileset file="${basedir}/examples/README" />
+		</copy>
+		<copy todir="${build.dir.dist}/examples/src">
+			<fileset dir="${basedir}/examples/src" />
+		</copy>
+		<copy todir="${build.dir.dist}/examples/lib">
+			<fileset dir="${basedir}/examples/lib" />
+		</copy>
+		<copy todir="${build.dir.dist}/examples/doc">
+			<fileset dir="${basedir}/examples/doc" />
+		</copy>
+		<!-- copy bixo-examples jar to dist dir -->
+		<copy todir="${build.dir.dist}">
+			<fileset file="${basedir}/examples/build/*.jar" />
+		</copy>
+
+		
 		<tar longfile="gnu" compression="gzip" destfile="${build.release.file}">
 			<tarfileset dir="${build.dir.dist}">
 			    <include name="**" />
@@ -537,17 +546,51 @@ SOFTWARE.
 		<antcall target="clean" />
 		<!-- <antcall target="clean-eclipse" /> -->
 		<antcall target="clean-eclipse-build"/>
+		<antcall target="clean-examples" />
 		<antcall target="clean-contrib" />
 	</target>
 
 	<target name="test-all"
-			depends="test, test-lr, test-it, test-contrib"
+			depends="test, test-lr, test-it, test-examples, test-contrib"
 			description="--> run all tests">
 	</target>
 
 	<target name="compile-all"
-			depends="compile, compile-test, compile-integration-test, compile-contrib"
-			description="--> compile all files including tests and contrib">
+			depends="compile, compile-test, compile-integration-test, compile-examples, compile-contrib"
+			description="--> compile all files including tests, examples and contrib">
+	</target>
+
+	<!-- ================================================================== -->
+	<!-- Examples targets                                         			-->
+	<!-- ================================================================== -->
+	<target name="compile-examples"
+			depends="mvn-install"
+	        description="--> compile examples">
+		<subant target="compile">
+			<fileset dir="./examples" includes="build.xml"/>
+        </subant>
+	</target>
+
+	<target name="test-examples"
+	        description="--> run tests on examples">
+		<subant target="test">
+			<fileset dir="./examples" includes="build.xml"/>
+        </subant>
+	</target>
+
+	<target name="clean-examples"
+	        description="--> clean all examples">
+		<subant target="clean">
+			<fileset dir="./examples" includes="build.xml"/>
+        </subant>
+	</target>
+
+	<target name="jar-examples"
+			depends="clean-examples"
+	        description="--> build examples jar">
+		<subant target="jar">
+			<fileset dir="./examples" includes="build.xml"/>
+        </subant>
 	</target>
 
 	<!-- ================================================================== -->

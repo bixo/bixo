@@ -1,0 +1,4 @@
+# Every bot that might possibly read and respect this file.
+User-agent: *
+Disallow: /*?
+Disallow: /*/with_friends

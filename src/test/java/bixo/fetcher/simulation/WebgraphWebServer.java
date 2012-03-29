@@ -1,3 +1,19 @@
+/*
+ * Copyright 2009-2012 Scale Unlimited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 package bixo.fetcher.simulation;
 
 import it.unimi.dsi.fastutil.io.BinIO;
@@ -8,11 +24,14 @@ import it.unimi.dsi.webgraph.ImmutableGraph;
 import java.io.IOException;
 import java.util.List;
 
-import org.mortbay.http.HttpException;
-import org.mortbay.http.HttpRequest;
-import org.mortbay.http.HttpResponse;
-import org.mortbay.http.HttpServer;
-import org.mortbay.http.handler.AbstractHttpHandler;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.mortbay.jetty.HttpException;
+import org.mortbay.jetty.Response;
+import org.mortbay.jetty.Server;
+import org.mortbay.jetty.handler.AbstractHandler;
+
 
 /**
  * A webserver serving content out of a webgraph.
@@ -26,7 +45,7 @@ public class WebgraphWebServer extends SimulationWebServer {
     private Object2LongFunction<? extends CharSequence> _url2node;
     private ImmutableGraph _graph;
     private int _port;
-    private HttpServer _server;
+    private Server _server;
 
     /**
      * @param pathToWebgraphBase
@@ -49,14 +68,13 @@ public class WebgraphWebServer extends SimulationWebServer {
 
     }
 
-    @SuppressWarnings("serial")
-    private class WebgraphHandler extends AbstractHttpHandler {
+    private class WebgraphHandler extends AbstractHandler {
 
         private static final String NODE = "/node/";
         private static final String URL = "/url/";
 
         @Override
-        public void handle(String pathInContext, String pathParams, HttpRequest request, HttpResponse response) throws HttpException, IOException {
+        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
             byte[] bytes = null;
             if (pathInContext.startsWith(NODE)) {
                 String nodeIdStr = pathInContext.substring(NODE.length());
@@ -71,9 +89,12 @@ public class WebgraphWebServer extends SimulationWebServer {
             } else {
                 throw new RuntimeException("unhandleable url");
             }
-            response.getHeader().add("Content-Length", "" + bytes.length);
-            response.getOutputStream().write(bytes);
-            response.getOutputStream().flush();
+            if (response instanceof  Response) {
+                Response jettyResponse = (Response) response;
+                jettyResponse.setHeader("Content-Length", "" + bytes.length);
+                jettyResponse.getOutputStream().write(bytes);
+                jettyResponse.getOutputStream().flush();
+            }
 
         }
 
@@ -124,7 +145,7 @@ public class WebgraphWebServer extends SimulationWebServer {
 
     }
 
-    public void stop() throws InterruptedException {
+    public void stop() throws Exception {
         _server.stop();
     }
 }
