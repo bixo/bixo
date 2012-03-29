@@ -38,6 +38,7 @@ public class SimpleCrawlToolOptions {
     private String _outputDir;
     private String _agentName;
     private String _domain;
+    private String _siteList;
     
     private int _crawlDuration = NO_CRAWL_DURATION;
     private int _maxThreads = DEFAULT_MAX_THREADS;
@@ -47,6 +48,11 @@ public class SimpleCrawlToolOptions {
     @Option(name = "-domain", usage = "domain to crawl (e.g. cnn.com)", required = true)
     public void setDomain(String domain) {
         _domain = domain;
+    }
+    
+    @Option(name = "-sitelist", usage = "path of a text file containing the list of domains to crawl", required = false)
+    public void setSitelist(String siteList) {
+        _siteList = siteList;
     }
 
     @Option(name = "-d", usage = "debug logging", required = false)
@@ -90,6 +96,9 @@ public class SimpleCrawlToolOptions {
 
     public String getDomain() {
         return _domain;
+    }
+    public String getSiteList() {
+        return _siteList;
     }
 
     public String getAgentName() {

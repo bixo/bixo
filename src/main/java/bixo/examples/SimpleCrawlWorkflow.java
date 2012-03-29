@@ -36,6 +36,7 @@ import org.apache.log4j.Logger;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
+import bixo.datum.MailDatum;
 import bixo.datum.ParsedDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
@@ -56,6 +57,7 @@ import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 import cascading.operation.OperationCall;
+import cascading.operation.regex.RegexGenerator;
 import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
@@ -73,11 +75,9 @@ import com.bixolabs.cascading.NullContext;
 import com.bixolabs.cascading.SplitterAssembly;
 import com.bixolabs.cascading.TupleLogger;
 
-
 public class SimpleCrawlWorkflow {
 
     private static final Logger LOGGER = Logger.getLogger(SimpleCrawlWorkflow.class);
-
 
     @SuppressWarnings("serial")
     private static class SplitFetchedUnfetchedCrawlDatums extends BaseSplitter {
@@ -92,15 +92,9 @@ public class SimpleCrawlWorkflow {
         public boolean isLHS(TupleEntry tupleEntry) {
             CrawlDbDatum datum = new CrawlDbDatum(tupleEntry);
             UrlStatus status = datum.getLastStatus();
-            if (status == UrlStatus.UNFETCHED
-                || status == UrlStatus.SKIPPED_DEFERRED
-                || status == UrlStatus.SKIPPED_BY_SCORER
-                || status == UrlStatus.SKIPPED_BY_SCORE
-                || status == UrlStatus.SKIPPED_TIME_LIMIT
-                || status == UrlStatus.SKIPPED_INTERRUPTED
-                || status == UrlStatus.SKIPPED_INEFFICIENT
-                || status == UrlStatus.ABORTED_SLOW_RESPONSE
-                || status == UrlStatus.ERROR_IOEXCEPTION) {
+            if (status == UrlStatus.UNFETCHED || status == UrlStatus.SKIPPED_DEFERRED || status == UrlStatus.SKIPPED_BY_SCORER || status == UrlStatus.SKIPPED_BY_SCORE
+                            || status == UrlStatus.SKIPPED_TIME_LIMIT || status == UrlStatus.SKIPPED_INTERRUPTED || status == UrlStatus.SKIPPED_INEFFICIENT
+                            || status == UrlStatus.ABORTED_SLOW_RESPONSE || status == UrlStatus.ERROR_IOEXCEPTION) {
                 return true;
             }
             return false;
@@ -132,12 +126,11 @@ public class SimpleCrawlWorkflow {
             urlDatum.setPayloadValue(CrawlDbDatum.LAST_UPDATED_FIELD, datum.getLastUpdated());
             urlDatum.setPayloadValue(CrawlDbDatum.LAST_STATUS_FIELD, datum.getLastStatus().name());
             urlDatum.setPayloadValue(CrawlDbDatum.CRAWL_DEPTH, datum.getCrawlDepth());
-            
+
             funcCall.getOutputCollector().add(urlDatum.getTuple());
         }
     }
 
-    
     public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, SimpleCrawlToolOptions options) throws Throwable {
         JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
         int numReducers = HadoopUtils.getNumReducers(conf);
@@ -154,7 +147,8 @@ public class SimpleCrawlWorkflow {
         Tap inputSource = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), crawlDbPath.toString());
         Pipe importPipe = new Pipe("import pipe");
 
-        // Split into tuples that are to be fetched and that have already been fetched
+        // Split into tuples that are to be fetched and that have already been
+        // fetched
         SplitterAssembly splitter = new SplitterAssembly(importPipe, new SplitFetchedUnfetchedCrawlDatums());
 
         Pipe finishedDatumsFromDb = splitter.getRHSPipe();
@@ -162,15 +156,16 @@ public class SimpleCrawlWorkflow {
 
         // Convert the urlsToFetchPipe so that we now deal with UrlDatums.
         urlsToFetchPipe = new Each(urlsToFetchPipe, new CreateUrlDatumFromCrawlDbFunction());
-        // A TupleLogger is a good way to follow the tuples around in a flow. You can enable the output
+        // A TupleLogger is a good way to follow the tuples around in a flow.
+        // You can enable the output
         // of tuples by setting options.setDebugLogging() to true.
         urlsToFetchPipe = TupleLogger.makePipe(urlsToFetchPipe, true);
-        
+
         // Create the output sinks :
-        //      crawldb
-        //      content
-        //      parse
-        //      status
+        // crawldb
+        // content
+        // parse
+        // status
         Path outCrawlDbPath = new Path(curWorkingDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
         Tap loopCrawldbSink = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), outCrawlDbPath.toString());
 
@@ -183,22 +178,28 @@ public class SimpleCrawlWorkflow {
         Path statusDirPath = new Path(curWorkingDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
         Tap statusSink = new Hfs(new TextLine(), statusDirPath.toString());
 
+        Path productsDirPath = new Path(curWorkingDirPath, CrawlConfig.PRODUCTS_SUBDIR_NAME);
+        Tap productsSink = new Hfs(new TextLine(/*MailDatum.FIELDS*/), productsDirPath.toString());
+
         // Create the sub-assembly that runs the fetch job
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(options.getMaxThreads(), fetcherPolicy, userAgent);
         fetcher.setMaxRetryCount(CrawlConfig.MAX_RETRIES);
         fetcher.setSocketTimeout(CrawlConfig.SOCKET_TIMEOUT);
         fetcher.setConnectionTimeout(CrawlConfig.CONNECTION_TIMEOUT);
 
-        // You can also provide a set of mime types you want to restrict what content type you 
-        // want to deal with - for now keep it simple.
+        // You can also provide a set of mime types you want to restrict what
+        // content type you want to deal with - for now keep it simple.
         Set<String> validMimeTypes = new HashSet<String>();
         validMimeTypes.add("text/plain");
         validMimeTypes.add("text/html");
         fetcherPolicy.setValidMimeTypes(validMimeTypes);
 
-        // The scorer is used by the FetchPipe to assign a score to every URL that passes the 
-        // robots.txt processing. The score is used to sort URLs such that higher scoring URLs
-        // are fetched first. If URLs are skipped for any reason(s) lower scoring URLs are skipped.
+        // The scorer is used by the FetchPipe to assign a score to every URL
+        // that passes the
+        // robots.txt processing. The score is used to sort URLs such that
+        // higher scoring URLs
+        // are fetched first. If URLs are skipped for any reason(s) lower
+        // scoring URLs are skipped.
         BaseScoreGenerator scorer = new FixedScoreGenerator();
 
         FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, numReducers);
@@ -206,49 +207,66 @@ public class SimpleCrawlWorkflow {
         Pipe contentPipe = new Pipe("content pipe", fetchPipe.getContentTailPipe());
         contentPipe = TupleLogger.makePipe(contentPipe, true);
 
-        
-        // Take content and split it into content output plus parse to extract URLs.
+        // Take content and split it into content output plus parse to extract
+        // URLs.
         SimpleParser parser = new SimpleParser();
         parser.setExtractLanguage(false);
         ParsePipe parsePipe = new ParsePipe(contentPipe, parser);
 
+        // MICO: this is where the useful work is done
+        Pipe productsPipe = new Pipe("products pipe", parsePipe.getTailPipe());
+        //productsPipe = new Each(productsPipe, new CreateMailDatumsFunction());
+        String regex = "[_A-Za-z0-9-]+(\\.[_A-Za-z0-9-]+)*@[A-Za-z0-9]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})";
+        Function function = new RegexGenerator( new Fields( "email" ), regex );
+        productsPipe = new Each(productsPipe, new Fields( "ParsedDatum-parsedText" ), function );
+        productsPipe = TupleLogger.makePipe(productsPipe, true);
+
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction());
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new UrlFilter(urlFilter));
+        
+        // Skip the URL filter if we are crawling a site list
+        if (options.getSiteList() == null || options.getSiteList().isEmpty())
+            urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new UrlFilter(urlFilter));
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new NormalizeUrlFunction(new SimpleUrlNormalizer()));
         urlFromOutlinksPipe = TupleLogger.makePipe(urlFromOutlinksPipe, true);
 
-
-        // Take status and output urls from it  
+        // Take status and output urls from it
         Pipe urlFromFetchPipe = new Pipe("url from fetch");
         urlFromFetchPipe = new Each(statusPipe, new CreateUrlDatumFromStatusFunction());
         urlFromFetchPipe = TupleLogger.makePipe(urlFromFetchPipe, true);
 
-        // Finally join the URLs we get from parsing content with the URLs we got
-        // from the status ouput, and the urls we didn't process from the db so that 
+        // Finally join the URLs we get from parsing content with the URLs we
+        // got
+        // from the status ouput, and the urls we didn't process from the db so
+        // that
         // we have a unified stream of all known URLs for the crawldb.
         Pipe finishedUrlsFromDbPipe = new Each(finishedDatumsFromDb, new CreateUrlDatumFromCrawlDbFunction());
         finishedUrlsFromDbPipe = TupleLogger.makePipe(finishedUrlsFromDbPipe, true);
 
-        // NOTE : Ideally you would just do a CoGroup instead of converting all the pipes to emit UrlDatums 
-        // and then doing the extra step of converting from UrlDatum to CrawlDbDatum.
-        // The reason this isn't being done here is because we are sharing LatestUrlDatumBuffer() with JDBCCrawlTool
-        Pipe crawlDbPipe = new GroupBy("crawldb pipe", Pipe.pipes(urlFromFetchPipe, urlFromOutlinksPipe, finishedUrlsFromDbPipe), 
-                        new Fields(UrlDatum.URL_FN));
+        // NOTE : Ideally you would just do a CoGroup instead of converting all
+        // the pipes to emit UrlDatums
+        // and then doing the extra step of converting from UrlDatum to
+        // CrawlDbDatum.
+        // The reason this isn't being done here is because we are sharing
+        // LatestUrlDatumBuffer() with JDBCCrawlTool
+        Pipe crawlDbPipe = new GroupBy("crawldb pipe", Pipe.pipes(urlFromFetchPipe, urlFromOutlinksPipe, finishedUrlsFromDbPipe), new Fields(UrlDatum.URL_FN));
         crawlDbPipe = new Every(crawlDbPipe, new LatestUrlDatumBuffer(), Fields.RESULTS);
-        
-        Pipe outputPipe = new Pipe ("output pipe");
+
+        Pipe outputPipe = new Pipe("output pipe");
         outputPipe = new Each(crawlDbPipe, new CreateCrawlDbDatumFromUrlFunction());
-        
-        // Create the output map that connects each tail pipe to the appropriate sink.
+
+        // Create the output map that connects each tail pipe to the appropriate
+        // sink.
         Map<String, Tap> sinkMap = new HashMap<String, Tap>();
         sinkMap.put(statusPipe.getName(), statusSink);
         sinkMap.put(contentPipe.getName(), contentSink);
         sinkMap.put(ParsePipe.PARSE_PIPE_NAME, parseSink);
         sinkMap.put(crawlDbPipe.getName(), loopCrawldbSink);
+        sinkMap.put(productsPipe.getName(), productsSink);
 
         FlowConnector flowConnector = new FlowConnector(props);
-        Flow flow = flowConnector.connect(inputSource, sinkMap, statusPipe, contentPipe, parsePipe.getTailPipe(), outputPipe);
+        Flow flow = flowConnector.connect(inputSource, sinkMap, statusPipe, contentPipe, parsePipe.getTailPipe(), outputPipe, productsPipe);
 
         return flow;
     }
