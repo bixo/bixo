@@ -85,7 +85,7 @@ public class FetchSetDatumTest {
         Assert.assertEquals(pfd1, pfd2);
     }
     
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
     public void testGroupBy() throws Exception {
         List<ScoredUrlDatum> urls = makeUrls(2, null);

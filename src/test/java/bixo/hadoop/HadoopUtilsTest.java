@@ -28,6 +28,7 @@ import com.bixolabs.cascading.HadoopUtils;
 
 
 
+@SuppressWarnings("deprecation")
 public class HadoopUtilsTest {
 
 	@Test

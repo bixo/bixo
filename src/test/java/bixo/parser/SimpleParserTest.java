@@ -29,10 +29,6 @@ import junit.framework.Assert;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.html.DefaultHtmlMapper;
-import org.apache.tika.parser.html.HtmlMapper;
-import org.apache.tika.parser.html.IdentityHtmlMapper;
 import org.junit.Test;
 
 import bixo.config.ParserPolicy;

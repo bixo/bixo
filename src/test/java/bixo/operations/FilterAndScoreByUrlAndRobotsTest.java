@@ -44,6 +44,7 @@ import cascading.tuple.TupleEntryCollector;
 
 import com.bixolabs.cascading.NullContext;
 
+@SuppressWarnings("deprecation")
 public class FilterAndScoreByUrlAndRobotsTest {
     private static final String CRLF = "\r\n";
 

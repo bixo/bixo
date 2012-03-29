@@ -42,7 +42,7 @@ import com.bixolabs.cascading.PartitioningKey;
  * Our output thus is one or more FetchSetDatums.
  *
  */
-@SuppressWarnings( { "serial", "unchecked" })
+@SuppressWarnings( { "serial" })
 public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
     private static final Logger LOGGER = Logger.getLogger(MakeFetchSetsBuffer.class);
 
@@ -60,7 +60,7 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
     }
 
     @Override
-    public void operate(FlowProcess process, BufferCall buffCall) {
+    public void operate(FlowProcess process, BufferCall<NullContext> buffCall) {
         Iterator<TupleEntry> values = buffCall.getArgumentsIterator();
         TupleEntry group = buffCall.getGroup();
         

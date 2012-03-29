@@ -31,6 +31,7 @@ import org.junit.Test;
 import com.bixolabs.cascading.HadoopUtils;
 
 
+@SuppressWarnings("deprecation")
 public class CrawlDirUtilsTest {
     
     JobConf _conf;

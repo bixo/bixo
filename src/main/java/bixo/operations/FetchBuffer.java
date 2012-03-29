@@ -53,7 +53,7 @@ import com.bixolabs.cascading.LoggingFlowProcess;
 import com.bixolabs.cascading.LoggingFlowReporter;
 import com.bixolabs.cascading.NullContext;
 
-@SuppressWarnings( { "serial", "unchecked" })
+@SuppressWarnings( { "serial" })
 public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<NullContext>, IFetchMgr {
     private static Logger LOGGER = Logger.getLogger(FetchBuffer.class);
 
@@ -245,7 +245,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     }
 
     @Override
-    public void prepare(FlowProcess flowProcess, OperationCall operationCall) {
+    public void prepare(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
         super.prepare(flowProcess, operationCall);
 
         _flowProcess = new LoggingFlowProcess((HadoopFlowProcess) flowProcess);
@@ -334,7 +334,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     }
 
     @Override
-    public void cleanup(FlowProcess process, OperationCall operationCall) {
+    public void cleanup(FlowProcess process, OperationCall<NullContext> operationCall) {
         try {
             // We don't know worst-case for amount of time a worker thread will effectively
             // "sleep" waiting for a FetchTask to be queued up, but we'll add in a bit of

@@ -19,7 +19,7 @@ package bixo.datum;
 import java.io.Serializable;
 import java.util.Map;
 
-@SuppressWarnings({ "unchecked", "serial" })
+@SuppressWarnings({ "serial", "rawtypes" })
 public class UrlAndMetadata implements Comparable, Serializable {
 
     private String _url;

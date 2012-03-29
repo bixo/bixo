@@ -25,7 +25,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.WritableComparable;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings("rawtypes")
 public class DiskBytesWritable implements WritableComparable {
     // private static final int LENGTH_BYTES = 4;
     // private static final byte[] EMPTY_BYTES = {};

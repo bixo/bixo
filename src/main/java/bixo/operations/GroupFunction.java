@@ -18,6 +18,8 @@ package bixo.operations;
 
 import org.apache.log4j.Logger;
 
+import com.bixolabs.cascading.NullContext;
+
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.UrlDatum;
 import cascading.flow.FlowProcess;
@@ -25,8 +27,8 @@ import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 
-@SuppressWarnings({ "serial", "unchecked" })
-public class GroupFunction extends BaseOperation implements Function {
+@SuppressWarnings({ "serial" })
+public class GroupFunction extends BaseOperation<NullContext> implements Function<NullContext> {
     private static final Logger LOGGER = Logger.getLogger(GroupFunction.class);
 
     private final BaseGroupGenerator _generator;
@@ -38,7 +40,7 @@ public class GroupFunction extends BaseOperation implements Function {
     }
 
     @Override
-    public void operate(FlowProcess process, FunctionCall funCall) {
+    public void operate(FlowProcess process, FunctionCall<NullContext> funCall) {
         String key;
         try {
             UrlDatum datum = new UrlDatum(funCall.getArguments());

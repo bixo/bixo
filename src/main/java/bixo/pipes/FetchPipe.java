@@ -104,8 +104,7 @@ public class FetchPipe extends SubAssembly {
         }
     }
     
-    @SuppressWarnings({ "unchecked" })
-    private static class FilterErrorsFunction extends BaseOperation implements Function {
+    private static class FilterErrorsFunction extends BaseOperation<NullContext> implements Function<NullContext> {
         private int _fieldPos;
         private int[] _fieldsToCopy;
         
@@ -125,8 +124,9 @@ public class FetchPipe extends SubAssembly {
             }
         }
 
+        @SuppressWarnings("rawtypes")
         @Override
-        public void operate(FlowProcess process, FunctionCall funcCall) {
+        public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
             Tuple t = funcCall.getArguments().getTuple();
             
             // Get the status to decide if it's a good fetch
@@ -137,8 +137,7 @@ public class FetchPipe extends SubAssembly {
         }
     }
 
-    @SuppressWarnings({ "unchecked" })
-    private static class MakeStatusFunction extends BaseOperation implements Function {
+    private static class MakeStatusFunction extends BaseOperation<NullContext> implements Function<NullContext> {
         private int _fieldPos;
         
         // Output an appropriate StatusDatum based on whether we were able to fetch
@@ -150,8 +149,9 @@ public class FetchPipe extends SubAssembly {
             _fieldPos = FetchedDatum.FIELDS.size();
         }
 
+        @SuppressWarnings("rawtypes")
         @Override
-        public void operate(FlowProcess process, FunctionCall funcCall) {
+        public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
             TupleEntry entry = funcCall.getArguments();
             FetchedDatum fd = new FetchedDatum(entry);
             

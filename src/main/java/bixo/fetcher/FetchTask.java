@@ -54,7 +54,7 @@ public class FetchTask implements Runnable {
         _ref = ref;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     @Override
     public void run() {
         LoggingFlowProcess process = _fetchMgr.getProcess();

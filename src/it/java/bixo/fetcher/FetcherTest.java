@@ -47,6 +47,7 @@ import cascading.tap.Tap;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 
+@SuppressWarnings("deprecation")
 public class FetcherTest {
     private static final Logger LOGGER = Logger.getLogger(FetcherTest.class);
     

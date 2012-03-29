@@ -185,7 +185,6 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
         }
     }
     
-    @SuppressWarnings("unchecked")
     public static Set<String> loadUrlShorteners() throws IOException {
         Set<String> result = new HashSet<String>();
         List<String> lines = IOUtils.readLines(UrlLengthener.class.getResourceAsStream("/url-shorteners.txt"), "UTF-8");

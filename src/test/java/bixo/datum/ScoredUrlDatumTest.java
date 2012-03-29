@@ -31,6 +31,7 @@ import cascading.tuple.TupleEntryCollector;
 import com.bixolabs.cascading.PartitioningKey;
 
 
+@SuppressWarnings("deprecation")
 public class ScoredUrlDatumTest {
 
 
