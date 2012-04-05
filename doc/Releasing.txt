@@ -31,10 +31,13 @@ Temporarily change the version number of the components (TODO should be scripted
  - contrib/helpful/pom.xml : in addition to changing the version for the component also change the 
    bixo-core artifact version number.
  - contrib/helpful/build.properties
-% ant clean-all dist
+% ant clean-all
+% ant install
+% ant dist
 
 4. Update bixo-core in the Bixo Maven repository
-% mvn deploy:deploy-file -Dfile=build/release/bixo-core-x.y.z.jar -DpomFile=build/release/bixo-core-x.y.z.pom -Durl=file:///Users/kenkrugler/git/bixo-pages/repo/
+% cp ~/.m2/repository/bixo/bixo-core/x.y.z/bixo-core-x.y.z.pom build/
+% mvn deploy:deploy-file -Dfile=build/bixo-core-x.y.z.jar -DpomFile=build/bixo-core-x.y.z.pom -Durl=file:///<path to local bixo-pages>/repo/
 % pushd ../bixo-pages
 % git add repo/
 % git commit -am "Updating bixo-core to x.y.z"
