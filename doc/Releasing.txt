@@ -13,7 +13,7 @@ little interest to users.
 <add/commit pending changes>
 % git pull
 <resolve any merge issues>
-% ant clean dist
+% ant test
 % git push
 
 2. Tag the master with the target release version
@@ -21,13 +21,19 @@ little interest to users.
 % git tag -am "Tagging version x.y.z" x.y.z
 % git push --tags
 
-3. Update bixo-core in the Bixo Maven repository
+3. Build the dist
+Temporarily change the version number of the components (TODO should be scripted):
+ - pom.xml
+ - build.properties
+ - examples/pom.xml : in addition to changing the version for the component also change the 
+   bixo-core artifact version number.
+ - examples/build.properties
+ - contrib/helpful/pom.xml : in addition to changing the version for the component also change the 
+   bixo-core artifact version number.
+ - contrib/helpful/build.properties
+% ant clean-all dist
 
-% rm -rf build/release
-% mkdir build/release
-% cp build/bixo-core-1.0-SNAPSHOT.jar build/release/bixo-core-x.y.z.jar
-% cp pom.xml build/release/bixo-core-x.y.z.pom
-% nano build/release/bixo-core-x.y.z.pom (fix version number)
+4. Update bixo-core in the Bixo Maven repository
 % mvn deploy:deploy-file -Dfile=build/release/bixo-core-x.y.z.jar -DpomFile=build/release/bixo-core-x.y.z.pom -Durl=file:///Users/kenkrugler/git/bixo-pages/repo/
 % pushd ../bixo-pages
 % git add repo/
@@ -35,21 +41,20 @@ little interest to users.
 % git push
 % popd
 
-4. Generate/fix references
-
-% cp build/bixo-dist-1.0-SNAPSHOT.tgz build/release/bixo-dist-x.y.z.tgz
-
+5. Upload dist
 Go to http://github.com/bixo/bixo/downloads
-Upload build/release/bixo-dist-x.y.z.tgz (this will take a while)
+Upload build/bixo-dist-x.y.z.tgz (this will take a while)
 Remove the previous release (if minor version change)
 
+6. Revert temporary version changes
 
-- update openbixo.org pages
- * Maven settings, link
+7. Update openbixo.org 
+	http://openbixo.org/documentation/getting-started/
+ 	* Maven settings, link
 
-- send email to list
+8. Send email to list
 
-5. Future...
+9. Future...
 
 - build dist, upload to GitHub
 - script the above
