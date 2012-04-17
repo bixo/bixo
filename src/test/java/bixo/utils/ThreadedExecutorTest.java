@@ -27,11 +27,11 @@ public class ThreadedExecutorTest {
 
     @Test
     public void testNoRejection() {
-        final long timeoutInMS = 20;
+        final long timeoutInMS = 100;
 
         ThreadedExecutor executor = new ThreadedExecutor(1, timeoutInMS);
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10; i++) {
             try {
                 Runnable cmd = new Runnable() {
                     public void run() {
