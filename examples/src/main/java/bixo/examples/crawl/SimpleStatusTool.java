@@ -57,10 +57,10 @@ public class SimpleStatusTool {
             TupleEntry entry = iter.next();
             totalEntries += 1;
     
-            // STATUS_FN, HEADERS_FN, EXCEPTION_FN, STATUS_TIME_FN, HOST_ADDRESS_FN).append(getSuperFields(StatusDatum.class)
+            // URL_FN, STATUS_FN, HEADERS_FN, EXCEPTION_FN, STATUS_TIME_FN, HOST_ADDRESS_FN).append(getSuperFields(StatusDatum.class)
             String statusLine = entry.getString("line");
             String[] pieces = statusLine.split("\t");
-            UrlStatus status = UrlStatus.valueOf(pieces[0]);
+            UrlStatus status = UrlStatus.valueOf(pieces[1]);
             statusCounts[status.ordinal()] += 1;
         }
         
