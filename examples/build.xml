@@ -179,6 +179,7 @@
 
 		<jar jarfile="${build.dir}/${jar.name}"
 		     basedir="${build.dir.main-classes}">
+			<fileset dir="${main.res.dir}" />
 			<manifest>
 				<section name="examples">
 					<attribute name="Implementation-Vendor"
