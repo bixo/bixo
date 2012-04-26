@@ -44,6 +44,7 @@ while [ -h "$THIS" ]; do
   fi
 done
 
+
 # if no args specified, show usage
 if [ $# = 0 ]; then
   echo "Usage: bixo COMMAND"
@@ -63,7 +64,8 @@ shift
 
 # some directories
 THIS_DIR=`dirname "$THIS"`
-BIXO_HOME=`cd "$THIS_DIR/.." ; pwd`
+BIXO_HOME=`cd "$THIS_DIR/../.." ; pwd`
+
 
 # some Java parameters
 if [ "$BIXO_JAVA_HOME" != "" ]; then
@@ -101,8 +103,6 @@ BIXO_CORE=`find "$BIXO_HOME/" -name "bixo-core-*.jar"`
 if [ -z BIXO_CORE ]; then
 	echo "Unable to find the bixo-core jar"
 	exit 1
-else 
-	BIXO_LIB_HOME=${BIXO_CORE%/bixo-core-*.jar}/runtime
 fi
 CLASSPATH=${CLASSPATH}:$BIXO_CORE
 
@@ -110,11 +110,13 @@ BIXO_EXAMPLES=`find "$BIXO_HOME/" -name "bixo-examples-*.jar"`
 if [ -z BIXO_EXAMPLES ]; then
 	echo "Unable to find the bixo-examples jar"
 	exit 1
+else 
+	EXAMPLES_RUNTIME_LIB_HOME=${BIXO_EXAMPLES%/bixo-examples-*.jar}/runtime
 fi
 CLASSPATH=${CLASSPATH}:$BIXO_EXAMPLES
 
 # add libs to CLASSPATH
-for f in $BIXO_LIB_HOME/*.jar; do
+for f in $EXAMPLES_RUNTIME_LIB_HOME/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 
@@ -188,10 +190,12 @@ if [ "$COMMAND" = "crawl" ] ; then
   CLASS=bixo.examples.crawl.SimpleCrawlTool
 elif [ "$COMMAND" = "status" ] ; then
   CLASS=bixo.examples.crawl.SimpleStatusTool
+elif [ "$COMMAND" = "webmining" ] ; then
+  CLASS=bixo.examples.webmining.WebMiningTool
 else
   CLASS=$COMMAND
 fi
 
+
 # run it
 exec "$JAVA" $JAVA_HEAP_MAX $BIXO_OPTS -classpath "$CLASSPATH" $CLASS "$@"
-

@@ -362,33 +362,24 @@
 	<!-- ================================================================== -->
 
 	<target name="dist"
-		    depends="test-all, jar, doc, jar-examples"
+		    depends="test-all, jar, doc, dist-examples"
 	        description="--> create a tarball distribution">
 
 		<delete dir="${build.dir.dist}" />
 
 		<!-- create target directory -->
 		<mkdir dir="${build.dir.dist}" />
-		<mkdir dir="${build.dir.dist}/bin" />
 		<mkdir dir="${build.dir.dist}/doc" />
 		<mkdir dir="${build.dir.dist}/doc/javadoc" />
 		<mkdir dir="${build.dir.dist}/doc/reports" />
 		<mkdir dir="${build.dir.dist}/lib" />
-		<mkdir dir="${build.dir.dist}/runtime" />
 		<mkdir dir="${build.dir.dist}/src" />
 		<mkdir dir="${build.dir.dist}/examples" />
+		<mkdir dir="${build.dir.dist}/examples/bin" />
 		<mkdir dir="${build.dir.dist}/examples/src" />
 		<mkdir dir="${build.dir.dist}/examples/lib" />
 		<mkdir dir="${build.dir.dist}/examples/doc" />
-
-		<!-- copy launch script to target -->
-		<copy todir="${build.dir.dist}/bin">
-			<fileset dir="${basedir}/bin" />
-		</copy>
-		
-        <chmod perm="oug+x">
-          <fileset dir="${build.dir.dist}/bin" />
-        </chmod>
+		<mkdir dir="${build.dir.dist}/examples/runtime" />
     
         <!-- copy  javadoc to target dir  -->
 		<copy todir="${build.dir.dist}/doc/javadoc">
@@ -400,11 +391,11 @@
 			<fileset dir="${basedir}/lib" />
 		</copy>
 		
-		<!-- copy runtime -->
-		<copy todir="${build.dir.dist}/runtime" flatten="true">
+		<!-- copy runtime for examples 
+		<copy todir="${build.dir.dist}/examples/runtime" flatten="true">
 			<path refid="runtime.classpath" />
 		</copy>
-		
+		-->
 		<!-- copy src -->
 		<copy todir="${build.dir.dist}/src">
 			<fileset dir="${basedir}/src" />
@@ -437,6 +428,13 @@
 			<fileset file="${basedir}/examples/build.xml" />
 			<fileset file="${basedir}/examples/README" />
 		</copy>
+		
+		<copy todir="${build.dir.dist}/examples/bin">
+			<fileset dir="${basedir}/examples/bin" />
+		</copy>
+        <chmod perm="oug+x">
+          <fileset dir="${build.dir.dist}/examples/bin" />
+        </chmod>
 		<copy todir="${build.dir.dist}/examples/src">
 			<fileset dir="${basedir}/examples/src" />
 		</copy>
@@ -447,18 +445,22 @@
 			<fileset dir="${basedir}/examples/doc" />
 		</copy>
 		<!-- copy bixo-examples jar to dist dir -->
-		<copy todir="${build.dir.dist}">
+		<copy todir="${build.dir.dist}/examples">
 			<fileset file="${basedir}/examples/build/*.jar" />
+		</copy>
+		<!-- copy examples' runtime -->
+		<copy todir="${build.dir.dist}/examples/runtime" flatten="true">
+			<fileset dir="${basedir}/examples/build/runtime" />
 		</copy>
 
 		
 		<tar longfile="gnu" compression="gzip" destfile="${build.release.file}">
 			<tarfileset dir="${build.dir.dist}">
 			    <include name="**" />
-			    <exclude name="bin/*" />
+			    <exclude name="examples/bin/*" />
 			</tarfileset>
 			<tarfileset dir="${build.dir.dist}" mode="755">
-			    <include name="bin/*" />
+			    <include name="examples/bin/*" />
 			</tarfileset>
 		</tar>
 	</target>
@@ -589,6 +591,14 @@
 			depends="clean-examples"
 	        description="--> build examples jar">
 		<subant target="jar">
+			<fileset dir="./examples" includes="build.xml"/>
+        </subant>
+	</target>
+
+	<target name="dist-examples"
+			depends="jar-examples"
+	        description="--> set up necessary components from examples for the dist build">
+		<subant target="runtime">
 			<fileset dir="./examples" includes="build.xml"/>
         </subant>
 	</target>
