@@ -274,5 +274,16 @@
 		<delete dir=".settings" />
 	</target>
 
+	<!-- ================================================================== -->
+	<!-- Distribution help                                                  -->
+	<!-- ================================================================== -->
+	<target name="runtime" 
+			depends="mvn-init"
+	        description="--> set up runtime lib directory used when building the distribution">
+		<delete file="${build.dir}/runtime" />
+		<copy todir="${build.dir}/runtime" flatten="true">
+			<path refid="runtime.classpath" />
+		</copy>
+	</target>
 
 </project>
