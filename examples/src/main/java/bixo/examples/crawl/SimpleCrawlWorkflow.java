@@ -50,6 +50,7 @@ import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 import cascading.operation.OperationCall;
+import cascading.operation.regex.RegexGenerator;
 import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
@@ -178,6 +179,10 @@ public class SimpleCrawlWorkflow {
         Path statusDirPath = new Path(curWorkingDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
         Tap statusSink = new Hfs(new TextLine(), statusDirPath.toString());
 
+        Path productsDirPath = new Path(curWorkingDirPath, CrawlConfig.PRODUCTS_SUBDIR_NAME);
+        Tap productsSink = new Hfs(new TextLine(), productsDirPath.toString());
+        // Tap productsSink = new Hfs(new TextLine(ProductDatum.FIELDS), productsDirPath.toString());
+
         // Create the sub-assembly that runs the fetch job
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(options.getMaxThreads(), fetcherPolicy, userAgent);
         fetcher.setMaxRetryCount(CrawlConfig.MAX_RETRIES);
@@ -206,6 +211,15 @@ public class SimpleCrawlWorkflow {
         SimpleParser parser = new SimpleParser();
         parser.setExtractLanguage(false);
         ParsePipe parsePipe = new ParsePipe(contentPipe, parser);
+
+        Pipe productsPipe = new Pipe("products pipe", parsePipe);
+        // PRECIOUS Pipe productsPipe = new Pipe("products pipe", fetchPipe.getContentTailPipe());
+        String regex = "[a-z]+@[a-z]+.[a-z]+";
+        // WAS: String regex = "[\\w\\-]([\\.\\w])+[\\w]+@([\\w\\-]+\\.)+[A-Z]{2,4}";
+        Function emailExtractor = new RegexGenerator(new Fields("email"), regex);
+        productsPipe = new Each(productsPipe, emailExtractor);
+        // PRECIOUS productsPipe = new Each(productsPipe, new CreateProductDatumsFunction());
+        productsPipe = TupleLogger.makePipe(productsPipe, true);
 
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction());
@@ -243,6 +257,7 @@ public class SimpleCrawlWorkflow {
         sinkMap.put(contentPipe.getName(), contentSink);
         sinkMap.put(ParsePipe.PARSE_PIPE_NAME, parseSink);
         sinkMap.put(crawlDbPipe.getName(), loopCrawldbSink);
+        sinkMap.put(productsPipe.getName(), productsSink);
 
         FlowConnector flowConnector = new FlowConnector(props);
         Flow flow = flowConnector.connect(inputSource, sinkMap, statusPipe, contentPipe, parsePipe.getTailPipe(), outputPipe);
