@@ -37,25 +37,26 @@
 	</scm>
 	<packaging>jar</packaging>
 	<!-- Must be kept in sync with "version" value in build.properties -->
-	<version>1.0-SNAPSHOT</version>
-	
-	<repositories>
-		<repository>
-			<id>Bixo</id>
-			<name>Bixo GitHub repository</name>
-			<url>http://bixo.github.com/repo/</url>
-		</repository>
+    <!-- <version>1.0-SNAPSHOT</version> -->
+     <version>0.7.1</version>
 
-		<repository>
-			<id>Conjars</id>
-			<name>Cascading repository</name>
-			<url>http://conjars.org/repo</url>
-		</repository>
-	</repositories>
-	
-	<dependencies>
+     <repositories>
+         <repository>
+             <id>Bixo</id>
+             <name>Bixo GitHub repository</name>
+             <url>http://bixo.github.com/repo/</url>
+         </repository>
 
-		<!-- Compile time dependencies -->
+         <repository>
+             <id>Conjars</id>
+             <name>Cascading repository</name>
+             <url>http://conjars.org/repo</url>
+         </repository>
+     </repositories>
+
+     <dependencies>
+
+         <!-- Compile time dependencies -->
 		
 		<dependency>
             <groupId>cascading</groupId>

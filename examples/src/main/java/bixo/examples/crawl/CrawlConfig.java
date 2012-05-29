@@ -22,6 +22,8 @@ public class CrawlConfig {
     public static final String CONTENT_SUBDIR_NAME = "content";
     public static final String STATUS_SUBDIR_NAME = "status";
     public static final String PARSE_SUBDIR_NAME = "parse";
+    public static final String MAHOUT_SUBDIR_NAME = "mahout";
+
 
     public static final String WEB_ADDRESS = "http://wiki.github.com/bixo/bixo/bixocrawler";
     public static final String EMAIL_ADDRESS = "bixo-dev@yahoogroups.com";

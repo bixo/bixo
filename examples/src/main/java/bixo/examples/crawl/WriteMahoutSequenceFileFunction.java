@@ -1,0 +1,61 @@
+/*
+ * Copyright 2009-2012 Scale Unlimited
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+package bixo.examples.crawl;
+
+import bixo.datum.ParsedDatum;
+import cascading.flow.FlowProcess;
+import cascading.operation.BaseOperation;
+import cascading.operation.Function;
+import cascading.operation.FunctionCall;
+import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
+import com.bixolabs.cascading.NullContext;
+import org.apache.hadoop.io.Text;
+
+@SuppressWarnings("serial")
+public class WriteMahoutSequenceFileFunction extends BaseOperation<NullContext> implements Function<NullContext> {
+    private String _languageName = "";
+
+    public String getlanguageName() {
+        return _languageName;
+    }
+
+    public void setlanguageName(String languageName) {
+        _languageName = languageName;
+    }
+
+    public WriteMahoutSequenceFileFunction() {
+        super(new Fields(ParsedDatum.URL_FN, ParsedDatum.PARSED_TEXT_FN));
+    }
+
+    @Override
+    public void operate(FlowProcess process, FunctionCall<NullContext> funCall) {
+        ParsedDatum datum = new ParsedDatum(funCall.getArguments());
+        String lang = datum.getLanguage();
+        if( lang.equals("") || lang.contains(getlanguageName())){//unknown or specified lang
+            Text key = new Text(datum.getUrl());
+            //the parsed title will be the first line of the the mahout sequence file
+            Text value = new Text(datum.getTitle() + '\n' + datum.getParsedText());
+            Tuple mahoutKeyValue = new Tuple(key, value);
+            funCall.getOutputCollector().add(mahoutKeyValue);
+        } else {
+            //todo: turn this into a debug output or just comment out when its working
+            //this test seldom works because language detection in tika is weak, I think
+            //System.out.println("Datum filtered because language = " + lang + '\n');
+        }
+    }
+}
