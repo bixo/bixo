@@ -173,8 +173,6 @@ public class ExportDocsMahout2Mongo  {
                         false,
                         true);
                 if( vcount != lastNumberOfSimDocs ){
-                    //System.out222
-                    // .println("The last number of sim docs was " + String.valueOf(lastNumberOfSimDocs) + " this time we got " + String.valueOf(vcount) + '\n');
                     lastNumberOfSimDocs = vcount;
                 }
                 count++;
@@ -207,17 +205,6 @@ public class ExportDocsMahout2Mongo  {
                 String url = currentClusterConf.vectorNameToURL(record.getFirst().toString());
                 Vector vector = record.getSecond().get();
                 ArrayList termVector = getTermVector(vector, tmpDict);
-                /*Iterator<Vector.Element> vi = vector.iterateNonZero();//a very sparse vector so don't waist time on empty elements
-                ArrayList termVector = new ArrayList();
-                while (vi.hasNext() ){
-                    Vector.Element ve = vi.next();
-                    int tokenId = ve.index();
-                    double weight = ve.get();
-                    DBObject tokenRecord = tmpDict.findOne(new BasicDBObject("key", tokenId));
-                    termVector.add( tokenRecord.get("token"));
-                    termVector.add( weight );
-                }
-                */
                 //get the doc referenced by name
                 DBObject doc = docs.findOne( new BasicDBObject("url", url) );
                 if( doc != null ){

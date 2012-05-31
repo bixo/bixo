@@ -261,15 +261,14 @@ class BixoClusterConfiguration extends ClusterConfiguration {
     HashMap<String, String> createMap() {
         HashMap<String, String> result = new HashMap<String, String>();
         result.put("INPUT_ROOT_DIR", "b2");
-        result.put("PARENT_CLUSTER_NAME", "bixo");
-        result.put("DOC_FILES", "bixo-seqfiles");
-        result.put("DOC_TO_ROW_INDEX_FILES", "bixo-matrix/docIndex");
-        result.put("ROW_SIMILARITY_MATRIX_FILES", "bixo-similarity/part-r-00000");
-        result.put("NAMED_VECTOR_FILES", "bixo-vectors/tfidf-vectors/part-r-00000");
-        result.put("DICTIONARY_FILES", "bixo-vectors/dictionary.file-0");
-        //result.put("CLUSTER_FILES", "bixo-kmeans-clusters/clusters-1-final/part-r-00000");
-        result.put("CLUSTER_FILES", "bixo-kmeans-clusters");//place to find clusters
-        result.put("DOC_TO_CLUSTER_MAP_FILES", "bixo-kmeans-clusters/clusteredPoints/part-m-00000");
+        result.put("PARENT_CLUSTER_NAME", "crawl");
+        result.put("DOC_FILES", "seqfiles");
+        result.put("DOC_TO_ROW_INDEX_FILES", "matrix/docIndex");
+        result.put("ROW_SIMILARITY_MATRIX_FILES", "similarity/part-r-00000");
+        result.put("NAMED_VECTOR_FILES", "vectors/tfidf-vectors/part-r-00000");
+        result.put("DICTIONARY_FILES", "vectors/dictionary.file-0");
+        result.put("CLUSTER_FILES", "kmeans-clusters");//place to find clusters
+        result.put("DOC_TO_CLUSTER_MAP_FILES", "kmeans-clusters/clusteredPoints/part-m-00000");
         return result;
     }
 

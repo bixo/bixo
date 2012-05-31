@@ -24,14 +24,14 @@ public class ExportToolOptions {
 
     public static final int DEFAULT_MAX_THREADS = 10;
 
-    private String _segmentsDir;
+    private String _loopsDir;
     private String _outputDir;
     private boolean _overWrite = false;
     private int _maxThreads = DEFAULT_MAX_THREADS;
 
-    @Option(name = "-segmentsdir", usage = "location of the bixo segments (ALL! will be munged into mahout sequencefiles)", required = true)
-    public void setSegmentsDir(String segmentsDir) {
-        _segmentsDir = segmentsDir;
+    @Option(name = "-loopsdir", usage = "location of the bixo crawl loops (ALL! will be munged into mahout sequencefiles)", required = true)
+    public void setSegmentsDir(String loopsDir) {
+        _loopsDir = loopsDir;
     }
 
     @Option(name = "-outputdir", usage = "output directory for mahout sequence files", required = true)
@@ -54,7 +54,7 @@ public class ExportToolOptions {
     }
 
     public String getSegmentsDir() {
-        return _segmentsDir;
+        return _loopsDir;
     }
 
     public boolean getOverWrite() {

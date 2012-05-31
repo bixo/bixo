@@ -289,7 +289,7 @@ Key: VL-21536: Value: VL-21536{n=222 c=[0:0.004, 23:0.002,
 
     public void sortDocsByDistance() {
         // each cluster has a doc collection of the nearest clustered docs, sort them from closest to furthest
-        // for tanimoto this is the smallest number is better so 0 is identical so smaller is better
+        // for cosine this is the smallest number is better so 0 is identical so smaller is better
         Iterator topicsDocsIterator = topics.entrySet().iterator();
         while( topicsDocsIterator.hasNext() ){
             //all we care about here is the topicDocs array
@@ -304,7 +304,7 @@ Key: VL-21536: Value: VL-21536{n=222 c=[0:0.004, 23:0.002,
 
     public class DistanceComparator implements Comparator<HashMap> {
         @Override
-        public int compare(HashMap o1, HashMap o2) {//smaller to larger descending? seems wrong
+        public int compare(HashMap o1, HashMap o2) {//smaller to larger for cosine distance, 0=identical, 1 = far away
             return Double.valueOf(o1.get("distance").toString()).compareTo(Double.valueOf(o2.get("distance").toString()));
         }
     }

@@ -31,7 +31,7 @@ public class ExportAllToMahoutWorkflow {
     private static final int EXPORT_STACKSIZE_KB = 128;
 
     @SuppressWarnings("serial")
-    public static Flow createFlow( Path segmentsPath, ExportToolOptions options) throws Throwable {
+    public static Flow createFlow( Path loopsPath, ExportToolOptions options) throws Throwable {
         JobConf conf = HadoopUtils.getDefaultJobConf(EXPORT_STACKSIZE_KB);
         int numReducers = HadoopUtils.getNumReducers(conf);
         conf.setNumReduceTasks(numReducers);
@@ -40,16 +40,34 @@ public class ExportAllToMahoutWorkflow {
         int sourceNum = 0;
 
         FileSystem fs = FileSystem.get(conf);
-        FileStatus[] stats = fs.listStatus(segmentsPath);
+        FileStatus[] stats = fs.listStatus(loopsPath);
         Path[] segmentDirList = new Path[stats.length];
+        Path currentLoopDir;
         int fileNum = 0;
+        ArrayList<Tap> all = new ArrayList<Tap>();
+        Fields inFields = ParsedDatum.FIELDS;
         for( FileStatus s : stats ){
-            segmentDirList[fileNum++] = s.getPath();
+            currentLoopDir = s.getPath();
+            Path parseDir = new Path(currentLoopDir, "parse");
+            FileStatus[] parsedFilesStats = fs.listStatus(parseDir);
+            System.out.println("Path of parse: "+parseDir.toString()+ '\n');
+            if(parsedFilesStats != null ){//got a 'parse' dir with files
+                for(FileStatus f : parsedFilesStats){
+                    if(f.getPath().toString().contains("part-")){//found a part-xxxxx file
+                        Path filePath = new Path(f.getPath().toString());
+                        all.add(new Hfs( inFields, filePath.toString()));
+                    }
+                }
+            }
         }
+        Tap[] taps = all.toArray(new Tap[all.size()]);
 
         //get the mahout dir to write all mahout sequence files too
         Path sinkPath = new Path(options.getOutputDir());
-        //todo we have a -ow so delete output path contents if it is set
+        //delete any previous files if -ow option
+        if(options.getOverWrite() && !sinkPath.toString().equals("")){
+            fs.delete(sinkPath, true);//delete with all sub dirs
+        }
 
         //create the Mahout output pipe
         Pipe mahoutExporterPipe = new Pipe("accumulate parsed text to mahout sequence file");
@@ -57,17 +75,8 @@ public class ExportAllToMahoutWorkflow {
 
 
         Fields outFields = new Fields(ParsedDatum.URL_FN, ParsedDatum.PARSED_TEXT_FN);
-        Fields inFields = ParsedDatum.FIELDS;
         Path srcPath;
         Tap outputSink = new Hfs( new WritableSequenceFile(outFields, Text.class, Text.class), sinkPath.toString());
-        ArrayList<Tap> all = new ArrayList<Tap>();
-        for( Path pt : segmentDirList){
-            srcPath = new Path( pt, "parse/part-00000");
-            if( srcPath.getFileSystem(conf).exists(srcPath)){
-                all.add(new Hfs( inFields, srcPath.toString()));
-            }
-        }
-        Tap[] taps = all.toArray(new Tap[all.size()]);
         MultiSourceTap sources = new MultiSourceTap(taps);
         FlowConnector flowConnector = new FlowConnector( props );
         Flow flow = flowConnector.connect(sources, outputSink, mahoutExporterPipe);
