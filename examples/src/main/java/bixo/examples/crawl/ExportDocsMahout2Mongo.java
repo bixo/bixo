@@ -164,16 +164,20 @@ public class ExportDocsMahout2Mongo  {
                 //get the doc referenced by name
                 String url = getNameFromID(key, tmpIndex);
                 DBObject doc = docs.findOne( new BasicDBObject("url", url) );
-                doc.put("similar_pages", simDocs);
-                docs.findAndModify(new BasicDBObject("url", url),
-                        new BasicDBObject(),
-                        new BasicDBObject("sort", 1),
-                        false,
-                        doc,
-                        false,
-                        true);
-                if( vcount != lastNumberOfSimDocs ){
-                    lastNumberOfSimDocs = vcount;
+                if(doc != null){
+                    doc.put("similar_pages", simDocs);
+                    docs.findAndModify(new BasicDBObject("url", url),
+                            new BasicDBObject(),
+                            new BasicDBObject("sort", 1),
+                            false,
+                            doc,
+                            false,
+                            true);
+                    if( vcount != lastNumberOfSimDocs ){
+                        lastNumberOfSimDocs = vcount;
+                    }
+                } else {
+                    System.out.println("Doc not in index for url: "+url+'\n');
                 }
                 count++;
             }
