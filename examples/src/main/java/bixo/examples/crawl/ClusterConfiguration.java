@@ -257,6 +257,8 @@ class NutchClusterConfiguration extends ClusterConfiguration {
 class BixoClusterConfiguration extends ClusterConfiguration {
     String currentURL = new String();
     Configuration conf;
+    int titleWeight = 3;//this assume the title is in triplicate at the start of the page parsed text
+    //created by the ExportTool
 
     HashMap<String, String> createMap() {
         HashMap<String, String> result = new HashMap<String, String>();
@@ -272,6 +274,13 @@ class BixoClusterConfiguration extends ClusterConfiguration {
         return result;
     }
 
+    public int getTitleWeight(){
+        return titleWeight;
+    }
+
+    public void setTitleWeight(int tw){
+        titleWeight = tw;
+    }
 
     BixoClusterConfiguration(Configuration conf){
         super();
@@ -285,11 +294,17 @@ class BixoClusterConfiguration extends ClusterConfiguration {
 
     //todo should put this stuff in a doc filtering class probably
     public String extractNameFromBody(String body){
-        //the first line of the text is the Title, the rest is content
-        int end = body.indexOf('\n', 0);//get end of ::Title line
+        //titleWeight number of lines at the beginning are the Title duplicated for TFIDF weighting, the rest is content
+        int end = 0;
+        int start = 0;
+        for( int i = 1; i <= titleWeight; i++){
+            start = end;
+            end = body.indexOf('\n', end);//get end of Title line titleWeight times
+            end++;
+        }
         String title;
-        if( end > 0 ){//all is well
-            title = body.substring(0, end);
+        if( end > start ){//all is well
+            title = body.substring(start, end - 1);//remove the \n
         } else {//can't find Title so ...
             title = "No title";
         }
@@ -297,9 +312,15 @@ class BixoClusterConfiguration extends ClusterConfiguration {
     }
 
     public String extractSnippetFromBody(String body){
-        int start = 0 ;
-        int end = body.indexOf('\n', start);//get end of Title line
-        start = end + 1;
+        //titleWeight number of lines at the beginning are the Title duplicated for TFIDF weighting, the rest is content
+        int end = 0;
+        int start = 0;
+        for( int i = 1; i <= titleWeight; i++){
+            start = end;
+            end = body.indexOf('\n', end);//get end of Title line titleWeight times
+            end++;
+        }
+        start = end + 1;//start past the \n
         String snippet = "No snippet";
         Integer length = body.length();
         Integer newLength = 300 + end;//number of characters in the snippet might drop one if .indexOf() returned -1
@@ -314,6 +335,16 @@ class BixoClusterConfiguration extends ClusterConfiguration {
 
     public String cleanupBody(String body) {
         //return rest of body after splitting out date, blank line, name, blank line
+        //titleWeight number of lines at the beginning are the Title duplicated for TFIDF weighting, the rest is content
+        int end = 0;
+        int start = 0;
+        for( int i = 1; i <= titleWeight; i++){
+            start = end;
+            end = body.indexOf('\n', end);//get end of Title line titleWeight times
+            end++;
+        }
+        start = end + 1;
+        body = body.substring(start, body.length()-1 );
         return body;
     }
 

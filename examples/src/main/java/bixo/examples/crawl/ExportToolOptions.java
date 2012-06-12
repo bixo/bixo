@@ -24,14 +24,15 @@ public class ExportToolOptions {
 
     public static final int DEFAULT_MAX_THREADS = 10;
 
-    private String _loopsDir;
+    private String _crawlDir;
     private String _outputDir;
     private boolean _overWrite = false;
     private int _maxThreads = DEFAULT_MAX_THREADS;
+    private int _titleWeight = 1;
 
-    @Option(name = "-loopsdir", usage = "location of the bixo crawl loops (ALL! will be munged into mahout sequencefiles)", required = true)
-    public void setSegmentsDir(String loopsDir) {
-        _loopsDir = loopsDir;
+    @Option(name = "-crawldir", usage = "location of the bixo crawl loops (ALL! will be munged into mahout sequencefiles)", required = true)
+    public void setCrawlDir(String crawlDir) {
+        _crawlDir = crawlDir;
     }
 
     @Option(name = "-outputdir", usage = "output directory for mahout sequence files", required = true)
@@ -44,6 +45,11 @@ public class ExportToolOptions {
         _overWrite = overWrite;
     }
 
+    @Option(name = "-titleweight", usage = "number of time to duplicate the title in the seq files to boost its importance (default = 1)", required = false)
+    public void setNumLoops(int titleWeight) {
+        _titleWeight = titleWeight;
+    }
+
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
@@ -53,8 +59,8 @@ public class ExportToolOptions {
         return _outputDir;
     }
 
-    public String getSegmentsDir() {
-        return _loopsDir;
+    public String getCrawlDir() {
+        return _crawlDir;
     }
 
     public boolean getOverWrite() {

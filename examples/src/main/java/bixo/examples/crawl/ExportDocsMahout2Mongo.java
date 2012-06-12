@@ -306,7 +306,7 @@ public class ExportDocsMahout2Mongo  {
                 String newBody = currentClusterConf.cleanupBody(str);
                 doc.put("name", currentClusterConf.extractNameFromBody(str));
                 doc.put("body", newBody );
-                doc.put("snippet", currentClusterConf.extractSnippetFromBody(newBody));
+                doc.put("snippet", currentClusterConf.extractSnippetFromBody(str));
                 ArrayList tmpArray = new ArrayList();
                 doc.put("topic_ids", tmpArray);//add an empty array of Topics it belongs to
 

@@ -29,6 +29,8 @@ import org.apache.hadoop.io.Text;
 @SuppressWarnings("serial")
 public class WriteMahoutSequenceFileFunction extends BaseOperation<NullContext> implements Function<NullContext> {
     private String _languageName = "";
+    private int _titleWeight = 1;
+
 
     public String getlanguageName() {
         return _languageName;
@@ -36,6 +38,14 @@ public class WriteMahoutSequenceFileFunction extends BaseOperation<NullContext> 
 
     public void setlanguageName(String languageName) {
         _languageName = languageName;
+    }
+
+    public int getTitleWeight() {
+        return _titleWeight;
+    }
+
+    public void setTitleWeight(int titleWeight) {
+        _titleWeight = titleWeight;
     }
 
     public WriteMahoutSequenceFileFunction() {
@@ -48,8 +58,16 @@ public class WriteMahoutSequenceFileFunction extends BaseOperation<NullContext> 
         String lang = datum.getLanguage();
         if( lang.equals("") || lang.contains(getlanguageName())){//unknown or specified lang
             Text key = new Text(datum.getUrl());
+            String title = "";
             //the parsed title will be the first line of the the mahout sequence file
-            Text value = new Text(datum.getTitle() + '\n' + datum.getParsedText());
+            for(int i = 1; i <= _titleWeight; i++){
+                title += datum.getTitle();
+                title += '\n';//make sure new line to separate title copies
+            }
+            // this assume there is never a '\n' in a page title except the ones we put there
+            // otherwise the display code will not know how to combine them
+            // sort of a hacky way to boost the title!
+            Text value = new Text(title + '\n' + datum.getParsedText());
             Tuple mahoutKeyValue = new Tuple(key, value);
             funCall.getOutputCollector().add(mahoutKeyValue);
         } else {

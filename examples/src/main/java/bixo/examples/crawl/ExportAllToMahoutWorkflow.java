@@ -31,19 +31,16 @@ public class ExportAllToMahoutWorkflow {
     private static final int EXPORT_STACKSIZE_KB = 128;
 
     @SuppressWarnings("serial")
-    public static Flow createFlow( Path loopsPath, ExportToolOptions options) throws Throwable {
+    public static Flow createFlow( Path crawlPath, ExportToolOptions options) throws Throwable {
         JobConf conf = HadoopUtils.getDefaultJobConf(EXPORT_STACKSIZE_KB);
         int numReducers = HadoopUtils.getNumReducers(conf);
         conf.setNumReduceTasks(numReducers);
         Properties props = HadoopUtils.getDefaultProperties(ExportAllToMahoutWorkflow.class, false, conf);
         //create a merge of all sources in one flow
-        int sourceNum = 0;
 
         FileSystem fs = FileSystem.get(conf);
-        FileStatus[] stats = fs.listStatus(loopsPath);
-        Path[] segmentDirList = new Path[stats.length];
+        FileStatus[] stats = fs.listStatus(crawlPath);
         Path currentLoopDir;
-        int fileNum = 0;
         ArrayList<Tap> all = new ArrayList<Tap>();
         Fields inFields = ParsedDatum.FIELDS;
         for( FileStatus s : stats ){
@@ -71,7 +68,9 @@ public class ExportAllToMahoutWorkflow {
 
         //create the Mahout output pipe
         Pipe mahoutExporterPipe = new Pipe("accumulate parsed text to mahout sequence file");
-        mahoutExporterPipe = new Each(mahoutExporterPipe, new WriteMahoutSequenceFileFunction() );
+        WriteMahoutSequenceFileFunction wf = new WriteMahoutSequenceFileFunction();
+        wf.setTitleWeight(3);//write the title 3 times to weight it higher
+        mahoutExporterPipe = new Each(mahoutExporterPipe, wf );
 
 
         Fields outFields = new Fields(ParsedDatum.URL_FN, ParsedDatum.PARSED_TEXT_FN);

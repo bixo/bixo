@@ -49,11 +49,11 @@ public class ExportTool {
             outputDirName = options.getOutputDir();
             JobConf conf = new JobConf();
             Path outputPath = new Path(outputDirName);
-            Path segmentsPath = new Path(options.getSegmentsDir());
+            Path crawlPath = new Path(options.getCrawlDir());
             FileSystem fs = outputPath.getFileSystem(conf);
 
             // create a flow that takes all parsed text and accumulates into a single sink in mahout format
-            Flow exportToMahoutFlow = ExportAllToMahoutWorkflow.createFlow(segmentsPath, options);
+            Flow exportToMahoutFlow = ExportAllToMahoutWorkflow.createFlow(crawlPath, options);
             exportToMahoutFlow.complete();
         } catch (PlannerException e) {
             e.writeDOT("build/failed-flow.dot");
