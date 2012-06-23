@@ -25,9 +25,12 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import com.bixolabs.cascading.NullContext;
 import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
 
 @SuppressWarnings("serial")
 public class WriteMahoutSequenceFileFunction extends BaseOperation<NullContext> implements Function<NullContext> {
+    private static final Logger LOGGER = Logger.getLogger(UrlImporter.class);
+
     private String _languageName = "";
     private int _titleWeight = 1;
 
@@ -64,16 +67,15 @@ public class WriteMahoutSequenceFileFunction extends BaseOperation<NullContext> 
                 title += datum.getTitle();
                 title += '\n';//make sure new line to separate title copies
             }
-            // this assume there is never a '\n' in a page title except the ones we put there
+            // todo: this assumes there is never a '\n' in a page title except the ones we put there
             // otherwise the display code will not know how to combine them
             // sort of a hacky way to boost the title!
             Text value = new Text(title + '\n' + datum.getParsedText());
             Tuple mahoutKeyValue = new Tuple(key, value);
             funCall.getOutputCollector().add(mahoutKeyValue);
         } else {
-            //todo: turn this into a debug output or just comment out when its working
             //this test seldom works because language detection in tika is weak, I think
-            //System.out.println("Datum filtered because language = " + lang + '\n');
+            LOGGER.debug("Datum filtered because language = " + lang + '\n');
         }
     }
 }
