@@ -344,7 +344,12 @@ class BixoClusterConfiguration extends ClusterConfiguration {
             end++;
         }
         start = end + 1;
-        body = body.substring(start, body.length()-1 );
+        end = body.length()-1;
+        if( start > end || start < 0 ){
+            body = "";
+        } else {
+            body = body.substring(start, body.length()-1 );
+        }
         return body;
     }
 
