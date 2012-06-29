@@ -3,10 +3,10 @@ package bixo.examples.crawl;
 import com.mongodb.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.mahout.clustering.WeightedPropertyVectorWritable;
-import org.apache.mahout.clustering.kmeans.Cluster;
+import org.apache.mahout.clustering.classify.WeightedVectorWritable;
+import org.apache.mahout.clustering.iterator.ClusterWritable;
 import org.apache.mahout.common.Pair;
+import org.apache.mahout.common.distance.CosineDistanceMeasure;
 import org.apache.mahout.common.iterator.sequencefile.SequenceFileIterator;
 import org.apache.mahout.math.NamedVector;
 import org.bson.types.ObjectId;
@@ -43,6 +43,7 @@ class TopicMap  {
         private ArrayList<HashMap<String, Object>> topClusteredDocs;
         private ArrayList centroidTermWeights; //list of pairs, term, weight
         private ObjectId oId = null;
+        private org.apache.mahout.math.Vector centroid;
 
         public Topic(){
             parent_ids = new ArrayList<ObjectId>();
@@ -56,6 +57,14 @@ class TopicMap  {
 
         public void setName(String name) {
             this.name = name;
+        }
+
+        public org.apache.mahout.math.Vector getCentroid() {
+            return centroid;
+        }
+
+        public void setCentroid(org.apache.mahout.math.Vector centroid) {
+            this.centroid = centroid;
         }
 
         public ObjectId getParent() {// todo assumes array of only one element, one parent
@@ -153,33 +162,34 @@ class TopicMap  {
 
     public void writeClustersToDocs() throws Exception {
         try {
-            SequenceFileIterator<IntWritable, WeightedPropertyVectorWritable> iterator = new SequenceFileIterator<IntWritable, WeightedPropertyVectorWritable>(clusterConf.getDocToClusterMapFiles(), true, conf);
+            SequenceFileIterator<IntWritable, WeightedVectorWritable> iterator = new SequenceFileIterator<IntWritable, WeightedVectorWritable>(clusterConf.getDocToClusterMapFiles(), true, conf);
             int numClusteredDocs = 0;
 
             while (iterator.hasNext()) {// for each clustered doc
-                Pair<IntWritable, WeightedPropertyVectorWritable> record = iterator.next();
+                Pair<IntWritable, WeightedVectorWritable> record = iterator.next();
                 // first store the cluster
                 // store the cluster id, inclusion amount, distance, vector name, ignore the vector value since it's used elsewhere.
                 // as you iterate, add the values to the cluster id record
                 numClusteredDocs++;
                 //get the cluster_id for key to HashMap
                 String clusterId = String.valueOf(record.getFirst().get());
-                WeightedPropertyVectorWritable propVector = record.getSecond();
-                Map<Text, Text> props = propVector.getProperties();
-                Object distObj = props.get(new Text("distance"));
-                double dist = Double.valueOf(distObj.toString());
+                //calculate the distance of the clustered doc to the cluster centroid
+                // TODO: this is pretty heavy weight, there used to be a distance stored with the doc vector
+                CosineDistanceMeasure dm = new CosineDistanceMeasure();
+                WeightedVectorWritable clusteredDoc = record.getSecond();
+                double dist = dm.distance(topics.get(clusterId).getCentroid(), clusteredDoc.getVector());
                 if(!Double.isNaN(dist) && !Double.isInfinite(dist)){
-                    String rawName = ((NamedVector)( propVector.getVector())).getName();
+                    String rawName = ((NamedVector)( clusteredDoc.getVector())).getName();
                     String url = clusterConf.vectorNameToURL(rawName);
-                    DBObject clusteredDoc = docs.findOne(new BasicDBObject("url", url));
-                    if( clusteredDoc != null ){
+                    DBObject cd = docs.findOne(new BasicDBObject("url", url));
+                    if( cd != null ){
                         Topic curTop = topics.get(clusterId);
                         ObjectId topId = curTop.getObjectId();
                         BasicDBList curClusterList = new BasicDBList();
                         //((BasicDBList)clusteredDoc.get("cluster_ids")).add(topics.get(clusterId).getObjectId());
                         curClusterList.add(topId);
-                        clusteredDoc.put("topic_ids", curClusterList );
-                        docs.findAndModify(new BasicDBObject("url", url), new BasicDBObject(), new BasicDBObject(), false, clusteredDoc, false, true);
+                        cd.put("topic_ids", curClusterList );
+                        docs.findAndModify(new BasicDBObject("url", url), new BasicDBObject(), new BasicDBObject(), false, cd, false, true);
                     } else {//can't find the doc
                         System.out.println("Unable to find doc with url: " + url + '\n');
 
@@ -198,23 +208,37 @@ class TopicMap  {
         try {
             init();
 
-            SequenceFileIterator<IntWritable, WeightedPropertyVectorWritable> iterator = new SequenceFileIterator<IntWritable, WeightedPropertyVectorWritable>(clusterConf.getDocToClusterMapFiles(), true, conf);
+            this.getClusterCentroids();
+            SequenceFileIterator<IntWritable, WeightedVectorWritable> iterator = new SequenceFileIterator<IntWritable, WeightedVectorWritable>(clusterConf.getDocToClusterMapFiles(), true, conf);
             int numClusteredDocs = 0;
 
             while (iterator.hasNext()) {// for each clustered doc
-                Pair<IntWritable, WeightedPropertyVectorWritable> record = iterator.next();
+                Pair<IntWritable, WeightedVectorWritable> record = iterator.next();
                 // first store the cluster
                 // store the cluster id, inclusion amount, distance, vector name, ignore the vector value since it's used elsewhere.
                 // as you iterate, add the values to the cluster id record
                 numClusteredDocs++;
                 //get the cluster_id for key to HashMap
                 String clusterId = String.valueOf(record.getFirst().get());
-                WeightedPropertyVectorWritable propVector = record.getSecond();
-                Map<Text, Text> props = propVector.getProperties();
-                Object distObj = props.get(new Text("distance"));
-                double dist = Double.valueOf(distObj.toString());
+                WeightedVectorWritable clusteredDoc = record.getSecond();
+                /* double pdf = clusteredDoc.getWeight();
+                double dist;
+                //pdf = 1/(1+distance) and as of the Jeff Eastman patch the "distance" property is really the pdf
+                //so calulate the distance from it thus dist = (1/pdf)-1
+                if( pdf != 0 ) {
+                    dist = (1.0/pdf)-1;
+                } else {//if the pdf = 0 there is no likelihood the vector is part of the cluster
+                    dist = 1;//as far away as you can get
+                }
+                */
+
+                //calculate the distance of the clustered doc to the cluster centroid
+                // TODO: this is pretty heavy weight, there used to be a distance stored with the doc vector
+                CosineDistanceMeasure dm = new CosineDistanceMeasure();
+                double dist = dm.distance(topics.get(clusterId).getCentroid(), clusteredDoc.getVector());
+
                 if(!Double.isNaN(dist) && !Double.isInfinite(dist)){
-                    String rawName = ((NamedVector)( propVector.getVector())).getName();
+                    String rawName = ((NamedVector)( clusteredDoc.getVector())).getName();
                     if( topics.get(clusterId) == null ){
                         topics.put(clusterId, new Topic());
                     }
@@ -222,7 +246,7 @@ class TopicMap  {
                     topics.get(clusterId).setParent(parentId);//parentId points to parent of all these clusters
                     HashMap<String, Object> currentDoc = new HashMap<String, Object>() ;//array of quads for each doc, only will contain the ones closest to the cluster center.
                     currentDoc.put("url", clusterConf.vectorNameToURL(rawName));
-                    currentDoc.put("weight", propVector.getWeight());
+                    currentDoc.put("weight", clusteredDoc.getWeight());
                     currentDoc.put("distance", dist);
                     // store the doc id when storing this data to mongo
                     ArrayList topicDocs = topics.get(clusterId).getTopClusteredDocs();
@@ -258,7 +282,6 @@ class TopicMap  {
 
             //this.removeDanglingDocs();
             this.sortDocsByDistance();
-            this.getClusterCentroids();
             Boolean stopHere = true;
         } catch (Exception e){
             throw e;
@@ -269,19 +292,20 @@ class TopicMap  {
 Key: VL-21536: Value: VL-21536{n=222 c=[0:0.004, 23:0.002,
 * */
     public void getClusterCentroids() throws Exception {
-        SequenceFileIterator<Text, Cluster> iterator = new SequenceFileIterator<Text, Cluster>(clusterConf.getClusterFiles(), true, conf);
+        SequenceFileIterator<IntWritable, ClusterWritable> iterator = new SequenceFileIterator<IntWritable, ClusterWritable>(clusterConf.getClusterFiles(), true, conf);
         int clusterNumber = 0;
         while (iterator.hasNext()) {// for each clustered doc
-            Pair<Text, Cluster> record = iterator.next();
+            Pair<IntWritable, ClusterWritable> record = iterator.next();
             // the cursed Text here is "VL-blah" with blah being the cluster id string, why they appended a VL- is anyone's guess
-            String clusterId = record.getFirst().toString().replaceFirst("VL-", "");//todo: make sure this always works! remove the cursed "VL-"
-            if( topics.get(clusterId) != null ){
+            String clusterId = Integer.toString(record.getSecond().getValue().getId());
+            if( topics.get(clusterId) == null ){
+                topics.put(clusterId, new Topic());
                 //we have a matching cluster now generate the term vector, sort, grab the top part of the vector and store it
-                org.apache.mahout.math.Vector centroid = record.getSecond().getCenter();
+                org.apache.mahout.math.Vector centroid = record.getSecond().getValue().getCenter();
+                topics.get(clusterId).setCentroid(centroid);
                 // sort it
                 //System.out.println("Creating centroid terms and weight for cluster #" + Integer.toString(++clusterNumber) + '\n');
                 ArrayList termVector = ExportDocsMahout2Mongo.getTermVector(centroid, dictionary);
-                //jeez, now all we have to is write it
                 topics.get(clusterId).setCentroidTermWeights(termVector);
             }
         }
