@@ -68,7 +68,7 @@ class TopicMap  {
         }
 
         public ObjectId getParent() {// todo assumes array of only one element, one parent
-            return this.parent_ids.get(0);
+            return this.parent_ids.isEmpty() ? null : this.parent_ids.get(0);
         }
 
         public void setParent(ObjectId parent) {
