@@ -68,6 +68,9 @@ class TopicMap  {
         }
 
         public ObjectId getParent() {// todo assumes array of only one element, one parent
+            if(this.parent_ids.isEmpty()){
+                String state = "fail";
+            }
             return this.parent_ids.isEmpty() ? null : this.parent_ids.get(0);
         }
 
@@ -369,51 +372,54 @@ Key: VL-21536: Value: VL-21536{n=222 c=[0:0.004, 23:0.002,
             BasicDBObject dbTopic = new BasicDBObject();
             BasicDBObject topicQuery = new BasicDBObject();
             Topic currentTopic = (Topic) pairs.getValue();
-            dbTopic.put("cluster_id", (String) pairs.getKey());
-            topicQuery.put("cluster_id", (String) pairs.getKey());
-            dbTopic.put("name", currentTopic.getName());
-            BasicDBList currentParents = new BasicDBList();
-            if (currentTopic.getParent() != null) currentParents.add(currentTopic.getParent());
-            dbTopic.put("parent_ids", currentParents);//does this work?
-            ArrayList currentClusteredDocs = ((Topic) pairs.getValue()).getTopClusteredDocs();
-            // insert the topic to get its id created
-            DBObject insertedCluster = clusters.findAndModify(topicQuery, new BasicDBObject(), new BasicDBObject("sort", 1), false, dbTopic, true, true);
-            //save the ObjectId
-            currentTopic.setObjectId((ObjectId)insertedCluster.get("_id"));
-            // add the topic id to its parent's child_ids
-            BasicDBObject parentQuery = new BasicDBObject("_id", currentTopic.getParent());
-            DBObject parentOfInsertedCluster = clusters.findOne(parentQuery);
-            ArrayList parentsChildren = (ArrayList) parentOfInsertedCluster.get("child_ids");
-            if (parentsChildren != null) {
-                if (!parentsChildren.contains(insertedCluster.get("_id"))) {
-                    parentsChildren.add(insertedCluster.get("_id"));
-                }
-            }
-            // now write the parent with added child
-            clusters.findAndModify(parentQuery, new BasicDBObject(), new BasicDBObject("sort", 1), false, parentOfInsertedCluster, true, true);
-
-            for (int i = 0; i < currentClusteredDocs.size(); i++) {// don't use and iterator because even single threaded you'll
-                HashMap currentClusteredDoc = (HashMap) currentClusteredDocs.get(i);
-                DBObject ampedPage = docs.findOne(new BasicDBObject("url", currentClusteredDoc.get("url")));
-                BasicDBObject pageQuery = new BasicDBObject("url", ampedPage.get("url"));
-                if (ampedPage == null) {
-                    currentClusteredDocs.remove(currentClusteredDoc);
-                    //docIterator.remove(); // to avoid ConcurrentModificationException??? doesn't work though
-                } else {// put the amped_page id in the topic and put the topic id in the amped_page
-                    currentClusteredDoc.put("amped_page_id", ampedPage.get("_id"));
-                    BasicDBList clustersThisPageBelongsTo = (BasicDBList) ampedPage.get("topic_ids");
-                    if(!clustersThisPageBelongsTo.contains(insertedCluster.get("_id"))){
-                        clustersThisPageBelongsTo.add( insertedCluster.get("_id"));
+            if (currentTopic.getParent() != null) { //got read in properly, if not it's a malformed cluster
+                // look at the read code, may not have any docs or distance to doc is NaN or some such
+                dbTopic.put("cluster_id", (String) pairs.getKey());
+                topicQuery.put("cluster_id", (String) pairs.getKey());
+                dbTopic.put("name", currentTopic.getName());
+                BasicDBList currentParents = new BasicDBList();
+                currentParents.add(currentTopic.getParent());
+                dbTopic.put("parent_ids", currentParents);//does this work?
+                ArrayList currentClusteredDocs = ((Topic) pairs.getValue()).getTopClusteredDocs();
+                // insert the topic to get its id created
+                DBObject insertedCluster = clusters.findAndModify(topicQuery, new BasicDBObject(), new BasicDBObject("sort", 1), false, dbTopic, true, true);
+                //save the ObjectId
+                currentTopic.setObjectId((ObjectId)insertedCluster.get("_id"));
+                // add the topic id to its parent's child_ids
+                BasicDBObject parentQuery = new BasicDBObject("_id", currentTopic.getParent());
+                DBObject parentOfInsertedCluster = clusters.findOne(parentQuery);
+                ArrayList parentsChildren = (ArrayList) parentOfInsertedCluster.get("child_ids");
+                if (parentsChildren != null) {
+                    if (!parentsChildren.contains(insertedCluster.get("_id"))) {
+                        parentsChildren.add(insertedCluster.get("_id"));
                     }
-                    docs.findAndModify(pageQuery, new BasicDBObject(), new BasicDBObject("sort", 1), false, ampedPage, true, true);
-
                 }
+                // now write the parent with added child
+                clusters.findAndModify(parentQuery, new BasicDBObject(), new BasicDBObject("sort", 1), false, parentOfInsertedCluster, true, true);
+
+                for (int i = 0; i < currentClusteredDocs.size(); i++) {// don't use and iterator because even single threaded you'll
+                    HashMap currentClusteredDoc = (HashMap) currentClusteredDocs.get(i);
+                    DBObject ampedPage = docs.findOne(new BasicDBObject("url", currentClusteredDoc.get("url")));
+                    BasicDBObject pageQuery = new BasicDBObject("url", ampedPage.get("url"));
+                    if (ampedPage == null) {
+                        currentClusteredDocs.remove(currentClusteredDoc);
+                        //docIterator.remove(); // to avoid ConcurrentModificationException??? doesn't work though
+                    } else {// put the amped_page id in the topic and put the topic id in the amped_page
+                        currentClusteredDoc.put("amped_page_id", ampedPage.get("_id"));
+                        BasicDBList clustersThisPageBelongsTo = (BasicDBList) ampedPage.get("topic_ids");
+                        if(!clustersThisPageBelongsTo.contains(insertedCluster.get("_id"))){
+                            clustersThisPageBelongsTo.add( insertedCluster.get("_id"));
+                        }
+                        docs.findAndModify(pageQuery, new BasicDBObject(), new BasicDBObject("sort", 1), false, ampedPage, true, true);
+
+                    }
+                }
+                dbTopic.put("term_weight_pairs", currentTopic.getCentroidTermWeights());
+                dbTopic.put("clustered_doc_descriptors", currentClusteredDocs);
+                DBObject currentRecord = clusters.findAndModify(topicQuery, new BasicDBObject(), new BasicDBObject("sort", 1), false, dbTopic, true, true);
+                //currentTopic.setObjectId((ObjectId)currentRecord.get("_id"));
+                numClusters++;
             }
-            dbTopic.put("term_weight_pairs", currentTopic.getCentroidTermWeights());
-            dbTopic.put("clustered_doc_descriptors", currentClusteredDocs);
-            DBObject currentRecord = clusters.findAndModify(topicQuery, new BasicDBObject(), new BasicDBObject("sort", 1), false, dbTopic, true, true);
-            //currentTopic.setObjectId((ObjectId)currentRecord.get("_id"));
-            numClusters++;
         }
         writeClustersToDocs();
         System.out.println("Number of clusters processed: " + String.valueOf(numClusters) + '\n');
