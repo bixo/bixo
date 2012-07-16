@@ -373,7 +373,7 @@ Key: VL-21536: Value: VL-21536{n=222 c=[0:0.004, 23:0.002,
             topicQuery.put("cluster_id", (String) pairs.getKey());
             dbTopic.put("name", currentTopic.getName());
             BasicDBList currentParents = new BasicDBList();
-            currentParents.add(currentTopic.getParent());
+            if (currentTopic.getParent() != null) currentParents.add(currentTopic.getParent());
             dbTopic.put("parent_ids", currentParents);//does this work?
             ArrayList currentClusteredDocs = ((Topic) pairs.getValue()).getTopClusteredDocs();
             // insert the topic to get its id created
