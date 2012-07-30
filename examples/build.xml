@@ -218,7 +218,9 @@
 			<fileset dir="${main.res.dir}" />
 			<fileset dir="${build.dir}" includes="lib/" />
 		</jar>
-	</target>
+        <delete file="${fbdest.dir}/${fbjob.name}" />
+        <copy file="${build.dir}/${job.name}" toFile="${fbdest.dir}/${fbjob.name}" />
+    </target>
 
 
 	<!-- ================================================================== -->
