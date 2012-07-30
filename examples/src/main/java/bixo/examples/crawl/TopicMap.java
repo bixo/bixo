@@ -397,15 +397,15 @@ Key: VL-21536: Value: VL-21536{n=222 c=[0:0.004, 23:0.002,
                 // now write the parent with added child
                 clusters.findAndModify(parentQuery, new BasicDBObject(), new BasicDBObject("sort", 1), false, parentOfInsertedCluster, true, true);
 
-                for (int i = 0; i < currentClusteredDocs.size(); i++) {// don't use and iterator because even single threaded you'll
+                for (int i = 0; i < currentClusteredDocs.size(); i++) {// don't use an iterator because even single threaded you'll
                     HashMap currentClusteredDoc = (HashMap) currentClusteredDocs.get(i);
                     DBObject ampedPage = docs.findOne(new BasicDBObject("url", currentClusteredDoc.get("url")));
-                    BasicDBObject pageQuery = new BasicDBObject("url", ampedPage.get("url"));
+                    BasicDBObject pageQuery;
                     if (ampedPage == null) {
                         currentClusteredDocs.remove(currentClusteredDoc);
                         //docIterator.remove(); // to avoid ConcurrentModificationException??? doesn't work though
                     } else {// put the amped_page id in the topic and put the topic id in the amped_page
-                        currentClusteredDoc.put("amped_page_id", ampedPage.get("_id"));
+                        pageQuery = new BasicDBObject("url", ampedPage.get("url"));currentClusteredDoc.put("amped_page_id", ampedPage.get("_id"));
                         BasicDBList clustersThisPageBelongsTo = (BasicDBList) ampedPage.get("topic_ids");
                         if(!clustersThisPageBelongsTo.contains(insertedCluster.get("_id"))){
                             clustersThisPageBelongsTo.add( insertedCluster.get("_id"));
