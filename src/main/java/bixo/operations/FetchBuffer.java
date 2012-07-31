@@ -131,34 +131,35 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 // First see if we've got something in the queue, and if so, then check if it's ready
                 // to be processed.
                 FetchSetDatum datum = _queue.peek();
+                int numUrls = 0;
                 if (datum != null) {
                     List<ScoredUrlDatum> urls = datum.getUrls();
+                    numUrls = urls.size();
                     String ref = datum.getGroupingRef();
                     trace("Queue returned %d urls from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
                     if (_activeRefs.get(ref) == null) {
                         Long nextFetchTime = _pendingRefs.get(ref);
                         if ((nextFetchTime == null) || (nextFetchTime <= System.currentTimeMillis())) {
-                            return _queue.remove();
+                            return removeFromQueue();
                         }
                     }
                 }
 
-                // We have a datum from the queue, but it's not ready to be returned.
                 if (datum != null) {
+                    // We have a datum from the queue, but it's not ready to be returned.
                     switch (mode) {
                         case COMPLETE:
                             trace("Ignoring top queue item %s (domain still active or pending)", datum.getGroupingRef());
                             break;
 
                         case IMPOLITE:
-                            _queue.remove();
-                            return datum;
+                            return removeFromQueue();
                             
                         // In efficient fetching, we punt on items that aren't ready.
                         case EFFICIENT:
-                            _queue.remove();
+                            datum = removeFromQueue();
                             List<ScoredUrlDatum> urls = datum.getUrls();
-                            trace("Skipping %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
+                            trace("Skipping %d urls from %s (e.g. %s)", numUrls, datum.getGroupingRef(), urls.get(0).getUrl());
                             skipUrls(urls, UrlStatus.SKIPPED_INEFFICIENT, null);
                             break;
                     }
@@ -188,6 +189,10 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                     switch (mode) {
                         case COMPLETE:
                             trace("Queuing next iter item %s (domain still active or pending)", datum.getGroupingRef());
+                            
+                            _flowProcess.increment(FetchCounters.FETCHSETS_QUEUED, 1);
+                            _flowProcess.increment(FetchCounters.URLS_QUEUED, urls.size());
+
                             _queue.add(datum);
                             break;
 
@@ -204,6 +209,14 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                     return null;
                 }
             }
+        }
+
+        private FetchSetDatum removeFromQueue() {
+            FetchSetDatum result = _queue.remove();
+            _flowProcess.increment(FetchCounters.FETCHSETS_QUEUED, -1);
+            _flowProcess.increment(FetchCounters.URLS_QUEUED, -result.getUrls().size());
+            
+            return result;
         }
     }
 

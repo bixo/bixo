@@ -40,6 +40,10 @@ public enum FetchCounters {
     URLS_SKIPPED_PER_SERVER_LIMIT, // UrlStatus.SKIPPED_PER_SERVER_LIMIT
     
     FETCHED_BYTES,          // Total bytes of fetched content.
+    
     FETCHED_TIME,           // Total time in milliseconds spent fetching
+    
+    FETCHSETS_QUEUED,       // Number of fetch sets in the disk queue
+    URLS_QUEUED,            // Number of URLs in the disk queue
 
 }
