@@ -85,6 +85,7 @@ public class FetchTask implements Runnable {
                     // TODO KKr - we'd have to do something special here for AbortedFetchException with
                     // the reason == INTERRUPTED, as we'd want to (a) increment URLS_SKIPPED, not failed,
                     // and we'd want to bail out of this loop (or set the interrupted flag)
+                    LOGGER.info("Fetch exception while fetching " + item.getUrl(), e);
                     process.increment(FetchCounters.URLS_FAILED, 1);
 
                     // We can do this because each of the concrete subclasses of BaseFetchException implements
