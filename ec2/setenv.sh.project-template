@@ -84,7 +84,7 @@ export AMI_IMAGE_M1_SMALL=
 # with the m1.large instance type.
 #
 # Example:
-# export AMI_IMAGE_M1_LARGE=ami-18ec1871
+# export AMI_IMAGE_M1_LARGE=ami-827c8beb
 #
 export AMI_IMAGE_M1_LARGE=
 
