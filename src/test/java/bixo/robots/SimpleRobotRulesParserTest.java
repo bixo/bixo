@@ -718,6 +718,13 @@ public class SimpleRobotRulesParserTest {
         assertFalse("many-user-agents", rules.isAllowed("http://domain.com/bot-trap/"));
     }
     
+    @Test
+    public void testMalformedPathInRobotsFile() throws Exception {
+        BaseRobotRules rules = createRobotRules("bot1", readFile("/robots/malformed-path.txt"));
+        assertFalse("Disallowed URL", rules.isAllowed("http://en.wikipedia.org/wiki/Wikipedia_talk:Mediation_Committee/"));
+        assertTrue("Regular URL", rules.isAllowed("http://en.wikipedia.org/wiki/"));
+    }
+    
     private byte[] readFile(String filename) throws Exception {
         byte[] bigBuffer = new byte[100000];
         InputStream is = SimpleRobotRulesParserTest.class.getResourceAsStream(filename);
