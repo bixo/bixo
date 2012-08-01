@@ -96,7 +96,10 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     }
     
     private class QueuedValues {
+        // TODO - make this part of CrawlPolicy. We'd like to contrain by total # of URLs, actually, not FetchSetDatums
         private static final int MAX_ELEMENTS_IN_MEMORY = 10000;
+        
+        private static final int MAX_FETCHSETS_TO_QUEUE_PER_DELAY = 100;
         
         private DiskQueue<FetchSetDatum> _queue;
         private Iterator<TupleEntry> _values;
@@ -126,89 +129,88 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         
         public FetchSetDatum nextOrNull(FetcherMode mode) {
             
-            // Loop until we have something to return, or there's nothing that we can return.
-            while (true) {
+            int fetchSetsQueued = 0;
+            
+            // Loop until we have something to return, or there's nothing that we can return, or we've
+            // queued up as many fetchsets as we want without any delay.
+            while (!isEmpty() && (fetchSetsQueued < MAX_FETCHSETS_TO_QUEUE_PER_DELAY)) {
                 // First see if we've got something in the queue, and if so, then check if it's ready
                 // to be processed.
-                FetchSetDatum datum = _queue.peek();
-                int numUrls = 0;
-                if (datum != null) {
-                    List<ScoredUrlDatum> urls = datum.getUrls();
-                    numUrls = urls.size();
-                    String ref = datum.getGroupingRef();
-                    trace("Queue returned %d urls from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
+                final FetchSetDatum queueDatum = removeFromQueue();
+                
+                if (queueDatum != null) {
+                    String ref = queueDatum.getGroupingRef();
                     if (_activeRefs.get(ref) == null) {
                         Long nextFetchTime = _pendingRefs.get(ref);
                         if ((nextFetchTime == null) || (nextFetchTime <= System.currentTimeMillis())) {
-                            return removeFromQueue();
+                            List<ScoredUrlDatum> urls = queueDatum.getUrls();
+                            trace("Politely returning %d urls via queue from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
+                            return queueDatum;
                         }
                     }
                 }
 
-                if (datum != null) {
-                    // We have a datum from the queue, but it's not ready to be returned.
-                    switch (mode) {
-                        case COMPLETE:
-                            trace("Ignoring top queue item %s (domain still active or pending)", datum.getGroupingRef());
-                            break;
-
-                        case IMPOLITE:
-                            return removeFromQueue();
-                            
-                        // In efficient fetching, we punt on items that aren't ready.
-                        case EFFICIENT:
-                            datum = removeFromQueue();
-                            List<ScoredUrlDatum> urls = datum.getUrls();
-                            trace("Skipping %d urls from %s (e.g. %s)", numUrls, datum.getGroupingRef(), urls.get(0).getUrl());
-                            skipUrls(urls, UrlStatus.SKIPPED_INEFFICIENT, null);
-                            break;
-                    }
-                }
-                
-                // Nothing ready in the queue, let's see about the iterator.
+                // Nothing ready from the top of the queue, let's see about the iterator.
                 if (safeHasNext()) {
-                    datum = new FetchSetDatum(new TupleEntry(_values.next()));
-                    List<ScoredUrlDatum> urls = datum.getUrls();
-                    trace("Iterator returned %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
+                    // Re-add the thing from the top of the queue, since we're going to want to keep it around.
+                    addToQueue(queueDatum);
                     
-                    if (datum.isSkipped()) {
-                        trace("Skipping %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
+                    // Now get our next FetchSet from the Hadoop iterator.
+                    FetchSetDatum iterDatum = new FetchSetDatum(new TupleEntry(_values.next()));
+                    List<ScoredUrlDatum> urls = iterDatum.getUrls();
+                    String ref = iterDatum.getGroupingRef();
+                    
+                    if (iterDatum.isSkipped()) {
+                        trace("Skipping %d urls via iterator from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
                         skipUrls(urls, UrlStatus.SKIPPED_PER_SERVER_LIMIT, null);
                         continue;
                     }
 
-                    String ref = datum.getGroupingRef();
                     if (_activeRefs.get(ref) == null) {
                         Long nextFetchTime = _pendingRefs.get(ref);
                         if ((nextFetchTime == null) || (nextFetchTime <= System.currentTimeMillis())) {
-                            return datum;
+                            trace("Politely returning %d urls via iterator from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
+                            return iterDatum;
                         }
                     }
 
-                    // We've got a datum from the iterator that's not ready to be processed.
+                    // We've got a datum from the iterator that's not ready to be processed, so we'll stuff it into the queue.
+                    trace("Queuing %d urls via iterator from %s (e.g. %s)", urls.size(), iterDatum.getGroupingRef(), urls.get(0).getUrl());
+                    addToQueue(iterDatum);
+                    fetchSetsQueued += 1;
+                    continue;
+                }
+                
+                // Nothing ready from top of queue, and iterator is empty too. If we had something from the top of the queue (which then
+                // must not be ready), decide what to do based on our FetcherMode.
+                if (queueDatum != null) {
+                    List<ScoredUrlDatum> urls = queueDatum.getUrls();
+
                     switch (mode) {
                         case COMPLETE:
-                            trace("Queuing next iter item %s (domain still active or pending)", datum.getGroupingRef());
-                            
-                            _flowProcess.increment(FetchCounters.FETCHSETS_QUEUED, 1);
-                            _flowProcess.increment(FetchCounters.URLS_QUEUED, urls.size());
-
-                            _queue.add(datum);
-                            break;
+                            // Re-add the datum, since we don't want to skip it. And immediately return, as otherwise we're trapped
+                            // in this loop, versus giving FetchBuffer time to delay.
+                            trace("Blocked on %d urls via queue from %s (e.g. %s)", urls.size(), queueDatum.getGroupingRef(), urls.get(0).getUrl());
+                            addToQueue(queueDatum);
+                            return null;
 
                         case IMPOLITE:
-                            return datum;
-
-                            // In efficient fetching, we punt on items that aren't ready.
+                            trace("Impolitely returning %d urls via queue from %s (e.g. %s)", urls.size(), queueDatum.getGroupingRef(), urls.get(0).getUrl());
+                            return queueDatum;
+                            
                         case EFFICIENT:
-                            trace("Skipping %d urls from %s (e.g. %s)", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
+                            // In efficient fetching, we punt on items that aren't ready. And immediately return, so that FetchBuffer's loop has
+                            // time to delay.
+                            trace("Efficiently skipping %d urls via queue from %s (e.g. %s)", urls.size(), queueDatum.getGroupingRef(), urls.get(0).getUrl());
                             skipUrls(urls, UrlStatus.SKIPPED_INEFFICIENT, null);
-                            break;
+                            return null;
                     }
-                } else {
-                    return null;
                 }
             }
+            
+            // Either we're all out of FetchSets to process (nothing left in iterator or queue) or we've queued up lots of sets, and
+            // we want to give FetchBuffer a chance to sleep.
+            return null;
         }
 
         private FetchSetDatum removeFromQueue() {
@@ -218,7 +220,14 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             
             return result;
         }
-    }
+
+        private void addToQueue(FetchSetDatum datum) {
+            _flowProcess.increment(FetchCounters.FETCHSETS_QUEUED, 1);
+            _flowProcess.increment(FetchCounters.URLS_QUEUED, datum.getUrls().size());
+
+            _queue.add(datum);
+        }
+}
 
     private static final Fields FETCH_RESULT_FIELD = new Fields(BaseDatum.fieldName(FetchBuffer.class, "fetch-exception"));
 
