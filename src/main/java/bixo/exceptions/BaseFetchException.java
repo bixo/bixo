@@ -135,7 +135,8 @@ public abstract class BaseFetchException extends Exception {
 
 	@Override
 	public String toString() {
-		return _url + ": " + _exception.toString();
+        String message = getLocalizedMessage();
+        return String.format("%s: %s [%s]", getClass().getSimpleName(), message != null ? message : "", _url);
 	}
 
     protected void readBaseFields(DataInput input) throws IOException {
