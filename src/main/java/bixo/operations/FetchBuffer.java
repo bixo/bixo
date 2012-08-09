@@ -127,6 +127,17 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             return _queue.isEmpty() && !safeHasNext();
         }
         
+        private boolean readyToFetch(String ref) {
+            if (_activeRefs.get(ref) == null) {
+                Long nextFetchTime = _pendingRefs.get(ref);
+                if ((nextFetchTime == null) || (nextFetchTime <= System.currentTimeMillis())) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
         public FetchSetDatum nextOrNull(FetcherMode mode) {
             
             int fetchSetsQueued = 0;
@@ -140,19 +151,17 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 
                 if (queueDatum != null) {
                     String ref = queueDatum.getGroupingRef();
-                    if (_activeRefs.get(ref) == null) {
-                        Long nextFetchTime = _pendingRefs.get(ref);
-                        if ((nextFetchTime == null) || (nextFetchTime <= System.currentTimeMillis())) {
-                            List<ScoredUrlDatum> urls = queueDatum.getUrls();
-                            trace("Politely returning %d urls via queue from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
-                            return queueDatum;
-                        }
+                    if (readyToFetch(ref)) {
+                        List<ScoredUrlDatum> urls = queueDatum.getUrls();
+                        trace("Politely returning %d urls via queue from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
+                        return queueDatum;
                     }
                 }
 
-                // Nothing ready from the top of the queue, let's see about the iterator.
+                // Nothing ready from the top of the queue or nothing in the queue, let's see about the iterator.
                 if (safeHasNext()) {
                     // Re-add the thing from the top of the queue, since we're going to want to keep it around.
+                    // This is safe to call with a null datum.
                     addToQueue(queueDatum);
                     
                     // Now get our next FetchSet from the Hadoop iterator.
@@ -166,12 +175,9 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                         continue;
                     }
 
-                    if (_activeRefs.get(ref) == null) {
-                        Long nextFetchTime = _pendingRefs.get(ref);
-                        if ((nextFetchTime == null) || (nextFetchTime <= System.currentTimeMillis())) {
-                            trace("Politely returning %d urls via iterator from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
-                            return iterDatum;
-                        }
+                    if (readyToFetch(ref)) {
+                        trace("Politely returning %d urls via iterator from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
+                        return iterDatum;
                     }
 
                     // We've got a datum from the iterator that's not ready to be processed, so we'll stuff it into the queue.
@@ -200,7 +206,8 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                             
                         case EFFICIENT:
                             // In efficient fetching, we punt on items that aren't ready. And immediately return, so that FetchBuffer's loop has
-                            // time to delay.
+                            // time to delay, as otherwise we'd likely skip everything that's in the in-memory queue (since the item we're skipping
+                            // is the "best" in terms of when it's going to be ready).
                             trace("Efficiently skipping %d urls via queue from %s (e.g. %s)", urls.size(), queueDatum.getGroupingRef(), urls.get(0).getUrl());
                             skipUrls(urls, UrlStatus.SKIPPED_INEFFICIENT, null);
                             return null;
@@ -213,19 +220,28 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             return null;
         }
 
+        /**
+         * Return the top-most item from the queue, or null if the queue is empty.
+         * 
+         * @return fetch set from queue
+         */
         private FetchSetDatum removeFromQueue() {
-            FetchSetDatum result = _queue.remove();
-            _flowProcess.increment(FetchCounters.FETCHSETS_QUEUED, -1);
-            _flowProcess.increment(FetchCounters.URLS_QUEUED, -result.getUrls().size());
+            FetchSetDatum result = _queue.poll();
+            if (result != null) {
+                _flowProcess.increment(FetchCounters.FETCHSETS_QUEUED, -1);
+                _flowProcess.increment(FetchCounters.URLS_QUEUED, -result.getUrls().size());
+            }
             
             return result;
         }
 
         private void addToQueue(FetchSetDatum datum) {
-            _flowProcess.increment(FetchCounters.FETCHSETS_QUEUED, 1);
-            _flowProcess.increment(FetchCounters.URLS_QUEUED, datum.getUrls().size());
+            if (datum != null) {
+                _flowProcess.increment(FetchCounters.FETCHSETS_QUEUED, 1);
+                _flowProcess.increment(FetchCounters.URLS_QUEUED, datum.getUrls().size());
 
-            _queue.add(datum);
+                _queue.add(datum);
+            }
         }
 }
 
