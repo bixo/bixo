@@ -37,7 +37,7 @@ import bixo.urls.BaseUrlFilter;
 // Filter URLs that fall outside of the target domain
 @SuppressWarnings("serial")
 public class RegexUrlFilter extends BaseUrlFilter {
-    private static final Logger LOGGER = Logger.getLogger(RegexUrlFilterTest.class);
+    private static final Logger LOGGER = Logger.getLogger(RegexUrlFilter.class);
 
     private static final String INCLUDE_CHAR = "+";
     private static final String EXCLUDE_CHAR = "-";
