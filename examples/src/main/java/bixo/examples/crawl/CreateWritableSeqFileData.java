@@ -25,6 +25,7 @@ import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 import cascading.operation.OperationCall;
+import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 
 import com.bixolabs.cascading.NullContext;
@@ -34,7 +35,7 @@ public class CreateWritableSeqFileData extends BaseOperation<NullContext> implem
     private static final Logger LOGGER = Logger.getLogger(CreateWritableSeqFileData.class);
 
     public CreateWritableSeqFileData() {
-        super(CrawlDbDatum.FIELDS);
+        super(new Fields(CrawlConfig.WRITABLE_SEQ_FILE_KEY_FN, CrawlConfig.WRITABLE_SEQ_FILE_VALUE_FN));
     }
 
     @Override

@@ -227,7 +227,8 @@ public class SimpleCrawlWorkflow {
             writableSeqFileDataPipe = new Pipe("writable seqfile data", new Each(parsePipe.getTailPipe(), new CreateWritableSeqFileData()));
             
             Path writableSeqFileDataPath = new Path(curWorkingDirPath, CrawlConfig.BOILERPIPE_SUBDIR_NAME);
-            writableSeqFileSink = new Hfs(new WritableSequenceFile(new Fields(ParsedDatum.URL_FN, ParsedDatum.PARSED_TEXT_FN), Text.class, Text.class ), writableSeqFileDataPath.toString());
+            writableSeqFileSink = new Hfs(new WritableSequenceFile(new Fields(CrawlConfig.WRITABLE_SEQ_FILE_KEY_FN, CrawlConfig.WRITABLE_SEQ_FILE_VALUE_FN), Text.class, Text.class),
+                            writableSeqFileDataPath.toString());
         }
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction());

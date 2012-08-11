@@ -42,4 +42,9 @@ public class CrawlConfig {
 
     // Misc
     public static final long MILLISECONDS_PER_MINUTE = 60 * 1000L;
+    
+    // WritableSequenceFile key value field names
+    public static final String WRITABLE_SEQ_FILE_KEY_FN = "urlKey";
+    public static final String WRITABLE_SEQ_FILE_VALUE_FN = "boilerpipeValue";
+
 }
