@@ -24,10 +24,12 @@ import java.util.Set;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
+import bixo.config.ParserPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
@@ -38,6 +40,7 @@ import bixo.operations.BaseScoreGenerator;
 import bixo.operations.FixedScoreGenerator;
 import bixo.operations.NormalizeUrlFunction;
 import bixo.operations.UrlFilter;
+import bixo.parser.SimpleLinkExtractor;
 import bixo.parser.SimpleParser;
 import bixo.pipes.FetchPipe;
 import bixo.pipes.ParsePipe;
@@ -56,6 +59,7 @@ import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.scheme.SequenceFile;
 import cascading.scheme.TextLine;
+import cascading.scheme.WritableSequenceFile;
 import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
@@ -203,10 +207,27 @@ public class SimpleCrawlWorkflow {
 
         
         // Take content and split it into content output plus parse to extract URLs.
-        SimpleParser parser = new SimpleParser();
+        SimpleParser parser;
+        if (options.isUseBoilerpipe()) {
+            parser = new SimpleParser(new BoilerpipeContentExtractor(), new SimpleLinkExtractor(), new ParserPolicy());
+        } else {
+            parser = new SimpleParser();
+        }
         parser.setExtractLanguage(false);
         ParsePipe parsePipe = new ParsePipe(contentPipe, parser);
 
+        
+        Tap writableSeqFileSink = null;
+        Pipe writableSeqFileDataPipe = null;
+        
+        if (options.isUseBoilerpipe()) {
+            // Let's output a WritableSequenceFile as an example - this file can then be used as input 
+            // when working with Mahout. 
+            writableSeqFileDataPipe = new Pipe("writable seqfile data", new Each(parsePipe.getTailPipe(), new CreateWritableSeqFileData()));
+            
+            Path writableSeqFileDataPath = new Path(curWorkingDirPath, CrawlConfig.BOILERPIPE_SUBDIR_NAME);
+            writableSeqFileSink = new Hfs(new WritableSequenceFile(new Fields(ParsedDatum.URL_FN, ParsedDatum.PARSED_TEXT_FN), Text.class, Text.class ), writableSeqFileDataPath.toString());
+        }
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction());
         if (urlFilter != null) {
@@ -243,9 +264,16 @@ public class SimpleCrawlWorkflow {
         sinkMap.put(contentPipe.getName(), contentSink);
         sinkMap.put(ParsePipe.PARSE_PIPE_NAME, parseSink);
         sinkMap.put(crawlDbPipe.getName(), loopCrawldbSink);
-
+        
+        Flow flow = null;
         FlowConnector flowConnector = new FlowConnector(props);
-        Flow flow = flowConnector.connect(inputSource, sinkMap, statusPipe, contentPipe, parsePipe.getTailPipe(), outputPipe);
+        
+        if (writableSeqFileSink != null) {
+            sinkMap.put(writableSeqFileDataPipe.getName(), writableSeqFileSink);
+            flow = flowConnector.connect(inputSource, sinkMap, statusPipe, contentPipe, parsePipe.getTailPipe(), outputPipe, writableSeqFileDataPipe);
+        } else {
+            flow = flowConnector.connect(inputSource, sinkMap, statusPipe, contentPipe, parsePipe.getTailPipe(), outputPipe);
+        }
 
         return flow;
     }

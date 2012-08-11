@@ -16,9 +16,7 @@
  */
 package bixo.examples.crawl;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.regex.Pattern;
+import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -28,13 +26,11 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
-
-import com.bixolabs.cascading.HadoopUtils;
+import org.mortbay.log.Log;
 
 import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.FetcherMode;
-import bixo.datum.UrlDatum;
+import bixo.config.UserAgent;
 import bixo.datum.UrlStatus;
 import bixo.urls.BaseUrlFilter;
 import bixo.urls.SimpleUrlNormalizer;
@@ -46,49 +42,11 @@ import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 
+import com.bixolabs.cascading.HadoopUtils;
+
 @SuppressWarnings("deprecation")
 public class SimpleCrawlTool {
 
-    private static final Logger LOGGER = Logger.getLogger(SimpleCrawlTool.class);
-
-    
-    // Filter URLs that fall outside of the target domain
-    @SuppressWarnings("serial")
-    private static class DomainUrlFilter extends BaseUrlFilter {
-
-        private String _domain;
-        private Pattern _suffixExclusionPattern;
-        private Pattern _protocolInclusionPattern;
-
-        public DomainUrlFilter(String domain) {
-            _domain = domain;
-            _suffixExclusionPattern = Pattern.compile("(?i)\\.(pdf|zip|gzip|gz|sit|bz|bz2|tar|tgz|exe)$");
-            _protocolInclusionPattern = Pattern.compile("(?i)^(http|https)://");
-        }
-
-        @Override
-        public boolean isRemove(UrlDatum datum) {
-            String urlAsString = datum.getUrl();
-            
-            // Skip URLs with protocols we don't want to try to process
-            if (!_protocolInclusionPattern.matcher(urlAsString).find()) {
-                return true;
-            }
-
-            if (_suffixExclusionPattern.matcher(urlAsString).find()) {
-                return true;
-            }
-            
-            try {
-                URL url = new URL(urlAsString);
-                String host = url.getHost();
-                return (!host.endsWith(_domain));
-            } catch (MalformedURLException e) {
-                LOGGER.warn("Invalid URL: " + urlAsString);
-                return true;
-            }
-        }
-    }
 
     private static void printUsageAndExit(CmdLineParser parser) {
         parser.printUsage(System.err);
@@ -196,6 +154,13 @@ public class SimpleCrawlTool {
             Path outputPath = new Path(outputDirName);
             FileSystem fs = outputPath.getFileSystem(conf);
 
+            // First check if the user want to clean
+            if (options.isCleanOutputDir()) {
+                if (fs.exists(outputPath)) {
+                    fs.delete(outputPath, true);
+                }
+            }
+            
             // See if the user isn't starting from scratch then set up the 
             // output directory and create an initial urls subdir.
             if (!fs.exists(outputPath)) {
@@ -250,9 +215,22 @@ public class SimpleCrawlTool {
             // By setting up a url filter we only deal with urls that we want to
             // instead of all the urls that we extract.
             BaseUrlFilter urlFilter = null;
-            if (domain != null) {
-                urlFilter = new DomainUrlFilter(domain);
+            List<String> patterns = null;
+            String regexUrlFiltersFile = options.getRegexUrlFiltersFile();
+            if (regexUrlFiltersFile != null) {
+                patterns = RegexUrlFilter.getUrlFilterPatterns(regexUrlFiltersFile);
+            } else {
+                patterns = RegexUrlFilter.getDefaultUrlFilterPatterns();
+                if (domain != null) {
+                    String domainPatterStr = "+(?i)^(http|https)://([a-z0-9]*\\.)*" + domain;
+                    patterns.add(domainPatterStr);
+                } else {
+                    String protocolPatterStr = "+(?i)^(http|https)://*";
+                    patterns.add(protocolPatterStr);
+                    Log.warn("Defaulting to basic url regex filtering (just suffix and protocol");
+                }
             }
+            urlFilter = new RegexUrlFilter(patterns.toArray(new String[patterns.size()]));
 
             // OK, now we're ready to start looping, since we've got our current
             // settings

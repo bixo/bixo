@@ -17,6 +17,7 @@
 package bixo.examples.crawl;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -26,10 +27,11 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import org.mortbay.log.Log;
 
 import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.FetcherMode;
+import bixo.config.UserAgent;
 import bixo.datum.UrlStatus;
 import bixo.urls.BaseUrlFilter;
 import bixo.urls.SimpleUrlNormalizer;
@@ -76,6 +78,20 @@ public class JDBCCrawlTool {
             appender.activateOptions();
         }
     }
+    
+    private static void validateDomain(String domain, CmdLineParser parser) {
+        if (domain.startsWith("http")) {
+            System.err.println("The target domain should be specified as just the host, without the http protocol: " + domain);
+            printUsageAndExit(parser);
+        }
+        
+        if (!domain.equals("localhost") && (domain.split("\\.").length < 2)) {
+            System.err.println("The target domain should be a valid paid-level domain or subdomain of the same: " + domain);
+            printUsageAndExit(parser);
+        }
+        
+    }
+
 
     private static void importOneDomain(String targetDomain, Tap urlSink, JobConf conf) throws IOException {
 
@@ -92,6 +108,7 @@ public class JDBCCrawlTool {
         }
     }
 
+
     public static void main(String[] args) {
         JDBCCrawlToolOptions options = new JDBCCrawlToolOptions();
         CmdLineParser parser = new CmdLineParser(options);
@@ -105,16 +122,9 @@ public class JDBCCrawlTool {
 
         // Before we get too far along, see if the domain looks valid.
         String domain = options.getDomain();
-        if (domain.startsWith("http")) {
-            System.err.println("The target domain should be specified as just the host, without the http protocol: " + domain);
-            printUsageAndExit(parser);
+        if (domain != null) {
+            validateDomain(domain, parser);
         }
-
-        if (!domain.equals("localhost") && (domain.split("\\.").length < 2)) {
-            System.err.println("The target domain should be a valid paid-level domain or subdomain of the same: " + domain);
-            printUsageAndExit(parser);
-        }
-
         String outputDirName = options.getOutputDir();
         if (options.isDebugLogging()) {
             System.setProperty("bixo.root.level", "DEBUG");
@@ -153,6 +163,10 @@ public class JDBCCrawlTool {
                 String curLoopDirName = curLoopDir.toUri().toString();
                 setLoopLoggerFile(curLoopDirName, 0);
 
+                if (domain == null) {
+                    System.err.println("For a new crawl the domain needs to be specified" + domain);
+                    printUsageAndExit(parser);
+                }
                 importOneDomain(domain, JDBCTapFactory.createUrlsSinkJDBCTap(options.getDbLocation()), conf);
             }
 
@@ -178,7 +192,25 @@ public class JDBCCrawlTool {
             long targetEndTime = hasEndTime ? 
                             System.currentTimeMillis() + (crawlDurationInMinutes * CrawlConfig.MILLISECONDS_PER_MINUTE) : FetcherPolicy.NO_CRAWL_END_TIME;
 
-            BaseUrlFilter urlFilter = new DomainUrlFilter(domain);
+            // By setting up a url filter we only deal with urls that we want to
+            // instead of all the urls that we extract.
+            BaseUrlFilter urlFilter = null;
+            List<String> patterns = null;
+            String regexUrlFiltersFile = options.getRegexUrlFiltersFile();
+            if (regexUrlFiltersFile != null) {
+                patterns = RegexUrlFilter.getUrlFilterPatterns(regexUrlFiltersFile);
+            } else {
+                patterns = RegexUrlFilter.getDefaultUrlFilterPatterns();
+                if (domain != null) {
+                    String domainPatterStr = "+(?i)^(http|https)://([a-z0-9]*\\.)*" + domain;
+                    patterns.add(domainPatterStr);
+                } else {
+                    String protocolPatterStr = "+(?i)^(http|https)://*";
+                    patterns.add(protocolPatterStr);
+                    Log.warn("Defaulting to basic url regex filtering (just suffix and protocol");
+                }
+            }
+            urlFilter = new RegexUrlFilter(patterns.toArray(new String[patterns.size()]));
 
             // Now we're ready to start looping, since we've got our current settings
             for (int curLoop = startLoop + 1; curLoop <= endLoop; curLoop++) {

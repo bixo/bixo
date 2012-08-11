@@ -1,0 +1,2 @@
+# Just one exclusion pattern - based on suffix
+-(?i)\.(pdf|zip|gzip|gz|sit|bz|bz2|tar|tgz|exe)$

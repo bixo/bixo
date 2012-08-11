@@ -114,6 +114,7 @@ public class SimpleCrawlWorkflowLRTest implements Serializable {
         };
 
         SimpleCrawlToolOptions options = new SimpleCrawlToolOptions();
+        options.setUseBoilerpipe(true);
         UserAgent userAgent = new UserAgent("test", "test@domain.com", "http://test.domain.com");
         Server server = null;
         try {
