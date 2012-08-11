@@ -40,6 +40,7 @@ import bixo.operations.BaseScoreGenerator;
 import bixo.operations.FixedScoreGenerator;
 import bixo.operations.NormalizeUrlFunction;
 import bixo.operations.UrlFilter;
+import bixo.parser.BoilerpipeContentExtractor;
 import bixo.parser.SimpleLinkExtractor;
 import bixo.parser.SimpleParser;
 import bixo.pipes.FetchPipe;

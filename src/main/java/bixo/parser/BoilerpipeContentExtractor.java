@@ -1,4 +1,4 @@
-package bixo.examples.crawl;
+package bixo.parser;
 
 import org.apache.log4j.Logger;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
@@ -7,7 +7,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
-import bixo.parser.BaseContentExtractor;
 import de.l3s.boilerpipe.document.TextDocument;
 import de.l3s.boilerpipe.extractors.DefaultExtractor;
 
