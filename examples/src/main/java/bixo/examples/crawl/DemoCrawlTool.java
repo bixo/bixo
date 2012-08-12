@@ -45,7 +45,7 @@ import cascading.tuple.TupleEntryCollector;
 import com.bixolabs.cascading.HadoopUtils;
 
 @SuppressWarnings("deprecation")
-public class SimpleCrawlTool {
+public class DemoCrawlTool {
 
 
     private static void printUsageAndExit(CmdLineParser parser) {
@@ -57,7 +57,7 @@ public class SimpleCrawlTool {
     private static void setLoopLoggerFile(String outputDirName, int loopNumber) {
         Logger rootLogger = Logger.getRootLogger();
 
-        String filename = String.format("%s/%d-SimpleCrawlTool.log", outputDirName, loopNumber);
+        String filename = String.format("%s/%d-DemoCrawlTool.log", outputDirName, loopNumber);
         FileAppender appender = (FileAppender)rootLogger.getAppender("loop-logger");
         if (appender == null) {
             appender = new FileAppender();
@@ -111,7 +111,7 @@ public class SimpleCrawlTool {
     }
 
     public static void main(String[] args) {
-        SimpleCrawlToolOptions options = new SimpleCrawlToolOptions();
+        DemoCrawlToolOptions options = new DemoCrawlToolOptions();
         CmdLineParser parser = new CmdLineParser(options);
 
         try {
@@ -208,7 +208,7 @@ public class SimpleCrawlTool {
             // end up in situations where the fetch slows down due to a 'long tail' and by 
             // specifying a crawl duration you know exactly when the crawl will end.
             int crawlDurationInMinutes = options.getCrawlDuration();
-            boolean hasEndTime = crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION;
+            boolean hasEndTime = crawlDurationInMinutes != DemoCrawlToolOptions.NO_CRAWL_DURATION;
             long targetEndTime = hasEndTime ? System.currentTimeMillis() + (crawlDurationInMinutes * CrawlConfig.MILLISECONDS_PER_MINUTE) : 
                 FetcherPolicy.NO_CRAWL_END_TIME;
 
@@ -248,7 +248,7 @@ public class SimpleCrawlTool {
                 String curLoopDirName = curLoopDirPath.toUri().toString();
                 setLoopLoggerFile(curLoopDirName, curLoop);
 
-                Flow flow = SimpleCrawlWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, options); 
+                Flow flow = DemoCrawlWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, options); 
                 flow.complete();
                 
                 // Writing out .dot files is a good way to verify your flows.

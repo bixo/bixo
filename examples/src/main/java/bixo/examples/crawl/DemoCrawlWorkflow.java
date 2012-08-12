@@ -74,9 +74,9 @@ import com.bixolabs.cascading.TupleLogger;
 
 
 @SuppressWarnings("deprecation")
-public class SimpleCrawlWorkflow {
+public class DemoCrawlWorkflow {
 
-    private static final Logger LOGGER = Logger.getLogger(SimpleCrawlWorkflow.class);
+    private static final Logger LOGGER = Logger.getLogger(DemoCrawlWorkflow.class);
 
 
     @SuppressWarnings("serial")
@@ -138,11 +138,11 @@ public class SimpleCrawlWorkflow {
     }
 
     
-    public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, SimpleCrawlToolOptions options) throws Throwable {
+    public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, DemoCrawlToolOptions options) throws Throwable {
         JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
         int numReducers = HadoopUtils.getNumReducers(conf);
         conf.setNumReduceTasks(numReducers);
-        Properties props = HadoopUtils.getDefaultProperties(SimpleCrawlWorkflow.class, options.isDebugLogging(), conf);
+        Properties props = HadoopUtils.getDefaultProperties(DemoCrawlWorkflow.class, options.isDebugLogging(), conf);
         FileSystem fs = curWorkingDirPath.getFileSystem(conf);
 
         // Input : the crawldb

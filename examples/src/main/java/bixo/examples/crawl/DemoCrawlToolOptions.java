@@ -20,34 +20,17 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
-public class SimpleStatusToolOptions {
-    private boolean _debugLogging = false;
+public class DemoCrawlToolOptions extends BaseCrawlToolOptions {
 
-    private String _crawlDir;
-    
-    @Option(name = "-d", usage = "debug logging", required = false)
-    public void setDebugLogging(boolean debugLogging) {
-        this._debugLogging = debugLogging;
+    private boolean _cleanOutputDir = false;
+
+    @Option(name = "-clean", usage = "Delete the output dir if it exists - WARNING:you won't be prompted!", required = false)
+    public void setCleanOutputDir(boolean cleanOutputDir) {
+        _cleanOutputDir = cleanOutputDir;
     }
 
-    @Option(name = "-crawldir", usage = "output directory of preceeding crawl", required = true)
-    public void setCrawlDir(String crawlDir) {
-    	_crawlDir = crawlDir;
-    }
-
-    @Option(name = "-exportdb", usage = "only export the crawldb", required = false)
-    private boolean _exportDb = false;
-
-    public String getCrawlDir() {
-        return _crawlDir;
-    }
-
-    public boolean isDebugLogging() {
-        return _debugLogging;
-    }
-    
-    public boolean isExportDb() {
-        return _exportDb;
+    public boolean isCleanOutputDir() {
+        return _cleanOutputDir  ;
     }
     
     @Override
