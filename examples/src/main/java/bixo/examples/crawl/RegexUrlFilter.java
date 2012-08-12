@@ -116,7 +116,7 @@ public class RegexUrlFilter extends BaseUrlFilter {
         List<String> filterList = new ArrayList<String>();
         String line = null;
         while ((line = reader.readLine()) != null) {
-            if (StringUtils.isNotBlank(line) || !line.startsWith(COMMENT_CHAR)) {
+            if (StringUtils.isNotBlank(line) && !line.startsWith(COMMENT_CHAR)) {
                 filterList.add(line.trim());
             }
         }
