@@ -92,7 +92,7 @@ public class BaseCrawlToolOptions {
         _useBoilerpipe = useBoilerpipe;
     }
 
-    @Option(name = "-regexfilters", usage = "text file containing list of regex patterns for url filtering", required = false)
+    @Option(name = "-urlfilters", usage = "text file containing list of regex patterns for url filtering", required = false)
     public void setRegexUrlFiltersFile(String regexFiltersFile) {
         _regexUrlFiltersFile = regexFiltersFile;
     }
