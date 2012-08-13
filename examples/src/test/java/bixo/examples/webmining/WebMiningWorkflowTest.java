@@ -99,12 +99,12 @@ public class WebMiningWorkflowTest {
     }
     @Test
     public void testCreateFetchWorkflow() throws Exception {
-        WebMiningOptions options = new WebMiningOptions();
+        DemoWebMiningOptions options = new DemoWebMiningOptions();
         options.setWorkingDir(WORKING_DIR);
         options.setAgentName("test-agent");
         Path workingDirPath = new Path(WORKING_DIR);
         FileSystem fs = workingDirPath.getFileSystem(new JobConf());
-        WebMiningTool.setupWorkingDir(fs, workingDirPath, "/test-seedurls.txt");
+        DemoWebMiningTool.setupWorkingDir(fs, workingDirPath, "/test-seedurls.txt");
         
         Path latestDirPath = CrawlDirUtils.findLatestLoopDir(fs, workingDirPath);
         Path crawlDbPath = new Path(latestDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
@@ -126,7 +126,7 @@ public class WebMiningWorkflowTest {
             
             Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, workingDirPath, 1);
 
-            Flow flow = WebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options, true);
+            Flow flow = DemoWebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options, true);
             flow.complete();
         
             // validate
@@ -143,7 +143,7 @@ public class WebMiningWorkflowTest {
             
             // run the second loop
             curLoopDirPath =  CrawlDirUtils.makeLoopDir(fs, workingDirPath, 2);
-            flow = WebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options, false);
+            flow = DemoWebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options, false);
             flow.complete();
             
             // validate

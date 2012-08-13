@@ -37,9 +37,9 @@ import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
 
 @SuppressWarnings("deprecation")
-public class WebMiningTool {
+public class DemoWebMiningTool {
 
-    private static final Logger LOGGER = Logger.getLogger(WebMiningTool.class);
+    private static final Logger LOGGER = Logger.getLogger(DemoWebMiningTool.class);
 
     private static void printUsageAndExit(CmdLineParser parser) {
         parser.printUsage(System.err);
@@ -63,7 +63,7 @@ public class WebMiningTool {
         // Create a "0-<timestamp>" loop sub-directory and import the seed urls
         loopDirPath = CrawlDirUtils.makeLoopDir(fs, workingDirPath, 0);
         crawlDbPath = new Path(loopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
-        WebMiningWorkflow.importSeedUrls(crawlDbPath, seedUrlsfileName);
+        DemoWebMiningWorkflow.importSeedUrls(crawlDbPath, seedUrlsfileName);
 
 
     }
@@ -75,7 +75,7 @@ public class WebMiningTool {
 
     public static void main(String[] args) throws IOException {
         
-        WebMiningOptions options = new WebMiningOptions();
+        DemoWebMiningOptions options = new DemoWebMiningOptions();
         CmdLineParser parser = new CmdLineParser(options);
 
         try {
@@ -121,7 +121,7 @@ public class WebMiningTool {
             // Let's limit our crawl to two loops 
             for (int curLoop = 1; curLoop <= 2; curLoop++) {
                 Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, workingDirPath, curLoop);
-                Flow flow = WebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options, curLoop == 1);
+                Flow flow = DemoWebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options, curLoop == 1);
                 flow.complete();
 
                 // Update crawlDbPath to point to the latest crawl db
