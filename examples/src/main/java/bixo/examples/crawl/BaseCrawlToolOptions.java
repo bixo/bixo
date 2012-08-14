@@ -25,7 +25,8 @@ public class BaseCrawlToolOptions {
     public static final int NO_CRAWL_DURATION = 0;
     public static final int DEFAULT_MAX_THREADS = 10;
     private static final int DEFAULT_NUM_LOOPS = 1;
-
+    private static final String DEFAULT_LOGS_DIR = "logs";
+    
     private String _loggingAppender = null;
     private boolean _debugLogging = false;
 
@@ -33,13 +34,13 @@ public class BaseCrawlToolOptions {
     private String _agentName;
     private String _domain;
     private String _urlsFile;
-    
     private int _crawlDuration = NO_CRAWL_DURATION;
     private int _maxThreads = DEFAULT_MAX_THREADS;
     private int _numLoops = DEFAULT_NUM_LOOPS;
     private boolean _useBoilerpipe = false;
     private boolean _cleanCrawlLoopDirs = false;
     private String _regexUrlFiltersFile = null;;
+    private String _logsDir = DEFAULT_LOGS_DIR;
 
     
     @Option(name = "-domain", usage = "domain to crawl (e.g. cnn.com)", required = false)
@@ -97,6 +98,11 @@ public class BaseCrawlToolOptions {
         _regexUrlFiltersFile = regexFiltersFile;
     }
 
+    @Option(name = "-logsdir", usage = "local fs dir to store loop specific logs [optional: default=logs]", required = false)
+    public void setLogsDir(String logsDir) {
+        _logsDir = logsDir;
+    }
+
     public String getOutputDir() {
         return _outputDir;
     }
@@ -146,6 +152,10 @@ public class BaseCrawlToolOptions {
         
     }
 
+    public String getLogsDir() {
+        return _logsDir ;
+        
+    }
     
     @Override
     public String toString() {

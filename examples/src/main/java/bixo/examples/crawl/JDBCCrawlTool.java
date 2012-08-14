@@ -57,7 +57,7 @@ public class JDBCCrawlTool {
         System.exit(-1);
     }
 
-    // Create log output file in loop directory.
+    // Create log output file (in the local file system).
     private static void setLoopLoggerFile(String outputDirName, int loopNumber) {
         Logger rootLogger = Logger.getRootLogger();
 
@@ -137,6 +137,11 @@ public class JDBCCrawlTool {
             System.setProperty("bixo.appender", options.getLoggingAppender());
         }
 
+        String logsDir = options.getLogsDir();
+        if (!logsDir.endsWith("/")) {
+            logsDir = logsDir + "/";
+        }
+
         try {
             JobConf conf = new JobConf();
             Path outputPath = new Path(outputDirName);
@@ -160,8 +165,8 @@ public class JDBCCrawlTool {
                 fs.mkdirs(outputPath);
 
                 Path curLoopDir = CrawlDirUtils.makeLoopDir(fs, outputPath, 0);
-                String curLoopDirName = curLoopDir.toUri().toString();
-                setLoopLoggerFile(curLoopDirName, 0);
+                String curLoopDirName = curLoopDir.getName();
+                setLoopLoggerFile(logsDir + curLoopDirName, 0);
 
                 if (domain == null) {
                     System.err.println("For a new crawl the domain needs to be specified" + domain);
@@ -224,8 +229,8 @@ public class JDBCCrawlTool {
                 }
 
                 Path curLoopDir = CrawlDirUtils.makeLoopDir(fs, outputPath, curLoop);
-                String curLoopDirName = curLoopDir.toUri().toString();
-                setLoopLoggerFile(curLoopDirName, curLoop);
+                String curLoopDirName = curLoopDir.getName();
+                setLoopLoggerFile(logsDir+curLoopDirName, curLoop);
 
                 Flow flow = JDBCCrawlWorkflow.createFlow(inputPath, curLoopDir, userAgent, defaultPolicy, urlFilter, 
                                 options.getMaxThreads(), options.isDebugLogging(), options.getDbLocation());

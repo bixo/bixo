@@ -53,7 +53,7 @@ public class DemoCrawlTool {
         System.exit(-1);
     }
 
-    // Create log output file in loop directory.
+    // Create log output file (in the local file system).
     private static void setLoopLoggerFile(String outputDirName, int loopNumber) {
         Logger rootLogger = Logger.getRootLogger();
 
@@ -149,6 +149,11 @@ public class DemoCrawlTool {
             System.setProperty("bixo.appender", options.getLoggingAppender());
         }
         
+        String logsDir = options.getLogsDir();
+        if (!logsDir.endsWith("/")) {
+            logsDir = logsDir + "/";
+        }
+        
         try {
             JobConf conf = new JobConf();
             Path outputPath = new Path(outputDirName);
@@ -166,12 +171,12 @@ public class DemoCrawlTool {
             if (!fs.exists(outputPath)) {
                 fs.mkdirs(outputPath);
 
-                // Create a "0-<timestamp>" sub-directory with just a /urls subdir
-                // In the /urls dir the input file will have a single URL for the target domain.
+                // Create a "0-<timestamp>" sub-directory with just a /crawldb subdir
+                // In the /crawldb dir the input file will have a single URL for the target domain.
 
                 Path curLoopDir = CrawlDirUtils.makeLoopDir(fs, outputPath, 0);
-                String curLoopDirName = curLoopDir.toUri().toString();
-                setLoopLoggerFile(curLoopDirName, 0);
+                String curLoopDirName = curLoopDir.getName();
+                setLoopLoggerFile(logsDir + curLoopDirName, 0);
 
                 Path crawlDbPath = new Path(curLoopDir, CrawlConfig.CRAWLDB_SUBDIR_NAME);
                 
@@ -245,8 +250,8 @@ public class DemoCrawlTool {
                 }
 
                 Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, outputPath, curLoop);
-                String curLoopDirName = curLoopDirPath.toUri().toString();
-                setLoopLoggerFile(curLoopDirName, curLoop);
+                String curLoopDirName = curLoopDirPath.getName();
+                setLoopLoggerFile(logsDir+curLoopDirName, curLoop);
 
                 Flow flow = DemoCrawlWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, options); 
                 flow.complete();
