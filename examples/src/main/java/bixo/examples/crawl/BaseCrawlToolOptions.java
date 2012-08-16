@@ -38,7 +38,6 @@ public class BaseCrawlToolOptions {
     private int _maxThreads = DEFAULT_MAX_THREADS;
     private int _numLoops = DEFAULT_NUM_LOOPS;
     private boolean _useBoilerpipe = false;
-    private boolean _cleanCrawlLoopDirs = false;
     private String _regexUrlFiltersFile = null;;
     private String _logsDir = DEFAULT_LOGS_DIR;
 
@@ -143,10 +142,6 @@ public class BaseCrawlToolOptions {
         return _useBoilerpipe ;
     }
     
-    public boolean isCleanCrawlLoopDirs() {
-        return _cleanCrawlLoopDirs  ;
-    }
-
     public String getRegexUrlFiltersFile() {
         return _regexUrlFiltersFile ;
         
