@@ -217,19 +217,17 @@ public class DemoCrawlWorkflow {
         parser.setExtractLanguage(false);
         ParsePipe parsePipe = new ParsePipe(contentPipe, parser);
 
-        
         Tap writableSeqFileSink = null;
         Pipe writableSeqFileDataPipe = null;
         
-        if (options.isUseBoilerpipe()) {
-            // Let's output a WritableSequenceFile as an example - this file can then be used as input 
-            // when working with Mahout. 
-            writableSeqFileDataPipe = new Pipe("writable seqfile data", new Each(parsePipe.getTailPipe(), new CreateWritableSeqFileData()));
-            
-            Path writableSeqFileDataPath = new Path(curWorkingDirPath, CrawlConfig.BOILERPIPE_SUBDIR_NAME);
-            writableSeqFileSink = new Hfs(new WritableSequenceFile(new Fields(CrawlConfig.WRITABLE_SEQ_FILE_KEY_FN, CrawlConfig.WRITABLE_SEQ_FILE_VALUE_FN), Text.class, Text.class),
-                            writableSeqFileDataPath.toString());
-        }
+        // Let's output a WritableSequenceFile as an example - this file can
+        // then be used as input when working with Mahout.
+        writableSeqFileDataPipe = new Pipe("writable seqfile data", new Each(parsePipe.getTailPipe(), new CreateWritableSeqFileData()));
+
+        Path writableSeqFileDataPath = new Path(curWorkingDirPath, CrawlConfig.EXTRACTED_TEXT_SUBDIR_NAME);
+        writableSeqFileSink = new Hfs(new WritableSequenceFile(new Fields(CrawlConfig.WRITABLE_SEQ_FILE_KEY_FN, CrawlConfig.WRITABLE_SEQ_FILE_VALUE_FN), Text.class, Text.class),
+                        writableSeqFileDataPath.toString());
+        
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction());
         if (urlFilter != null) {
@@ -266,16 +264,10 @@ public class DemoCrawlWorkflow {
         sinkMap.put(contentPipe.getName(), contentSink);
         sinkMap.put(ParsePipe.PARSE_PIPE_NAME, parseSink);
         sinkMap.put(crawlDbPipe.getName(), loopCrawldbSink);
+        sinkMap.put(writableSeqFileDataPipe.getName(), writableSeqFileSink);
         
-        Flow flow = null;
         FlowConnector flowConnector = new FlowConnector(props);
-        
-        if (writableSeqFileSink != null) {
-            sinkMap.put(writableSeqFileDataPipe.getName(), writableSeqFileSink);
-            flow = flowConnector.connect(inputSource, sinkMap, statusPipe, contentPipe, parsePipe.getTailPipe(), outputPipe, writableSeqFileDataPipe);
-        } else {
-            flow = flowConnector.connect(inputSource, sinkMap, statusPipe, contentPipe, parsePipe.getTailPipe(), outputPipe);
-        }
+        Flow flow = flowConnector.connect(inputSource, sinkMap, statusPipe, contentPipe, parsePipe.getTailPipe(), outputPipe, writableSeqFileDataPipe);
 
         return flow;
     }

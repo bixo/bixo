@@ -22,7 +22,7 @@ public class CrawlConfig {
     public static final String CONTENT_SUBDIR_NAME = "content";
     public static final String STATUS_SUBDIR_NAME = "status";
     public static final String PARSE_SUBDIR_NAME = "parse";
-    public static final String BOILERPIPE_SUBDIR_NAME = "boilerpipe";
+    public static final String EXTRACTED_TEXT_SUBDIR_NAME = "extracted-text";
 
     public static final String WEB_ADDRESS = "http://wiki.github.com/bixo/bixo/bixocrawler";
     public static final String EMAIL_ADDRESS = "bixo-dev@yahoogroups.com";
@@ -44,7 +44,7 @@ public class CrawlConfig {
     public static final long MILLISECONDS_PER_MINUTE = 60 * 1000L;
     
     // WritableSequenceFile key value field names
-    public static final String WRITABLE_SEQ_FILE_KEY_FN = "urlKey";
-    public static final String WRITABLE_SEQ_FILE_VALUE_FN = "boilerpipeValue";
+    public static final String WRITABLE_SEQ_FILE_KEY_FN = "url";
+    public static final String WRITABLE_SEQ_FILE_VALUE_FN = "parsedText";
 
 }
