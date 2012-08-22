@@ -7,8 +7,10 @@ import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
+import de.l3s.boilerpipe.BoilerpipeExtractor;
 import de.l3s.boilerpipe.document.TextDocument;
 import de.l3s.boilerpipe.extractors.DefaultExtractor;
+import de.l3s.boilerpipe.extractors.ExtractorBase;
 
 /**
  * BoilerpipeContentExtractor is a content extractor that extracts Boilerpipe cleaned content
@@ -18,10 +20,36 @@ import de.l3s.boilerpipe.extractors.DefaultExtractor;
 public class BoilerpipeContentExtractor extends BaseContentExtractor {
     private static final Logger LOGGER = Logger.getLogger(BoilerpipeContentExtractor.class);
     
+    
+    private Class<? extends ExtractorBase> _extractorClass;
     private transient BoilerpipeContentHandler _bpContentHandler;
     
+    /**
+     * Defaults to using {@link DefaultExtractor} when setting up 
+     * the {@link BoilerpipeContentHandler}
+     */
     public BoilerpipeContentExtractor() {
-        init();
+        this(DefaultExtractor.class);
+    }
+
+    /**
+     * {@link BoilerpipeExtractor} doesn't implement Serializable, but a caller can work around 
+     * this limitation by specifying the BoilerpipeExtractor class to use with 
+     * the {@link BoilerpipeContentHandler} (this would work for most extractors; 
+     * it won't work for {@link KeepEverythingWithMinKWordsExtractor} which takes a parameter). 
+     */
+    public BoilerpipeContentExtractor(Class<? extends ExtractorBase> extractorClass) {
+        _extractorClass = extractorClass;
+    }
+
+    private BoilerpipeExtractor initExtractor(Class<? extends ExtractorBase> extractorClass) {
+        BoilerpipeExtractor extractor = null;
+        try {
+            extractor = (BoilerpipeExtractor) extractorClass.newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException (e.getMessage());            
+        }
+        return extractor;
     }
 
     @Override
@@ -109,8 +137,9 @@ public class BoilerpipeContentExtractor extends BaseContentExtractor {
     protected synchronized void init() {
         
         if (_bpContentHandler == null) {
+            BoilerpipeExtractor extractor = initExtractor(_extractorClass);
             BodyContentHandler bodyContentHandler = new BodyContentHandler();
-            _bpContentHandler = new BoilerpipeContentHandler(bodyContentHandler, DefaultExtractor.INSTANCE);
+            _bpContentHandler = new BoilerpipeContentHandler(bodyContentHandler, extractor);
         }
     }
 }
