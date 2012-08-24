@@ -56,7 +56,6 @@ public class MultiDomainUrlFilter extends BaseUrlFilter {
         _protocolInclusionPattern = Pattern.compile("(?i)^(http|https)://");
 
         JobConf conf = HadoopUtils.getDefaultJobConf();
-        etLoopLoggerFile(curLoopDirName, curLoop)
         try {//process the file passed in
             if( filterFile != null){
                 FileSystem fs = filterFile.getFileSystem(conf);
