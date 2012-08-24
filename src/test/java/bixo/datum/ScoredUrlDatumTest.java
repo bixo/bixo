@@ -34,7 +34,6 @@ import com.bixolabs.cascading.PartitioningKey;
 @SuppressWarnings("deprecation")
 public class ScoredUrlDatumTest {
 
-
     @Test
     public void testSerializable() {
         DiskQueue<ScoredUrlDatum> queue = new DiskQueue<ScoredUrlDatum>(1);

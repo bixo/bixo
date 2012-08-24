@@ -32,9 +32,12 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.SimpleHttpFetcher;
+import bixo.parser.BoilerpipeContentExtractor;
+import bixo.parser.NullLinkExtractor;
 import bixo.parser.SimpleParser;
 
 public class FetchAndParseTool {
+
 
 	@SuppressWarnings("serial")
 	private static class FirefoxUserAgent extends UserAgent {
@@ -94,6 +97,9 @@ public class FetchAndParseTool {
         ParserPolicy parserPolicy = new ParserPolicy(MAX_PARSE_DURATION);
         SimpleParser parser = new SimpleParser(parserPolicy);
 
+        // Create Boilperpipe content extractor
+        SimpleParser bpParser = new SimpleParser(new BoilerpipeContentExtractor(), new NullLinkExtractor(), parserPolicy);
+        
         if (options.isTraceLogging()) {
             Logger.getRootLogger().setLevel(Level.TRACE);
             System.setProperty("bixo.root.level", "TRACE");
@@ -127,15 +133,21 @@ public class FetchAndParseTool {
         		System.out.println(String.format("Parsed %s: lang = %s, size = %d", parsed.getUrl(),
         		                parsed.getLanguage(), parsed.getParsedText().length()));
         		
+        		ParsedDatum bpParsed = bpParser.parse(result);
+        		
         		if (interactive) {
         		    while (true) {
-        		        System.out.print("Next action - (d)ump, (e)xit: ");
+        		        System.out.print("Next action - (d)ump regular, dump (b)oilerpipe, (e)xit: ");
         		        String action = readInputLine();
         		        if (action.startsWith("e") || (action.length() == 0)) {
         		            break;
-        		        } else if (action.startsWith("d")) {
+                        } else if (action.startsWith("d")) {
                             System.out.println("=====================================================================");
                             System.out.println(parsed.getParsedText());
+                            System.out.println("=====================================================================");
+                        } else if (action.startsWith("b")) {
+                            System.out.println("=====================================================================");
+                            System.out.println(bpParsed.getParsedText());
                             System.out.println("=====================================================================");
         		        } else {
         		            System.out.println("Unknown command - " + action);

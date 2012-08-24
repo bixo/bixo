@@ -51,7 +51,7 @@ public class FetcherPolicy implements Serializable {
     // creating an HttpClient. Then we could call it DefaultFetchPolicy, versus
     // DefaultFetchJobPolicy and BaseFetchJobPolicy.
     // =========================================================
-    protected static final int DEFAULT_MAX_REQUESTS_PER_CONNECTION = 50;
+    protected static final int DEFAULT_MAX_REQUESTS_PER_CONNECTION = 10;
     
     // Interval between requests, in milliseconds.
     @Deprecated

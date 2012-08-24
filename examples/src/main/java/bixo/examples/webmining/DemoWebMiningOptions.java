@@ -20,7 +20,7 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
-public class WebMiningOptions {
+public class DemoWebMiningOptions {
     
     private String _workingDir = "build/test/working";
     private String _agentName;

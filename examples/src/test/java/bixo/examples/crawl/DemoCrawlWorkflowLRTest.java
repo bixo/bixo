@@ -52,7 +52,7 @@ import cascading.tap.Hfs;
 import cascading.tuple.TupleEntryIterator;
 
 @SuppressWarnings({ "serial", "deprecation" })
-public class SimpleCrawlWorkflowLRTest implements Serializable {
+public class DemoCrawlWorkflowLRTest implements Serializable {
 
     public static class FakeWebSiteHandler extends AbstractHandler {
 
@@ -99,7 +99,7 @@ public class SimpleCrawlWorkflowLRTest implements Serializable {
         Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, baseDirPath, 0);
         Path crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
 
-        SimpleCrawlTool.importOneDomain("localhost:8089", crawlDbPath, conf);
+        DemoCrawlTool.importOneDomain("localhost:8089", crawlDbPath, conf);
         curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, baseDirPath, 1);
 
         FetcherPolicy defaultPolicy = new FetcherPolicy();
@@ -113,12 +113,13 @@ public class SimpleCrawlWorkflowLRTest implements Serializable {
             }
         };
 
-        SimpleCrawlToolOptions options = new SimpleCrawlToolOptions();
+        DemoCrawlToolOptions options = new DemoCrawlToolOptions();
+        options.setUseBoilerpipe(true);
         UserAgent userAgent = new UserAgent("test", "test@domain.com", "http://test.domain.com");
         Server server = null;
         try {
             server = startServer(new FakeWebSiteHandler(), 8089);
-            Flow flow = SimpleCrawlWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, options);
+            Flow flow = DemoCrawlWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, options);
             flow.complete();
 
             // Update the crawlDb path
@@ -155,7 +156,7 @@ public class SimpleCrawlWorkflowLRTest implements Serializable {
             // Do it one more time, to verify status gets propagated forward.
             curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, baseDirPath, 2);
 
-            flow = SimpleCrawlWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, options);
+            flow = DemoCrawlWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, options);
             flow.complete();
             // Update crawldb path
             crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);

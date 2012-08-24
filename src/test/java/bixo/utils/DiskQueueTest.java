@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
@@ -35,6 +36,30 @@ import bixo.datum.UrlStatus;
 
 public class DiskQueueTest {
 
+    private static class StringComparator implements Comparator<String> {
+
+        @Override
+        public int compare(String o1, String o2) {
+            return o1.compareTo(o2);
+        }
+    }
+    
+    private static class AtomicIntegerComparator implements Comparator<AtomicInteger> {
+
+        @Override
+        public int compare(AtomicInteger o1, AtomicInteger o2) {
+            return o1.get() - o2.get();
+        }
+    }
+    
+    private static class IntegerComparator implements Comparator<Integer> {
+
+        @Override
+        public int compare(Integer o1, Integer o2) {
+            return o1 - o2;
+        }
+    }
+    
     private static class FetchSetComparator implements Comparator<FetchSetDatum> {
         
         @Override
@@ -55,7 +80,7 @@ public class DiskQueueTest {
     
     @Test
     public void testQueue() {
-        DiskQueue<String> queue = new DiskQueue<String>(1);
+        DiskQueue<String> queue = new DiskQueue<String>(1, new StringComparator());
         
         assertTrue(queue.offer("one"));
         assertTrue(queue.offer("two"));
@@ -71,7 +96,7 @@ public class DiskQueueTest {
     
     @Test
     public void testReadAndWriteFromDiskQueue() {
-        DiskQueue<String> queue = new DiskQueue<String>(1);
+        DiskQueue<String> queue = new DiskQueue<String>(1, new StringComparator());
         
         assertTrue(queue.offer("one"));
         assertTrue(queue.offer("two"));
@@ -87,7 +112,7 @@ public class DiskQueueTest {
     
     @Test
     public void testLotsOfOperations() {
-        DiskQueue<Integer> queue = new DiskQueue<Integer>(10);
+        DiskQueue<Integer> queue = new DiskQueue<Integer>(10, new IntegerComparator());
         int numInQueue = 0;
         int readIndex = 0;
         int writeIndex = 0;
@@ -115,7 +140,7 @@ public class DiskQueueTest {
     
     @Test
     public void testLotsOfFileDeleteAndCreate() {
-        DiskQueue<Integer> queue = new DiskQueue<Integer>(1);
+        DiskQueue<Integer> queue = new DiskQueue<Integer>(1, new IntegerComparator());
 
         // We'll repeatedly overflow to disk, and then drain the queue,
         // thus forcing file creation/deletion.
@@ -131,7 +156,7 @@ public class DiskQueueTest {
     @Test
     public void testInvalidQueueSize() {
         try {
-            new DiskQueue<String>(0);
+            new DiskQueue<String>(0, new StringComparator());
             fail("Should have thrown exception");
         } catch (Exception e) {
             // valid
@@ -140,7 +165,7 @@ public class DiskQueueTest {
     
     @Test
     public void testClearingQueue() {
-        DiskQueue<Integer> queue = new DiskQueue<Integer>(1);
+        DiskQueue<Integer> queue = new DiskQueue<Integer>(1, new IntegerComparator());
         assertTrue(queue.offer(new Integer(666)));
         queue.clear();
         
@@ -154,7 +179,7 @@ public class DiskQueueTest {
         // disk, but not in queue) this needs to get accounted for in the size
         // calculation.
         
-        DiskQueue<Integer> queue = new DiskQueue<Integer>(1);
+        DiskQueue<Integer> queue = new DiskQueue<Integer>(1, new IntegerComparator());
         assertTrue(queue.offer(new Integer(1)));
         assertTrue(queue.offer(new Integer(2)));
         assertTrue(queue.offer(new Integer(3)));
@@ -166,13 +191,12 @@ public class DiskQueueTest {
     
     @Test
     public void testReleasingMemory() {
-        DiskQueue<String> queue = new DiskQueue<String>(1);
+        DiskQueue<String> queue = new DiskQueue<String>(1, new StringComparator());
 
         assertTrue(queue.offer("first"));
         assertTrue(queue.offer("second"));
         try {
             for (int i = 0; i < 30; i++) {
-                System.out.println(i);
                 byte data[] = new byte[1000000];
                 assertTrue(queue.offer(new String(data)));
                 assertNotNull(queue.poll());
@@ -214,7 +238,7 @@ public class DiskQueueTest {
 
     @Test
     public void testAddingNullElement() {
-        DiskQueue<Integer> queue = new DiskQueue<Integer>(1);
+        DiskQueue<Integer> queue = new DiskQueue<Integer>(1, new IntegerComparator());
 
         try {
             queue.offer(null);
@@ -237,7 +261,7 @@ public class DiskQueueTest {
     
     @Test
     public void testPeekingAndGetting() throws Exception {
-        DiskQueue<Integer> queue = new DiskQueue<Integer>(3);
+        DiskQueue<Integer> queue = new DiskQueue<Integer>(3, new IntegerComparator());
         
         assertTrue(queue.offer(new Integer(666)));
         assertTrue(queue.offer(new Integer(999)));
@@ -250,6 +274,29 @@ public class DiskQueueTest {
 
         assertEquals(999, queue.remove().intValue());
         assertEquals(0, queue.size());
+    }
+    
+    @Test
+    public void testDynamicSortOrder() throws Exception {
+        DiskQueue<AtomicInteger> queue = new DiskQueue<AtomicInteger>(3, new AtomicIntegerComparator());
+
+        AtomicInteger i1 = new AtomicInteger(0);
+        AtomicInteger i2 = new AtomicInteger(10);
+        assertTrue(queue.offer(i1));
+        assertTrue(queue.offer(i2));
+        
+        assertEquals(i1.get(), queue.peek().get());
+
+        // Change the value of the first item, and verify that we now
+        // get the new lowest value.
+        i1.set(100);
+        assertEquals(i2.get(), queue.peek().get());
+    }
+    
+    @Test
+    public void testPeeking() throws Exception {
+        DiskQueue<AtomicInteger> queue = new DiskQueue<AtomicInteger>(3, new AtomicIntegerComparator());
+        assertEquals(null, queue.peek());
     }
     
 }

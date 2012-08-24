@@ -41,6 +41,9 @@ import com.bixolabs.cascading.LoggingFlowProcess;
  */
 public class FetchTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(FetchTask.class);
+
+    // Min duration (in milliseconds) between page fetches in a single fetch set.
+    private static final long MIN_PAGE_FETCH_INTERVAL = 1000L;
     
     private IFetchMgr _fetchMgr;
     private BaseFetcher _httpFetcher;
@@ -67,13 +70,19 @@ public class FetchTask implements Runnable {
             while (!Thread.interrupted() && iter.hasNext()) {
                 ScoredUrlDatum item = iter.next();
                 FetchedDatum result = new FetchedDatum(item);
+                
+                // We use status as an extra field on the end of of FetchedDatum that lets
+                // us generate a full status pipe, and also a content pipe that only has
+                // entries which were fetched. By keying off the type (string == OK,
+                // BaseFetchException == bad) the FetchPipe can do this magic.
                 Comparable status = null;
 
+                long fetchStartTime = System.currentTimeMillis();
+                
                 try {
                     process.increment(FetchCounters.URLS_FETCHING, 1);
-                    long startTime = System.currentTimeMillis();
                     result = _httpFetcher.get(item);
-                    long deltaTime = System.currentTimeMillis() - startTime;
+                    long deltaTime = System.currentTimeMillis() - fetchStartTime;
 
                     process.increment(FetchCounters.FETCHED_TIME, (int)deltaTime);
                     process.increment(FetchCounters.URLS_FETCHED, 1);
@@ -81,10 +90,14 @@ public class FetchTask implements Runnable {
                     process.setStatus(Level.TRACE, "Fetched " + result);
 
                     status = UrlStatus.FETCHED.toString();
+                    
+                    // TODO - check keep-alive response (if present), and close the connection/delay
+                    // for some amount of time if we exceed this limit.
                 } catch (BaseFetchException e) {
                     // TODO KKr - we'd have to do something special here for AbortedFetchException with
                     // the reason == INTERRUPTED, as we'd want to (a) increment URLS_SKIPPED, not failed,
                     // and we'd want to bail out of this loop (or set the interrupted flag)
+                    LOGGER.info("Fetch exception while fetching " + item.getUrl(), e);
                     process.increment(FetchCounters.URLS_FAILED, 1);
 
                     // We can do this because each of the concrete subclasses of BaseFetchException implements
@@ -101,6 +114,23 @@ public class FetchTask implements Runnable {
                     Tuple tuple = result.getTuple();
                     tuple.add(status);
                    _fetchMgr.collect(tuple);
+                   
+                   // Figure out how long it's been since the start of the request.
+                   long fetchInterval = System.currentTimeMillis() - fetchStartTime;
+                   long delay = Math.min(0, MIN_PAGE_FETCH_INTERVAL - fetchInterval);
+                   
+                   // We want to avoid fetching faster than a max acceptable rate.
+                   if (delay > 0) {
+                       LOGGER.trace(String.format("FetchTask: sleeping for %dms", delay));
+                       
+                       try {
+                           Thread.sleep(delay);
+                       } catch (InterruptedException e) {
+                           LOGGER.warn("FetchTask interrupted!");
+                           Thread.currentThread().interrupt();
+                           continue;
+                       }
+                   }
                 }
             }
             

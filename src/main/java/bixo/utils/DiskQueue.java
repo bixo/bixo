@@ -26,9 +26,10 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.security.InvalidParameterException;
 import java.util.AbstractQueue;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.PriorityQueue;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -48,24 +49,27 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
 
     public static final float DEFAULT_REFILL_RATIO = 0.75f;
     
+    private static class DefaultComparator<T extends Comparable> implements Comparator<T> {
+
+        @Override
+        public int compare(T o1, T o2) {
+            return o1.compareTo(o2);
+        }
+        
+    }
+    
     private static class IndexQueue<E> extends AbstractQueue<E> {
 
-        private PriorityQueue<E> _queue;
+        private List<E> _queue;
+        private Comparator<? super E> _comparator;
         private int _capacity;
-        
-        public IndexQueue(int capacity) {
-            this(capacity, null);
-        }
-        
+
         public IndexQueue(int capacity, Comparator<? super E> comparator) {
             _capacity = capacity;
-            if (comparator != null) {
-                _queue = new PriorityQueue<E>(capacity, comparator);
-            } else {
-                _queue = new PriorityQueue<E>(capacity);
-            }
+            _comparator = comparator;
+            _queue = new ArrayList<E>(capacity);
         }
-        
+
         @Override
         public Iterator<E> iterator() {
             return _queue.iterator();
@@ -74,7 +78,7 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
         public int getCapacity() {
             return _capacity;
         }
-        
+
         @Override
         public int size() {
             return _queue.size();
@@ -94,7 +98,12 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
 
         @Override
         public E peek() {
-            return _queue.peek();
+            if (_queue.size() == 0) {
+                return null;
+            } else {
+                sort();
+                return _queue.get(0);
+            }
         }
 
         @Override
@@ -102,14 +111,35 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
             if (_queue.size() == 0) {
                 return null;
             } else {
-                return _queue.remove();
+                sort();
+                return _queue.remove(0);
             }
         }
-        
+
         public E remove() {
-            return _queue.remove();
+            sort();
+            return _queue.remove(0);
         }
-        
+
+        private void sort() {
+            // Find the lowest element, and if it's not the first element,
+            // swap it into place.
+            E lowestEntry = null;
+            int lowestIndex = -1;
+            for (int i = 0; i < _queue.size(); i++) {
+                if ((lowestEntry == null)
+                                || (_comparator.compare(lowestEntry, _queue.get(i)) > 0)) {
+                    lowestIndex = i;
+                    lowestEntry = _queue.get(i);
+                }
+            }
+
+            if ((lowestEntry != null) && (lowestIndex != 0)) {
+                E higherEntry = _queue.get(0);
+                _queue.set(0, lowestEntry);
+                _queue.set(lowestIndex, higherEntry);
+            }
+        }
     }
     
     // The _memoryQueue represents the head of the queue. It can also be the tail, if
@@ -146,9 +176,9 @@ public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
      * @param maxInMemorySize Maximum number of elements to keep in memory.
      */
     public DiskQueue(int maxInMemorySize) {
-        this(maxInMemorySize, null);
+        this(maxInMemorySize, new DefaultComparator());
     }
-
+    
     public DiskQueue(int maxInMemorySize, Comparator<? super E> comparator) {
         if (maxInMemorySize < 1) {
             throw new InvalidParameterException("DiskQueue max in-memory size must be at least one");

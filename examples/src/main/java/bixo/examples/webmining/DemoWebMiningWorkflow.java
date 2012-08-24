@@ -74,7 +74,7 @@ import com.bixolabs.cascading.SplitterAssembly;
 import com.bixolabs.cascading.TupleLogger;
 
 @SuppressWarnings("deprecation")
-public class WebMiningWorkflow {
+public class DemoWebMiningWorkflow {
 
     // Max URLs to fetch in local vs. distributed mode.
     private static final long MAX_LOCAL_FETCH = 5;
@@ -172,7 +172,7 @@ public class WebMiningWorkflow {
             Tap urlSink = new Hfs(new TextLine(), crawlDbPath.toString(), true);
             writer = urlSink.openForWrite(defaultJobConf);
 
-            is = WebMiningWorkflow.class.getResourceAsStream(fileName);
+            is = DemoWebMiningWorkflow.class.getResourceAsStream(fileName);
             if (is == null) {
                 throw new FileNotFoundException("The seed urls file doesn't exist");
             }
@@ -202,7 +202,7 @@ public class WebMiningWorkflow {
     }
     
     public static Flow createWebMiningWorkflow(Path crawlDbPath, Path curLoopDirPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, 
-                    WebMiningOptions options, boolean resetSolr) throws IOException, InterruptedException {
+                    DemoWebMiningOptions options, boolean resetSolr) throws IOException, InterruptedException {
         
         // Fetch at most 200 pages, max size of 128K, complete mode, from the current dir.
         // HTML only.
@@ -216,7 +216,7 @@ public class WebMiningWorkflow {
         int numReducers = 1; // we always want to use a single reducer, to avoid contention
         conf.setNumReduceTasks(numReducers);
         conf.setInt("mapred.min.split.size", 64 * 1024 * 1024);
-        Properties props = HadoopUtils.getDefaultProperties(WebMiningWorkflow.class, false, conf);
+        Properties props = HadoopUtils.getDefaultProperties(DemoWebMiningWorkflow.class, false, conf);
         FileSystem fs = crawlDbPath.getFileSystem(conf);
 
         // Input : the crawldb

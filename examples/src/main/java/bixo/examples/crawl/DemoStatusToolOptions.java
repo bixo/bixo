@@ -20,7 +20,7 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
-public class SimpleStatusToolOptions {
+public class DemoStatusToolOptions {
     private boolean _debugLogging = false;
 
     private String _crawlDir;

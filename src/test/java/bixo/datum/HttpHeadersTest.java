@@ -90,8 +90,8 @@ public class HttpHeadersTest {
 
         String result = headers.toString();
         System.out.println(result);
-        assertTrue(result.contains("key1:"));
-        assertTrue(result.contains("key2:"));
+        assertTrue(result.contains("key1="));
+        assertTrue(result.contains("key2="));
     }
     
     @Test

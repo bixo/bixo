@@ -39,7 +39,7 @@ public class HttpFetchException extends BaseFetchException implements WritableCo
     }
     
     public HttpFetchException(String url, String msg, int httpStatus, HttpHeaders httpHeaders) {
-        super(url, msg);
+        super(url, buildMessage(msg, httpStatus, httpHeaders));
         _httpStatus = httpStatus;
         _httpHeaders = httpHeaders;
     }
@@ -52,13 +52,17 @@ public class HttpFetchException extends BaseFetchException implements WritableCo
         return _httpHeaders;
     }
 
-    @Override
-    public String getMessage() {
-        StringBuilder result = new StringBuilder(super.getMessage());
+    private static String buildMessage(String msg, int httpStatus, HttpHeaders httpHeaders) {
+        StringBuilder result = new StringBuilder(msg);
         result.append(" (");
-        result.append(_httpStatus);
-        result.append(") Headers: ");
-        result.append(_httpHeaders.toString());
+        result.append(httpStatus);
+        result.append(")");
+        
+        String headers = httpHeaders.toString();
+        if (headers.length() > 0) {
+            result.append(" Headers: ");
+            result.append(headers);
+        }
         
         return result.toString();
     }

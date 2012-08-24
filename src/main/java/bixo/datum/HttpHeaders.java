@@ -115,7 +115,7 @@ public class HttpHeaders implements Writable {
 
             List<String> values = getAll(key);
             result.append(encodeString(key));
-            result.append(": ");
+            result.append("=");
 
             int numValues = 0;
             for (String value : values) {

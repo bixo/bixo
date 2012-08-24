@@ -20,19 +20,17 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
-public class JDBCCrawlToolOptions extends BaseCrawlToolOptions {
+public class DemoCrawlToolOptions extends BaseCrawlToolOptions {
 
-    private String _dbLocation = null;
-    
+    private boolean _cleanOutputDir = false;
 
-    @Option(name = "-persist", usage = "location where the db will be persisted", required = false)
-    public void setDbLocation(String dbLocation) {
-        _dbLocation = dbLocation;
+    @Option(name = "-clean", usage = "Delete the output dir if it exists - WARNING:you won't be prompted!", required = false)
+    public void setCleanOutputDir(boolean cleanOutputDir) {
+        _cleanOutputDir = cleanOutputDir;
     }
 
-
-    public String getDbLocation() {
-        return _dbLocation;
+    public boolean isCleanOutputDir() {
+        return _cleanOutputDir  ;
     }
     
     @Override

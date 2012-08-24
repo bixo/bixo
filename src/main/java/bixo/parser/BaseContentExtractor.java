@@ -68,6 +68,17 @@ public abstract class BaseContentExtractor extends DefaultHandler implements Ser
         }
     }
     
+    /* (non-Javadoc)
+     * @see org.xml.sax.helpers.DefaultHandler#ignorableWhitespace(char[], int, int)
+     * 
+     * We want to capture whitespace, as otherwise HTML elements get jammed together (e.g.
+     * <li>xxx</li><li>yyy</li> will show up as xxxyyy).
+     */
+    @Override
+    public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
+        characters(ch, start, length);
+    }
+    
     @Override
     public void endElement(String uri, String localName, String name) throws SAXException {
         super.endElement(uri, localName, name);
