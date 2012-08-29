@@ -66,7 +66,7 @@ public class CreateLinkDatumFromOutlinksFunction extends BaseOperation<NullConte
             float outlinkScore = pageScore/outlinks.length;
     
             for (Outlink outlink : outlinks) {
-                String url = outlink.getToUrl();
+                String url = outlink.getToUrl().trim();
                 url = url.replaceAll("[\n\r]", "");
                 String normalizedUrl = _normalizer.normalize(url);
     

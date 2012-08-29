@@ -7,6 +7,7 @@
 package bixo.examples.webmining;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.DataInputStream;
 import java.io.File;
@@ -40,6 +41,7 @@ import cascading.scheme.SequenceFile;
 import cascading.scheme.TextLine;
 import cascading.tap.Hfs;
 import cascading.tuple.Fields;
+import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 
 import com.bixolabs.cascading.HadoopUtils;
@@ -48,6 +50,11 @@ import com.bixolabs.cascading.HadoopUtils;
 public class WebMiningWorkflowTest {
 
     private static final String WORKING_DIR = "build/test/WebMiningWorkflowTest";
+
+    private static final String PAGE1_URL = "http://127.0.0.1:8089/page-1.html";
+    private static final String PAGE1_SCORE = "0.021978023";
+    private static final String PAGE2_URL = "http://127.0.0.1:8089/page-2.html";
+    private static final String PAGE2_SCORE = "0.0";
 
     private File _workingDir;
     @Before
@@ -126,7 +133,7 @@ public class WebMiningWorkflowTest {
             
             Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, workingDirPath, 1);
 
-            Flow flow = DemoWebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options, true);
+            Flow flow = DemoWebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options);
             flow.complete();
         
             // validate
@@ -139,11 +146,9 @@ public class WebMiningWorkflowTest {
             crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
             validateEntryCount(crawlDbPath, null, 3, "crawldb", true);
             
-            // TODO validate the scores and status ?
-            
             // run the second loop
             curLoopDirPath =  CrawlDirUtils.makeLoopDir(fs, workingDirPath, 2);
-            flow = DemoWebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options, false);
+            flow = DemoWebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options);
             flow.complete();
             
             // validate
@@ -155,7 +160,8 @@ public class WebMiningWorkflowTest {
 
             crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
             validateEntryCount(crawlDbPath, null, 8, "crawldb", true);
- 
+            assertTrue(validatePageScores(crawlDbPath));
+            
             Path resultsPath = new Path(curLoopDirPath, CrawlConfig.RESULTS_SUBDIR_NAME);
             validateEntryCount(resultsPath, null, 3, "page results", true);
 
@@ -195,4 +201,24 @@ public class WebMiningWorkflowTest {
         assertEquals(msgStr, expected, numEntries);
     }
 
+    private boolean validatePageScores(Path dataPath) throws IOException, InterruptedException {
+        boolean allOK = false;
+        int verifiedCnt = 0;
+        Hfs sourceTap = new Hfs(new TextLine(), dataPath.toString(), false);
+        TupleEntryIterator tupleEntryIterator = sourceTap.openForRead(HadoopUtils.getDefaultJobConf());
+        while (tupleEntryIterator.hasNext()) {
+          TupleEntry next = tupleEntryIterator.next();
+          String line = next.getString("line");
+          String[] split = line.split("\t");
+          if (split[0].equals(PAGE1_URL)) {
+              allOK |= split[3].equals(PAGE1_SCORE);
+              verifiedCnt++;
+          } else if (split[0].equals(PAGE2_URL)) {
+              allOK |= split[3].equals(PAGE2_SCORE);
+              verifiedCnt++;
+          }
+        }
+        tupleEntryIterator.close();
+        return allOK && (verifiedCnt==2);
+     }
 }

@@ -202,7 +202,7 @@ public class DemoWebMiningWorkflow {
     }
     
     public static Flow createWebMiningWorkflow(Path crawlDbPath, Path curLoopDirPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, 
-                    DemoWebMiningOptions options, boolean resetSolr) throws IOException, InterruptedException {
+                    DemoWebMiningOptions options) throws IOException, InterruptedException {
         
         // Fetch at most 200 pages, max size of 128K, complete mode, from the current dir.
         // HTML only.

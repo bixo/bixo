@@ -24,11 +24,9 @@ import org.apache.hadoop.io.Writable;
 
 public class PageResult implements Writable {
 
-    // These field names should match the field names in the solr schema.
-    public static final String STUDENT_INDEX_FN = "student";
-    public static final String SOURCE_URL_INDEX_FN = "sourceurl";
-    public static final String IMG_URL_INDEX_FN = "imageurl";
-    public static final String DESC_INDEX_FN = "description";
+    public static final String SOURCE_URL_FN = "sourceurl";
+    public static final String IMG_URL_FN = "imageurl";
+    public static final String DESC_FN = "description";
 
     private String _sourceUrl;
     private String _imageUrl;
