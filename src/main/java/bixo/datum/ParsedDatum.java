@@ -106,7 +106,7 @@ public class ParsedDatum extends PayloadDatum {
     }
 
     public Outlink[] getOutlinks() {
-        return convertTupleToOutlinks((Tuple)_tupleEntry.get(OUTLINKS_FN));
+        return convertTupleToOutlinks((Tuple)_tupleEntry.getObject(OUTLINKS_FN));
     }
 
     public void setOutlinks(Outlink[] outlinks) {
@@ -114,7 +114,7 @@ public class ParsedDatum extends PayloadDatum {
     }
 
     public Map<String, String> getParsedMeta() {
-        return convertTupleToMap((Tuple)_tupleEntry.get(PARSED_META_FN));
+        return convertTupleToMap((Tuple)_tupleEntry.getObject(PARSED_META_FN));
     }
 
     public void setParsedMeta(Map<String, String> parsedMeta) {
@@ -156,10 +156,9 @@ public class ParsedDatum extends PayloadDatum {
         return result;
     }
     
-    @SuppressWarnings("unchecked")
     private Map<String, String> convertTupleToMap(Tuple tuple) {
         Map<String, String> result = new HashMap<String, String>();
-        Iterator<Comparable<?>> iter = tuple.iterator();
+        Iterator<Object> iter = tuple.iterator();
         while (iter.hasNext()) {
             String key = (String)iter.next();
             String value = (String)iter.next();

@@ -31,8 +31,6 @@ import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Response;
 import org.mortbay.jetty.handler.AbstractHandler;
 
-import com.bixolabs.cascading.Payload;
-
 import bixo.config.BaseFetchJobPolicy;
 import bixo.config.DefaultFetchJobPolicy;
 import bixo.config.FetcherPolicy;
@@ -65,15 +63,20 @@ import bixo.utils.GroupingKey;
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
+import cascading.flow.hadoop.HadoopFlowConnector;
+import cascading.flow.hadoop.HadoopFlowProcess;
+import cascading.flow.local.LocalFlowConnector;
 import cascading.pipe.Pipe;
-import cascading.scheme.SequenceFile;
-import cascading.tap.Hfs;
-import cascading.tap.Lfs;
+import cascading.scheme.hadoop.SequenceFile;
 import cascading.tap.Tap;
+import cascading.tap.hadoop.Hfs;
+import cascading.tap.hadoop.Lfs;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
+
+import com.bixolabs.cascading.Payload;
 
 // Long-running test
 @SuppressWarnings("deprecation")
@@ -172,7 +175,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         
         // Verify numPages fetched and numPages status entries were saved.
         Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
         
         int totalEntries = 0;
         boolean[] fetchedPages = new boolean[numPages];
@@ -196,7 +199,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         tupleEntryIterator.close();
         
         validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
-        tupleEntryIterator = validate.openForRead(new JobConf());
+        tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
         totalEntries = 0;
         fetchedPages = new boolean[numPages];
         while (tupleEntryIterator.hasNext()) {
@@ -256,12 +259,12 @@ public class FetchPipeLRTest extends CascadingTestCase {
         
         // Verify numPages fetched and numPages status entries were saved.
         Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
         Assert.assertFalse(tupleEntryIterator.hasNext());
         tupleEntryIterator.close();
         
         validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
-        tupleEntryIterator = validate.openForRead(new JobConf());
+        tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
         int totalEntries = 0;
         boolean[] fetchedPages = new boolean[numPages];
         while (tupleEntryIterator.hasNext()) {
@@ -330,7 +333,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
         
         Lfs validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
         int totalEntries = 0;
         while (tupleEntryIterator.hasNext()) {
             TupleEntry entry = tupleEntryIterator.next();
@@ -369,7 +372,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         flow.complete();
         
         Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
         
         int totalEntries = 0;
         while (tupleEntryIterator.hasNext()) {
@@ -415,15 +418,15 @@ public class FetchPipeLRTest extends CascadingTestCase {
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
         
         String outputPath = DEFAULT_OUTPUT_PATH;
-        Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+        Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
         
         // Finally we can run it.
-        FlowConnector flowConnector = new FlowConnector();
+        FlowConnector flowConnector = new HadoopFlowConnector();
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(null, content), fetchPipe);
         flow.complete();
         
         Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
         Assert.assertFalse(tupleEntryIterator.hasNext());
     }
     
@@ -454,11 +457,11 @@ public class FetchPipeLRTest extends CascadingTestCase {
         flow.complete();
         
         Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
         Assert.assertFalse(tupleEntryIterator.hasNext());
         
         validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
-        tupleEntryIterator = validate.openForRead(new JobConf());
+        tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
         
         int numEntries = 0;
         while (tupleEntryIterator.hasNext()) {
@@ -491,21 +494,21 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
         // Create the output
         String outputPath = DEFAULT_OUTPUT_PATH;
-        Tap statusSink = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
-        Tap contentSink = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+        Lfs statusSink = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
+        Lfs contentSink = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
 
-        FlowConnector flowConnector = new FlowConnector();
+        FlowConnector flowConnector = new LocalFlowConnector();
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(statusSink, contentSink), fetchPipe);
         flow.complete();
         
         Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
         Assert.assertTrue(tupleEntryIterator.hasNext());
         tupleEntryIterator.next();
         Assert.assertFalse(tupleEntryIterator.hasNext());
 
         validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
-        tupleEntryIterator = validate.openForRead(new JobConf());
+        tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
         
         int numSkippedEntries = 0;
         int numFetchedEntries = 0;
@@ -627,7 +630,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
     
     private Lfs makeInputData(int numDomains, int numPages, Payload payload) throws IOException {
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), DEFAULT_INPUT_PATH, true);
-        TupleEntryCollector write = in.openForWrite(new JobConf());
+        TupleEntryCollector write = in.openForWrite(new HadoopFlowProcess());
         for (int i = 0; i < numDomains; i++) {
             for (int j = 0; j < numPages; j++) {
                 // Use special domain name pattern so code deep inside of operations "knows" not
@@ -642,7 +645,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
     
     private Lfs makeInputData(String domain, int numPages, Payload payload) throws IOException {
         Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), DEFAULT_INPUT_PATH, true);
-        TupleEntryCollector write = in.openForWrite(new JobConf());
+        TupleEntryCollector write = in.openForWrite(new HadoopFlowProcess());
         for (int j = 0; j < numPages; j++) {
             write.add(makeTuple(domain, j, payload));
         }
