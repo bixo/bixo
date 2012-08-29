@@ -47,7 +47,7 @@ import cascading.tuple.TupleEntryIterator;
 import com.bixolabs.cascading.HadoopUtils;
 
 @SuppressWarnings("deprecation")
-public class WebMiningWorkflowTest {
+public class DemoWebMiningWorkflowTest {
 
     private static final String WORKING_DIR = "build/test/WebMiningWorkflowTest";
 
