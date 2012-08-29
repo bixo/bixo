@@ -69,13 +69,12 @@ public class FetchSetDatum extends BaseDatum {
         setSkipped(false);
     }
 
-    @SuppressWarnings("unchecked")
     public List<ScoredUrlDatum> getUrls() {
-        Tuple urls = (Tuple)_tupleEntry.get(URLS_FN);
+        Tuple urls = (Tuple)_tupleEntry.getObject(URLS_FN);
         List<ScoredUrlDatum> result = new ArrayList<ScoredUrlDatum>(urls.size());
-        Iterator<Tuple> iter = (Iterator<Tuple>)urls.iterator();
+        Iterator<Object> iter = urls.iterator();
         while (iter.hasNext()) {
-            result.add(new ScoredUrlDatum(iter.next()));
+            result.add(new ScoredUrlDatum((Tuple)iter.next()));
         }
         
         return result;
