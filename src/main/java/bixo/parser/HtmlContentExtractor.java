@@ -26,9 +26,8 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
-
-import bixo.parser.BaseContentExtractor;
 
 /*
  * HtmlcontentExtractor is a content extractor that returns as content the 
@@ -49,6 +48,37 @@ public class HtmlContentExtractor extends BaseContentExtractor {
         _method = method;
     }
     
+    
+    @Override
+    public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
+        _contentHandler.ignorableWhitespace(ch, start, length);
+    }
+
+    @Override
+    public void setDocumentLocator(Locator locator) {
+        _contentHandler.setDocumentLocator(locator);
+    }
+
+    @Override
+    public void startPrefixMapping(String prefix, String uri) throws SAXException {
+        _contentHandler.startPrefixMapping(prefix, uri);
+    }
+
+    @Override
+    public void endPrefixMapping(String prefix) throws SAXException {
+        _contentHandler.endPrefixMapping(prefix);
+    }
+
+    @Override
+    public void processingInstruction(String target, String data) throws SAXException {
+        _contentHandler.processingInstruction(target, data);
+    }
+
+    @Override
+    public void skippedEntity(String name) throws SAXException {
+        _contentHandler.skippedEntity(name);
+    }
+
     @Override
     public void startDocument() throws SAXException {
         try {
