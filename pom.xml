@@ -191,6 +191,19 @@
             <scope>test</scope>
         </dependency>
 
+		<!-- For testing the parsing of HTML with markup -->
+        <dependency>
+            <groupId>jaxen</groupId>
+            <artifactId>jaxen</artifactId>
+            <version>1.1.1</version>
+            <scope>test</scope>
+            <exclusions>
+				<exclusion>
+					<groupId>xerces</groupId>
+					<artifactId>xercesImpl</artifactId>
+				</exclusion>
+            </exclusions>
+        </dependency>
 
 		<!-- Provided dependencies -->
 	
