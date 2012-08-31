@@ -56,16 +56,11 @@ public class DemoWebMiningWorkflowTest {
     private static final String PAGE2_URL = "http://127.0.0.1:8089/page-2.html";
     private static final String PAGE2_SCORE = "0.0";
 
-    private File _workingDir;
-    @Before
-    public void setup() {
-        _workingDir = new File(WORKING_DIR);
-        if (_workingDir.exists()) {
-            FileUtils.deleteQuietly(_workingDir);
-        }
-        _workingDir.mkdirs();
-    }
-    
+    /**
+     * Handler we use with embedded Jetty to "serve" web pages that are files found in a base
+     * directory.
+     *
+     */
     private class DirectoryResponseHandler extends AbstractHandler {
 
         private File _baseDir;
@@ -99,13 +94,23 @@ public class DemoWebMiningWorkflowTest {
             } catch (Exception e) {
                 throw new HttpException(500, e.getMessage());
             }
-            
         }
-
-
     }
+
+    private File _workingDir;
+    
+    @Before
+    public void setup() {
+        _workingDir = new File(WORKING_DIR);
+        if (_workingDir.exists()) {
+            FileUtils.deleteQuietly(_workingDir);
+        }
+        
+        _workingDir.mkdirs();
+    }
+    
     @Test
-    public void testCreateFetchWorkflow() throws Exception {
+    public void testDemoWebMiningWorkflow() throws Exception {
         DemoWebMiningOptions options = new DemoWebMiningOptions();
         options.setWorkingDir(WORKING_DIR);
         options.setAgentName("test-agent");
@@ -164,8 +169,6 @@ public class DemoWebMiningWorkflowTest {
             
             Path resultsPath = new Path(curLoopDirPath, CrawlConfig.RESULTS_SUBDIR_NAME);
             validateEntryCount(resultsPath, null, 3, "page results", true);
-
-            
         }  finally {
             if (server != null) {
                 server.stop();
@@ -173,9 +176,6 @@ public class DemoWebMiningWorkflowTest {
         }
     }
     
-   
-
-
     private Server startServer(Handler handler, int port) throws Exception {
         Server server = new Server(port);
         server.setHandler(handler);
@@ -191,12 +191,14 @@ public class DemoWebMiningWorkflowTest {
         } else {
             sourceTap = new Hfs(new SequenceFile(fields), dataPath.toString(), false);
         }
+        
         TupleEntryIterator tupleEntryIterator = sourceTap.openForRead(HadoopUtils.getDefaultJobConf());
         int numEntries = 0;
         while (tupleEntryIterator.hasNext()) {
           tupleEntryIterator.next();
           numEntries++;
         }
+        
         tupleEntryIterator.close();
         assertEquals(msgStr, expected, numEntries);
     }
@@ -218,6 +220,7 @@ public class DemoWebMiningWorkflowTest {
               verifiedCnt++;
           }
         }
+        
         tupleEntryIterator.close();
         return allOK && (verifiedCnt==2);
      }

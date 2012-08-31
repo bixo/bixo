@@ -17,6 +17,7 @@
 package bixo.examples.webmining;
 
 import java.io.InputStream;
+import java.net.ContentHandler;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.dom4j.io.SAXWriter;
 
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
+import bixo.examples.crawl.SimpleBodyContentHandler;
 import bixo.parser.DOMParser;
 import cascading.flow.FlowProcess;
 import cascading.operation.OperationCall;
@@ -81,10 +83,8 @@ public class AnalyzeHtml extends DOMParser {
     
     @Override
     protected void process(ParsedDatum datum, Document doc, TupleEntryCollector collector) throws Exception {
-        // Get all of the text from doc, and pass it to getScore()
-        BodyContentHandler bodyContentHandler = new BodyContentHandler();
-        XHTMLContentHandler xhtmlContentHandler =  new XHTMLContentHandler(bodyContentHandler, new Metadata());
-        SAXWriter writer = new SAXWriter(xhtmlContentHandler);
+        SimpleBodyContentHandler bodyContentHandler = new SimpleBodyContentHandler();
+        SAXWriter writer = new SAXWriter(bodyContentHandler);
         writer.write(doc);
 
         float pageScore = getScore(bodyContentHandler.toString());

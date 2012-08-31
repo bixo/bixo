@@ -233,13 +233,13 @@ public class DemoCrawlWorkflow {
         if (urlFilter != null) {
             urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new UrlFilter(urlFilter));
         }
+        
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new NormalizeUrlFunction(new SimpleUrlNormalizer()));
         urlFromOutlinksPipe = TupleLogger.makePipe(urlFromOutlinksPipe, true);
 
-
         // Take status and output urls from it  
-        Pipe urlFromFetchPipe = new Pipe("url from fetch");
-        urlFromFetchPipe = new Each(statusPipe, new CreateUrlDatumFromStatusFunction());
+        Pipe urlFromFetchPipe = new Pipe("url from fetch", statusPipe);
+        urlFromFetchPipe = new Each(urlFromFetchPipe, new CreateUrlDatumFromStatusFunction());
         urlFromFetchPipe = TupleLogger.makePipe(urlFromFetchPipe, true);
 
         // Finally join the URLs we get from parsing content with the URLs we got
