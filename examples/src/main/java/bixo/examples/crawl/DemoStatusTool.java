@@ -51,6 +51,7 @@ public class DemoStatusTool {
         
         TupleEntryIterator iter = statusTap.openForRead(conf);
         
+        LOGGER.info("Analyzing: " +  CrawlConfig.STATUS_SUBDIR_NAME);
         UrlStatus[] statusValues = UrlStatus.values();
         int[] statusCounts = new int[statusValues.length];
         int totalEntries = 0;
@@ -84,7 +85,9 @@ public class DemoStatusTool {
         totalEntries = 0;
         int fetchedUrls = 0;
         int unfetchedUrls = 0;
-        
+ 
+        LOGGER.info("Analyzing: " +  CrawlConfig.CRAWLDB_SUBDIR_NAME);
+
         while (iter.hasNext()) {
             TupleEntry entry = iter.next();
             totalEntries += 1;
