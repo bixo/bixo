@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 
 import bixo.datum.Outlink;
 import bixo.urls.SimpleUrlNormalizer;
+import bixo.urls.SimpleUrlValidator;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
@@ -33,6 +34,7 @@ import com.bixolabs.cascading.NullContext;
 public class CreateLinkDatumFromOutlinksFunction extends BaseOperation<NullContext> implements Function<NullContext> {
     private static final Logger LOGGER = Logger.getLogger(CreateLinkDatumFromOutlinksFunction.class);
     private transient SimpleUrlNormalizer _normalizer;
+    private transient SimpleUrlValidator _validator;
 
     public CreateLinkDatumFromOutlinksFunction() {
         super(LinkDatum.FIELDS);
@@ -42,6 +44,7 @@ public class CreateLinkDatumFromOutlinksFunction extends BaseOperation<NullConte
     public void prepare(FlowProcess process, OperationCall<NullContext> operationCall) {
         LOGGER.info("Starting creation of outlink URLs");
         _normalizer = new SimpleUrlNormalizer();
+        _validator = new SimpleUrlValidator();
     }
 
     @Override
@@ -69,9 +72,10 @@ public class CreateLinkDatumFromOutlinksFunction extends BaseOperation<NullConte
                 String url = outlink.getToUrl().trim();
                 url = url.replaceAll("[\n\r]", "");
                 String normalizedUrl = _normalizer.normalize(url);
-    
-                LinkDatum linkDatum = new LinkDatum(normalizedUrl, pageScore, outlinkScore);
-                collector.add(linkDatum.getTuple());
+                if (_validator.isValid(normalizedUrl)) {
+                    LinkDatum linkDatum = new LinkDatum(normalizedUrl, 0, outlinkScore);
+                    collector.add(linkDatum.getTuple());
+                }
             }
         }
     }
