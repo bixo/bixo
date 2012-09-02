@@ -213,7 +213,7 @@ public class DemoWebMiningWorkflow {
         
         JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
         boolean isLocal = HadoopUtils.isJobLocal(conf);
-        int numReducers = 1; // we always want to use a single reducer, to avoid contention
+        int numReducers = HadoopUtils.getNumReducers(conf);
         conf.setNumReduceTasks(numReducers);
         conf.setInt("mapred.min.split.size", 64 * 1024 * 1024);
         Properties props = HadoopUtils.getDefaultProperties(DemoWebMiningWorkflow.class, false, conf);
