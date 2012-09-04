@@ -36,7 +36,7 @@ public class BoilerpipeContentExtractor extends BaseContentExtractor {
      * {@link BoilerpipeExtractor} doesn't implement Serializable, but a caller can work around 
      * this limitation by specifying the BoilerpipeExtractor class to use with 
      * the {@link BoilerpipeContentHandler} (this would work for most extractors; 
-     * it won't work for {@link KeepEverythingWithMinKWordsExtractor} which takes a parameter). 
+     * it won't work for {@link de.l3s.boilerpipe.extractors.KeepEverythingWithMinKWordsExtractor} which takes a parameter).
      */
     public BoilerpipeContentExtractor(Class<? extends ExtractorBase> extractorClass) {
         _extractorClass = extractorClass;

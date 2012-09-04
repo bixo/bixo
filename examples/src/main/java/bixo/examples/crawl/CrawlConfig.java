@@ -23,6 +23,8 @@ public class CrawlConfig {
     public static final String STATUS_SUBDIR_NAME = "status";
     public static final String PARSE_SUBDIR_NAME = "parse";
 
+    public static final String MAHOUT_SUBDIR_NAME = "mahout";
+
     public static final String EXTRACTED_TEXT_SUBDIR_NAME = "extracted-text";
 
     public static final String WEB_ADDRESS = "http://wiki.github.com/bixo/bixo/bixocrawler";

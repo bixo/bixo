@@ -18,10 +18,10 @@ import java.util.*;
  * User: pferrel
  * Date: 4/4/12
  * Time: 11:55 AM
- * Creates a structure to mimic the Topic in finderbots, then will write it to Mongo
- * { "_id" : ObjectId("4f7c8d7466775a1ba30c8916"), "name" : "reuters: topic #15", "clusterID" : "reuters:21477", "parent" : ObjectId("4f7c88723ea0e7fad212194e"), "amped_pages" : [ 	{ 	"url" : "http://finderbots.com/r/reut2-000.sgm-103.txt","weight" : 1, 	"distance" : 0.9698336270321658 }, 	{ 	"url" : "http://finderbots.com/r/reut2-000.sgm-107.txt","weight" : 1, 	"distance" : 0.988130577490163 }, 	{ 	"url" : "http://finderbots.com/r/reut2-000.sgm-110.txt","weight" : 1, 	"distance" : 0.9771974485436884 } ] }
+ * Description: Creates a structure to mimic the Topic in finderbots, then will write it to Mongo
  *
  */
+
 class TopicMap  {
     Configuration conf;
     DBCollection clusters;

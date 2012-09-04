@@ -262,15 +262,15 @@ class BixoClusterConfiguration extends ClusterConfiguration {
 
     HashMap<String, String> createMap() {
         HashMap<String, String> result = new HashMap<String, String>();
-        result.put("INPUT_ROOT_DIR", "b2");
+        result.put("INPUT_ROOT_DIR", "b");
         result.put("PARENT_CLUSTER_NAME", "crawl");
         result.put("DOC_FILES", "seqfiles");
-        result.put("DOC_TO_ROW_INDEX_FILES", "matrix/docIndex");
+        result.put("DOC_TO_ROW_INDEX_FILES", "doc-matrix/docIndex");
         result.put("ROW_SIMILARITY_MATRIX_FILES", "similarity/part-r-00000");
         result.put("NAMED_VECTOR_FILES", "vectors/tfidf-vectors/part-r-00000");
         result.put("DICTIONARY_FILES", "vectors/dictionary.file-0");
-        result.put("CLUSTER_FILES", "kmeans-clusters");//place to find clusters
-        result.put("DOC_TO_CLUSTER_MAP_FILES", "kmeans-clusters/clusteredPoints/part-m-00000");
+        result.put("CLUSTER_FILES", "clusters");//place to find clusters
+        result.put("DOC_TO_CLUSTER_MAP_FILES", "clusters/clusteredPoints/part-m-00000");
         return result;
     }
 

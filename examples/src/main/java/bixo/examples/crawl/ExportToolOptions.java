@@ -45,7 +45,7 @@ public class ExportToolOptions {
         _overWrite = overWrite;
     }
 
-    @Option(name = "-titleweight", usage = "number of time to duplicate the title in the seq files to boost its importance (default = 1)", required = false)
+    @Option(name = "-titleweight", usage = "number of times to duplicate the title in the seq files to boost its importance (default = 1)", required = false)
     public void setNumLoops(int titleWeight) {
         _titleWeight = titleWeight;
     }
