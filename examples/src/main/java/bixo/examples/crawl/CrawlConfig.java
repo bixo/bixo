@@ -16,6 +16,8 @@
  */
 package bixo.examples.crawl;
 
+import bixo.datum.UrlStatus;
+
 public class CrawlConfig {
 
     public static final String CRAWLDB_SUBDIR_NAME = "crawldb";
@@ -47,4 +49,19 @@ public class CrawlConfig {
     public static final String WRITABLE_SEQ_FILE_KEY_FN = "url";
     public static final String WRITABLE_SEQ_FILE_VALUE_FN = "parsedText";
 
+    
+    public static boolean isUnfetchedStatus(UrlStatus status) {
+        if (status == UrlStatus.UNFETCHED
+            || status == UrlStatus.SKIPPED_DEFERRED
+            || status == UrlStatus.SKIPPED_BY_SCORER
+            || status == UrlStatus.SKIPPED_BY_SCORE
+            || status == UrlStatus.SKIPPED_TIME_LIMIT
+            || status == UrlStatus.SKIPPED_INTERRUPTED
+            || status == UrlStatus.SKIPPED_INEFFICIENT
+            || status == UrlStatus.ABORTED_SLOW_RESPONSE
+            || status == UrlStatus.ERROR_IOEXCEPTION) {
+            return true;
+        }
+        return false;
+    }
 }

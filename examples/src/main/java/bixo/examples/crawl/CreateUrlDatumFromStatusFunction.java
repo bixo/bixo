@@ -51,33 +51,19 @@ public class CreateUrlDatumFromStatusFunction extends BaseOperation<NullContext>
         LOGGER.info(String.format("Created %d URLs", _numCreated));
     }
 
-    // TODO VMa - verify w/Ken about this method...
     @Override
     public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
         StatusDatum datum = new StatusDatum(funcCall.getArguments());
         UrlStatus status = datum.getStatus();
         String url = datum.getUrl();
         long statusTime = datum.getStatusTime();
-        long fetchTime;
-
-        if (status == UrlStatus.FETCHED) {
-            fetchTime = statusTime;
-        } else if (status == UrlStatus.SKIPPED_BY_SCORER) {
-            status = UrlStatus.FETCHED;
-            fetchTime = statusTime; // Not strictly true, but we need old status
-                                    // time passed through
-
-            // TODO KKr - it would be nice to be able to get the old status
-            // here, versus "knowing" that the only time a url is skipped by our
-            // scorer is when it's already been fetched.
-        } else if (status == UrlStatus.UNFETCHED) {
-            // Since we only try to fetch URLs that have never been fetched, we
-            // know that the last fetch time will always be 0.
-            fetchTime = 0;
-        } else {
-            LOGGER.error(String.format("Unknown status %s for URL %s", status, url));
-            return;
-        }
+        
+        long fetchTime = statusTime; // Not exactly true... since in some cases we
+                    // may not have fetched the url. But because we are sharing this logic
+                    // between the JDBCCrawlTool and the DemoCrawlTool, we use the value
+                    // of the fetchTime while selecting the "latest" url. Newly added urls
+                    // have a fetchTime of 0, so in order to preserve say a SKIPPED status
+                    // we set the fetch time here.
 
         _numCreated += 1;
 

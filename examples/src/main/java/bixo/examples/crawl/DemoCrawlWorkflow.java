@@ -34,7 +34,6 @@ import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.datum.UrlDatum;
-import bixo.datum.UrlStatus;
 import bixo.fetcher.SimpleHttpFetcher;
 import bixo.operations.BaseScoreGenerator;
 import bixo.operations.FixedScoreGenerator;
@@ -84,26 +83,14 @@ public class DemoCrawlWorkflow {
 
         @Override
         public String getLHSName() {
-            return "fetched unfetched UrlDatums";
+            return "unfetched UrlDatums";
         }
 
         @Override
         // LHS represents unfetched tuples
         public boolean isLHS(TupleEntry tupleEntry) {
             CrawlDbDatum datum = new CrawlDbDatum(tupleEntry);
-            UrlStatus status = datum.getLastStatus();
-            if (status == UrlStatus.UNFETCHED
-                || status == UrlStatus.SKIPPED_DEFERRED
-                || status == UrlStatus.SKIPPED_BY_SCORER
-                || status == UrlStatus.SKIPPED_BY_SCORE
-                || status == UrlStatus.SKIPPED_TIME_LIMIT
-                || status == UrlStatus.SKIPPED_INTERRUPTED
-                || status == UrlStatus.SKIPPED_INEFFICIENT
-                || status == UrlStatus.ABORTED_SLOW_RESPONSE
-                || status == UrlStatus.ERROR_IOEXCEPTION) {
-                return true;
-            }
-            return false;
+            return CrawlConfig.isUnfetchedStatus(datum.getLastStatus());
         }
     }
 
