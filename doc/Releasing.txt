@@ -35,8 +35,14 @@ Temporarily change the version number of the components (TODO should be scripted
 % ant install
 % ant dist
 
-4. Update bixo-core in the Conjars repository
-% scp -i ~/.ssh/<id_rsa_key> pom.xml build/bixo-core-x.y.z.jar repo@conjars.org:
+-4. Update bixo-core in the Bixo Maven repository
+% cp ~/.m2/repository/bixo/bixo-core/x.y.z/bixo-core-x.y.z.pom build/
+% mvn deploy:deploy-file -Dfile=build/bixo-core-x.y.z.jar -DpomFile=build/bixo-core-x.y.z.pom -Durl=file:///<path to local bixo-pages>/repo/
+% pushd ../bixo-pages
+% git add repo/
+% git commit -am "Updating bixo-core to x.y.z"
+% git push
+% popd
 
 5. Upload dist
 Go to http://github.com/bixo/bixo/downloads
