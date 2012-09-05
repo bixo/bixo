@@ -115,7 +115,7 @@ public class UpdateCrawlDbBuffer extends BaseOperation<NullContext> implements B
         } else if (statusDatum != null) {
             status = statusDatum.getStatus();
             if (status != UrlStatus.FETCHED ) {
-                pageScore = (Float)statusDatum.getPayloadValue(CustomFields.PAGE_SCORE_FN);
+                pageScore = 0; // if we didn't fetch the page, then we can't have a page score
                 linkScore += (Float)statusDatum.getPayloadValue(CustomFields.LINKS_SCORE_FN);
             } else {
                 if (analyzedDatum != null) {
