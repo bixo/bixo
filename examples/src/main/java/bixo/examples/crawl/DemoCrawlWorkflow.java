@@ -46,6 +46,7 @@ import bixo.pipes.FetchPipe;
 import bixo.pipes.ParsePipe;
 import bixo.urls.BaseUrlFilter;
 import bixo.urls.SimpleUrlNormalizer;
+import bixo.urls.SimpleUrlValidator;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -216,7 +217,7 @@ public class DemoCrawlWorkflow {
                         writableSeqFileDataPath.toString());
         
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
-        urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction());
+        urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction(new SimpleUrlNormalizer(), new SimpleUrlValidator()));
         if (urlFilter != null) {
             urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new UrlFilter(urlFilter));
         }

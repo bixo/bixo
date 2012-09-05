@@ -36,10 +36,10 @@ public class UrlImporter {
         private BaseUrlNormalizer _normalizer;
         private BaseUrlValidator _validator;
 
-        public CreateUrlFromTextFunction(BaseUrlNormalizer normalizer) {
+        public CreateUrlFromTextFunction(BaseUrlNormalizer normalizer, BaseUrlValidator validator) {
             super(CrawlDbDatum.FIELDS);
             _normalizer = normalizer;
-            _validator = new SimpleUrlValidator();
+            _validator = validator;
         }
 
         @Override
@@ -80,7 +80,7 @@ public class UrlImporter {
 
         try {
             Tap urlSource = new Hfs(new TextLine(), _inputFilePath.toString());
-            Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFromTextFunction(new SimpleUrlNormalizer()));
+            Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFromTextFunction(new SimpleUrlNormalizer(), new SimpleUrlValidator()));
 
             Tap urlSink = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), _destDirPath.toString(), true);
 
