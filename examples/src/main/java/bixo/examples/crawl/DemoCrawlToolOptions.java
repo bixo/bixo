@@ -23,7 +23,8 @@ import org.kohsuke.args4j.Option;
 public class DemoCrawlToolOptions extends BaseCrawlToolOptions {
 
     private boolean _cleanOutputDir = false;
-
+    private boolean _generateHTML = false;
+    
     @Option(name = "-clean", usage = "Delete the output dir if it exists - WARNING:you won't be prompted!", required = false)
     public void setCleanOutputDir(boolean cleanOutputDir) {
         _cleanOutputDir = cleanOutputDir;
@@ -31,6 +32,15 @@ public class DemoCrawlToolOptions extends BaseCrawlToolOptions {
 
     public boolean isCleanOutputDir() {
         return _cleanOutputDir  ;
+    }
+    
+    @Option(name = "-html", usage = "Generate HTML output as a text file", required = false)
+    public void setGenerateHTML(boolean generateHTML) {
+        _generateHTML = generateHTML;
+    }
+
+    public boolean isGenerateHTML() {
+        return _generateHTML  ;
     }
     
     @Override

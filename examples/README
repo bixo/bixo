@@ -7,10 +7,12 @@ and it will crawl for the specified number of loops.
 The DemoWebMiningTool is an example of a focused crawler with the emphasis on 
 extracting (un)structured data from web pages. It demonstrates how 
 to analyze the fetched data from a page using a DOM parser. The result is a text
-file with one entry per line : 
+file with one entry per line:
+
 	<soruce url>\t<extracted img url>\t<description text (if any) via the alt tag>.
-(http://www.scaleunlimited.com/about/focused-crawler/ is a good starting point 
-to understand focused crawling)
+	
+http://www.scaleunlimited.com/about/focused-crawler/ is a good starting point 
+to understand focused crawling
 
 
 
@@ -21,19 +23,22 @@ To build a job jar:
 
 To run the job jar (for DemoCrawlTool and DemoWebMiningTool):
 
-% hadoop jar build/bixo-examples-job-<x.y.z>.jar bixo.examples.crawl.DemoCrawlTool \
+  % hadoop jar build/bixo-examples-job-<x.y.z>.jar bixo.examples.crawl.DemoCrawlTool \
 	-agentname <your agent name> -domain <target domain> -numloops <number of loops> -outputdir <results dir>
 
 Note that you should pick a number of loops > 1, so that it crawls more than just the top-level
-page of your target domain.
+page of your target domain. You can also provide the optional "-html" parameter, to generate
+"raw" HTML outupt as a text file, with one page per line.
 
-% hadoop jar build/bixo-examples-job-<x.y.z>.jar bixo.examples.webmining.DemoWebMiningTool \
+To run the job jar for DemoWebMiningTool:
+
+  % hadoop jar build/bixo-examples-job-<x.y.z>.jar bixo.examples.webmining.DemoWebMiningTool \
 	-agentname <your agent name> -workingdir <results dir>
 
 To create an Eclipse project:
 
-% cd <path to Bixo>/examples
-% ant eclipse
+  % cd <path to Bixo>/examples
+  % ant eclipse
 
 after which you would import the project into your Eclipse workspace.
 
