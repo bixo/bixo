@@ -95,7 +95,7 @@ public class SimpleParser extends BaseParser {
      */
     public SimpleParser(ParserPolicy parserPolicy, boolean includeMarkup) {
         this(includeMarkup ? new HtmlContentExtractor() : new SimpleContentExtractor(),
-             includeMarkup ? NullLinkExtractor.INSTANCE : new SimpleLinkExtractor(),
+             new SimpleLinkExtractor(),
              parserPolicy, includeMarkup);
     }
 
