@@ -121,7 +121,7 @@ public class DemoStatusTool {
             printUsageAndExit(parser);
         }
 
-        String crawlDirName = options.getCrawlDir();
+        String crawlDirName = options.getWorkingDir();
 
         try {
         	JobConf conf = new JobConf();

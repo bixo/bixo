@@ -22,30 +22,32 @@ import org.kohsuke.args4j.Option;
 
 public class DemoStatusToolOptions {
     private boolean _debugLogging = false;
-
-    private String _crawlDir;
+    private boolean _exportDb = false;
+    private String _workingDir;
     
     @Option(name = "-d", usage = "debug logging", required = false)
     public void setDebugLogging(boolean debugLogging) {
-        this._debugLogging = debugLogging;
-    }
-
-    @Option(name = "-crawldir", usage = "output directory of preceeding crawl", required = true)
-    public void setCrawlDir(String crawlDir) {
-    	_crawlDir = crawlDir;
-    }
-
-    @Option(name = "-exportdb", usage = "only export the crawldb", required = false)
-    private boolean _exportDb = false;
-
-    public String getCrawlDir() {
-        return _crawlDir;
+        _debugLogging = debugLogging;
     }
 
     public boolean isDebugLogging() {
         return _debugLogging;
     }
     
+    @Option(name = "-workingdir", usage = "Directory of preceeding crawl", required = true)
+    public void setWorkingDir(String workingDir) {
+    	_workingDir = workingDir;
+    }
+    
+    public String getWorkingDir() {
+        return _workingDir;
+    }
+
+    @Option(name = "-exportdb", usage = "only export the crawldb", required = false)
+    public void setExportDB(boolean exportDb) {
+        _exportDb = exportDb;
+    }
+
     public boolean isExportDb() {
         return _exportDb;
     }
