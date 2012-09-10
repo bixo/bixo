@@ -241,14 +241,14 @@ class TopicMap  {
                 double dist = dm.distance(topics.get(clusterId).getCentroid(), clusteredDoc.getVector());
 
                 if(!Double.isNaN(dist) && !Double.isInfinite(dist)){
-                    String rawName = ((NamedVector)( clusteredDoc.getVector())).getName();
+                    //String rawName = ((NamedVector)( clusteredDoc.getVector())).getName();
                     if( topics.get(clusterId) == null ){
                         topics.put(clusterId, new Topic());
                     }
                     topics.get(clusterId).setName(clusterConf.get("PARENT_CLUSTER_NAME")+": topic #"+Integer.toString(numClusteredDocs));
                     topics.get(clusterId).setParent(parentId);//parentId points to parent of all these clusters
                     HashMap<String, Object> currentDoc = new HashMap<String, Object>() ;//array of quads for each doc, only will contain the ones closest to the cluster center.
-                    currentDoc.put("url", clusterConf.vectorNameToURL(rawName));
+//                    currentDoc.put("url", clusterConf.vectorNameToURL(rawName));
                     currentDoc.put("weight", clusteredDoc.getWeight());
                     currentDoc.put("distance", dist);
                     // store the doc id when storing this data to mongo
