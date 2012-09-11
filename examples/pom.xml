@@ -35,7 +35,7 @@
 			<url>http://conjars.org/repo</url>
 		</repository>
 	</repositories>
-	
+
 	<dependencies>
 		<dependency>
 			<groupId>bixo</groupId>
