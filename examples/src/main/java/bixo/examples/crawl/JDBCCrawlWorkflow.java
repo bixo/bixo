@@ -41,6 +41,7 @@ import bixo.pipes.FetchPipe;
 import bixo.pipes.ParsePipe;
 import bixo.urls.BaseUrlFilter;
 import bixo.urls.SimpleUrlNormalizer;
+import bixo.urls.SimpleUrlValidator;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
@@ -88,7 +89,6 @@ public class JDBCCrawlWorkflow {
         @Override
         public void operate(FlowProcess process, BufferCall<NullContext> bufferCall) {
             CrawlDbDatum bestDatum = null;
-            
             Iterator<TupleEntry> iter = bufferCall.getArgumentsIterator();
             while (iter.hasNext()) {
                 CrawlDbDatum datum = new CrawlDbDatum(iter.next());
@@ -96,10 +96,10 @@ public class JDBCCrawlWorkflow {
                     bestDatum = datum;
                 } else if (datum.getLastFetched() > bestDatum.getLastFetched()) {
                     bestDatum = datum;
-                }    
+                }
             }
             
-            if (bestDatum != null && bestDatum.getLastFetched() == 0) {
+            if (bestDatum != null && CrawlConfig.isUnfetchedStatus(bestDatum.getLastStatus())) {
                 UrlDatum urlDatum = new UrlDatum(bestDatum.getUrl());
                 urlDatum.setPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD, bestDatum.getLastFetched());
                 urlDatum.setPayloadValue(CrawlDbDatum.LAST_UPDATED_FIELD, bestDatum.getLastUpdated());
@@ -129,12 +129,12 @@ public class JDBCCrawlWorkflow {
         Tap inputSource = JDBCTapFactory.createUrlsSourceJDBCTap(persistentDbLocation);
 
         // Read _everything_ in initially
-        // Split that pipe into URLs we want to fetch for the fetch pipe
+        // Group on the url, and select the best urls to best
         Pipe importPipe = new Pipe("url importer");
         importPipe = new GroupBy(importPipe, new Fields(CrawlDbDatum.URL_FIELD));
         importPipe = new Every(importPipe, new BestUrlToFetchBuffer(), Fields.RESULTS);
 
-        Path contentPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+        Path contentPath = new Path(curLoopDirPath, CrawlConfig.CONTENT_SUBDIR_NAME);
         Tap contentSink = new Hfs(new SequenceFile(FetchedDatum.FIELDS), contentPath.toString());
 
         Path parsePath = new Path(curLoopDirPath, CrawlConfig.PARSE_SUBDIR_NAME);
@@ -158,7 +158,7 @@ public class JDBCCrawlWorkflow {
         // Take content and split it into content output plus parse to extract URLs.
         ParsePipe parsePipe = new ParsePipe(fetchPipe.getContentTailPipe(), new SimpleParser());
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
-        urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction());
+        urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction(new SimpleUrlNormalizer(), new SimpleUrlValidator()));
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new UrlFilter(urlFilter));
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new NormalizeUrlFunction(new SimpleUrlNormalizer()));
 

@@ -217,6 +217,9 @@
 			<fileset dir="${build.dir.main-classes}" />
 			<fileset dir="${main.res.dir}" />
 			<fileset dir="${build.dir}" includes="lib/" />
+			<manifest>
+				<attribute name="Main-Class" value="${job.main.class}"/>
+			</manifest>
 		</jar>
         <delete file="${fbdest.dir}/${fbjob.name}" />
         <copy file="${build.dir}/${job.name}" toFile="${fbdest.dir}/${fbjob.name}" />

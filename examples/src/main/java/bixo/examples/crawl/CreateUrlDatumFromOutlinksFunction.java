@@ -21,6 +21,8 @@ import org.apache.log4j.Logger;
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.datum.UrlDatum;
+import bixo.urls.BaseUrlNormalizer;
+import bixo.urls.BaseUrlValidator;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
@@ -33,9 +35,13 @@ import com.bixolabs.cascading.NullContext;
 @SuppressWarnings("serial")
 public class CreateUrlDatumFromOutlinksFunction extends BaseOperation<NullContext> implements Function<NullContext> {
     private static final Logger LOGGER = Logger.getLogger(CreateUrlDatumFromOutlinksFunction.class);
+    private BaseUrlNormalizer _normalizer;
+    private BaseUrlValidator _validator;
 
-    public CreateUrlDatumFromOutlinksFunction() {
+    public CreateUrlDatumFromOutlinksFunction(BaseUrlNormalizer normalizer, BaseUrlValidator urlValidator) {
         super(UrlDatum.FIELDS);
+        _normalizer = normalizer;
+        _validator = urlValidator;
     }
 
     @Override
@@ -62,10 +68,12 @@ public class CreateUrlDatumFromOutlinksFunction extends BaseOperation<NullContex
         for (Outlink outlink : outlinks) {
             String url = outlink.getToUrl();
             url = url.replaceAll("[\n\r]", "");
-
-            UrlDatum urlDatum = new UrlDatum(url);
-            urlDatum.setPayload(datum.getPayload());
-            collector.add(urlDatum.getTuple());
+            url = _normalizer.normalize(url);
+            if (_validator.isValid(url)) {
+                UrlDatum urlDatum = new UrlDatum(url);
+                urlDatum.setPayload(datum.getPayload());
+                collector.add(urlDatum.getTuple());
+            }
         }
     }
 }

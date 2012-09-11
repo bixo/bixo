@@ -52,7 +52,7 @@ fi
 # http://docs.amazonwebservices.com/AWSEC2/latest/CommandLineReference/
 #
 if [ -z "$EC2_HOME" ]; then
-    EC2_API_TOOLS_VRESION="1.3-53907"
+    EC2_API_TOOLS_VRESION="1.5.2.5"
     if [ ! -d "$EC2_BASEDIR/support/ec2-api-tools-$EC2_API_TOOLS_VRESION" ]; then
         echo "Error: $EC2_BASEDIR/support/ec2-api-tools-$EC2_API_TOOLS_VRESION/ directory does not exist!"
         return
