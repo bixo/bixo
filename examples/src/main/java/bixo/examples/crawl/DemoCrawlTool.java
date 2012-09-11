@@ -205,10 +205,10 @@ public class DemoCrawlTool {
             FetcherPolicy defaultPolicy = new FetcherPolicy();
             defaultPolicy.setCrawlDelay(CrawlConfig.DEFAULT_CRAWL_DELAY);
             defaultPolicy.setMaxContentSize(CrawlConfig.MAX_CONTENT_SIZE);
-//            defaultPolicy.setFetcherMode(FetcherMode.EFFICIENT);
+            defaultPolicy.setFetcherMode(FetcherMode.EFFICIENT);
 // this is to cause Bixo to block waiting for next time it can fetch from a particular site.
 // todo: may not be necessary in future versions of Bixo
-            defaultPolicy.setFetcherMode(FetcherMode.COMPLETE);
+//            defaultPolicy.setFetcherMode(FetcherMode.COMPLETE);
 
             // It is a good idea to set up a crawl duration when running long crawls as you may 
             // end up in situations where the fetch slows down due to a 'long tail' and by 
