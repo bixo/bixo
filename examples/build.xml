@@ -217,16 +217,19 @@
 			<fileset dir="${build.dir.main-classes}" />
 			<fileset dir="${main.res.dir}" />
 			<fileset dir="${build.dir}" includes="lib/" />
-			<manifest>
-				<attribute name="Main-Class" value="${job.main.class}"/>
-			</manifest>
-		</jar>
-        <delete file="${fbdest.dir}/${fbjob.name}" />
-        <copy file="${build.dir}/${job.name}" toFile="${fbdest.dir}/${fbjob.name}" />
-    </target>
+<!-- pferrel:take out so you can have multiple entry points but you'll need to pass in the
+       class name with the main method
+             <manifest>
+                 <attribute name="Main-Class" value="${job.main.class}"/>
+             </manifest>
+-->
+         </jar>
+         <delete file="${fbdest.dir}/${fbjob.name}" />
+         <copy file="${build.dir}/${job.name}" toFile="${fbdest.dir}/${fbjob.name}" />
+     </target>
 
 
-	<!-- ================================================================== -->
+     <!-- ================================================================== -->
 	<!-- Generating eclipse file                                            -->
 	<!-- ================================================================== -->
 
