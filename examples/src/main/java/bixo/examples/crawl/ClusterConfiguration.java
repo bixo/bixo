@@ -270,7 +270,7 @@ class BixoClusterConfiguration extends ClusterConfiguration {
         result.put("NAMED_VECTOR_FILES", "vectors/tfidf-vectors/part-r-00000");
         result.put("DICTIONARY_FILES", "vectors/dictionary.file-0");
         result.put("CLUSTER_FILES", "clusters");//place to find clusters
-        result.put("DOC_TO_CLUSTER_MAP_FILES", "clusters/clusteredPoints/part-m-00000");
+        result.put("DOC_TO_CLUSTER_MAP_FILES", "clusters/clusteredPoints/part-m-0");
         return result;
     }
 
