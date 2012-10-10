@@ -26,7 +26,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
-import org.mortbay.log.Log;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
@@ -47,7 +46,8 @@ import com.bixolabs.cascading.HadoopUtils;
 @SuppressWarnings("deprecation")
 public class DemoCrawlTool {
 
-
+    private static final Logger LOGGER = Logger.getLogger(DemoCrawlTool.class);
+    
     private static void printUsageAndExit(CmdLineParser parser) {
         parser.printUsage(System.err);
         System.exit(-1);
@@ -232,7 +232,7 @@ public class DemoCrawlTool {
                 } else {
                     String protocolPatterStr = "+(?i)^(http|https)://*";
                     patterns.add(protocolPatterStr);
-                    Log.warn("Defaulting to basic url regex filtering (just suffix and protocol");
+                    LOGGER.warn("Defaulting to basic url regex filtering (just suffix and protocol");
                 }
             }
             urlFilter = new RegexUrlFilter(patterns.toArray(new String[patterns.size()]));
