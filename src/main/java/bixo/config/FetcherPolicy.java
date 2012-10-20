@@ -124,6 +124,7 @@ public class FetcherPolicy implements Serializable {
         _requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     }
 
+    @Deprecated
     public long getDefaultCrawlDelay() {
         return DEFAULT_CRAWL_DELAY;
     }
@@ -175,10 +176,20 @@ public class FetcherPolicy implements Serializable {
         _maxContentSize = maxContentSize;
     }
     
+    /**
+     * The (default) crawl delay should be specified via the BaseFetchJobPolicy, not the FetcherPolicy
+     * @return
+     */
+    @Deprecated
     public long getCrawlDelay() {
         return _crawlDelay;
     }
     
+    /**
+     * The (default) crawl delay should be specified via the BaseFetchJobPolicy, not the FetcherPolicy
+     * @return
+     */
+    @Deprecated
     public void setCrawlDelay(long crawlDelay) {
         _crawlDelay = crawlDelay;
     }
