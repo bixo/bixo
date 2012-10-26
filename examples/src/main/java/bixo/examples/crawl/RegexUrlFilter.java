@@ -16,23 +16,24 @@
  */
 package bixo.examples.crawl;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import bixo.datum.UrlDatum;
+import bixo.urls.BaseUrlFilter;
+import com.bixolabs.cascading.HadoopUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.util.LineReader;
+import org.apache.log4j.Logger;
+
+import java.io.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import bixo.datum.UrlDatum;
-import bixo.urls.BaseUrlFilter;
 
 // Filter URLs that fall outside of the target domain
 @SuppressWarnings("serial")
@@ -43,6 +44,7 @@ public class RegexUrlFilter extends BaseUrlFilter {
     private static final String EXCLUDE_CHAR = "-";
 
     private static final String COMMENT_CHAR = "#";
+    private static final String DEFAULT_FILTER_LIST = "-(?i)\\.(pdf|zip|gzip|gz|sit|bz|bz2|tar|tgz|exe)$";
 
     private ArrayList<SimpleImmutableEntry<Pattern, Boolean>> _domainExclusionInclusionList = new ArrayList<SimpleImmutableEntry<Pattern, Boolean>>();
 
@@ -99,28 +101,38 @@ public class RegexUrlFilter extends BaseUrlFilter {
     }
     
     public static List<String> getDefaultUrlFilterPatterns() throws IOException {
-        InputStream is = RegexUrlFilter.class.getResourceAsStream("/regex-url-filters.txt");
-        DataInputStream in = new DataInputStream(is);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        return readFilters(reader);
+//        InputStream is = RegexUrlFilter.class.getResourceAsStream("/regex-url-filters.txt");
+//        DataInputStream in = new DataInputStream(is);
+//        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+//        return readFilters(reader);
+//  pferrel: the above is hard to make work with both BufferedReader and LineReader since one works with Text and one with String
+//  pferrel: so I changed the default regex to be stored in a static string instead of a file in the resources dir.
+//  pferrel: I suggest the "regex-url-filters.txt" file be put in the same place the DemoCrawlTool is run from as an example
+//  pferrel: filter file to build from. The logic here is that a user of the command line is not as likely to look in the resource
+//  pferrel: directory to find examples as a programmer modifying the code.
+        List<String> defaultFilters = new ArrayList<String>();
+        defaultFilters.add(DEFAULT_FILTER_LIST);
+        return defaultFilters;
     }
 
-    public static List<String> getUrlFilterPatterns(String urlFiltersFile) throws IOException  {
-        FileReader fileReader = new FileReader(urlFiltersFile);
-        BufferedReader reader = new BufferedReader(fileReader);
-        return readFilters(reader);
-        
-    }
-
-    private static List<String> readFilters(BufferedReader reader) throws IOException {
+    public static List<String> getUrlFilterPatterns(String urlFiltersFile) throws IOException, InterruptedException {
+        //this reads regex filters from a file in HDFS or the native file sysytem
+        JobConf conf = HadoopUtils.getDefaultJobConf();
+        Path filterFile = new Path(urlFiltersFile);
+        FileSystem fs = filterFile.getFileSystem(conf);
         List<String> filterList = new ArrayList<String>();
-        String line = null;
-        while ((line = reader.readLine()) != null) {
-            if (StringUtils.isNotBlank(line) && !line.startsWith(COMMENT_CHAR)) {
-                filterList.add(line.trim());
+        if(fs.exists(filterFile)){
+            FSDataInputStream in = fs.open(filterFile);
+            LineReader reader = new LineReader(in);
+            Text tLine = new Text();
+            while (reader.readLine(tLine) > 0 ) {
+                String line = tLine.toString();
+                if (StringUtils.isNotBlank(line) && (line.startsWith(INCLUDE_CHAR) || line.startsWith(EXCLUDE_CHAR))) {
+                    filterList.add(line.trim());
+                }
             }
+            in.close();
         }
-        reader.close();
         return filterList;
     }
 }

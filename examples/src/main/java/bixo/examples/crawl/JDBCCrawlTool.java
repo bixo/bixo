@@ -16,19 +16,6 @@
  */
 package bixo.examples.crawl;
 
-import java.io.IOException;
-import java.util.List;
-
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import org.mortbay.log.Log;
-
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.config.UserAgent;
@@ -40,6 +27,17 @@ import cascading.flow.Flow;
 import cascading.flow.PlannerException;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.log4j.FileAppender;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PatternLayout;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+
+import java.io.IOException;
+import java.util.List;
 
 /**
  * JDBCCrawlTool is an example of using Bixo to write a simple crawl tool.
@@ -212,7 +210,7 @@ public class JDBCCrawlTool {
                 } else {
                     String protocolPatterStr = "+(?i)^(http|https)://*";
                     patterns.add(protocolPatterStr);
-                    Log.warn("Defaulting to basic url regex filtering (just suffix and protocol");
+                    //Log.warn("Defaulting to basic url regex filtering (just suffix and protocol");
                 }
             }
             urlFilter = new RegexUrlFilter(patterns.toArray(new String[patterns.size()]));

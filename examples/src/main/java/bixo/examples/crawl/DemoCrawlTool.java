@@ -37,7 +37,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
-import org.mortbay.log.Log;
 
 import java.util.List;
 
@@ -232,7 +231,7 @@ public class DemoCrawlTool {
                 } else {
                     String protocolPatterStr = "+(?i)^(http|https)://*";
                     patterns.add(protocolPatterStr);
-                    Log.warn("Defaulting to basic url regex filtering (just suffix and protocol");
+                    //Log.warn("Defaulting to basic url regex filtering (just suffix and protocol");
                 }
             }
             urlFilter = new RegexUrlFilter(patterns.toArray(new String[patterns.size()]));
