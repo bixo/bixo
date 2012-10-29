@@ -71,7 +71,7 @@ public class MinerOptions {
         return _numLoops;
     }
 
-    @Option(name = "-urlfilters", usage = "text file containing list of regex patterns for url filtering", required = false)
+    @Option(name = "-urlfilters", usage = "text file containing list of regex patterns for url filtering", required = true)
     public void setRegexUrlFiltersFile(String regexFiltersFile) {
         _regexUrlFiltersFile = regexFiltersFile;
     }

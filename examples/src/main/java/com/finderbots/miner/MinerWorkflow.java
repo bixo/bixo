@@ -28,6 +28,7 @@ import bixo.operations.BaseScoreGenerator;
 import bixo.parser.SimpleParser;
 import bixo.pipes.FetchPipe;
 import bixo.pipes.ParsePipe;
+import bixo.urls.BaseUrlFilter;
 import bixo.urls.SimpleUrlNormalizer;
 import bixo.utils.IoUtils;
 import cascading.flow.Flow;
@@ -198,7 +199,7 @@ public class MinerWorkflow {
     }
 
     public static Flow createWebMiningWorkflow(Path crawlDbPath, Path curLoopDirPath, FetcherPolicy fetcherPolicy, UserAgent userAgent,
-                                               MinerOptions options) throws IOException, InterruptedException {
+                                               MinerOptions options, BaseUrlFilter crawlUrlFilter, BaseUrlFilter mineUrlFilter ) throws IOException, InterruptedException {
 
         // Fetch at most 200 pages, max size of 128K, complete mode, from the current dir.
         // HTML only.
@@ -259,6 +260,7 @@ public class MinerWorkflow {
         Pipe analyzerPipe = new Pipe("analyzer pipe");
         analyzerPipe = new Each(parsePipe.getTailPipe(), new AnalyzeHtml());
 
+        //add a regex url filter to filter outlinks
         Pipe outlinksPipe = new Pipe("outlinks pipe", analyzerPipe);
         outlinksPipe = new Each(outlinksPipe, new CreateLinkDatumFromOutlinksFunction());
 

@@ -19,6 +19,7 @@ package com.finderbots.miner;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.config.UserAgent;
+import bixo.urls.BaseUrlFilter;
 import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
 import org.apache.hadoop.fs.FileSystem;
@@ -33,6 +34,7 @@ import org.kohsuke.args4j.CmdLineParser;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @SuppressWarnings("deprecation")
@@ -124,10 +126,21 @@ public class MinerTool {
             }
             fetcherPolicy.setValidMimeTypes(validMimeTypes);
 
-            // Let's limit our crawl to two loops 
+            // By setting up a url filter we only deal with urls that we want to
+            // instead of all the urls that we extract.
+            String crawlUrlFiltersFile = options.getRegexUrlFiltersFile();
+            List<String> crawlUrlPatterns = RegexUrlFilter.getUrlFilterPatterns(crawlUrlFiltersFile);
+            BaseUrlFilter crawlUrlFilter = new RegexUrlFilter(crawlUrlPatterns.toArray(new String[crawlUrlPatterns.size()]));
+
+            // setting up a miner filter we will mine only pages that match one of the urls
+            String regexUrlFiltersFile = options.getRegexUrlFiltersFile();
+            List<String> mineUrlPatterns = RegexUrlFilter.getUrlFilterPatterns(regexUrlFiltersFile);
+            BaseUrlFilter mineUrlFilter = new RegexUrlFilter(mineUrlPatterns.toArray(new String[mineUrlPatterns.size()]));
+
+            // Let's limit our crawl to two loops
             for (int curLoop = 1; curLoop <= options.getNumLoops(); curLoop++) {
                 Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, workingDirPath, curLoop);
-                Flow flow = MinerWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options);
+                Flow flow = MinerWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options, crawlUrlFilter, mineUrlFilter);
                 flow.complete();
 
                 // Update crawlDbPath to point to the latest crawl db
