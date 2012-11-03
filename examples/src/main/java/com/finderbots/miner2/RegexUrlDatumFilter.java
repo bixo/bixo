@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package com.finderbots.miner;
+package com.finderbots.miner2;
 
 import bixo.datum.UrlDatum;
 import bixo.urls.BaseUrlFilter;
@@ -37,8 +37,8 @@ import java.util.regex.Pattern;
 
 // Filter URLs that fall outside of the target domain
 @SuppressWarnings("serial")
-public class RegexUrlFilter extends BaseUrlFilter {
-    private static final Logger LOGGER = Logger.getLogger(RegexUrlFilter.class);
+public class RegexUrlDatumFilter extends BaseUrlFilter {
+    private static final Logger LOGGER = Logger.getLogger(RegexUrlDatumFilter.class);
 
     private static final String INCLUDE_CHAR = "+";
     private static final String EXCLUDE_CHAR = "-";
@@ -54,13 +54,13 @@ public class RegexUrlFilter extends BaseUrlFilter {
      * Note : The filters are applied in the order defined in the list.
      * @param exclusionInclusionPatterns
      */
-    public RegexUrlFilter(String[] exclusionInclusionPatterns) {
+    public RegexUrlDatumFilter(String[] exclusionInclusionPatterns) {
         initExclusionInclusionList(exclusionInclusionPatterns);
     }
-    
+
     private void initExclusionInclusionList(String[] exclusionInclusionPatterns) {
-        
-         if (exclusionInclusionPatterns != null) {
+
+        if (exclusionInclusionPatterns != null) {
             for (String line : exclusionInclusionPatterns) {
                 String p = line.trim();
                 if (p.length() > 0) {
@@ -75,15 +75,15 @@ public class RegexUrlFilter extends BaseUrlFilter {
                     }
                 }
             }
-        } 
+        }
     }
 
 
     @Override
     public boolean isRemove(UrlDatum datum) {
         String urlAsString = datum.getUrl();
-        
-        
+
+
         if (!_domainExclusionInclusionList.isEmpty()) {
             for (Entry<Pattern, Boolean> e : _domainExclusionInclusionList) {
                 if (e.getKey().matcher(urlAsString).find()) {
@@ -96,10 +96,10 @@ public class RegexUrlFilter extends BaseUrlFilter {
             }
             return true;    // if it doesn't match any pattern, then by default remove
         }
-        
+
         return false;       // No filters so do not remove the url
     }
-    
+
     public static List<String> getDefaultUrlFilterPatterns() throws IOException {
 //        InputStream is = RegexUrlFilter.class.getResourceAsStream("/regex-url-filters.txt");
 //        DataInputStream in = new DataInputStream(is);
@@ -107,7 +107,7 @@ public class RegexUrlFilter extends BaseUrlFilter {
 //        return readFilters(reader);
 //  pferrel: the above is hard to make work with both BufferedReader and LineReader since one works with Text and one with String
 //  pferrel: so I changed the default regex to be stored in a static string instead of a file in the resources dir.
-//  pferrel: I suggest the "regex-url-filters.txt" file be put in the same place the DemoCrawlAndMinerTool is run from as an example
+//  pferrel: I suggest the "regex-url-filters.txt" file be put in the same place the DemoCrawlTool is run from as an example
 //  pferrel: filter file to build from. The logic here is that a user of the command line is not as likely to look in the resource
 //  pferrel: directory to find examples as a programmer modifying the code.
         List<String> defaultFilters = new ArrayList<String>();

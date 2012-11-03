@@ -25,6 +25,8 @@ import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.fetcher.SimpleHttpFetcher;
 import bixo.operations.BaseScoreGenerator;
+import bixo.operations.FixedScoreGenerator;
+import bixo.operations.UrlFilter;
 import bixo.parser.SimpleParser;
 import bixo.pipes.FetchPipe;
 import bixo.pipes.ParsePipe;
@@ -239,14 +241,17 @@ public class MinerWorkflow {
         long maxToFetch = HadoopUtils.isJobLocal(conf) ? MAX_LOCAL_FETCH : MAX_DISTRIBUTED_FETCH;
         urlsToFetchPipe = new Each(urlsToFetchPipe, new CreateUrlDatumFromCrawlDbDatum(maxToFetch));
 
-        BaseScoreGenerator scorer = new LinkScoreGenerator();
-
         // Create the sub-assembly that runs the fetch job
         int maxThreads = isLocal ? CrawlConfig.DEFAULT_NUM_THREADS_LOCAL :  CrawlConfig.DEFAULT_NUM_THREADS_CLUSTER;
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, fetcherPolicy, userAgent);
         fetcher.setMaxRetryCount(CrawlConfig.MAX_RETRIES);
         fetcher.setSocketTimeout(CrawlConfig.SOCKET_TIMEOUT);
         fetcher.setConnectionTimeout(CrawlConfig.CONNECTION_TIMEOUT);
+
+        // The scorer is used by the FetchPipe to assign a score to every URL that passes the
+        // robots.txt processing. The score is used to sort URLs such that higher scoring URLs
+        // are fetched first. If URLs are skipped for any reason(s) lower scoring URLs are skipped.
+        BaseScoreGenerator scorer = new FixedScoreGenerator();
 
         FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, numReducers);
         Pipe statusPipe = new Pipe("status pipe", fetchPipe.getStatusTailPipe());
@@ -263,6 +268,9 @@ public class MinerWorkflow {
         //add a regex url filter to filter outlinks
         Pipe outlinksPipe = new Pipe("outlinks pipe", analyzerPipe);
         outlinksPipe = new Each(outlinksPipe, new CreateLinkDatumFromOutlinksFunction());
+        if (crawlUrlFilter != null) {
+            outlinksPipe = new Each(outlinksPipe, new UrlFilter(crawlUrlFilter));
+        }
 
         Pipe resultsPipe = new Pipe("results pipe", analyzerPipe);
         resultsPipe = new Each(resultsPipe, new CreateResultsFunction());
@@ -276,10 +284,12 @@ public class MinerWorkflow {
 
         // output : loop dir specific crawldb
         Path outCrawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
-        Tap crawlDbSink = new Hfs(new TextLine(), outCrawlDbPath.toString());
+        Tap crawlDbSink = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), outCrawlDbPath.toString());
+
         // Status, 
         Path statusDirPath = new Path(curLoopDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
         Tap statusSink = new Hfs(new TextLine(), statusDirPath.toString());
+
         // Content
         Path contentDirPath = new Path(curLoopDirPath, CrawlConfig.CONTENT_SUBDIR_NAME);
         Tap contentSink = new Hfs(new SequenceFile(FetchedDatum.FIELDS), contentDirPath.toString());
