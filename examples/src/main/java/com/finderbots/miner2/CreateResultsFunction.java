@@ -51,7 +51,7 @@ public class CreateResultsFunction extends BaseOperation<NullContext> implements
         PageResult[] pageResults = datum.getPageResults();
         if (pageResults.length > 0) {
             for (PageResult pageResult : pageResults) {
-                String outResult = String.format("%s\t%s\t%s", pageResult.getSourceUrl(), pageResult.getImageUrl(), pageResult.getDescription());
+                String outResult = String.format("%s\t%s\t%s", pageResult.getSourceUrl(), pageResult.getOutlinkUrl(), pageResult.getDescription());
                 collector.add(new Tuple(outResult));
             }
         }

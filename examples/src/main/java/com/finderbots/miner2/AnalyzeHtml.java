@@ -88,9 +88,10 @@ public class AnalyzeHtml extends DOMParser {
 
             // Get the outlinks.
             Outlink[] outlinks = getOutlinks(doc);
+            PageResult[] pageResults = getFollowingOutlinks(datum.getUrl().toString(),doc);
 
             // Extract all of the images, and use them as page results.
-            PageResult[] pageResults = extractImages(datum.getUrl(), doc, outlinks);
+            //PageResult[] pageResults = extractImages(datum.getUrl(), doc, outlinks);
 
             _result.setUrl(datum.getUrl());
             _result.setPageScore(pageScore);
@@ -125,14 +126,36 @@ public class AnalyzeHtml extends DOMParser {
         return outlinkList.toArray(new Outlink[outlinkList.size()]);
     }
 
-    private PageResult[] extractImages(String sourceUrl, Document doc, Outlink[] outlinks) {
-        ArrayList<PageResult> pageResults = new ArrayList<PageResult>();
+    // This will create a list of outlinks from the current page that correspond to followed people on Pinterest
+    // The Url encodes the user id of the people and points to their main page.
+    // todo: need more sophisticated filter, just gets all outlinks now!!! Also need to decode person ID
+    // todo: and save it as the key for other person related info since it is unique on Pinterest
+
+    private PageResult[] getFollowingOutlinks(String sourceUrl, Document doc) {
+        ArrayList<PageResult> outlinkList = new ArrayList<PageResult>();
+        List<Node> aNodes = getNodes(doc, "//a");
+
+
+        for (Node node : aNodes) {
+            String url = getAttributeFromNode(node, "href");
+            //String anchor = getAttributeFromNode(node, "name");
+            //String alt = getAttributeFromNode(node, "alt");
+            String linkText = getTextFromNode(node);
+            PageResult link = new PageResult(sourceUrl, url, linkText);
+            outlinkList.add(link);
+        }
+
+        return outlinkList.toArray(new PageResult[outlinkList.size()]);
+    }
+
+    private ImagesPageResult[] extractImages(String sourceUrl, Document doc, Outlink[] outlinks) {
+        ArrayList<ImagesPageResult> pageResults = new ArrayList<ImagesPageResult>();
         // Find if we have image links that may have extracted as an Outlink
         for (Outlink outlink : outlinks) {
             String outlinkUrl = outlink.getToUrl();
             if (isImgSuffix(outlinkUrl)) {
                 // TODO Maybe set description to any words found in image name? Change '-' and '_' to spaces?
-                PageResult result = new PageResult(sourceUrl, outlinkUrl, "");
+                ImagesPageResult result = new ImagesPageResult(sourceUrl, outlinkUrl, "");
                 pageResults.add(result);
 
             }
@@ -142,11 +165,11 @@ public class AnalyzeHtml extends DOMParser {
         for (Node node : imgNodes) {
             String src = getAttributeFromNode(node, "src");
             String alt = getAttributeFromNode(node, "alt");
-            PageResult result = new PageResult(sourceUrl, src, alt);
+            ImagesPageResult result = new ImagesPageResult(sourceUrl, src, alt);
             pageResults.add(result);
         }
 
-        return pageResults.toArray(new PageResult[pageResults.size()]);
+        return pageResults.toArray(new ImagesPageResult[pageResults.size()]);
     }
 
     private String getAttributeFromNode(Node node, String attribute) {
@@ -154,7 +177,16 @@ public class AnalyzeHtml extends DOMParser {
         if (node.getNodeType() == Node.ELEMENT_NODE) {
             Element e = (Element)node;
             attributeValue = e.attributeValue(attribute);
-        } 
+        }
+        return  (attributeValue == null ? "" : attributeValue);
+    }
+
+    private String getTextFromNode(Node node) {
+        String attributeValue = null;
+        if (node.getNodeType() == Node.ELEMENT_NODE) {
+            Element e = (Element)node;
+            attributeValue = e.getTextTrim();
+        }
         return  (attributeValue == null ? "" : attributeValue);
     }
 

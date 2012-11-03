@@ -22,26 +22,23 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-/* This class encapsulates a mining result and writes it.
- */
-
-public class PageResult implements Writable {
+public class ImagesPageResult implements Writable {
 
     public static final String SOURCE_URL_FN = "sourceurl";
-    public static final String OUTLINK_URL_FN = "outlinkurl";
+    public static final String IMG_URL_FN = "imageurl";
     public static final String DESC_FN = "description";
 
     private String _sourceUrl;
-    private String _outlinkUrl;
+    private String _imageUrl;
     private String _description;
-
-    public PageResult() {
+    
+    public ImagesPageResult() {
         // Empty constructor for deserialization
     }
-
-    public PageResult(String sourceUrl, String outlinkUrl, String description) {
+    
+    public ImagesPageResult(String sourceUrl, String imageUrl, String description) {
         _sourceUrl = sourceUrl;
-        _outlinkUrl = outlinkUrl;
+        _imageUrl = imageUrl;
         _description = description;
     }
 
@@ -53,12 +50,12 @@ public class PageResult implements Writable {
         _sourceUrl = sourceUrl;
     }
 
-    public String getOutlinkUrl() {
-        return _outlinkUrl;
+    public String getImageUrl() {
+        return _imageUrl;
     }
 
-    public void setOutlinkUrl(String outlinkUrl) {
-        _outlinkUrl = outlinkUrl;
+    public void setImageUrl(String imageUrl) {
+        _imageUrl = imageUrl;
     }
 
     public String getDescription() {
@@ -72,14 +69,14 @@ public class PageResult implements Writable {
     @Override
     public void readFields(DataInput in) throws IOException {
         _sourceUrl = in.readUTF();
-        _outlinkUrl = in.readUTF();
+        _imageUrl = in.readUTF();
         _description = in.readUTF();
     }
 
     @Override
     public void write(DataOutput out) throws IOException {
         out.writeUTF(_sourceUrl);
-        out.writeUTF(_outlinkUrl);
+        out.writeUTF(_imageUrl);
         out.writeUTF(_description);
     }
     
