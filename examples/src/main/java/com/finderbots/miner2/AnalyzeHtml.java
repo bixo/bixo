@@ -56,8 +56,9 @@ public class AnalyzeHtml extends DOMParser {
 
     private transient AnalyzedDatum _result;
     private RegexUrlStringFilter _urlsToMineFilter;// if not null then url must match a pattern to include before  being analyzed
+    private RegexUrlStringFilter _minedOutlinksFilter;// the outlinks found on the analyzed page must match a regex here to be returned in PageResults
 
-    public AnalyzeHtml(RegexUrlStringFilter urlsToMineFilter) {
+    public AnalyzeHtml(RegexUrlStringFilter urlsToMineFilter ) {
         super(AnalyzedDatum.FIELDS);
         _urlsToMineFilter = urlsToMineFilter;
     }
@@ -133,15 +134,22 @@ public class AnalyzeHtml extends DOMParser {
 
     private PageResult[] getFollowingOutlinks(String sourceUrl, Document doc) {
         ArrayList<PageResult> outlinkList = new ArrayList<PageResult>();
-        List<Node> aNodes = getNodes(doc, "//a");
+        //List<Node> aNodes = getNodes(doc, "//a");
+        // doc is the entire page find the div of followed people
+        //     <div class="FixedContainer">
+        //       <div id="PeopleList">
+        // them throw out all outlinks not needed
+        // -.*/pin/.*   -- for instance
 
-
+        //todo: put the xpaths in a param file if xpaths keyed by url-regex is enough for a nice DSL
+        List<Node> aNodes = getNodes(doc, "//div[@class='PersonInfo']/h4/a");
         for (Node node : aNodes) {
             String url = getAttributeFromNode(node, "href");
             //String anchor = getAttributeFromNode(node, "name");
             //String alt = getAttributeFromNode(node, "alt");
             String linkText = getTextFromNode(node);
             PageResult link = new PageResult(sourceUrl, url, linkText);
+            // todo: also should return the person ID? Url is returned now because it may be of interest
             outlinkList.add(link);
         }
 

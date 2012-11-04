@@ -240,9 +240,11 @@ public class DemoCrawlAndMinerTool {
             patterns.clear();
             RegexUrlStringFilter urlsToMineFilter = null;
             String regexUrlsToMineFiltersFile = options.getRegexUrlToMineFile();
+            AnalyzeHtml analyzer = null;
             if (regexUrlsToMineFiltersFile != null ){
                 patterns = RegexUrlDatumFilter.getUrlFilterPatterns(regexUrlsToMineFiltersFile);
                 urlsToMineFilter = new RegexUrlStringFilter(patterns.toArray(new String[patterns.size()]));
+                analyzer = new AnalyzeHtml(urlsToMineFilter);
             }
 
             // OK, now we're ready to start looping, since we've got our current
@@ -261,7 +263,7 @@ public class DemoCrawlAndMinerTool {
                 String curLoopDirName = curLoopDirPath.getName();
                 setLoopLoggerFile(logsDir+curLoopDirName, curLoop);
 
-                Flow flow = DemoCrawlAndMinerWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, urlsToMineFilter, options);
+                Flow flow = DemoCrawlAndMinerWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, analyzer, options);
                 flow.complete();
                 
                 // Writing out .dot files is a good way to verify your flows.

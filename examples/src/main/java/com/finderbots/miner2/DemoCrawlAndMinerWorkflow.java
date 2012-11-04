@@ -115,7 +115,7 @@ public class DemoCrawlAndMinerWorkflow {
     }
 
 
-    public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, RegexUrlStringFilter urlsToMineFilter, DemoCrawlAndMinerToolOptions options) throws Throwable {
+    public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, AnalyzeHtml analyzer, DemoCrawlAndMinerToolOptions options) throws Throwable {
         JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
         int numReducers = HadoopUtils.getNumReducers(conf);
         conf.setNumReduceTasks(numReducers);
@@ -221,7 +221,7 @@ public class DemoCrawlAndMinerWorkflow {
 
         if (options.isEnableMiner()) {
             Pipe analyzerPipe = new Pipe("analyzer pipe", parsePipe.getTailPipe());
-            analyzerPipe = new Each(analyzerPipe, new AnalyzeHtml(urlsToMineFilter));
+            analyzerPipe = new Each(analyzerPipe, analyzer);
 
             Pipe resultsPipe = new Pipe("results pipe", analyzerPipe);
             resultsPipe = new Each(resultsPipe, new CreateResultsFunction());

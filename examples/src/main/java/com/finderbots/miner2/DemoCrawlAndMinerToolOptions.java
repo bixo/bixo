@@ -26,6 +26,7 @@ public class DemoCrawlAndMinerToolOptions extends BaseCrawlToolOptions {
     private boolean _generateHTML = false;
     private boolean _enableMiner = false;
     private String _regexUrlToMineFile = null;//default to mine all fetched pages
+    private String _regexOutlinksToMineFile = null;//default ro return all outlinks
 
     @Option(name = "-urlstomine", usage = "text file containing list of regex patterns for urls to mine", required = false)
     public void setRegexUrlToMineFile(String regexFiltersFile) {
@@ -34,6 +35,16 @@ public class DemoCrawlAndMinerToolOptions extends BaseCrawlToolOptions {
 
     public String getRegexUrlToMineFile() {
         return _regexUrlToMineFile ;
+
+    }
+
+    @Option(name = "-outlinkstomine", usage = "text file containing list of regex patterns for outlinks on the urltomine which will be returned as results", required = false)
+    public void setRegexOutlinksToMineFile(String regexFiltersFile) {
+        _regexOutlinksToMineFile = regexFiltersFile;
+    }
+
+    public String getRegexOutlinksToMineFile() {
+        return _regexOutlinksToMineFile ;
 
     }
 
