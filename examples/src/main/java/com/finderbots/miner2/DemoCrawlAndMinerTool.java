@@ -205,8 +205,8 @@ public class DemoCrawlAndMinerTool {
             defaultPolicy.setMaxContentSize(CrawlConfig.MAX_CONTENT_SIZE);
 // this is to cause Bixo to block waiting for next time it can fetch from a particular site.
 // todo: COMPLETE for crawling a single site, EFFICIENT for many sites
-//            defaultPolicy.setFetcherMode(FetcherPolicy.FetcherMode.EFFICIENT);
-            defaultPolicy.setFetcherMode(FetcherPolicy.FetcherMode.COMPLETE);
+            defaultPolicy.setFetcherMode(FetcherPolicy.FetcherMode.EFFICIENT);
+//            defaultPolicy.setFetcherMode(FetcherPolicy.FetcherMode.COMPLETE);
 
             // It is a good idea to set up a crawl duration when running long crawls as you may
             // end up in situations where the fetch slows down due to a 'long tail' and by

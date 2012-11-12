@@ -74,7 +74,7 @@ public class AnalyzeHtml extends DOMParser {
         //_positivePhrases = loadAnalyzedPhrases("positive-phrases.txt", _analyzer);
         //_negativePhrases = loadAnalyzedPhrases("negative-phrases.txt", _analyzer);
         
-        _result = new AnalyzedDatum("", 0.0f, new PageResult[0], new Outlink[0]);
+        _result = new AnalyzedDatum("", 0.0f, new BooleanPreference[0], new Outlink[0]);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class AnalyzeHtml extends DOMParser {
 
             // Get the outlinks.
             Outlink[] outlinks = getOutlinks(doc);
-            PageResult[] pageResults = getFollowingOutlinks(datum.getUrl().toString(),doc);
+            BooleanPreference[] pageResults = getPrefs(datum.getUrl().toString(), doc);
 
             // Extract all of the images, and use them as page results.
             //PageResult[] pageResults = extractImages(datum.getUrl(), doc, outlinks);
@@ -132,8 +132,8 @@ public class AnalyzeHtml extends DOMParser {
     // todo: need more sophisticated filter, just gets all outlinks now!!! Also need to decode person ID
     // todo: and save it as the key for other person related info since it is unique on Pinterest
 
-    private PageResult[] getFollowingOutlinks(String sourceUrl, Document doc) {
-        ArrayList<PageResult> outlinkList = new ArrayList<PageResult>();
+    private BooleanPreference[] getPrefs(String sourceUrl, Document doc) throws IllegalStateException {
+        ArrayList<BooleanPreference> prefList = new ArrayList<BooleanPreference>();
         //List<Node> aNodes = getNodes(doc, "//a");
         // doc is the entire page find the div of followed people
         //     <div class="FixedContainer">
@@ -143,17 +143,37 @@ public class AnalyzeHtml extends DOMParser {
 
         //todo: put the xpaths in a param file if xpaths keyed by url-regex is enough for a nice DSL
         List<Node> aNodes = getNodes(doc, "//div[@class='PersonInfo']/h4/a");
+        Pattern prefIdPattern = Pattern.compile("(?<=pinterest.com/)(.*)(?=/)");
+        Pattern personIdPattern = Pattern.compile("(?<=pinterest.com/)(.*)(?=/following/*)");
         for (Node node : aNodes) {
-            String url = getAttributeFromNode(node, "href");
+            String preferedUrl = getAttributeFromNode(node, "href");
+            //get the part between pinterest.com/ and the next slash, that is the unique username in pinterest
             //String anchor = getAttributeFromNode(node, "name");
             //String alt = getAttributeFromNode(node, "alt");
-            String linkText = getTextFromNode(node);
-            PageResult link = new PageResult(sourceUrl, url, linkText);
-            // todo: also should return the person ID? Url is returned now because it may be of interest
-            outlinkList.add(link);
+            //String linkText = getTextFromNode(node);
+            try{
+
+                Matcher prefIdMatcher = prefIdPattern.matcher(preferedUrl);
+                String preferenceId = "";
+                if( prefIdMatcher.find() ){
+                    preferenceId = prefIdMatcher.group(0);
+                }
+                Matcher personIdMatcher = personIdPattern.matcher(sourceUrl);
+                String personId = "";
+                if( personIdMatcher.find() ){
+                    personId = personIdMatcher.group(0);
+                }
+                BooleanPreference pref = new BooleanPreference(personId, preferenceId);
+                // todo: also should return the person ID? Url is returned now because it may be of interest
+                prefList.add(pref);
+            } catch (IllegalStateException e) {
+                //just ignore a bad pair
+                LOGGER.warn("Exception during a regex matching the preference url " + sourceUrl + " or person url " + preferedUrl + "it will be ignored but beware something is wrong");
+                throw e;
+            }
         }
 
-        return outlinkList.toArray(new PageResult[outlinkList.size()]);
+        return prefList.toArray(new BooleanPreference[prefList.size()]);
     }
 
     private ImagesPageResult[] extractImages(String sourceUrl, Document doc, Outlink[] outlinks) {

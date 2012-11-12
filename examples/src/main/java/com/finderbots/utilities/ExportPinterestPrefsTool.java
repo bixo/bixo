@@ -25,7 +25,7 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
 @SuppressWarnings("deprecation")
-public class ExportTool {
+public class ExportPinterestPrefsTool {
 
     private static void printUsageAndExit(CmdLineParser parser) {
         parser.printUsage(System.err);
@@ -52,9 +52,10 @@ public class ExportTool {
             Path crawlPath = new Path(options.getCrawlDir());
             FileSystem fs = outputPath.getFileSystem(conf);
 
-            // create a flow that takes all parsed text and accumulates into a single sink in mahout format
-            Flow exportToMahoutFlow = ExportAllToMahoutWorkflow.createFlow(crawlPath, options);
-            exportToMahoutFlow.complete();
+            // get the urls of users, urls of followed people, make sure they are unique, create an index
+            // and write the ids out as CSV file of prefs for mahout input.
+            Flow exportPinterestPrefsWorkFlow = ExportPinterestPrefsWorkflow.createFlow(crawlPath, options);
+            exportPinterestPrefsWorkFlow.complete();
         } catch (PlannerException e) {
             e.writeDOT("failed-flow.dot");
             System.err.println("PlannerException: " + e.getMessage());

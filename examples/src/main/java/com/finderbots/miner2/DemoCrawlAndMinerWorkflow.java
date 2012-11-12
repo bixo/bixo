@@ -224,7 +224,7 @@ public class DemoCrawlAndMinerWorkflow {
             analyzerPipe = new Each(analyzerPipe, analyzer);
 
             Pipe resultsPipe = new Pipe("results pipe", analyzerPipe);
-            resultsPipe = new Each(resultsPipe, new CreateResultsFunction());
+            resultsPipe = new Each(resultsPipe, new CreateBooleanPreferenceFunction());
 
             Path minerOutputPath = new Path(curWorkingDirPath, CrawlConfig.MINER_SUBDIR_NAME);
             Tap minerOutputTap = new Hfs(new TextLine(), minerOutputPath.toString(), true);

@@ -43,7 +43,7 @@ public class AnalyzedDatum extends BaseDatum {
         super(fields, tuple);
     }
 
-    public AnalyzedDatum(Fields fields, String url, float pageScore, PageResult[] pageResults, Outlink[] outlinks) {
+    public AnalyzedDatum(Fields fields, String url, float pageScore, BooleanPreference[] pageResults, Outlink[] outlinks) {
         super(fields);
         
         setUrl(url);
@@ -52,7 +52,7 @@ public class AnalyzedDatum extends BaseDatum {
         setOutlinks(outlinks);
     }
 
-    public AnalyzedDatum(String url, float pageScore, PageResult[] pageResults, Outlink[] outlinks) {
+    public AnalyzedDatum(String url, float pageScore, BooleanPreference[] pageResults, Outlink[] outlinks) {
         this(FIELDS, url, pageScore, pageResults, outlinks);
     }
     
@@ -72,11 +72,11 @@ public class AnalyzedDatum extends BaseDatum {
         return _tupleEntry.getFloat(PAGE_SCORE_FIELD);
     }
 
-    public void setPageResults(PageResult[] results) {
+    public void setPageResults(BooleanPreference[] results) {
         _tupleEntry.set(PAGE_RESULTS_FIELD, makeTupleOfPageResults(results));
     }
 
-    public PageResult[] getPageResults() {
+    public BooleanPreference[] getPageResults() {
         return makePageResultsFromTuple((Tuple)_tupleEntry.get(PAGE_RESULTS_FIELD));
     }
 
@@ -89,19 +89,19 @@ public class AnalyzedDatum extends BaseDatum {
         return makeOutlinksFromTuple((Tuple)_tupleEntry.get(OUTLINKS_FIELD));
     }
 
-    private Object makeTupleOfPageResults(PageResult[] results) {
+    private Object makeTupleOfPageResults(BooleanPreference[] results) {
         Tuple t = new Tuple();
-        for (PageResult pr : results) {
+        for (BooleanPreference pr : results) {
             t.add(pr);
         }
         
         return t;
     }
 
-    private PageResult[] makePageResultsFromTuple(Tuple tuple) {
-        PageResult[] result = new PageResult[tuple.size()];
+    private BooleanPreference[] makePageResultsFromTuple(Tuple tuple) {
+        BooleanPreference[] result = new BooleanPreference[tuple.size()];
         for (int i = 0; i < tuple.size(); i++) {
-            result[i] = (PageResult)tuple.getObject(i);
+            result[i] = (BooleanPreference)tuple.getObject(i);
         }
         
         return result;

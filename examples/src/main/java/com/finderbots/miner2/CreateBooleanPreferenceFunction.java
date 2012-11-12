@@ -28,10 +28,10 @@ import com.bixolabs.cascading.NullContext;
 import org.apache.log4j.Logger;
 
 @SuppressWarnings("serial")
-public class CreateResultsFunction extends BaseOperation<NullContext> implements Function<NullContext> {
-    private static final Logger LOGGER = Logger.getLogger(CreateResultsFunction.class);
+public class CreateBooleanPreferenceFunction extends BaseOperation<NullContext> implements Function<NullContext> {
+    private static final Logger LOGGER = Logger.getLogger(CreateBooleanPreferenceFunction.class);
 
-    public CreateResultsFunction() {
+    public CreateBooleanPreferenceFunction() {
         super(new Fields("line"));
     }
 
@@ -48,10 +48,10 @@ public class CreateResultsFunction extends BaseOperation<NullContext> implements
         AnalyzedDatum datum = new AnalyzedDatum(funcCall.getArguments().getTuple());
 
         TupleEntryCollector collector = funcCall.getOutputCollector();
-        PageResult[] pageResults = datum.getPageResults();
-        if (pageResults.length > 0) {
-            for (PageResult pageResult : pageResults) {
-                String outResult = String.format("%s\t%s\t%s", pageResult.getSourceUrl(), pageResult.getOutlinkUrl(), pageResult.getDescription());
+        BooleanPreference[] preferences = datum.getPageResults();
+        if (preferences.length > 0) {
+            for (BooleanPreference preference : preferences) {
+                String outResult = String.format("%s,%s", preference.getPersonId(), preference.getPreferenceId());
                 collector.add(new Tuple(outResult));
             }
         }
