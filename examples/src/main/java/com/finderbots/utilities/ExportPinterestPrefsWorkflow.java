@@ -9,6 +9,7 @@ import cascading.operation.FunctionCall;
 import cascading.operation.OperationCall;
 import cascading.operation.regex.RegexSplitter;
 import cascading.pipe.Each;
+import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.pipe.assembly.Unique;
 import cascading.scheme.Scheme;
@@ -102,10 +103,12 @@ public class ExportPinterestPrefsWorkflow {
         Properties props = HadoopUtils.getDefaultProperties(ExportPinterestPrefsWorkflow.class, false, conf);
         //create a merge of all sources to go into a multisource tap
         //Scheme importScheme = new TextLine(new Fields("line","text_person_id", "text_preference_id"));//two fields per line
-            Scheme indexScheme = new TextLine( IndexDatum.FIELDS );
-            Scheme outputScheme = new TextLine( IndexDatum.FIELDS );
+        Scheme indexScheme = new TextLine( IndexDatum.FIELDS, 1 );
+        indexScheme.setNumSinkParts(1);//one index file
+        Scheme outputScheme = new TextLine( new Fields("hashed person id", "hashed preference id"));
+        outputScheme.setNumSinkParts(1);//one preference output file
 
-            FileSystem fs = FileSystem.get(conf);
+        FileSystem fs = FileSystem.get(conf);
         FileStatus[] stats = fs.listStatus(crawlPath);
         Path currentLoopDir;
         ArrayList<Tap> all = new ArrayList<Tap>();
@@ -137,7 +140,7 @@ public class ExportPinterestPrefsWorkflow {
         fs.delete(new Path(options.getOutputDir()), true);
 
         //get the dir to write all preference files to
-        Path sinkPath = new Path(options.getOutputDir(), PREFERENCES_SUBDIR);
+        Path prefSinkPath = new Path(options.getOutputDir(), PREFERENCES_SUBDIR);
 
         //get the subdir to write the person index to
         Path personIndexSinkPath = new Path(options.getOutputDir(), PERSON_INDEX_SUBDIR);
@@ -175,15 +178,18 @@ public class ExportPinterestPrefsWorkflow {
         Pipe writeHashedIds = new Pipe("write hashed preference pairs", importPipe);
         writeHashedIds = new Each(writeHashedIds, new Fields("text_person_id", "text_preference_id"), new WriteHashedPrefPairs( new Fields("hashed person id", "hashed preference id")), new Fields("hashed person id", "hashed preference id") );
 
+        //now throw in a gratuitous GroupBy just to get a reducer so the output will go to one file (see the outputSink Scheme)
+        GroupBy outputPipe = new GroupBy(writeHashedIds,new Fields("hashed person id", "hashed preference id"));
+
         Tap indexSink = new Hfs( indexScheme, personIndexSinkPath.toString());
-        Tap outputSink = new Hfs( outputScheme, sinkPath.toString());
+        Tap outputSink = new Hfs( outputScheme, prefSinkPath.toString());
         Map<String, Tap> sinkMap = new HashMap<String, Tap>();
         sinkMap.put(unique.getName(), indexSink);
         sinkMap.put(writeHashedIds.getName(), outputSink);
 
         List<Pipe> tailPipes = new ArrayList<Pipe>();
         tailPipes.add(unique);
-        tailPipes.add(writeHashedIds);
+        tailPipes.add(outputPipe);
 
 
         FlowConnector flowConnector = new FlowConnector( props );
