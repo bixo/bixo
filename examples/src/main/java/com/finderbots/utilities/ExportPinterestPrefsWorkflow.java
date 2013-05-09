@@ -41,6 +41,24 @@ public class ExportPinterestPrefsWorkflow {
     private static final int EXPORT_STACKSIZE_KB = 128;
     private static final String PERSON_INDEX_SUBDIR = "person-index";
     private static final String PREFERENCES_SUBDIR = "preferences";
+    private static int highestID;
+    private static HashMap<String, Integer> index;
+
+    public static int getHighestID() {
+        return highestID;
+    }
+
+    public static void setHighestID(int highestID) {
+        ExportPinterestPrefsWorkflow.highestID = highestID;
+    }
+
+    public static HashMap<String, Integer> getIndex() {
+        return index;
+    }
+
+    public static void setIndex(HashMap<String, Integer> index) {
+        ExportPinterestPrefsWorkflow.index = index;
+    }
 
     private static class MergeFieldsFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
@@ -51,20 +69,23 @@ public class ExportPinterestPrefsWorkflow {
         @Override
         public void prepare(FlowProcess process, OperationCall<NullContext> operationCall) {
             super.prepare(process, operationCall);
-
         }
+
         public void operate(FlowProcess flowProcess, FunctionCall<NullContext> funcCall) {
             //To change body of implemented methods use File | Settings | File Templates.
+            HashMap<String, Integer> index = ExportPinterestPrefsWorkflow.getIndex();
             Tuple tuple = funcCall.getArguments().getTuple();
             TupleEntryCollector collector = funcCall.getOutputCollector();
-            Integer hashedPersonId1 = tuple.getString(0).hashCode();
-            Integer hashedPersonId2 = tuple.getString(1).hashCode();
+            Integer hashedPersonId1 = index.get(tuple.getString(0));
+            Integer hashedPersonId2 = index.get(tuple.getString(1));
             Tuple tuple1 = new Tuple();
             tuple1.add(hashedPersonId1);
+            //tuple1.add(index.get(tuple.getString(0)));//assumes it is already in the index!!!
             tuple1.add(tuple.getString(0));
 
             Tuple tuple2 = new Tuple();
             tuple2.add(hashedPersonId2);
+            //tuple2.add(index.get(tuple.getString(1)));//assumes it is already in the index!!!
             tuple2.add(tuple.getString(1));
 
             IndexDatum id1 = new IndexDatum( tuple1 );
@@ -83,16 +104,38 @@ public class ExportPinterestPrefsWorkflow {
         @Override
         public void prepare(FlowProcess process, OperationCall<NullContext> operationCall) {
             super.prepare(process, operationCall);
-
         }
+
         public void operate(FlowProcess flowProcess, FunctionCall<NullContext> funcCall) {
             //To change body of implemented methods use File | Settings | File Templates.
             Tuple tuple = funcCall.getArguments().getTuple();
             TupleEntryCollector collector = funcCall.getOutputCollector();
             Tuple outTuple = new Tuple();
-            outTuple.add(tuple.getString(0).hashCode());
-            outTuple.add(tuple.getString(1).hashCode());
+            String inKey = tuple.getString(0);
+            String inValue = tuple.getString(1);
+            int outKey;
+            int outValue;
+            HashMap<String, Integer> index = ExportPinterestPrefsWorkflow.getIndex();
+            int highestID = ExportPinterestPrefsWorkflow.getHighestID();
+            if( index.containsKey(inKey) ){
+                outKey = index.get(inKey);
+            } else { //new id-string mapping
+                outKey = highestID;
+                index.put(inKey, outKey);
+                highestID += 1;
+            }
+            if( index.containsKey(inValue) ){
+                outValue = index.get(inValue);
+            } else { //new id-string mapping
+                outValue = highestID;
+                index.put(inValue, outValue);
+                highestID += 1;
+            }
+            outTuple.add(outKey);
+            outTuple.add(outValue+"\t1.0");
             collector.add(outTuple);
+            ExportPinterestPrefsWorkflow.setHighestID(highestID);
+            ExportPinterestPrefsWorkflow.setIndex(index);//todo not sure this is needed if index is a reference to enclosing class's index it's already modified. If it's a deep copy yikes, copied with every get?????
         }
     }
     
@@ -107,6 +150,10 @@ public class ExportPinterestPrefsWorkflow {
         indexScheme.setNumSinkParts(1);//one index file
         Scheme outputScheme = new TextLine( new Fields("hashed person id", "hashed preference id"));
         outputScheme.setNumSinkParts(1);//one preference output file
+
+        //initialize the indexing stuff
+        highestID = 0;//start sequential IDs from 0
+        index = new HashMap<String, Integer>();
 
         FileSystem fs = FileSystem.get(conf);
         FileStatus[] stats = fs.listStatus(crawlPath);
@@ -145,16 +192,6 @@ public class ExportPinterestPrefsWorkflow {
         //get the subdir to write the person index to
         Path personIndexSinkPath = new Path(options.getOutputDir(), PERSON_INDEX_SUBDIR);
         //todo: may have trouble if we need to create non-existent subdirs after the delete we'll see
-
-        //build a subassembly to create the index and accumulate preferences
-        //both need to be unique so there is only one preference (user, followedUser) of a particular value
-        //and the index will have unique entries (userName, userId); the userName is unique
-        //and is a Pinterest user name, the userId is just an ordinal created as a side effect
-        //of accumulating unique ones.
-//        Pipe importPipe = new Pipe("import_preferences");
-//        importPipe = new Each("turn_text_into_datum",new CreateTextPrefDatum());
-//        importPipe = new Each(importPipe, new RegexSplitGenerator(","));
-
 
         // split the text line into "url" and "raw" with the delimiter of comma
         RegexSplitter regexSplitter = new RegexSplitter( new Fields( "text_person_id", "text_preference_id" ), "," );
