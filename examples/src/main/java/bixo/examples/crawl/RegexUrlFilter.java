@@ -116,11 +116,12 @@ public class RegexUrlFilter extends BaseUrlFilter {
     }
 
     public static List<String> getUrlFilterPatterns(String urlFiltersFile) throws IOException, InterruptedException {
-        //this reads regex filters from a file in HDFS or the native file sysytem
+        //this reads regex filters from a file in HDFS or the native file system
         JobConf conf = HadoopUtils.getDefaultJobConf();
         Path filterFile = new Path(urlFiltersFile);
         FileSystem fs = filterFile.getFileSystem(conf);
         List<String> filterList = new ArrayList<String>();
+        LOGGER.info("Looking for file: "+urlFiltersFile);
         if(fs.exists(filterFile)){
             FSDataInputStream in = fs.open(filterFile);
             LineReader reader = new LineReader(in);
@@ -132,6 +133,8 @@ public class RegexUrlFilter extends BaseUrlFilter {
                 }
             }
             in.close();
+        } else {
+            LOGGER.info("Can't find file: "+urlFiltersFile);
         }
         return filterList;
     }
