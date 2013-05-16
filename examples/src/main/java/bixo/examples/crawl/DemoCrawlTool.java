@@ -203,6 +203,7 @@ public class DemoCrawlTool {
             FetcherPolicy defaultPolicy = new FetcherPolicy();
             defaultPolicy.setCrawlDelay(CrawlConfig.DEFAULT_CRAWL_DELAY);
             defaultPolicy.setMaxContentSize(CrawlConfig.MAX_CONTENT_SIZE);
+//            defaultPolicy.setFetcherMode(FetcherPolicy.FetcherMode.IMPOLITE);
             defaultPolicy.setFetcherMode(FetcherPolicy.FetcherMode.EFFICIENT);
 // this is to cause Bixo to block waiting for next time it can fetch from a particular site.
 // todo: may not be necessary in future versions of Bixo

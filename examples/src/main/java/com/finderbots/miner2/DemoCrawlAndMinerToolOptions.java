@@ -18,15 +18,40 @@ package com.finderbots.miner2;
 
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.log4j.Logger;
 import org.kohsuke.args4j.Option;
 
 public class DemoCrawlAndMinerToolOptions extends BaseCrawlToolOptions {
+    private static Logger LOGGER = Logger.getRootLogger();
 
     private boolean _cleanOutputDir = false;
     private boolean _generateHTML = false;
     private boolean _enableMiner = false;
     private String _regexUrlToMineFile = null;//default to mine all fetched pages
     private String _regexOutlinksToMineFile = null;//default ro return all outlinks
+    public static final String EFFICIENT_CRAWL_POLICY = "EFFICIENT-CRAWL";
+    public static final String COMPLETE_CRAWL_POLICY = "COMPLETE-CRAWL";
+    public static final String IMPOLITE_CRAWL_POLICY = "IMPOLITE-CRAWL";
+    public static final String DEFAULT_CRAWL_POLICY = EFFICIENT_CRAWL_POLICY;
+    private String _crawlPolicy = DEFAULT_CRAWL_POLICY;
+
+    DemoCrawlAndMinerToolOptions(){
+        _crawlPolicy = DEFAULT_CRAWL_POLICY;
+    }
+
+    public String get_crawlPolicy() {
+        return _crawlPolicy;
+    }
+
+    @Option(name = "-crawlPolicy", usage = "Policy for following links: EFFICIENT-CRAWL = follow all that are convenient, COMPLETE-CRAWL = follow all even if it means waiting, IMPOLITE-CRAWL = follow all and do it fast (optional). Default: EFFICIENT-CRAWL", required = false)
+    public void set_crawlPolicy(String _crawlPolicy) {
+        if(!_crawlPolicy.equals(EFFICIENT_CRAWL_POLICY) && !_crawlPolicy.equals(COMPLETE_CRAWL_POLICY) && !_crawlPolicy.equals(IMPOLITE_CRAWL_POLICY)){
+            LOGGER.warn("Bad crawl policy, using default: EFFICIENT-CRAWL.");
+            this._crawlPolicy = DEFAULT_CRAWL_POLICY;
+        } else {
+            this._crawlPolicy = _crawlPolicy;
+        }
+    }
 
     @Option(name = "-urlstomine", usage = "text file containing list of regex patterns for urls to mine", required = false)
     public void setRegexUrlToMineFile(String regexFiltersFile) {
