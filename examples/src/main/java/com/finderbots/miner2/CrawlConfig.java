@@ -37,7 +37,6 @@ public class CrawlConfig {
     // Fetcher policy constants
     public static final int CRAWL_STACKSIZE_KB = 128;
     public static final int MAX_CONTENT_SIZE = 128 * 1024;
-    public static final long DEFAULT_CRAWL_DELAY = 10 * 1000L; // in millisecond
 //    public static final int MAX_CONNECTIONS_PER_HOST = 30;
 //    public static final int MAX_REQUESTS_PER_CONNECTION = 10;
 //    public static final int MIN_RESPONSE_RATE = 1024;          // Min bytes/second

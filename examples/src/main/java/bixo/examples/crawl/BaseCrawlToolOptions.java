@@ -40,8 +40,21 @@ public class BaseCrawlToolOptions {
     private boolean _useBoilerpipe = false;
     private String _regexUrlFiltersFile = null;
     private String _logsDir = DEFAULT_LOGS_DIR;
+    private Long _endCrawlTime = null;//no end time specified
+    private Long _startCrawlTime = null;//no end time specified
 
-    
+    BaseCrawlToolOptions(){
+        _endCrawlTime = null;//no end time specified
+    }
+
+    public Long getEndCrawlTime() {
+        return _endCrawlTime;
+    }
+
+    public void setEndCrawlTime(Long _endCrawlTime) {
+        this._endCrawlTime = _endCrawlTime;
+    }
+
     @Option(name = "-domain", usage = "domain to crawl (e.g. cnn.com)", required = false)
     public void setDomain(String domain) {
         _domain = domain;
@@ -83,8 +96,10 @@ public class BaseCrawlToolOptions {
     }
 
     @Option(name = "-duration", usage = "target crawl duration in minutes", required = false)
-    public void setCrawlDuration(int crawlDuration) {
-        _crawlDuration = crawlDuration;
+    public void setCrawlDuration(int durationInMinutes) {
+        _startCrawlTime = System.currentTimeMillis();
+        _endCrawlTime = _startCrawlTime + (durationInMinutes * 60 * 1000);//store as millis
+        _crawlDuration = durationInMinutes;
     }
     
     @Option(name = "-boilerpipe", usage = "Use Boilerpipe library when parsing", required = false)

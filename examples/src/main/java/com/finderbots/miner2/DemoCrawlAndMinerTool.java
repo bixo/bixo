@@ -16,6 +16,7 @@
  */
 package com.finderbots.miner2;
 
+import bixo.config.AdaptiveFetcherPolicy;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.UrlStatus;
@@ -29,6 +30,8 @@ import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 import com.bixolabs.cascading.HadoopUtils;
+import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
@@ -37,6 +40,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
 import java.util.List;
 
@@ -107,7 +111,7 @@ public class DemoCrawlAndMinerTool {
     }
 
     public static void main(String[] args) {
-        DemoCrawlAndMinerToolOptions options = new DemoCrawlAndMinerToolOptions();
+        Options options = new Options();
         CmdLineParser parser = new CmdLineParser(options);
 
         try {
@@ -155,7 +159,7 @@ public class DemoCrawlAndMinerTool {
             Path outputPath = new Path(outputDirName);
             FileSystem fs = outputPath.getFileSystem(conf);
 
-            // First check if the user want to clean
+            // First check if the user wants to clean
             if (options.isCleanOutputDir()) {
                 if (fs.exists(outputPath)) {
                     fs.delete(outputPath, true);
@@ -200,15 +204,14 @@ public class DemoCrawlAndMinerTool {
             UserAgent userAgent = new UserAgent(options.getAgentName(), CrawlConfig.EMAIL_ADDRESS, CrawlConfig.WEB_ADDRESS);
 
             // You also get to customize the FetcherPolicy
-            FetcherPolicy defaultPolicy = new FetcherPolicy();
-            defaultPolicy.setCrawlDelay(CrawlConfig.DEFAULT_CRAWL_DELAY);
+            FetcherPolicy defaultPolicy = new AdaptiveFetcherPolicy(options.getEndCrawlTime(), options.getCrawlDelay());
             defaultPolicy.setMaxContentSize(CrawlConfig.MAX_CONTENT_SIZE);
             // COMPLETE for crawling a single site, EFFICIENT for many sites
-            if(options.get_crawlPolicy().equals(DemoCrawlAndMinerToolOptions.IMPOLITE_CRAWL_POLICY)){
+            if(options.getCrawlPolicy().equals(Options.IMPOLITE_CRAWL_POLICY)){
                 defaultPolicy.setFetcherMode(FetcherPolicy.FetcherMode.IMPOLITE);
-            } else if(options.get_crawlPolicy().equals(DemoCrawlAndMinerToolOptions.EFFICIENT_CRAWL_POLICY)){
+            } else if(options.getCrawlPolicy().equals(Options.EFFICIENT_CRAWL_POLICY)){
                 defaultPolicy.setFetcherMode(FetcherPolicy.FetcherMode.EFFICIENT);
-            } else if (options.get_crawlPolicy().equals(DemoCrawlAndMinerToolOptions.COMPLETE_CRAWL_POLICY)){
+            } else if (options.getCrawlPolicy().equals(Options.COMPLETE_CRAWL_POLICY)){
                 defaultPolicy.setFetcherMode(FetcherPolicy.FetcherMode.COMPLETE);
             }
 
@@ -216,7 +219,7 @@ public class DemoCrawlAndMinerTool {
             // end up in situations where the fetch slows down due to a 'long tail' and by
             // specifying a crawl duration you know exactly when the crawl will end.
             int crawlDurationInMinutes = options.getCrawlDuration();
-            boolean hasEndTime = crawlDurationInMinutes != DemoCrawlAndMinerToolOptions.NO_CRAWL_DURATION;
+            boolean hasEndTime = crawlDurationInMinutes != Options.NO_CRAWL_DURATION;
             long targetEndTime = hasEndTime ? System.currentTimeMillis() + (crawlDurationInMinutes * CrawlConfig.MILLISECONDS_PER_MINUTE) :
                 FetcherPolicy.NO_CRAWL_END_TIME;
 
@@ -288,5 +291,238 @@ public class DemoCrawlAndMinerTool {
         }
     }
 
+    public static class Options {
 
+        public static final int NO_CRAWL_DURATION = 0;
+        public static final Long DEFAULT_CRAWL_DELAY = 10L * 1000L;// 10 seconds between fetches?
+        public static final int DEFAULT_MAX_THREADS = 10;
+        private static final int DEFAULT_NUM_LOOPS = 1;
+        private static final String DEFAULT_LOGS_DIR = "logs";
+        private static Logger LOGGER = Logger.getRootLogger();
+        public static final String EFFICIENT_CRAWL_POLICY = "EFFICIENT-CRAWL";
+        public static final String COMPLETE_CRAWL_POLICY = "COMPLETE-CRAWL";
+        public static final String IMPOLITE_CRAWL_POLICY = "IMPOLITE-CRAWL";
+        public static final String DEFAULT_CRAWL_POLICY = EFFICIENT_CRAWL_POLICY;
+
+        private String _loggingAppender = null;
+        private boolean _debugLogging = false;
+        private String _outputDir;
+        private String _agentName;
+        private String _domain;
+        private String _urlsFile;
+        private int _crawlDuration = NO_CRAWL_DURATION;
+        private int _maxThreads = DEFAULT_MAX_THREADS;
+        private int _numLoops = DEFAULT_NUM_LOOPS;
+        private boolean _useBoilerpipe = false;
+        private String _regexUrlFiltersFile = null;
+        private String _logsDir = DEFAULT_LOGS_DIR;
+        private Long _endCrawlTime = null;//no end time specified
+        private Long _startCrawlTime = null;//no end time specified
+        private boolean _cleanOutputDir = false;
+        private boolean _generateHTML = false;
+        private boolean _enableMiner = false;
+        private String _regexUrlToMineFile = null;//default to mine all fetched pages
+        private String _regexOutlinksToMineFile = null;//default ro return all outlinks
+        private String _crawlPolicy = DEFAULT_CRAWL_POLICY;
+        private Long _crawlDelay = DEFAULT_CRAWL_DELAY;
+
+        Options(){
+            _crawlPolicy = DEFAULT_CRAWL_POLICY;
+        }
+
+        @Option(name = "-delayBetweenFetches", usage = "Set the amount of time between fetches in Miliseconds (optional). Default: 10000 (10 seconds)", required = false)
+        public void setCrawlDelay(Long crawlDelay) {
+            this._crawlDelay = crawlDelay;//store as milliseconds
+        }
+
+        @Option(name = "-crawlPolicy", usage = "Policy for following links: EFFICIENT-CRAWL = follow all that are convenient, COMPLETE-CRAWL = follow all even if it means waiting, IMPOLITE-CRAWL = follow all and do it fast (optional). Default: EFFICIENT-CRAWL", required = false)
+        public void setCrawlPolicy(String _crawlPolicy) {
+            if(!_crawlPolicy.equals(EFFICIENT_CRAWL_POLICY) && !_crawlPolicy.equals(COMPLETE_CRAWL_POLICY) && !_crawlPolicy.equals(IMPOLITE_CRAWL_POLICY)){
+                LOGGER.warn("Bad crawl policy, using default: EFFICIENT-CRAWL.");
+                this._crawlPolicy = DEFAULT_CRAWL_POLICY;
+            } else {
+                this._crawlPolicy = _crawlPolicy;
+            }
+        }
+
+        @Option(name = "-urlstomine", usage = "text file containing list of regex patterns for urls to mine", required = false)
+        public void setRegexUrlToMineFile(String regexFiltersFile) {
+            _regexUrlToMineFile = regexFiltersFile;
+        }
+
+        @Option(name = "-outlinkstomine", usage = "text file containing list of regex patterns for outlinks on the urltomine which will be returned as results", required = false)
+        public void setRegexOutlinksToMineFile(String regexFiltersFile) {
+            _regexOutlinksToMineFile = regexFiltersFile;
+        }
+
+        @Option(name = "-clean", usage = "Delete the output dir if it exists - WARNING:you won't be prompted!", required = false)
+        public void setCleanOutputDir(boolean cleanOutputDir) {
+            _cleanOutputDir = cleanOutputDir;
+        }
+
+        @Option(name = "-html", usage = "Generate HTML output as a text file", required = false)
+        public void setGenerateHTML(boolean generateHTML) {
+            _generateHTML = generateHTML;
+        }
+
+        @Option(name = "-enableminer", usage = "Generate miner output as a text file", required = false)
+        public void setEnableMiner(boolean generateHTML) {
+            _enableMiner = generateHTML;
+        }
+
+        @Option(name = "-domain", usage = "domain to crawl (e.g. cnn.com)", required = false)
+        public void setDomain(String domain) {
+            _domain = domain;
+        }
+
+        @Option(name = "-urls", usage = "text file containing list of urls (either -domain or -urls needs to be set)", required = false)
+        public void setUrlsFile(String urlsFile) {
+            _urlsFile = urlsFile;
+        }
+
+        @Option(name = "-d", usage = "debug logging", required = false)
+        public void setDebugLogging(boolean debugLogging) {
+            _debugLogging = debugLogging;
+        }
+
+        @Option(name = "-logger", usage = "set logging appender (console, DRFA)", required = false)
+        public void setLoggingAppender(String loggingAppender) {
+            _loggingAppender = loggingAppender;
+        }
+
+        @Option(name = "-outputdir", usage = "output directory", required = true)
+        public void setOutputDir(String outputDir) {
+            _outputDir = outputDir;
+        }
+
+        @Option(name = "-agentname", usage = "user agent name", required = true)
+        public void setAgentName(String agentName) {
+            _agentName = agentName;
+        }
+
+        @Option(name = "-maxthreads", usage = "maximum number of fetcher threads to use", required = false)
+        public void setMaxThreads(int maxThreads) {
+            _maxThreads = maxThreads;
+        }
+
+        @Option(name = "-numloops", usage = "number of fetch/update loops", required = false)
+        public void setNumLoops(int numLoops) {
+            _numLoops = numLoops;
+        }
+
+        @Option(name = "-duration", usage = "target crawl duration in minutes", required = false)
+        public void setCrawlDuration(int durationInMinutes) {
+            _startCrawlTime = System.currentTimeMillis();
+            _endCrawlTime = _startCrawlTime + (durationInMinutes * 60 * 1000);//store as millis
+            _crawlDuration = durationInMinutes;
+        }
+
+        @Option(name = "-boilerpipe", usage = "Use Boilerpipe library when parsing", required = false)
+        public void setUseBoilerpipe(boolean useBoilerpipe) {
+            _useBoilerpipe = useBoilerpipe;
+        }
+
+        @Option(name = "-urlfilters", usage = "text file containing list of regex patterns for url filtering", required = false)
+        public void setRegexUrlFiltersFile(String regexFiltersFile) {
+            _regexUrlFiltersFile = regexFiltersFile;
+        }
+
+        @Option(name = "-logsdir", usage = "local fs dir to store loop specific logs [optional: default=logs]", required = false)
+        public void setLogsDir(String logsDir) {
+            _logsDir = logsDir;
+        }
+
+        public boolean isCleanOutputDir() {
+            return _cleanOutputDir  ;
+        }
+
+        public boolean isGenerateHTML() {
+            return _generateHTML  ;
+        }
+
+        public String getRegexOutlinksToMineFile() {
+            return _regexOutlinksToMineFile ;
+
+        }
+
+        public String getCrawlPolicy() {
+            return _crawlPolicy;
+        }
+
+        public String getRegexUrlToMineFile() {
+            return _regexUrlToMineFile ;
+
+        }
+
+        public Long getCrawlDelay() {
+            return _crawlDelay;
+        }
+
+        public Long getEndCrawlTime() {
+            return _endCrawlTime;
+        }
+
+        public void setEndCrawlTime(Long _endCrawlTime) {
+            this._endCrawlTime = _endCrawlTime;
+        }
+
+        public String getOutputDir() {
+            return _outputDir;
+        }
+
+        public boolean isEnableMiner() {
+            return _enableMiner  ;
+        }
+
+        public String getDomain() {
+            return _domain;
+        }
+
+        public String getUrlsFile() {
+            return _urlsFile;
+        }
+
+        public String getAgentName() {
+            return _agentName;
+        }
+
+        public int getMaxThreads() {
+            return _maxThreads;
+        }
+
+        public int getNumLoops() {
+            return _numLoops;
+        }
+
+        public int getCrawlDuration() {
+            return _crawlDuration;
+        }
+
+        public boolean isDebugLogging() {
+            return _debugLogging;
+        }
+
+        public String getLoggingAppender() {
+            return _loggingAppender;
+        }
+
+        public boolean isUseBoilerpipe() {
+            return _useBoilerpipe ;
+        }
+
+        public String getRegexUrlFiltersFile() {
+            return _regexUrlFiltersFile ;
+
+        }
+
+        public String getLogsDir() {
+            return _logsDir ;
+
+        }
+
+        @Override
+        public String toString() {
+            return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
+        }
+    }
 }

@@ -115,7 +115,7 @@ public class DemoCrawlAndMinerWorkflow {
     }
 
 
-    public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, AnalyzeHtml analyzer, DemoCrawlAndMinerToolOptions options) throws Throwable {
+    public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, AnalyzeHtml analyzer, DemoCrawlAndMinerTool.Options options) throws Throwable {
         JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
         int numReducers = HadoopUtils.getNumReducers(conf);
         conf.setNumReduceTasks(numReducers);
