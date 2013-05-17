@@ -204,7 +204,12 @@ public class DemoCrawlAndMinerTool {
             UserAgent userAgent = new UserAgent(options.getAgentName(), CrawlConfig.EMAIL_ADDRESS, CrawlConfig.WEB_ADDRESS);
 
             // You also get to customize the FetcherPolicy
-            FetcherPolicy defaultPolicy = new AdaptiveFetcherPolicy(options.getEndCrawlTime(), options.getCrawlDelay());
+            FetcherPolicy defaultPolicy;
+            if(options.getCrawlDuration() != 0){
+                defaultPolicy = new AdaptiveFetcherPolicy(options.getEndCrawlTime(), options.getCrawlDelay());
+            } else {
+                defaultPolicy = new FetcherPolicy();
+            }
             defaultPolicy.setMaxContentSize(CrawlConfig.MAX_CONTENT_SIZE);
             // COMPLETE for crawling a single site, EFFICIENT for many sites
             if(options.getCrawlPolicy().equals(Options.IMPOLITE_CRAWL_POLICY)){
@@ -410,7 +415,7 @@ public class DemoCrawlAndMinerTool {
             _numLoops = numLoops;
         }
 
-        @Option(name = "-duration", usage = "target crawl duration in minutes", required = false)
+        @Option(name = "-duration", usage = "Target crawl duration in minutes (optional)", required = false)
         public void setCrawlDuration(int durationInMinutes) {
             _startCrawlTime = System.currentTimeMillis();
             _endCrawlTime = _startCrawlTime + (durationInMinutes * 60 * 1000);//store as millis
