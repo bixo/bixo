@@ -42,9 +42,9 @@ public class CrawlConfig {
 //    public static final int MIN_RESPONSE_RATE = 1024;          // Min bytes/second
     
     // Fetcher constants
-    public static final int MAX_RETRIES = 2;
-    public static final int SOCKET_TIMEOUT = 10 * 1000;
-    public static final int CONNECTION_TIMEOUT = 10 * 1000;
+    public static final int MAX_RETRIES = 0;//was 2, trying 0 for pinterest hope this means try fetching but not refetching
+    public static final int SOCKET_TIMEOUT = 5 * 1000;//was 10 trying 5 for pinterest
+    public static final int CONNECTION_TIMEOUT = 5 * 1000;//was 10 trying 5 for pinterest
 
     // Misc
     public static final long MILLISECONDS_PER_MINUTE = 60 * 1000L;

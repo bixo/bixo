@@ -211,6 +211,8 @@ public class DemoCrawlAndMinerTool {
                 defaultPolicy = new FetcherPolicy();
             }
             defaultPolicy.setMaxContentSize(CrawlConfig.MAX_CONTENT_SIZE);
+            defaultPolicy.setRequestTimeout(10L*1000L);//10 seconds
+
             // COMPLETE for crawling a single site, EFFICIENT for many sites
             if(options.getCrawlPolicy().equals(Options.IMPOLITE_CRAWL_POLICY)){
                 defaultPolicy.setFetcherMode(FetcherPolicy.FetcherMode.IMPOLITE);

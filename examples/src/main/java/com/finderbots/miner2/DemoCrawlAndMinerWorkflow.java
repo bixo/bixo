@@ -162,8 +162,8 @@ public class DemoCrawlAndMinerWorkflow {
 
         // Create the sub-assembly that runs the fetch job
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(options.getMaxThreads(), fetcherPolicy, userAgent);
-        fetcher.setMaxRetryCount(CrawlConfig.MAX_RETRIES);
-        fetcher.setSocketTimeout(CrawlConfig.SOCKET_TIMEOUT);
+        fetcher.setMaxRetryCount(CrawlConfig.MAX_RETRIES);// set to two tries
+        fetcher.setSocketTimeout(CrawlConfig.SOCKET_TIMEOUT);// and 10 sec timeout
         fetcher.setConnectionTimeout(CrawlConfig.CONNECTION_TIMEOUT);
 
         // You can also provide a set of mime types you want to restrict what content type you
