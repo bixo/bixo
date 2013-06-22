@@ -246,7 +246,6 @@ public class DemoCrawlWorkflow {
             urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new UrlFilter(urlFilter));
         }
         
-        urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new NormalizeUrlFunction(new SimpleUrlNormalizer()));
         urlFromOutlinksPipe = TupleLogger.makePipe(urlFromOutlinksPipe, true);
 
         // Take status and output urls from it  
