@@ -48,6 +48,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.AbortedFetchException;
 import bixo.exceptions.AbortedFetchReason;
+import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.RedirectFetchException;
 import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
@@ -208,6 +209,50 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
             assertEquals(AbortedFetchReason.SLOW_RESPONSE_RATE, e.getAbortReason());
         }
         server.stop();
+    }
+
+    @Test
+    public final void testInterruptedFetch() throws Exception {
+        // Need to read in lots of data that we get very slowly
+        Server server = startServer(new RandomResponseHandler(20000, 2 * 1000L), 8089);
+
+        // Set no response rate, so that doesn't trigger an exception
+        FetcherPolicy policy = new FetcherPolicy();
+        policy.setMinResponseRate(FetcherPolicy.NO_MIN_RESPONSE_RATE);
+
+        final BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        final String[] failMsg = new String[1];
+        
+        Thread t = new Thread(new Runnable() {
+            
+            @Override
+            public void run() {
+                String url = "http://localhost:8089/test.html";
+                try {
+                    fetcher.get(new ScoredUrlDatum(url));
+                    failMsg[0] = "No exception thrown, should have thrown an aborted by interrupt exception";
+                } catch (AbortedFetchException e) {
+                    if (e.getAbortReason() != AbortedFetchReason.INTERRUPTED) {
+                        failMsg[0] = "Wrong abort exception thrown, should have thrown an aborted by interrupt exception";
+                    }
+                } catch (BaseFetchException e) {
+                    failMsg[0] = "Wrong exception thrown, should have thrown an aborted by interrupt exception";
+                }
+            }
+        });
+        
+        t.start();
+        t.interrupt();
+        
+        while (t.isAlive()) {
+            Thread.sleep(100);
+        }
+        
+        server.stop();
+        
+        if (failMsg[0] != null) {
+            fail(failMsg[0]);
+        }
     }
 
     @Test

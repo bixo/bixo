@@ -618,8 +618,8 @@ public class SimpleHttpFetcher extends BaseFetcher {
                 // metrics support for how to do this. Once we fix this, fix
                 // the test to read a smaller (< 20K)
                 // chuck of data.
-                while ((totalRead < targetLength) &&
-                                ((bytesRead = in.read(buffer, 0, Math.min(buffer.length, targetLength - totalRead))) != -1)) {
+                while ((totalRead < targetLength)
+                    && ((bytesRead = in.read(buffer, 0, Math.min(buffer.length, targetLength - totalRead))) != -1)) {
                     readRequests += 1;
                     totalRead += bytesRead;
                     out.write(buffer, 0, bytesRead);

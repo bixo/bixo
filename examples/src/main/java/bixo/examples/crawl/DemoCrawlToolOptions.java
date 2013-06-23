@@ -14,33 +14,33 @@
  * limitations under the License.
  *
  */
-package bixo.examples.webmining;
+package bixo.examples.crawl;
 
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
-public class WebMiningOptions {
+public class DemoCrawlToolOptions extends BaseCrawlToolOptions {
+
+    private boolean _cleanOutputDir = false;
+    private boolean _generateHTML = false;
     
-    private String _workingDir = "build/test/working";
-    private String _agentName;
-
-    @Option(name = "-workingdir", usage = "path to directory for fetching", required = false)
-    public void setWorkingDir(String workingDir) {
-        _workingDir = workingDir;
+    @Option(name = "-clean", usage = "Delete the output dir if it exists - WARNING:you won't be prompted!", required = false)
+    public void setCleanOutputDir(boolean cleanOutputDir) {
+        _cleanOutputDir = cleanOutputDir;
     }
 
-    public String getWorkingDir() {
-        return _workingDir;
+    public boolean isCleanOutputDir() {
+        return _cleanOutputDir  ;
+    }
+    
+    @Option(name = "-html", usage = "Generate HTML output as a text file", required = false)
+    public void setGenerateHTML(boolean generateHTML) {
+        _generateHTML = generateHTML;
     }
 
-    @Option(name = "-agentname", usage = "user agent name", required = true)
-    public void setAgentName(String agentName) {
-        _agentName = agentName;
-    }
-
-    public String getAgentName() {
-        return _agentName;
+    public boolean isGenerateHTML() {
+        return _generateHTML  ;
     }
     
     @Override

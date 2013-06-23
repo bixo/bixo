@@ -30,13 +30,17 @@
 			<name>Bixo GitHub repository</name>
 			<url>http://bixo.github.com/repo/</url>
 		</repository>
+		<repository>
+			<id>Conjars</id>
+			<url>http://conjars.org/repo</url>
+		</repository>
 	</repositories>
 	
 	<dependencies>
 		<dependency>
 			<groupId>bixo</groupId>
 			<artifactId>bixo-core</artifactId>
-			<version>1.0-SNAPSHOT</version>
+			<version>0.8.0</version>
 		</dependency>
 		
 		<dependency>

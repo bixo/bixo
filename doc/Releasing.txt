@@ -8,7 +8,7 @@ little interest to users.
 
 1. Make sure master is up to date & valid
 
-% cd ~/git/github/bixo
+% cd <path to>/bixo
 % git checkout master
 <add/commit pending changes>
 % git pull
@@ -35,7 +35,7 @@ Temporarily change the version number of the components (TODO should be scripted
 % ant install
 % ant dist
 
-4. Update bixo-core in the Bixo Maven repository
+-4. Update bixo-core in the Bixo Maven repository
 % cp ~/.m2/repository/bixo/bixo-core/x.y.z/bixo-core-x.y.z.pom build/
 % mvn deploy:deploy-file -Dfile=build/bixo-core-x.y.z.jar -DpomFile=build/bixo-core-x.y.z.pom -Durl=file:///<path to local bixo-pages>/repo/
 % pushd ../bixo-pages

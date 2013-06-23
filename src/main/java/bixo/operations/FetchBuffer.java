@@ -151,9 +151,9 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 
                 if (queueDatum != null) {
                     String ref = queueDatum.getGroupingRef();
-                    if (readyToFetch(ref)) {
+                    if (readyToFetch(ref) || (mode == FetcherMode.IMPOLITE)) {
                         List<ScoredUrlDatum> urls = queueDatum.getUrls();
-                        trace("Politely returning %d urls via queue from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
+                        trace("Returning %d urls via queue from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
                         return queueDatum;
                     }
                 }
@@ -175,8 +175,8 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                         continue;
                     }
 
-                    if (readyToFetch(ref)) {
-                        trace("Politely returning %d urls via iterator from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
+                    if ((mode == FetcherMode.IMPOLITE) || readyToFetch(ref)) {
+                        trace("Returning %d urls via iterator from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
                         return iterDatum;
                     }
 
@@ -218,6 +218,21 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             // Either we're all out of FetchSets to process (nothing left in iterator or queue) or we've queued up lots of sets, and
             // we want to give FetchBuffer a chance to sleep.
             return null;
+        }
+        
+        /**
+         * Empty the buffer, then the iterator, without worrying about mode/state.
+         * 
+         * @return
+         */
+        public FetchSetDatum drain() {
+            if (!_queue.isEmpty()) {
+                return removeFromQueue();
+            } else if (safeHasNext()) {
+                return new FetchSetDatum(new TupleEntry(_values.next()));
+            } else {
+                return null;
+            }
         }
 
         /**
@@ -358,15 +373,10 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             UrlStatus status = Thread.interrupted() ? UrlStatus.SKIPPED_INTERRUPTED : UrlStatus.SKIPPED_TIME_LIMIT;
             
             while (!values.isEmpty()) {
-                FetchSetDatum datum = values.nextOrNull(FetcherMode.IMPOLITE);
-                
-                // datum could be null if the URLs were set to be skipped, as then
-                // nextOrNull() will return null even with impolite mode.
-                if (datum != null) {
-                    List<ScoredUrlDatum> urls = datum.getUrls();
-                    trace("Skipping %d urls from %s (e.g. %s) ", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
-                    skipUrls(datum.getUrls(), status, null);
-                }
+                FetchSetDatum datum = values.drain();
+                List<ScoredUrlDatum> urls = datum.getUrls();
+                trace("Skipping %d urls from %s (e.g. %s) ", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
+                skipUrls(urls, status, null);
             }
         }
     }

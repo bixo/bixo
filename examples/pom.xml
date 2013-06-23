@@ -30,6 +30,10 @@
 			<name>Bixo GitHub repository</name>
 			<url>http://bixo.github.com/repo/</url>
 		</repository>
+		<repository>
+			<id>Conjars</id>
+			<url>http://conjars.org/repo</url>
+		</repository>
 	</repositories>
 	
 	<dependencies>

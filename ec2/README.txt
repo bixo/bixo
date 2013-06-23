@@ -1,6 +1,11 @@
 The scripts in this directory can be used to create a Bixo-enabled 
 cluster in EC2
 
+If you are working with a distribution, you will need to get the 
+ec2-api-tools. The Bixo project maintains a slightly older version
+at https://github.com/bixo/bixo/tree/master/ec2/support. Or you 
+can download the latest from http://aws.amazon.com/developertools/
+
 See also http://openbixo.org/documentation/running-bixo-in-ec2/
 for more in-depth information about how to set up for running Bixo
 in EC2.

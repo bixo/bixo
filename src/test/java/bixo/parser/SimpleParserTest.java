@@ -22,13 +22,26 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import junit.framework.Assert;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.ccil.cowan.tagsoup.Parser;
+import org.dom4j.Document;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Node;
+import org.dom4j.XPath;
+import org.dom4j.io.SAXReader;
+import org.dom4j.io.SAXWriter;
+import org.hsqldb.lib.StringInputStream;
 import org.junit.Test;
 
 import bixo.config.ParserPolicy;
@@ -486,6 +499,42 @@ public class SimpleParserTest {
         Assert.assertEquals(1, outlinks.length);
         Assert.assertEquals("http://domain.com/song.mid", outlinks[0].getToUrl());
     }
+    
+    @Test
+    public void testHtmlWithTags() throws Exception {
+        final String htmlText = "<html><head><title>Title</title></head>" +
+                        "<body><p>this is a test</p></body></html>";
+        
+        // Create FetchedDatum using data
+        String url = "http://domain.com/page.html";
+        String contentType = "text/html; charset=utf-8";
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaderNames.CONTENT_TYPE, contentType);
+        ContentBytes content = new ContentBytes(htmlText.getBytes("utf-8"));
+        FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), headers, content, contentType, 0);
+        
+        // Call parser.parse
+        SimpleParser parser = new SimpleParser(new ParserPolicy(), true);
+        ParsedDatum parsedDatum = parser.parse(fetchedDatum);
+        
+        // Now take the resulting HTML, process it using Dom4J
+        SAXReader reader = new SAXReader(new Parser());
+        reader.setEncoding("UTF-8");
+        String htmlWithMarkup = parsedDatum.getParsedText();
+        Document doc = reader.read(new StringInputStream(htmlWithMarkup));
+        
+        // We have to do helicopter stunts since HTML has a global namespace on it, set
+        // at the <html> element level.
+        XPath xpath = DocumentHelper.createXPath("/xhtml:html/xhtml:body/xhtml:p");
+        Map<String, String> namespaceUris = new HashMap<String, String>();
+        namespaceUris.put("xhtml", "http://www.w3.org/1999/xhtml");
+        xpath.setNamespaceURIs(namespaceUris);
+        
+        Node paragraphNode = xpath.selectSingleNode(doc);
+        Assert.assertNotNull(paragraphNode);
+        Assert.assertEquals("this is a test", paragraphNode.getText());
+    }
+    
     
 	private static String readFromFile(String filePath) throws IOException {
 		InputStream is = SimpleParserTest.class.getResourceAsStream("/" + filePath);

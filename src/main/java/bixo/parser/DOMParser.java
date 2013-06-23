@@ -45,55 +45,66 @@ import com.bixolabs.cascading.NullContext;
 public abstract class DOMParser extends BaseOperation<NullContext> implements Function<NullContext> {
 
     /**
-     * Strip out XML namespace, so that XPath can be easily used to extract elements.
+     * Lowercase element names, and optionally strip out XML namespace, so that XPath can be easily 
+     * used to extract elements.
      *
      */
     private static class DowngradeXmlFilter extends XMLFilterImpl {
         
+        private boolean _removeNamespaces;
+        
+        public DowngradeXmlFilter(boolean removeNamespaces) {
+            super();
+            
+            _removeNamespaces = removeNamespaces;
+        }
+        
         @Override
-        public void startElement(String uri, String localName, String name, Attributes atts)
-                throws SAXException {
+        public void startElement(String uri, String localName, String name, Attributes atts) throws SAXException {
+            // Always lower-case element names, for easier XPath matching
             String lower = localName.toLowerCase();
 
-            AttributesImpl attributes = new AttributesImpl();
-            for (int i = 0; i < atts.getLength(); i++) {
-                String local = atts.getLocalName(i);
-                String qname = atts.getQName(i);
-                if (!XMLConstants.NULL_NS_URI.equals(atts.getURI(i).length())
-                        && !local.equals(XMLConstants.XMLNS_ATTRIBUTE)
-                        && !qname.startsWith(XMLConstants.XMLNS_ATTRIBUTE + ":")) {
-                    attributes.addAttribute(
-                            atts.getURI(i), local, qname,
-                            atts.getType(i), atts.getValue(i));
+            if (_removeNamespaces) {
+                AttributesImpl attributes = new AttributesImpl();
+                for (int i = 0; i < atts.getLength(); i++) {
+                    String local = atts.getLocalName(i);
+                    String qname = atts.getQName(i);
+                    if (!XMLConstants.NULL_NS_URI.equals(atts.getURI(i).length())
+                                    && !local.equals(XMLConstants.XMLNS_ATTRIBUTE)
+                                    && !qname.startsWith(XMLConstants.XMLNS_ATTRIBUTE + ":")) {
+                        attributes.addAttribute(
+                                        atts.getURI(i), local, qname,
+                                        atts.getType(i), atts.getValue(i));
+                    }
                 }
-            }
 
-            super.startElement(XMLConstants.NULL_NS_URI, lower, lower, attributes);
+                super.startElement(XMLConstants.NULL_NS_URI, lower, lower, attributes);
+            } else {
+                super.startElement(uri, lower, lower, atts);
+            }
         }
 
         @Override
-        public void endElement(String uri, String localName, String name)
-                throws SAXException {
+        public void endElement(String uri, String localName, String name) throws SAXException {
             String lower = localName.toLowerCase();
             super.endElement(XMLConstants.NULL_NS_URI, lower, lower);
-        }
-
-        @Override
-        public void startPrefixMapping(String prefix, String uri) {
-        }
-
-        @Override
-        public void endPrefixMapping(String prefix) {
         }
     }
     
     
-
+    private boolean _removeNamespaces;
+    
     private transient SAXReader _reader = null;
     private transient ParsedDatum _input;
     
     public DOMParser(Fields outputFields) {
+        this(outputFields, true);
+    }
+    
+    public DOMParser(Fields outputFields, boolean removeNamespaces) {
         super(outputFields);
+        
+        _removeNamespaces = removeNamespaces;
     }
     
     @Override
@@ -101,7 +112,7 @@ public abstract class DOMParser extends BaseOperation<NullContext> implements Fu
         super.prepare(process, opCall);
         
         _reader = new SAXReader(new Parser());
-        _reader.setXMLFilter(new DowngradeXmlFilter());
+        _reader.setXMLFilter(new DowngradeXmlFilter(_removeNamespaces));
         _reader.setEncoding("UTF-8");
         _input = new ParsedDatum();
     }

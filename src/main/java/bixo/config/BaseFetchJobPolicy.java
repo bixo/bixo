@@ -27,7 +27,7 @@ public abstract class BaseFetchJobPolicy implements Serializable {
     // Interval between requests, in milliseconds.
     public static final long UNSET_CRAWL_DELAY = Long.MIN_VALUE;
     public static final long DEFAULT_CRAWL_DELAY = 30 * 1000L;
-    
+
     public static class FetchSetInfo {
         private List<ScoredUrlDatum> _urls;
         private long _sortKey;
@@ -59,7 +59,7 @@ public abstract class BaseFetchJobPolicy implements Serializable {
     }
 
     private long _defaultCrawlDelay;
-
+    
     public void setDefaultCrawlDelay(long defaultCrawlDelay) {
         _defaultCrawlDelay = defaultCrawlDelay;
     }
