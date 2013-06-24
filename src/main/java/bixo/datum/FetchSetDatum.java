@@ -20,11 +20,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.scaleunlimited.cascading.BaseDatum;
+
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
-import com.bixolabs.cascading.BaseDatum;
 
 /**
  * A FetchSetDatum represents a group of URLs that will be fetched using one

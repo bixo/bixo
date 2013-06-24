@@ -24,6 +24,8 @@ import java.util.Queue;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
@@ -37,7 +39,6 @@ import bixo.utils.DomainNames;
 import bixo.utils.GroupingKey;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.LoggingFlowProcess;
 
 public class ProcessRobotsTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ProcessRobotsTask.class);

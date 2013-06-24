@@ -23,6 +23,8 @@ import java.util.List;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
@@ -33,7 +35,6 @@ import bixo.exceptions.IOFetchException;
 import bixo.hadoop.FetchCounters;
 import cascading.tuple.Tuple;
 
-import com.bixolabs.cascading.LoggingFlowProcess;
 
 /**
  * Runnable instance for fetching a set of URLs from the same server, using keep-alive.

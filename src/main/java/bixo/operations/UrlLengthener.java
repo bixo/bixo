@@ -27,6 +27,10 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+import com.scaleunlimited.cascading.LoggingFlowReporter;
+import com.scaleunlimited.cascading.NullContext;
+
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
 import bixo.config.UserAgent;
@@ -44,9 +48,6 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.LoggingFlowProcess;
-import com.bixolabs.cascading.LoggingFlowReporter;
-import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("serial")
 public class UrlLengthener extends BaseOperation<NullContext> implements Function<NullContext> {

@@ -18,6 +18,8 @@ package bixo.operations;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.NullContext;
+
 import bixo.datum.UrlDatum;
 import bixo.hadoop.ImportCounters;
 import bixo.urls.BaseUrlFilter;
@@ -27,7 +29,6 @@ import cascading.operation.Filter;
 import cascading.operation.FilterCall;
 import cascading.operation.OperationCall;
 
-import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("serial")
 public class UrlFilter extends BaseOperation<NullContext> implements Filter<NullContext> {

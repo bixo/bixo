@@ -29,6 +29,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.XMLFilterImpl;
 
+import com.scaleunlimited.cascading.NullContext;
+
 import bixo.datum.ParsedDatum;
 import bixo.utils.IoUtils;
 import cascading.flow.FlowProcess;
@@ -39,7 +41,6 @@ import cascading.operation.OperationCall;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("serial")
 public abstract class DOMParser extends BaseOperation<NullContext> implements Function<NullContext> {

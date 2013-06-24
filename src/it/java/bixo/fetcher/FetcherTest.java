@@ -25,6 +25,9 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
+import com.scaleunlimited.cascading.BasePath;
+
+import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
@@ -40,9 +43,7 @@ import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
-import cascading.scheme.SequenceFile;
-import cascading.scheme.TextLine;
-import cascading.tap.Lfs;
+import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
@@ -66,24 +67,27 @@ public class FetcherTest {
         }
     }
         
-    private String makeCrawlDb(String workingFolder, String inputPath) throws IOException {
+    private String makeCrawlDb(String workingFolder, String input) throws Exception {
 
+        BixoPlatform platform = new BixoPlatform(true);
+        
         // We don't want to regenerate this DB all the time.
-        File crawlDBFile = new File(workingFolder, URL_DB_NAME);
-        String crawlDBPath = crawlDBFile.getAbsolutePath();
-        if (!crawlDBFile.exists()) {
+        BasePath workingPath = platform.makePath(workingFolder);
+        BasePath crawlDBPath = platform.makePath(workingPath, URL_DB_NAME);
+        if (!crawlDBPath.exists()) {
             Pipe importPipe = new Pipe("import URLs");
             importPipe = new Each(importPipe, new LoadUrlsFunction());
             
-            Tap sourceTap = new Lfs(new TextLine(), inputPath);
-            Tap sinkTap = new Lfs(new SequenceFile(UrlDatum.FIELDS), crawlDBPath, true);
+            BasePath inputPath = platform.makePath(input);
+            Tap sourceTap = platform.makeTap(platform.makeTextScheme(), inputPath);
+            Tap sinkTap = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), crawlDBPath, SinkMode.REPLACE);
             
-            FlowConnector flowConnector = new FlowConnector();
+            FlowConnector flowConnector = platform.makeFlowConnector();
             Flow flow = flowConnector.connect(sourceTap, sinkTap, importPipe);
             flow.complete();
         }
 
-        return crawlDBPath;
+        return crawlDBPath.getAbsolutePath();
     }
     
     @Test
@@ -91,11 +95,22 @@ public class FetcherTest {
         System.setProperty("bixo.root.level", "TRACE");
 
         String workingFolder = "build/it/FetcherTest/testStaleConnection/working";
-        String inputPath = makeCrawlDb(workingFolder, "src/it/resources/apple-pages.txt");
-        Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
-        String outPath = "build/it/FetcherTest/testStaleConnection/out";
-        Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outPath + "/content", true);
-        Lfs status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outPath + "/status", true);
+        String input = makeCrawlDb(workingFolder, "src/it/resources/apple-pages.txt");
+        
+        BixoPlatform platform = new BixoPlatform(true);
+        BasePath workingPath = platform.makePath(workingFolder);
+        BasePath inputPath = platform.makePath(input);
+
+        Tap in = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), inputPath);
+        String outputDir = "build/it/FetcherTest/testStaleConnection/out";
+        BasePath outputPath = platform.makePath(outputDir);
+
+        BasePath contentPath = platform.makePath(outputPath, "content");
+        Tap content = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath, SinkMode.REPLACE);
+
+        BasePath statusPath = platform.makePath(outputPath, "status");
+        Tap status = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath, SinkMode.REPLACE);
+
         
         Pipe pipe = new Pipe("urlSource");
 
@@ -107,14 +122,13 @@ public class FetcherTest {
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
 
-        FlowConnector flowConnector = new FlowConnector();
-
+        FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
         
         // Test for all valid fetches.
-        Lfs validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outPath + "/status");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        Tap validate = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         while (tupleEntryIterator.hasNext()) {
             TupleEntry entry = tupleEntryIterator.next();
             StatusDatum sd = new StatusDatum(entry);
@@ -135,11 +149,18 @@ public class FetcherTest {
         System.setProperty("bixo.root.level", "TRACE");
         
         String workingFolder = "build/test-it/FetcherTest/testRunFetcher";
-        String inputPath = makeCrawlDb(workingFolder, "src/it/resources/top10urls.txt");
-        Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), inputPath, true);
-        Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), workingFolder + "/content", true);
-        Lfs status = new Lfs(new TextLine(), workingFolder + "/status", true);
+        String input = makeCrawlDb(workingFolder, "src/it/resources/top10urls.txt");
+        BixoPlatform platform = new BixoPlatform(true);
+        BasePath workingPath = platform.makePath(workingFolder);
+        BasePath inputPath = platform.makePath(input);
+        Tap in = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), inputPath);
+        
+        BasePath contentPath = platform.makePath(workingPath, "content");
+        Tap content = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath, SinkMode.REPLACE);
+        BasePath statusPath = platform.makePath(workingPath, "status");
+        Tap status = platform.makeTap(platform.makeTextScheme(), statusPath, SinkMode.REPLACE);
 
+        
         Pipe pipe = new Pipe("urlSource");
 
         UserAgent userAgent = new FirefoxUserAgent();
@@ -147,14 +168,14 @@ public class FetcherTest {
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
 
-        FlowConnector flowConnector = new FlowConnector();
+        FlowConnector flowConnector = platform.makeFlowConnector();
 
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
         
         // Test for 10 good fetches.
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), workingFolder + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        Tap validate = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         int fetchedPages = 0;
         while (tupleEntryIterator.hasNext()) {
             TupleEntry entry = tupleEntryIterator.next();

@@ -21,8 +21,9 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.mortbay.jetty.HttpException;
-import org.mortbay.jetty.handler.AbstractHandler;
+import org.eclipse.jetty.http.HttpException;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
 
 /**
@@ -37,7 +38,9 @@ public class FixedStatusResponseHandler extends AbstractHandler {
     }
     
     @Override
-    public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+    public void handle(String pathInContext, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
         throw new HttpException(_status, "Pre-defined error fetching: " + pathInContext);
     }
+
+    
 }

@@ -28,6 +28,9 @@ import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.junit.Test;
 
+import com.scaleunlimited.cascading.BasePath;
+
+import bixo.config.BixoPlatform;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
@@ -37,8 +40,8 @@ import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Pipe;
-import cascading.scheme.SequenceFile;
-import cascading.tap.Lfs;
+import cascading.tap.SinkMode;
+import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 
 @SuppressWarnings("deprecation")
@@ -48,12 +51,17 @@ public class ParsePipeTest extends CascadingTestCase {
 	@Test
     public void testParserPipe() throws Exception {
 
+        BixoPlatform platform = new BixoPlatform(true);
+        
+
         Pipe pipe = new Pipe("parse_source");
         ParsePipe parserPipe = new ParsePipe(pipe, new SimpleParser());
-        Lfs in = new Lfs(new SequenceFile(FetchedDatum.FIELDS), "build/test/ParserPipeTest/in", true);
-        Lfs out = new Lfs(new SequenceFile(ParsedDatum.FIELDS), "build/test/ParserPipeTest/out", true);
+        BasePath inputPath = platform.makePath("build/test/ParserPipeTest/in");
+        Tap in = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), inputPath);
+        BasePath outputPath = platform.makePath("build/test/ParserPipeTest/out");
+        Tap out = platform.makeTap(platform.makeBinaryScheme(ParsedDatum.FIELDS), outputPath, SinkMode.REPLACE);
 
-        TupleEntryCollector write = in.openForWrite(new JobConf());
+        TupleEntryCollector write = in.openForWrite(platform.makeFlowProcess());
 
         ArchiveReader archiveReader = ArchiveReaderFactory.get("src/test/resources/someHtml.arc");
         Iterator<ArchiveRecord> iterator = archiveReader.iterator();
@@ -99,7 +107,7 @@ public class ParsePipeTest extends CascadingTestCase {
         }
 
         write.close();
-        FlowConnector flowConnector = new FlowConnector();
+        FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(in, out, parserPipe);
         flow.complete();
         

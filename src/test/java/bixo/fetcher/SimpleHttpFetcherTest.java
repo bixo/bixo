@@ -33,14 +33,14 @@ import junit.framework.Assert;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.conn.HttpHostConnectException;
+import org.eclipse.jetty.http.HttpException;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.bio.SocketConnector;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.Test;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.HttpException;
-import org.mortbay.jetty.Request;
-import org.mortbay.jetty.Response;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.handler.AbstractHandler;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
@@ -71,7 +71,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         }
         
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext, Request baseRequest, HttpServletRequest servletRequest, HttpServletResponse response) throws HttpException, IOException {
             if (pathInContext.endsWith("base")) {
                 if (_permanent) {
                     if (response instanceof  Response) {
@@ -80,9 +80,9 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
                     // Can't use sendRedirect, as that forces it to be a temp redirect.
                         jettyResponse.setStatus(HttpStatus.SC_MOVED_PERMANENTLY);
                         jettyResponse.setHeader("Location", "http://localhost:8089/redirect");
-                        if (request instanceof Request) {
-                            Request baseRequest = (Request) request;
-                            baseRequest.setHandled(true);
+                        if (servletRequest instanceof Request) {
+                            Request request = (Request) servletRequest;
+                            request.setHandled(true);
                         }
                     }
                 } else {
@@ -110,7 +110,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         }
 
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
             String language = request.getHeader(HttpHeaderNames.ACCEPT_LANGUAGE);
             String content;
             if ((language != null) && (language.contains("en"))) {
@@ -136,7 +136,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         }
 
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
             String content = "test";
             response.setStatus(HttpStatus.SC_OK);
             if (_mimeType != null) {

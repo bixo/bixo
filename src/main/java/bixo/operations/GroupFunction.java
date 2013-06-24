@@ -18,7 +18,8 @@ package bixo.operations;
 
 import org.apache.log4j.Logger;
 
-import com.bixolabs.cascading.NullContext;
+import com.scaleunlimited.cascading.NullContext;
+
 
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.UrlDatum;
