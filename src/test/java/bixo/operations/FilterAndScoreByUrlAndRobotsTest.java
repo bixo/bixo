@@ -24,6 +24,8 @@ import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 
+import com.scaleunlimited.cascading.NullContext;
+
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.RandomResponseHandler;
@@ -42,7 +44,6 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("deprecation")
 public class FilterAndScoreByUrlAndRobotsTest {

@@ -26,8 +26,10 @@ import java.net.URL;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.mortbay.jetty.HttpException;
-import org.mortbay.jetty.handler.AbstractHandler;
+import org.eclipse.jetty.http.HttpException;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+
 
 
 public class ResourcesResponseHandler extends AbstractHandler {
@@ -46,7 +48,7 @@ public class ResourcesResponseHandler extends AbstractHandler {
     }
     
     @Override
-    public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+    public void handle(String pathInContext, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
         // Get the resource.
         URL path = ResourcesResponseHandler.class.getResource(_testContext + pathInContext);
         if (path == null) {

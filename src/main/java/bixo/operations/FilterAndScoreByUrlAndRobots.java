@@ -21,6 +21,10 @@ import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+import com.scaleunlimited.cascading.LoggingFlowReporter;
+import com.scaleunlimited.cascading.NullContext;
+
 import bixo.config.UserAgent;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
@@ -38,9 +42,6 @@ import cascading.operation.Buffer;
 import cascading.operation.BufferCall;
 import cascading.tuple.TupleEntry;
 
-import com.bixolabs.cascading.LoggingFlowProcess;
-import com.bixolabs.cascading.LoggingFlowReporter;
-import com.bixolabs.cascading.NullContext;
 
 /**
  * Filter out URLs by either domain (not popular enough) or if they're blocked by robots.txt

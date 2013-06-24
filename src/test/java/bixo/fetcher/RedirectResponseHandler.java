@@ -22,8 +22,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.http.HttpStatus;
-import org.mortbay.jetty.HttpException;
-import org.mortbay.jetty.handler.AbstractHandler;
+import org.eclipse.jetty.http.HttpException;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 
 /**
  * Reponse handler that always returns a 404.
@@ -40,7 +41,7 @@ public class RedirectResponseHandler extends AbstractHandler {
     }
     
     @Override
-    public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+    public void handle(String pathInContext, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
         if (pathInContext.equalsIgnoreCase(_originalPath)) {
             response.sendRedirect(_redirectUrl);
         } else if (_redirectUrl.contains(pathInContext)) {

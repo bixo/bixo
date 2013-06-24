@@ -81,6 +81,8 @@ import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.Payload;
+
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
 import bixo.config.UserAgent;
@@ -100,7 +102,6 @@ import bixo.utils.EncodingUtils;
 import bixo.utils.EncodingUtils.ExpandedResult;
 import bixo.utils.HttpUtils;
 
-import com.bixolabs.cascading.Payload;
 
 @SuppressWarnings("serial")
 public class SimpleHttpFetcher extends BaseFetcher {

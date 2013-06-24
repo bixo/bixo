@@ -23,7 +23,8 @@ import java.net.URL;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
-import com.bixolabs.cascading.Payload;
+import com.scaleunlimited.cascading.Payload;
+
 
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;

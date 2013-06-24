@@ -21,80 +21,79 @@ import java.io.IOException;
 
 import junit.framework.Assert;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.bixolabs.cascading.HadoopUtils;
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.BasePlatform;
+
+import bixo.config.BixoPlatform;
+
 
 
 @SuppressWarnings("deprecation")
 public class CrawlDirUtilsTest {
     
-    JobConf _conf;
-    FileSystem _fileSystem;
-    Path _outputPath;
-
+    BasePlatform _platform;
+    BasePath _outputPath;
+    
     @Before
     public void setUp() throws Exception {
-        _conf = HadoopUtils.getDefaultJobConf();
-        _outputPath = new Path("./build/FsUtilsTest");
-        _fileSystem = _outputPath.getFileSystem(_conf);
-        _fileSystem.mkdirs(_outputPath);
+        _platform = new BixoPlatform(true);
+        _outputPath = _platform.makePath("./build/CrawlDirUtilsTest");
+        _outputPath.mkdirs();
     }
     
     @After
     public void tearDown() throws Exception {
-        _fileSystem.delete(_outputPath, true);
+        _outputPath.delete(true);
     }
 
     @Test
-    public void testMakeLoopDir() throws IOException {
-        Path loopPath = CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 3);
+    public void testMakeLoopDir() throws Exception {
+        BasePath loopPath = CrawlDirUtils.makeLoopDir(_platform, _outputPath, 3);
         Assert.assertTrue(loopPath.toString().startsWith(_outputPath.toString() + "/3-"));
-        Assert.assertTrue(_fileSystem.exists(loopPath));
+        Assert.assertTrue(loopPath.exists());
     }
     
     @Test
-    public void testFindLatestLoopDir() throws IOException {
-        CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 0);
-        CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 1);
-        CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 3);
-        CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 7);
-        Path expectedPath =
-            CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 11).makeQualified(_fileSystem);
+    public void testFindLatestLoopDir() throws Exception {
+        CrawlDirUtils.makeLoopDir(_platform, _outputPath, 0);
+        CrawlDirUtils.makeLoopDir(_platform, _outputPath, 1);
+        CrawlDirUtils.makeLoopDir(_platform, _outputPath, 3);
+        CrawlDirUtils.makeLoopDir(_platform, _outputPath, 7);
+        BasePath expectedPath =
+            CrawlDirUtils.makeLoopDir(_platform, _outputPath, 11);
         Assert.assertEquals(expectedPath.toString(),
-                            CrawlDirUtils.findLatestLoopDir(_fileSystem, _outputPath).makeQualified(_fileSystem).toString());
+                            CrawlDirUtils.findLatestLoopDir(_platform, _outputPath).toString());
     }
     
     @Test
-    public void testFindNextLoopDir() throws IOException {
-        CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 0);
-        Path path1 =
-            CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 1).makeQualified(_fileSystem);
-        Path path3 =
-            CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 3).makeQualified(_fileSystem);
-        Path path7 =
-            CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 7).makeQualified(_fileSystem);
-        CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 11);
+    public void testFindNextLoopDir() throws Exception {
+        CrawlDirUtils.makeLoopDir(_platform, _outputPath, 0);
+        BasePath path1 =
+            CrawlDirUtils.makeLoopDir(_platform, _outputPath, 1);
+        BasePath path3 =
+            CrawlDirUtils.makeLoopDir(_platform, _outputPath, 3);
+        BasePath path7 =
+            CrawlDirUtils.makeLoopDir(_platform, _outputPath, 7);
+        CrawlDirUtils.makeLoopDir(_platform, _outputPath, 11);
         Assert.assertEquals(path1.toString(),
-                            CrawlDirUtils.findNextLoopDir(_fileSystem, _outputPath, 0).makeQualified(_fileSystem).toString());
+                            CrawlDirUtils.findNextLoopDir(_platform, _outputPath, 0).toString());
         Assert.assertEquals(path3.toString(),
-                            CrawlDirUtils.findNextLoopDir(_fileSystem, _outputPath, 1).makeQualified(_fileSystem).toString());
+                            CrawlDirUtils.findNextLoopDir(_platform, _outputPath, 1).toString());
         Assert.assertEquals(path7.toString(),
-                            CrawlDirUtils.findNextLoopDir(_fileSystem, _outputPath, 4).makeQualified(_fileSystem).toString());
+                            CrawlDirUtils.findNextLoopDir(_platform, _outputPath, 4).toString());
     }
 
     @Test
-    public void testExtractLoopNumber() throws IOException {
-        Path path0 = CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 0);
-        Path path1 = CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 1);
-        Path path3 = CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 3);
-        Path path7 = CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 7);
-        Path path11 = CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 11);
+    public void testExtractLoopNumber() throws Exception {
+        BasePath path0 = CrawlDirUtils.makeLoopDir(_platform, _outputPath, 0);
+        BasePath path1 = CrawlDirUtils.makeLoopDir(_platform, _outputPath, 1);
+        BasePath path3 = CrawlDirUtils.makeLoopDir(_platform, _outputPath, 3);
+        BasePath path7 = CrawlDirUtils.makeLoopDir(_platform, _outputPath, 7);
+        BasePath path11 = CrawlDirUtils.makeLoopDir(_platform, _outputPath, 11);
         Assert.assertEquals(0, CrawlDirUtils.extractLoopNumber(path0));
         Assert.assertEquals(1, CrawlDirUtils.extractLoopNumber(path1));
         Assert.assertEquals(3, CrawlDirUtils.extractLoopNumber(path3));
@@ -103,23 +102,23 @@ public class CrawlDirUtilsTest {
     }
  
     @Test
-    public void testFindAllSubdirs() throws IOException {
+    public void testFindAllSubdirs() throws Exception {
         // Make a loop dir with a subdir
         String subdirName = "bogus";
-        Path path0 = CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 0);
-        Path subdirPath0 = new Path(path0, subdirName);
-        _fileSystem.mkdirs(subdirPath0);
+        BasePath path0 = CrawlDirUtils.makeLoopDir(_platform, _outputPath, 0);
+        BasePath subdirPath0 = _platform.makePath(path0, subdirName);
+        subdirPath0.mkdirs();
         
         // And another one without the subdir
-        Path path1 = CrawlDirUtils.makeLoopDir(_fileSystem, _outputPath, 1);
+        BasePath path1 = CrawlDirUtils.makeLoopDir(_platform, _outputPath, 1);
 
-        Path[] allSubdirPathsArr = CrawlDirUtils.findAllSubdirs(_fileSystem, _outputPath, subdirName);
+        BasePath[] allSubdirPathsArr = CrawlDirUtils.findAllSubdirs(_platform, _outputPath, subdirName);
         Assert.assertEquals(1, allSubdirPathsArr.length);
 
         // Now add a subdir to path1 as well
-        Path subdirPath1 = new Path(path1, subdirName);
-        _fileSystem.mkdirs(subdirPath1);
-        Path[] strictSubdirPathsArr = CrawlDirUtils.findAllSubdirs(_fileSystem, _outputPath, subdirName);
+        BasePath subdirPath1 = _platform.makePath(path1, subdirName);
+        subdirPath1.mkdirs();
+        BasePath[] strictSubdirPathsArr = CrawlDirUtils.findAllSubdirs(_platform, _outputPath, subdirName);
         Assert.assertEquals(2, strictSubdirPathsArr.length);
     }
 }

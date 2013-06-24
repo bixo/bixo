@@ -16,8 +16,9 @@
  */
 package bixo.fetcher.simulation;
 
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+
 
 
 public class TestWebServer extends SimulationWebServer {

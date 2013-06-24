@@ -20,6 +20,9 @@ import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.NullContext;
+import com.scaleunlimited.cascading.PartitioningKey;
+
 import bixo.config.BaseFetchJobPolicy;
 import bixo.config.BaseFetchJobPolicy.FetchSetInfo;
 import bixo.datum.FetchSetDatum;
@@ -32,8 +35,6 @@ import cascading.operation.BufferCall;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.NullContext;
-import com.bixolabs.cascading.PartitioningKey;
 
 /**
  * We get ScoredUrlDatums, grouped by server IP address.

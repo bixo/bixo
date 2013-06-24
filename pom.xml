@@ -53,6 +53,12 @@
 		</repository>
 	</repositories>
 	
+	<properties>
+		<cascading.version>2.1.6</cascading.version>
+        <hadoop.version>1.0.4</hadoop.version>
+        <jetty.version>8.1.8.v20121106</jetty.version>
+	</properties>
+	
 	<dependencies>
 
 		<!-- Compile time dependencies -->
@@ -60,13 +66,26 @@
 		<dependency>
             <groupId>cascading</groupId>
             <artifactId>cascading-core</artifactId>
+            <version>${cascading.version}</version>
         </dependency>
         
-        <dependency>
-            <groupId>com.bixolabs</groupId>
-            <artifactId>cascading.utils</artifactId>
-            <version>1.1</version>
+         <dependency>
+            <groupId>cascading</groupId>
+            <artifactId>cascading-hadoop</artifactId>
+            <version>${cascading.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+ 
+       <dependency>
+           <groupId>com.scaleunlimited</groupId>
+           <artifactId>cascading.utils</artifactId>
+           <version>2.1.4</version>
+       </dependency>
         
 		<dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -110,7 +129,21 @@
             <version>2.0.18</version>
         </dependency>
 
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+            <version>1.6.1</version>
+		</dependency>
+
 		<!-- Test dependencies -->
+
+        <dependency>
+            <groupId>cascading</groupId>
+            <artifactId>cascading-core</artifactId>
+            <version>${cascading.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
 
 		<dependency>
             <groupId>junit</groupId>
@@ -129,21 +162,22 @@
 		<dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-test</artifactId>
-            <version>0.20.2</version>
+            <version>1.0.4</version>
             <scope>test</scope>
         </dependency>
 
-		<dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jetty</artifactId>
-            <version>6.1.26</version>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>${jetty.version}</version>
             <scope>test</scope>
-            <exclusions>
-            	<exclusion>
-            		<artifactId>servlet-api</artifactId>
-            		<groupId>javax.servlet</groupId>
-            	</exclusion>
-            </exclusions>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>${jetty.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- These two jars could be a runtime dependency of hadoop-core,
@@ -155,14 +189,19 @@
             <artifactId>jasper</artifactId>
             <version>6.0.20</version>
             <scope>test</scope>
+            <exclusions>
+				<exclusion>
+					<groupId>org.mortbay.jetty</groupId>
+					<artifactId>servlet-api-2.5</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.tomcat</groupId>
+					<artifactId>servlet-api</artifactId>
+				</exclusion>
+            </exclusions>
+            
         </dependency>
  		
-		<dependency>
-            <groupId>cascading</groupId>
-            <artifactId>cascading-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        
 		<dependency>
             <groupId>it.unimi</groupId>
             <artifactId>dsiutils</artifactId>
@@ -210,30 +249,36 @@
 		<dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-core</artifactId>
-            <version>0.20.2</version>
+            <version>1.0.4</version>
 		    <scope>provided</scope>
 		    
 		    <exclusions>
 		    	<exclusion>
-		    		<artifactId>jetty</artifactId>
 		    		<groupId>org.mortbay.jetty</groupId>
+		    		<artifactId>jetty</artifactId>
 		    	</exclusion>
 		    	<exclusion>
-		    		<artifactId>jetty-util</artifactId>
 		    		<groupId>org.mortbay.jetty</groupId>
+		    		<artifactId>jetty-util</artifactId>
 		    	</exclusion>
+		    	<exclusion>
+		    		<groupId>org.mortbay.jetty</groupId>
+		    		<artifactId>servlet-api</artifactId>
+		    	</exclusion>
+				<exclusion>
+					<groupId>org.mortbay.jetty</groupId>
+					<artifactId>servlet-api-2.5</artifactId>
+				</exclusion>
+		    	<exclusion>
+		    		<groupId>org.apache.tomcat</groupId>
+		    		<artifactId>servlet-api</artifactId>
+		    	</exclusion>
+		    	
 		    	<exclusion>
 		    		<artifactId>ant</artifactId>
 		    		<groupId>ant</groupId>
 		    	</exclusion>
 		    </exclusions>
-		</dependency>
-        
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>servlet-api</artifactId>
-			<version>2.5</version>
-			<scope>provided</scope>
 		</dependency>
         
 		<!-- Eclipse project generation dependencies -->
@@ -247,21 +292,6 @@
         
 	</dependencies>
 	
-	<dependencyManagement>
-		<dependencies>			
-			<dependency>
-				<groupId>cascading</groupId>
-				<artifactId>cascading-core</artifactId>
-				<version>1.2.5</version>
-			</dependency>
-			
-			<dependency>
-				<groupId>cascading</groupId>
-				<artifactId>cascading-test</artifactId>
-				<version>1.2.5</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 	
 		
 </project>

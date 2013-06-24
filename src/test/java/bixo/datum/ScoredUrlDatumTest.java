@@ -22,13 +22,14 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.scaleunlimited.cascading.PartitioningKey;
+
 import bixo.utils.DiskQueue;
 import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.scheme.hadoop.SequenceFile;
 import cascading.tap.hadoop.Lfs;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.PartitioningKey;
 
 
 public class ScoredUrlDatumTest {

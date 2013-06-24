@@ -21,7 +21,8 @@ import static org.junit.Assert.assertFalse;
 
 import org.junit.Test;
 
-import com.bixolabs.cascading.Payload;
+import com.scaleunlimited.cascading.Payload;
+
 
 import cascading.tuple.Tuple;
 
