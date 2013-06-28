@@ -302,7 +302,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     public void prepare(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
         super.prepare(flowProcess, operationCall);
 
-        _flowProcess = new LoggingFlowProcess((HadoopFlowProcess) flowProcess);
+        _flowProcess = new LoggingFlowProcess(flowProcess);
         _flowProcess.addReporter(new LoggingFlowReporter());
 
         _executor = new ThreadedExecutor(_fetcher.getMaxThreads(), _fetcher.getFetcherPolicy().getRequestTimeout());

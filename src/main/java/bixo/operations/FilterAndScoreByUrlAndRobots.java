@@ -87,7 +87,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         
         // FUTURE KKr - use Cascading process vs creating our own, once it
         // supports logging in local mode, and a setStatus() call.
-        _flowProcess = new LoggingFlowProcess((HadoopFlowProcess)flowProcess);
+        _flowProcess = new LoggingFlowProcess(flowProcess);
         _flowProcess.addReporter(new LoggingFlowReporter());
     }
     

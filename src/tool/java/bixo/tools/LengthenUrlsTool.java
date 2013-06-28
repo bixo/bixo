@@ -21,13 +21,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Properties;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.hadoop.mapred.JobConf;
-
-import com.scaleunlimited.cascading.BasePath;
-import com.scaleunlimited.cascading.NullSinkTap;
 
 import bixo.config.BixoPlatform;
 import bixo.fetcher.BaseFetcher;
@@ -43,6 +38,9 @@ import cascading.tap.SinkMode;
 import cascading.tap.SinkTap;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
+
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.NullSinkTap;
 
 
 public class LengthenUrlsTool {
