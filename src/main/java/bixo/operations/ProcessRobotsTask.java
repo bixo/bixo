@@ -152,7 +152,7 @@ public class ProcessRobotsTask implements Runnable {
 
                     // collectors aren't thread safe
                     synchronized (_collector) {
-                        _collector.add(scoreUrl.getTuple());
+                        _collector.add(BixoPlatform.clone(scoreUrl.getTuple(), _flowProcess));
                     }
                 }
             }
