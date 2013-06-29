@@ -15,23 +15,34 @@
  *
  */package bixo.config;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.util.Date;
 
+import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
+import cascading.flow.FlowProcess.NullFlowProcess;
+import cascading.flow.hadoop.HadoopFlowProcess;
+import cascading.flow.local.LocalFlowProcess;
 import cascading.scheme.Scheme;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
+import cascading.tuple.Tuple;
 
 import com.scaleunlimited.cascading.BasePath;
 import com.scaleunlimited.cascading.BasePlatform;
+import com.scaleunlimited.cascading.LoggingFlowProcess;
 import com.scaleunlimited.cascading.hadoop.HadoopPlatform;
 import com.scaleunlimited.cascading.local.LocalPlatform;
 
-@SuppressWarnings({"rawtypes", "deprecation"})
+@SuppressWarnings({"rawtypes"})
 public class BixoPlatform extends BasePlatform {
 
     private static final long CASCADING_LOCAL_JOB_POLLING_INTERVAL = 100;
@@ -65,6 +76,76 @@ public class BixoPlatform extends BasePlatform {
         }
         
     }
+    
+    public static Tuple clone(Tuple t, FlowProcess flowProcess) {
+        if (flowProcess instanceof LoggingFlowProcess) {
+            // Need to unwrap to get at actual flow process.
+            flowProcess = ((LoggingFlowProcess)flowProcess).getDelegate();
+        }
+        
+        if (flowProcess instanceof HadoopFlowProcess) {
+            // Hadoop will do a deep copy implicitly (via serialization), so we don't
+            // have to do any copying ourselves, and thus the tuple isn't modified.
+            return t;
+        } else if (flowProcess instanceof NullFlowProcess) {
+            // I'm guessing we don't need to copy Tuples when running a CascadingTestCase.
+            return t;
+        } else if (flowProcess instanceof LocalFlowProcess) {
+            
+            // TODO We don't really need to copy the Tuple if every value
+            // inside is immutable.
+            
+            // Cascading local mode just does a shallow copy of the tuple, so we need
+            // to clone the tuple, and then deep-clone any tuple fields that aren't scalars.
+            // Currently we only handle Tuple & Date as an embedded object, or anything
+            // that's Writable.
+            
+            Tuple result = t;
+            
+            for (int i = 0; i < result.size(); i++) {
+                Object value = result.getObject(i);
+                if ((value == null) || (value instanceof Boolean) || (value instanceof String) ||
+                    (value instanceof Double) || (value instanceof Float) || 
+                    (value instanceof Integer) || (value instanceof Long) || (value instanceof Short)) {
+                    // All set, Cascading will do shallow copy
+                } else {
+                    // we need to clone the Tuple
+                    if (result == t) {
+                        result = new Tuple(t);
+                    }
+                    
+                    result.set(i, cloneValue(value, i));
+                }
+            }
+            
+            return result;
+        } else {
+            throw new IllegalArgumentException("Unknown class of flow process: " + flowProcess.getClass().getName());
+        }
+    }
+    
+    private static Object cloneValue(Object value, int index) {
+        if (value instanceof Tuple) {
+            return new Tuple((Tuple)value);
+        } else if (value instanceof Date) {
+            return new Date(((Date)value).getTime());
+        } else if (value instanceof Writable) {
+            // FUTURE - add threadlocal variables that we reuse here, versus re-allocating constantly.
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ((Writable)value).write(new DataOutputStream(baos));
+                Object result = value.getClass().newInstance();
+                ((Writable)result).readFields(new DataInputStream(new ByteArrayInputStream(baos.toByteArray())));
+                return result;
+            } catch (Exception e) {
+                throw new RuntimeException("Error doing deep copy of Writable", e);
+            }
+        } else {
+            // FUTURE - add support for Serializable types
+            throw new RuntimeException(String.format("Field value of type %s at position %d can't be cloned, unknown type", value.getClass().getName(), index));
+        }
+    }
+
 
     @Override
     public File getDefaultLogDir() {

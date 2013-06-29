@@ -22,6 +22,7 @@ import com.scaleunlimited.cascading.LoggingFlowProcess;
 import com.scaleunlimited.cascading.LoggingFlowReporter;
 import com.scaleunlimited.cascading.NullContext;
 
+import bixo.config.BixoPlatform;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.parser.BaseParser;
@@ -76,7 +77,7 @@ public class ParsePipe extends SubAssembly {
             try {
                 ParsedDatum parseResult = _parser.parse(fetchedDatum);
                 _flowProcess.increment(ParserCounters.DOCUMENTS_PARSED, 1);
-                functionCall.getOutputCollector().add(parseResult.getTuple());
+                functionCall.getOutputCollector().add(BixoPlatform.clone(parseResult.getTuple(), flowProcess));
             } catch (Exception e) {
                 LOGGER.warn("Error processing " + fetchedDatum.getUrl(), e);
                 _flowProcess.increment(ParserCounters.DOCUMENTS_FAILED, 1);

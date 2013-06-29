@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 
 import com.scaleunlimited.cascading.NullContext;
 
+import bixo.config.BixoPlatform;
 import bixo.datum.UrlDatum;
 import bixo.hadoop.ImportCounters;
 import cascading.flow.FlowProcess;
@@ -67,7 +68,7 @@ public class LoadUrlsFunction extends BaseOperation<NullContext> implements Func
             new URL(url);
             
             UrlDatum urlDatum = new UrlDatum(url);
-            funcCall.getOutputCollector().add(urlDatum.getTuple());
+            funcCall.getOutputCollector().add(BixoPlatform.clone(urlDatum.getTuple(), process));
             
             _numUrls += 1;
             process.increment(ImportCounters.URLS_ACCEPTED, 1);
