@@ -23,11 +23,11 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
-import bixo.fetcher.BaseFetcher;
 import bixo.utils.ConfigUtils;
+import crawlercommons.fetcher.http.BaseHttpFetcher;
 
 @SuppressWarnings("serial")
-public class NullHttpFetcher extends BaseFetcher {
+public class NullHttpFetcher extends BaseHttpFetcher {
 
     public NullHttpFetcher() {
         super(1, new FetcherPolicy(), ConfigUtils.BIXO_TEST_AGENT);

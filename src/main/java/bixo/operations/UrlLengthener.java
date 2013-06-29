@@ -27,11 +27,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import bixo.config.FetcherPolicy;
-import bixo.config.FetcherPolicy.RedirectMode;
-import bixo.config.UserAgent;
-import bixo.fetcher.BaseFetcher;
-import bixo.fetcher.SimpleHttpFetcher;
 import bixo.hadoop.FetchCounters;
 import bixo.utils.ThreadedExecutor;
 import cascading.flow.FlowProcess;
@@ -47,6 +42,11 @@ import cascading.tuple.TupleEntryCollector;
 import com.bixolabs.cascading.LoggingFlowProcess;
 import com.bixolabs.cascading.LoggingFlowReporter;
 import com.bixolabs.cascading.NullContext;
+
+import crawlercommons.fetcher.http.BaseHttpFetcher;
+import crawlercommons.fetcher.http.BaseHttpFetcher.RedirectMode;
+import crawlercommons.fetcher.http.SimpleHttpFetcher;
+import crawlercommons.fetcher.http.UserAgent;
 
 @SuppressWarnings("serial")
 public class UrlLengthener extends BaseOperation<NullContext> implements Function<NullContext> {
@@ -72,7 +72,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
 
     private static final Fields DEFAULT_FIELD = new Fields(URL_FN);
     
-    private BaseFetcher _fetcher;
+    private BaseHttpFetcher _fetcher;
     private int _maxThreads;
     private Set<String> _urlShorteners;
 
@@ -87,25 +87,23 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
      * @param userAgent - what to use when making requests.
      * @return BaseFetcher that can be passed to the UrlLengthener constructor.
      */
-    public static BaseFetcher makeFetcher(int maxThreads, UserAgent userAgent) {
-        FetcherPolicy policy = new FetcherPolicy();
-        policy.setRedirectMode(RedirectMode.FOLLOW_NONE);
-        policy.setMaxRedirects(MAX_REDIRECTS);
-        policy.setMaxConnectionsPerHost(maxThreads);
-
-        SimpleHttpFetcher result = new SimpleHttpFetcher(maxThreads, policy, userAgent);
+    public static BaseHttpFetcher makeFetcher(int maxThreads, UserAgent userAgent) {
+        SimpleHttpFetcher result = new SimpleHttpFetcher(maxThreads, userAgent);
+        result.setRedirectMode(RedirectMode.FOLLOW_NONE);
+        result.setMaxRedirects(MAX_REDIRECTS);
+        result.setMaxConnectionsPerHost(maxThreads);
         result.setDefaultMaxContentSize(MAX_CONTENT_SIZE);
         
         // We don't want any encoding (compression) of the data.
-        result.setAcceptEncoding("");
+        result.setAccceptEncoding("");
         return result;
     }
     
-    public UrlLengthener(BaseFetcher fetcher) throws IOException {
+    public UrlLengthener(BaseHttpFetcher fetcher) throws IOException {
         this(fetcher, DEFAULT_FIELD);
     }
 
-    public UrlLengthener(BaseFetcher fetcher, Fields resultField) throws IOException {
+    public UrlLengthener(BaseHttpFetcher fetcher, Fields resultField) throws IOException {
         super(resultField);
         
         if (resultField.size() != 1) {

@@ -35,6 +35,8 @@ import cascading.tuple.Tuple;
 
 import com.bixolabs.cascading.LoggingFlowProcess;
 
+import crawlercommons.fetcher.http.BaseHttpFetcher;
+
 /**
  * Runnable instance for fetching a set of URLs from the same server, using keep-alive.
  *
@@ -43,11 +45,11 @@ public class FetchTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(FetchTask.class);
 
     private IFetchMgr _fetchMgr;
-    private BaseFetcher _httpFetcher;
+    private BaseHttpFetcher _httpFetcher;
     private List<ScoredUrlDatum> _items;
     private String _ref;
     
-    public FetchTask(IFetchMgr fetchMgr, BaseFetcher httpFetcher, List<ScoredUrlDatum> items, String ref) {
+    public FetchTask(IFetchMgr fetchMgr, BaseHttpFetcher httpFetcher, List<ScoredUrlDatum> items, String ref) {
         _fetchMgr = fetchMgr;
         _httpFetcher = httpFetcher;
         _items = items;

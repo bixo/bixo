@@ -23,10 +23,7 @@ import java.net.URL;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
-import com.bixolabs.cascading.Payload;
-
 import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
@@ -35,8 +32,13 @@ import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.UrlFetchException;
 
+import com.bixolabs.cascading.Payload;
+
+import crawlercommons.fetcher.http.BaseHttpFetcher;
+import crawlercommons.fetcher.http.UserAgent;
+
 @SuppressWarnings("serial")
-public class LoggingFetcher extends BaseFetcher {
+public class LoggingFetcher extends BaseHttpFetcher {
     private static final Logger LOGGER = Logger.getLogger(LoggingFetcher.class);
     
     public static final String FAKE_CONTENT_LOCATION = "Fake-LoggingFetcher";
@@ -53,7 +55,6 @@ public class LoggingFetcher extends BaseFetcher {
     }
 
 
-    @Override
     public FetchedDatum get(ScoredUrlDatum datum) throws BaseFetchException {
         String url = datum.getUrl();
         Payload payload = datum.getPayload();

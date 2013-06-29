@@ -31,16 +31,12 @@ import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.exceptions.BaseFetchException;
-import bixo.fetcher.BaseFetcher;
 import bixo.operations.BaseGroupGenerator;
 import bixo.operations.BaseScoreGenerator;
 import bixo.operations.FetchBuffer;
 import bixo.operations.FilterAndScoreByUrlAndRobots;
 import bixo.operations.GroupFunction;
 import bixo.operations.MakeFetchSetsBuffer;
-import bixo.robots.BaseRobotsParser;
-import bixo.robots.RobotUtils;
-import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.GroupingKey;
 import bixo.utils.UrlUtils;
 import cascading.flow.FlowProcess;
@@ -61,6 +57,12 @@ import com.bixolabs.cascading.BaseSplitter;
 import com.bixolabs.cascading.NullContext;
 import com.bixolabs.cascading.NullSinkTap;
 import com.bixolabs.cascading.SplitterAssembly;
+
+import crawlercommons.fetcher.BaseFetcher;
+import crawlercommons.fetcher.http.BaseHttpFetcher;
+import crawlercommons.robots.BaseRobotsParser;
+import crawlercommons.robots.RobotUtils;
+import crawlercommons.robots.SimpleRobotRulesParser;
 
 @SuppressWarnings("serial")
 public class FetchPipe extends SubAssembly {
@@ -217,14 +219,14 @@ public class FetchPipe extends SubAssembly {
      * @param numReducers
      */
     
-    public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseFetcher fetcher, int numReducers) {
+    public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseHttpFetcher fetcher, int numReducers) {
         this(urlProvider, scorer, fetcher, RobotUtils.createFetcher(fetcher),
                         new SimpleRobotRulesParser(),
                         new DefaultFetchJobPolicy(fetcher.getFetcherPolicy()),
                         numReducers);
     }
     
-    public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseFetcher fetcher, BaseFetcher robotsFetcher, BaseRobotsParser parser,
+    public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseHttpFetcher fetcher, BaseHttpFetcher robotsFetcher, BaseRobotsParser parser,
                     BaseFetchJobPolicy fetchJobPolicy, int numReducers) {
         
         Pipe robotsPipe = new Each(urlProvider, new GroupFunction(new GroupByDomain()));

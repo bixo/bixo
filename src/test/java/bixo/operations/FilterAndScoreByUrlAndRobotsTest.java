@@ -27,12 +27,9 @@ import org.mockito.Mockito;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.RandomResponseHandler;
-import bixo.fetcher.SimpleHttpFetcher;
 import bixo.fetcher.StringResponseHandler;
 import bixo.fetcher.simulation.TestWebServer;
 import bixo.hadoop.FetchCounters;
-import bixo.robots.BaseRobotsParser;
-import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
 import cascading.flow.hadoop.HadoopFlowProcess;
@@ -43,6 +40,10 @@ import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
 import com.bixolabs.cascading.NullContext;
+
+import crawlercommons.fetcher.http.SimpleHttpFetcher;
+import crawlercommons.robots.BaseRobotsParser;
+import crawlercommons.robots.SimpleRobotRulesParser;
 
 @SuppressWarnings("deprecation")
 public class FilterAndScoreByUrlAndRobotsTest {

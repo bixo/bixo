@@ -31,7 +31,6 @@ import bixo.datum.FetchSetDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.FetchTask;
 import bixo.fetcher.IFetchMgr;
 import bixo.hadoop.FetchCounters;
@@ -52,6 +51,9 @@ import com.bixolabs.cascading.BaseDatum;
 import com.bixolabs.cascading.LoggingFlowProcess;
 import com.bixolabs.cascading.LoggingFlowReporter;
 import com.bixolabs.cascading.NullContext;
+
+import crawlercommons.fetcher.BaseFetcher;
+import crawlercommons.fetcher.http.BaseHttpFetcher;
 
 @SuppressWarnings( { "serial" })
 public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<NullContext>, IFetchMgr {
@@ -267,7 +269,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
 
     private static final long HARD_TERMINATION_CLEANUP_DURATION = 10 * 1000L;
 
-    private BaseFetcher _fetcher;
+    private BaseHttpFetcher _fetcher;
     private FetcherMode _fetcherMode;
 
     private transient ThreadedExecutor _executor;
@@ -280,7 +282,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     
     private transient AtomicBoolean _keepCollecting;
     
-    public FetchBuffer(BaseFetcher fetcher) {
+    public FetchBuffer(BaseHttpFetcher fetcher) {
         // We're going to output a tuple that contains a FetchedDatum, plus meta-data,
         // plus a result that could be a string, a status, or an exception
         super(FetchedDatum.FIELDS.append(FETCH_RESULT_FIELD));

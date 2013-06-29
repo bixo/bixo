@@ -21,13 +21,9 @@ import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.log4j.Logger;
 
-import bixo.config.UserAgent;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
-import bixo.fetcher.BaseFetcher;
 import bixo.hadoop.FetchCounters;
-import bixo.robots.BaseRobotsParser;
-import bixo.robots.RobotUtils;
 import bixo.utils.DiskQueue;
 import bixo.utils.GroupingKey;
 import bixo.utils.ThreadedExecutor;
@@ -41,6 +37,11 @@ import cascading.tuple.TupleEntry;
 import com.bixolabs.cascading.LoggingFlowProcess;
 import com.bixolabs.cascading.LoggingFlowReporter;
 import com.bixolabs.cascading.NullContext;
+
+import crawlercommons.fetcher.http.BaseHttpFetcher;
+import crawlercommons.fetcher.http.UserAgent;
+import crawlercommons.robots.BaseRobotsParser;
+import crawlercommons.robots.RobotUtils;
 
 /**
  * Filter out URLs by either domain (not popular enough) or if they're blocked by robots.txt
@@ -57,7 +58,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     private static final int MAX_URLS_IN_MEMORY = 100;
 
     private BaseScoreGenerator _scorer;
-	private BaseFetcher _fetcher;
+	private BaseHttpFetcher _fetcher;
 	private BaseRobotsParser _parser;
 	
     private transient ThreadedExecutor _executor;
@@ -71,7 +72,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         _fetcher = RobotUtils.createFetcher(userAgent, maxThreads);
     }
 
-    public FilterAndScoreByUrlAndRobots(BaseFetcher fetcher, BaseRobotsParser parser, BaseScoreGenerator scorer) {
+    public FilterAndScoreByUrlAndRobots(BaseHttpFetcher fetcher, BaseRobotsParser parser, BaseScoreGenerator scorer) {
         // We're going to output a ScoredUrlDatum (what FetcherBuffer expects).
         super(ScoredUrlDatum.FIELDS);
 

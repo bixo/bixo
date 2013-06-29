@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  */
 package bixo.utils;
 
-import bixo.config.UserAgent;
+import crawlercommons.fetcher.http.UserAgent;
 
 public class ConfigUtils {
 

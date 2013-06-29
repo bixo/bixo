@@ -31,8 +31,6 @@ import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Response;
 import org.mortbay.jetty.handler.AbstractHandler;
 
-import com.bixolabs.cascading.Payload;
-
 import bixo.config.BaseFetchJobPolicy;
 import bixo.config.DefaultFetchJobPolicy;
 import bixo.config.FetcherPolicy;
@@ -50,16 +48,12 @@ import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.RedirectFetchException;
 import bixo.exceptions.UrlFetchException;
-import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.RandomResponseHandler;
-import bixo.fetcher.SimpleHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
 import bixo.fetcher.simulation.TestWebServer;
 import bixo.operations.BaseGroupGenerator;
 import bixo.operations.BaseScoreGenerator;
 import bixo.operations.FixedScoreGenerator;
-import bixo.robots.BaseRobotsParser;
-import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
 import cascading.CascadingTestCase;
@@ -74,6 +68,14 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
+
+import com.bixolabs.cascading.Payload;
+
+import crawlercommons.fetcher.BaseFetcher;
+import crawlercommons.fetcher.http.BaseHttpFetcher;
+import crawlercommons.fetcher.http.SimpleHttpFetcher;
+import crawlercommons.robots.BaseRobotsParser;
+import crawlercommons.robots.SimpleRobotRulesParser;
 
 // Long-running test
 @SuppressWarnings("deprecation")
@@ -116,7 +118,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Lfs in = makeInputData(1, 1);
 
         Pipe pipe = new Pipe("urlSource");
-        BaseFetcher fetcher = new FakeHttpFetcher(false, 1);
+        BaseHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
@@ -151,7 +153,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
         Pipe pipe = new Pipe("urlSource");
         BaseScoreGenerator scorer = new FixedScoreGenerator();
-        BaseFetcher fetcher = new SimpleHttpFetcher(ConfigUtils.BIXO_TEST_AGENT);
+        BaseHttpFetcher fetcher = new SimpleHttpFetcher(ConfigUtils.BIXO_TEST_AGENT);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
         
         String outputPath = "build/test/FetchPipeTest/testFetchPipe";
@@ -235,7 +237,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         FetcherPolicy policy = new FetcherPolicy();
         policy.setRedirectMode(RedirectMode.FOLLOW_TEMP);
-        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
         
         String outputPath = "build/test/FetchPipeTest/testRedirectException";
@@ -307,7 +309,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         // Assume we should only need 10ms for fetching all 10 URLs.
         policy.setRequestTimeout(10);
         
-        BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        BaseHttpFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
         
         String outputPath = "build/test/FetchPipeTest/testFetchTerminationPipe";
@@ -353,7 +355,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Lfs in = makeInputData(1, 1, payload);
 
         Pipe pipe = new Pipe("urlSource");
-        BaseFetcher fetcher = new FakeHttpFetcher(false, 10);
+        BaseHttpFetcher fetcher = new FakeHttpFetcher(false, 10);
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
@@ -408,7 +410,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Lfs in = makeInputData(1, 1);
 
         Pipe pipe = new Pipe("urlSource");
-        BaseFetcher fetcher = new FakeHttpFetcher(false, 1);
+        BaseHttpFetcher fetcher = new FakeHttpFetcher(false, 1);
         BaseScoreGenerator scorer = new SkippedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
@@ -438,7 +440,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         // This will force all URLs to get skipped because of the crawl end time limit.
         FetcherPolicy defaultPolicy = new FetcherPolicy();
         defaultPolicy.setCrawlEndTime(0);
-        BaseFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
+        BaseHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy(defaultPolicy);
@@ -483,7 +485,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         // This will limit us to one URL.
         final int maxUrls = 1;
         FetcherPolicy defaultPolicy = new FetcherPolicy();
-        BaseFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
+        BaseHttpFetcher fetcher = new FakeHttpFetcher(false, 1, defaultPolicy);
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy(defaultPolicy.getMaxRequestsPerConnection(), maxUrls, BaseFetchJobPolicy.DEFAULT_CRAWL_DELAY);
@@ -761,7 +763,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
     }
     
     @SuppressWarnings({ "serial", "unused" })
-    private static class CustomFetcher extends BaseFetcher {
+    private static class CustomFetcher extends BaseHttpFetcher {
 
         public CustomFetcher() {
             super(1, new MaxUrlFetcherPolicy(4), ConfigUtils.BIXO_TEST_AGENT);

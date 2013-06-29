@@ -18,24 +18,23 @@ package bixo.operations;
 
 import org.apache.log4j.Logger;
 
-import cascading.tuple.Tuple;
-import cascading.tuple.TupleEntryCollector;
-
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.RedirectFetchException;
-import bixo.fetcher.BaseFetcher;
+import cascading.tuple.Tuple;
+import cascading.tuple.TupleEntryCollector;
+import crawlercommons.fetcher.http.BaseHttpFetcher;
 
 public class ResolveRedirectsTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ResolveRedirectsTask.class);
     
     private String _url;
-    private BaseFetcher _fetcher;
+    private BaseHttpFetcher _fetcher;
     private TupleEntryCollector _collector;
 
-    public ResolveRedirectsTask(String url, BaseFetcher fetcher, TupleEntryCollector collector) {
+    public ResolveRedirectsTask(String url, BaseHttpFetcher fetcher, TupleEntryCollector collector) {
         _url = url;
         _fetcher = fetcher;
         _collector = collector;

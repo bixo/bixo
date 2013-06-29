@@ -23,8 +23,6 @@ import java.util.Random;
 import org.apache.http.HttpStatus;
 import org.apache.log4j.Logger;
 
-import com.bixolabs.cascading.Payload;
-
 import bixo.config.FetcherPolicy;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
@@ -33,11 +31,14 @@ import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.UrlFetchException;
-import bixo.fetcher.BaseFetcher;
 import bixo.utils.ConfigUtils;
 
+import com.bixolabs.cascading.Payload;
+
+import crawlercommons.fetcher.http.BaseHttpFetcher;
+
 @SuppressWarnings("serial")
-public class FakeHttpFetcher extends BaseFetcher {
+public class FakeHttpFetcher extends BaseHttpFetcher {
     private static Logger LOGGER = Logger.getLogger(FakeHttpFetcher.class);
 
     private boolean _randomFetching;

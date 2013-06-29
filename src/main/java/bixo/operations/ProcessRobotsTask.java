@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,7 @@ import org.apache.log4j.Logger;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.fetcher.BaseFetcher;
 import bixo.hadoop.FetchCounters;
-import bixo.robots.BaseRobotRules;
-import bixo.robots.BaseRobotsParser;
-import bixo.robots.RobotUtils;
 import bixo.utils.DomainInfo;
 import bixo.utils.DomainNames;
 import bixo.utils.GroupingKey;
@@ -39,18 +35,23 @@ import cascading.tuple.TupleEntryCollector;
 
 import com.bixolabs.cascading.LoggingFlowProcess;
 
+import crawlercommons.fetcher.http.BaseHttpFetcher;
+import crawlercommons.robots.BaseRobotRules;
+import crawlercommons.robots.BaseRobotsParser;
+import crawlercommons.robots.RobotUtils;
+
 public class ProcessRobotsTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ProcessRobotsTask.class);
 
     private String _protocolAndDomain;
     private BaseScoreGenerator _scorer;
     private Queue<GroupedUrlDatum> _urls;
-    private BaseFetcher _fetcher;
+    private BaseHttpFetcher _fetcher;
     private TupleEntryCollector _collector;
     private BaseRobotsParser _parser;
     private LoggingFlowProcess _flowProcess;
 
-    public ProcessRobotsTask(String protocolAndDomain, BaseScoreGenerator scorer, Queue<GroupedUrlDatum> urls, BaseFetcher fetcher, 
+    public ProcessRobotsTask(String protocolAndDomain, BaseScoreGenerator scorer, Queue<GroupedUrlDatum> urls, BaseHttpFetcher fetcher, 
                     BaseRobotsParser parser, TupleEntryCollector collector, LoggingFlowProcess flowProcess) {
         _protocolAndDomain = protocolAndDomain;
         _scorer = scorer;
