@@ -17,3 +17,4 @@ private
 extras/webgraph/tmp
 extras/webgraph/eu-2005.*
 junit*.properties
+examples/logs
