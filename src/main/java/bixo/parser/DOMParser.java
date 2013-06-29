@@ -141,6 +141,8 @@ public abstract class DOMParser extends BaseOperation<NullContext> implements Fu
 
     }
     
+    // TODO VMa - change interface to pass in FlowProcess as well.
+    
     /**
      * The _input ParsedDatum was successfully converted into a Dom4J Document.
      * at this point you would typically emit one or more output tuples (with

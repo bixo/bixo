@@ -63,7 +63,7 @@ public class RunFakeFetchPipe {
 
                 UrlDatum urlDatum = new UrlDatum(url.toString());
 
-                funcCall.getOutputCollector().add(urlDatum.getTuple());
+                funcCall.getOutputCollector().add(BixoPlatform.clone(urlDatum.getTuple(), process));
             } catch (MalformedURLException e) {
                 LOGGER.warn("Invalid URL: " + urlAsString);
                 // throw new RuntimeException("Invalid URL: " + urlAsString, e);

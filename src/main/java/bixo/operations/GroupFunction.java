@@ -21,6 +21,7 @@ import org.apache.log4j.Logger;
 import com.scaleunlimited.cascading.NullContext;
 
 
+import bixo.config.BixoPlatform;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.UrlDatum;
 import cascading.flow.FlowProcess;
@@ -47,7 +48,7 @@ public class GroupFunction extends BaseOperation<NullContext> implements Functio
             UrlDatum datum = new UrlDatum(funCall.getArguments());
             key = _generator.getGroupingKey(datum);
             GroupedUrlDatum result = new GroupedUrlDatum(datum, key);
-            funCall.getOutputCollector().add(result.getTuple());
+            funCall.getOutputCollector().add(BixoPlatform.clone(result.getTuple(), process));
         } catch (Exception e) {
             // TODO KKr - don't lose the tuple (skipping support)
             LOGGER.error("Unexpected exception while grouping URL (probably badly formed)", e);

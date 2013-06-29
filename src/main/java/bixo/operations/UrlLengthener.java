@@ -31,6 +31,7 @@ import com.scaleunlimited.cascading.LoggingFlowProcess;
 import com.scaleunlimited.cascading.LoggingFlowReporter;
 import com.scaleunlimited.cascading.NullContext;
 
+import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
 import bixo.config.UserAgent;
@@ -170,7 +171,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
         }
         
         try {
-            ResolveRedirectsTask task = new ResolveRedirectsTask(url, _fetcher, _collector);
+            ResolveRedirectsTask task = new ResolveRedirectsTask(url, _fetcher, _collector, _flowProcess);
             _executor.execute(task);
         } catch (RejectedExecutionException e) {
             // should never happen.
@@ -209,7 +210,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
 
     private void emitTuple(String url) {
         synchronized(_collector) {
-            _collector.add(new Tuple(url));
+            _collector.add(BixoPlatform.clone(new Tuple(url), _flowProcess));
         }
     }
     

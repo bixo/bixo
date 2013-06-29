@@ -30,6 +30,7 @@ import com.scaleunlimited.cascading.LoggingFlowProcess;
 import com.scaleunlimited.cascading.LoggingFlowReporter;
 import com.scaleunlimited.cascading.NullContext;
 
+import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.FetchSetDatum;
@@ -443,7 +444,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         // 2. Two people calling collector.add() at the same time (it's not thread safe)
         synchronized (_keepCollecting) {
             if (_keepCollecting.get()) {
-                _collector.add(tuple);
+                _collector.add(BixoPlatform.clone(tuple, _flowProcess));
             } else {
                 LOGGER.warn("Losing an entry: " + tuple);
             }
@@ -460,7 +461,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             FetchedDatum result = new FetchedDatum(datum);
             Tuple tuple = result.getTuple();
             tuple.add(status.toString());
-            _collector.add(tuple);
+            _collector.add(BixoPlatform.clone(tuple, _flowProcess));
         }
 
         _flowProcess.increment(FetchCounters.URLS_SKIPPED, urls.size());
