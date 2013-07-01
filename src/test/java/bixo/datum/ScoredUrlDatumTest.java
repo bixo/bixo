@@ -26,8 +26,8 @@ import com.scaleunlimited.cascading.PartitioningKey;
 
 import bixo.utils.DiskQueue;
 import cascading.flow.hadoop.HadoopFlowProcess;
-import cascading.scheme.hadoop.SequenceFile;
-import cascading.tap.hadoop.Lfs;
+import cascading.tap.Hfs;
+import cascading.tap.Lfs;
 import cascading.tuple.TupleEntryCollector;
 
 
@@ -61,7 +61,7 @@ public class ScoredUrlDatumTest {
         PartitioningKey groupingKey = new PartitioningKey("key", 1);
         FetchSetDatum pfd = new FetchSetDatum(urls, fetchTime, 1000, groupingKey.getValue(), groupingKey.getRef());
         
-        Lfs in = new Lfs(new SequenceFile(FetchSetDatum.FIELDS), "build/test/ScoredUrlDatumTest/testCascadingSerialization/in", true);
+        Hfs in = new Hfs(new SequenceFile(FetchSetDatum.FIELDS), "build/test/ScoredUrlDatumTest/testCascadingSerialization/in", true);
         TupleEntryCollector write = in.openForWrite(new HadoopFlowProcess());
         write.add(pfd.getTuple());
         write.close();
