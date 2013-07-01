@@ -131,7 +131,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     }
     
     @Override
-    public void cleanup(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
+    public void flush(FlowProcess flowProcess, OperationCall<NullContext> perationCall) {
         try {
             if (!_executor.terminate(TERMINATE_TIMEOUT)) {
                 LOGGER.warn("Had to do a hard shutdown of robots fetching");
@@ -143,6 +143,11 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
             Thread.currentThread().interrupt();
         }
         
+        super.flush(flowProcess, perationCall);
+    }
+    
+    @Override
+    public void cleanup(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
         _flowProcess.dumpCounters();
         super.cleanup(flowProcess, operationCall);
     }
