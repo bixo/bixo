@@ -25,8 +25,9 @@ package bixo.datum;
 import java.io.Serializable;
 import java.security.InvalidParameterException;
 
-import com.bixolabs.cascading.Payload;
-import com.bixolabs.cascading.PayloadDatum;
+import com.scaleunlimited.cascading.Payload;
+import com.scaleunlimited.cascading.PayloadDatum;
+
 
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;

@@ -25,6 +25,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.BaseDatum;
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+import com.scaleunlimited.cascading.LoggingFlowReporter;
+import com.scaleunlimited.cascading.NullContext;
+
+import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.datum.FetchSetDatum;
@@ -48,10 +54,6 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.BaseDatum;
-import com.bixolabs.cascading.LoggingFlowProcess;
-import com.bixolabs.cascading.LoggingFlowReporter;
-import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings( { "serial" })
 public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<NullContext>, IFetchMgr {
@@ -151,9 +153,9 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 
                 if (queueDatum != null) {
                     String ref = queueDatum.getGroupingRef();
-                    if (readyToFetch(ref)) {
+                    if (readyToFetch(ref) || (mode == FetcherMode.IMPOLITE)) {
                         List<ScoredUrlDatum> urls = queueDatum.getUrls();
-                        trace("Politely returning %d urls via queue from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
+                        trace("Returning %d urls via queue from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
                         return queueDatum;
                     }
                 }
@@ -175,8 +177,8 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                         continue;
                     }
 
-                    if (readyToFetch(ref)) {
-                        trace("Politely returning %d urls via iterator from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
+                    if ((mode == FetcherMode.IMPOLITE) || readyToFetch(ref)) {
+                        trace("Returning %d urls via iterator from %s (e.g. %s)", urls.size(), ref, urls.get(0).getUrl());
                         return iterDatum;
                     }
 
@@ -218,6 +220,21 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             // Either we're all out of FetchSets to process (nothing left in iterator or queue) or we've queued up lots of sets, and
             // we want to give FetchBuffer a chance to sleep.
             return null;
+        }
+        
+        /**
+         * Empty the buffer, then the iterator, without worrying about mode/state.
+         * 
+         * @return
+         */
+        public FetchSetDatum drain() {
+            if (!_queue.isEmpty()) {
+                return removeFromQueue();
+            } else if (safeHasNext()) {
+                return new FetchSetDatum(new TupleEntry(_values.next()));
+            } else {
+                return null;
+            }
         }
 
         /**
@@ -286,7 +303,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     public void prepare(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
         super.prepare(flowProcess, operationCall);
 
-        _flowProcess = new LoggingFlowProcess((HadoopFlowProcess) flowProcess);
+        _flowProcess = new LoggingFlowProcess(flowProcess);
         _flowProcess.addReporter(new LoggingFlowReporter());
 
         _executor = new ThreadedExecutor(_fetcher.getMaxThreads(), _fetcher.getFetcherPolicy().getRequestTimeout());
@@ -358,15 +375,10 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             UrlStatus status = Thread.interrupted() ? UrlStatus.SKIPPED_INTERRUPTED : UrlStatus.SKIPPED_TIME_LIMIT;
             
             while (!values.isEmpty()) {
-                FetchSetDatum datum = values.nextOrNull(FetcherMode.IMPOLITE);
-                
-                // datum could be null if the URLs were set to be skipped, as then
-                // nextOrNull() will return null even with impolite mode.
-                if (datum != null) {
-                    List<ScoredUrlDatum> urls = datum.getUrls();
-                    trace("Skipping %d urls from %s (e.g. %s) ", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
-                    skipUrls(datum.getUrls(), status, null);
-                }
+                FetchSetDatum datum = values.drain();
+                List<ScoredUrlDatum> urls = datum.getUrls();
+                trace("Skipping %d urls from %s (e.g. %s) ", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
+                skipUrls(urls, status, null);
             }
         }
     }
@@ -432,7 +444,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         // 2. Two people calling collector.add() at the same time (it's not thread safe)
         synchronized (_keepCollecting) {
             if (_keepCollecting.get()) {
-                _collector.add(tuple);
+                _collector.add(BixoPlatform.clone(tuple, _flowProcess));
             } else {
                 LOGGER.warn("Losing an entry: " + tuple);
             }
@@ -449,7 +461,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             FetchedDatum result = new FetchedDatum(datum);
             Tuple tuple = result.getTuple();
             tuple.add(status.toString());
-            _collector.add(tuple);
+            _collector.add(BixoPlatform.clone(tuple, _flowProcess));
         }
 
         _flowProcess.increment(FetchCounters.URLS_SKIPPED, urls.size());

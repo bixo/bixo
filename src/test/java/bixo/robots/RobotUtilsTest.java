@@ -20,16 +20,18 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URL;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import junit.framework.Assert;
 
+import org.eclipse.jetty.http.HttpException;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mortbay.jetty.HttpException;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
 
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
@@ -44,7 +46,7 @@ public class RobotUtilsTest {
     private static class CircularRedirectResponseHandler extends AbstractHandler {
         
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
             response.sendRedirect(pathInContext);
         }
     }
@@ -52,7 +54,7 @@ public class RobotUtilsTest {
     private static class RedirectToTopResponseHandler extends AbstractHandler {
         
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
             if (pathInContext.endsWith("robots.txt")) {
                 response.sendRedirect("/");
             } else {

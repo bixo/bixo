@@ -33,14 +33,14 @@ import junit.framework.Assert;
 
 import org.apache.http.HttpStatus;
 import org.apache.http.conn.HttpHostConnectException;
+import org.eclipse.jetty.http.HttpException;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.bio.SocketConnector;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.Test;
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.HttpException;
-import org.mortbay.jetty.Request;
-import org.mortbay.jetty.Response;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.bio.SocketConnector;
-import org.mortbay.jetty.handler.AbstractHandler;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
@@ -48,6 +48,7 @@ import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.AbortedFetchException;
 import bixo.exceptions.AbortedFetchReason;
+import bixo.exceptions.BaseFetchException;
 import bixo.exceptions.IOFetchException;
 import bixo.exceptions.RedirectFetchException;
 import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
@@ -70,7 +71,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         }
         
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext, Request baseRequest, HttpServletRequest servletRequest, HttpServletResponse response) throws HttpException, IOException {
             if (pathInContext.endsWith("base")) {
                 if (_permanent) {
                     if (response instanceof  Response) {
@@ -79,9 +80,9 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
                     // Can't use sendRedirect, as that forces it to be a temp redirect.
                         jettyResponse.setStatus(HttpStatus.SC_MOVED_PERMANENTLY);
                         jettyResponse.setHeader("Location", "http://localhost:8089/redirect");
-                        if (request instanceof Request) {
-                            Request baseRequest = (Request) request;
-                            baseRequest.setHandled(true);
+                        if (servletRequest instanceof Request) {
+                            Request request = (Request) servletRequest;
+                            request.setHandled(true);
                         }
                     }
                 } else {
@@ -109,7 +110,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         }
 
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
             String language = request.getHeader(HttpHeaderNames.ACCEPT_LANGUAGE);
             String content;
             if ((language != null) && (language.contains("en"))) {
@@ -135,7 +136,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
         }
 
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
             String content = "test";
             response.setStatus(HttpStatus.SC_OK);
             if (_mimeType != null) {
@@ -208,6 +209,50 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
             assertEquals(AbortedFetchReason.SLOW_RESPONSE_RATE, e.getAbortReason());
         }
         server.stop();
+    }
+
+    @Test
+    public final void testInterruptedFetch() throws Exception {
+        // Need to read in lots of data that we get very slowly
+        Server server = startServer(new RandomResponseHandler(20000, 2 * 1000L), 8089);
+
+        // Set no response rate, so that doesn't trigger an exception
+        FetcherPolicy policy = new FetcherPolicy();
+        policy.setMinResponseRate(FetcherPolicy.NO_MIN_RESPONSE_RATE);
+
+        final BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
+        final String[] failMsg = new String[1];
+        
+        Thread t = new Thread(new Runnable() {
+            
+            @Override
+            public void run() {
+                String url = "http://localhost:8089/test.html";
+                try {
+                    fetcher.get(new ScoredUrlDatum(url));
+                    failMsg[0] = "No exception thrown, should have thrown an aborted by interrupt exception";
+                } catch (AbortedFetchException e) {
+                    if (e.getAbortReason() != AbortedFetchReason.INTERRUPTED) {
+                        failMsg[0] = "Wrong abort exception thrown, should have thrown an aborted by interrupt exception";
+                    }
+                } catch (BaseFetchException e) {
+                    failMsg[0] = "Wrong exception thrown, should have thrown an aborted by interrupt exception";
+                }
+            }
+        });
+        
+        t.start();
+        t.interrupt();
+        
+        while (t.isAlive()) {
+            Thread.sleep(100);
+        }
+        
+        server.stop();
+        
+        if (failMsg[0] != null) {
+            fail(failMsg[0]);
+        }
     }
 
     @Test

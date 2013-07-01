@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
+import bixo.datum.StatusDatum;
 import bixo.datum.UrlStatus;
 import bixo.utils.CrawlDirUtils;
 import cascading.scheme.SequenceFile;
@@ -36,8 +37,8 @@ import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 
 @SuppressWarnings("deprecation")
-public class SimpleStatusTool {
-	private static final Logger LOGGER = Logger.getLogger(SimpleStatusTool.class);
+public class DemoStatusTool {
+	private static final Logger LOGGER = Logger.getLogger(DemoStatusTool.class);
 	
     private static void printUsageAndExit(CmdLineParser parser) {
         parser.printUsage(System.err);
@@ -50,6 +51,7 @@ public class SimpleStatusTool {
         
         TupleEntryIterator iter = statusTap.openForRead(conf);
         
+        LOGGER.info("Analyzing: " +  CrawlConfig.STATUS_SUBDIR_NAME);
         UrlStatus[] statusValues = UrlStatus.values();
         int[] statusCounts = new int[statusValues.length];
         int totalEntries = 0;
@@ -57,10 +59,10 @@ public class SimpleStatusTool {
             TupleEntry entry = iter.next();
             totalEntries += 1;
     
-            // URL_FN, STATUS_FN, HEADERS_FN, EXCEPTION_FN, STATUS_TIME_FN, HOST_ADDRESS_FN).append(getSuperFields(StatusDatum.class)
             String statusLine = entry.getString("line");
             String[] pieces = statusLine.split("\t");
-            UrlStatus status = UrlStatus.valueOf(pieces[1]);
+            int pos = StatusDatum.FIELDS.getPos(StatusDatum.STATUS_FN);
+            UrlStatus status = UrlStatus.valueOf(pieces[pos]);
             statusCounts[status.ordinal()] += 1;
         }
         
@@ -83,7 +85,9 @@ public class SimpleStatusTool {
         totalEntries = 0;
         int fetchedUrls = 0;
         int unfetchedUrls = 0;
-        
+ 
+        LOGGER.info("Analyzing: " +  CrawlConfig.CRAWLDB_SUBDIR_NAME);
+
         while (iter.hasNext()) {
             TupleEntry entry = iter.next();
             totalEntries += 1;
@@ -107,7 +111,7 @@ public class SimpleStatusTool {
     }
 
     public static void main(String[] args) {
-        SimpleStatusToolOptions options = new SimpleStatusToolOptions();
+        DemoStatusToolOptions options = new DemoStatusToolOptions();
         CmdLineParser parser = new CmdLineParser(options);
         
         try {
@@ -117,7 +121,7 @@ public class SimpleStatusTool {
             printUsageAndExit(parser);
         }
 
-        String crawlDirName = options.getCrawlDir();
+        String crawlDirName = options.getWorkingDir();
 
         try {
         	JobConf conf = new JobConf();

@@ -1,0 +1,7 @@
+# Exclude based on the suffix
+-(?i)\.(pdf|zip|gzip|gz|sit|bz|bz2|tar|tgz|exe)$
+
+# If you want to get fancy :
+# 	e.g discard everything under foo.bar.com but include everything else from bar.com
+#-(?i)^(http|https)://foo.bar.com
+#+(?i)^(http|https)://([a-z0-9]*\.)*bar.com

@@ -14,25 +14,33 @@
  * limitations under the License.
  *
  */
-package bixo.examples.crawl;
+package bixo.examples.webmining;
 
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
-public class JDBCCrawlToolOptions extends BaseCrawlToolOptions {
-
-    private String _dbLocation = null;
+public class DemoWebMiningOptions {
     
+    private String _workingDir = "build/test/working";
+    private String _agentName;
 
-    @Option(name = "-persist", usage = "location where the db will be persisted", required = false)
-    public void setDbLocation(String dbLocation) {
-        _dbLocation = dbLocation;
+    @Option(name = "-workingdir", usage = "path to directory for fetching", required = false)
+    public void setWorkingDir(String workingDir) {
+        _workingDir = workingDir;
     }
 
+    public String getWorkingDir() {
+        return _workingDir;
+    }
 
-    public String getDbLocation() {
-        return _dbLocation;
+    @Option(name = "-agentname", usage = "user agent name", required = true)
+    public void setAgentName(String agentName) {
+        _agentName = agentName;
+    }
+
+    public String getAgentName() {
+        return _agentName;
     }
     
     @Override

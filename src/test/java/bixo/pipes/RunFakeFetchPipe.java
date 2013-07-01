@@ -22,6 +22,10 @@ import java.net.URL;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.NullContext;
+
+import bixo.config.BixoPlatform;
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.BaseFetcher;
@@ -36,13 +40,10 @@ import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
-import cascading.scheme.TextLine;
-import cascading.tap.Hfs;
-import cascading.tap.Lfs;
+import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
-import com.bixolabs.cascading.NullContext;
 
 public class RunFakeFetchPipe {
     private static final Logger LOGGER = Logger.getLogger(RunFakeFetchPipe.class);
@@ -62,7 +63,7 @@ public class RunFakeFetchPipe {
 
                 UrlDatum urlDatum = new UrlDatum(url.toString());
 
-                funcCall.getOutputCollector().add(urlDatum.getTuple());
+                funcCall.getOutputCollector().add(BixoPlatform.clone(urlDatum.getTuple(), process));
             } catch (MalformedURLException e) {
                 LOGGER.warn("Invalid URL: " + urlAsString);
                 // throw new RuntimeException("Invalid URL: " + urlAsString, e);
@@ -81,8 +82,10 @@ public class RunFakeFetchPipe {
                 System.exit(-1);
             }
 
-            File inputFile = new File(path.getFile());
-            Tap in = new Lfs(new TextLine(), inputFile.getCanonicalPath());
+            BixoPlatform platform = new BixoPlatform(true);
+            
+            BasePath inputPath = platform.makePath(path.getFile());
+            Tap in = platform.makeTap(platform.makeTextScheme(), inputPath);
 
             Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFunction());
 
@@ -91,12 +94,17 @@ public class RunFakeFetchPipe {
             FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, 1);
 
             // Create the output, which is a dual file sink tap.
-            String outputPath = "build/test/RunFakeFetchPipe/dual";
-            Tap status = new Hfs(new TextLine(), outputPath + "/status", true);
-            Tap content = new Hfs(new TextLine(null, FetchedDatum.FIELDS), outputPath + "/content", true);
+            String output = "build/test/RunFakeFetchPipe/dual";
+            BasePath outputPath = platform.makePath(output);
+            BasePath statusPath = platform.makePath(outputPath, "status");
+            Tap status = platform.makeTap(platform.makeTextScheme(), statusPath, SinkMode.REPLACE);
+
+            BasePath contentPath = platform.makePath(outputPath, "content");
+            Tap content = platform.makeTap(platform.makeTextScheme(), contentPath, SinkMode.REPLACE);
+//            Tap content = new Hfs(new TextLine(null, FetchedDatum.FIELDS), outputPath + "/content", true);
             
             // Finally we can run it.
-            FlowConnector flowConnector = new FlowConnector();
+            FlowConnector flowConnector = platform.makeFlowConnector();
             Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
             flow.complete();
         } catch (Throwable t) {

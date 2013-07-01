@@ -21,7 +21,13 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.scaleunlimited.cascading.BaseSplitter;
+import com.scaleunlimited.cascading.NullContext;
+import com.scaleunlimited.cascading.NullSinkTap;
+import com.scaleunlimited.cascading.SplitterAssembly;
+
 import bixo.config.BaseFetchJobPolicy;
+import bixo.config.BixoPlatform;
 import bixo.config.DefaultFetchJobPolicy;
 import bixo.datum.FetchSetDatum;
 import bixo.datum.FetchedDatum;
@@ -57,10 +63,6 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
-import com.bixolabs.cascading.BaseSplitter;
-import com.bixolabs.cascading.NullContext;
-import com.bixolabs.cascading.NullSinkTap;
-import com.bixolabs.cascading.SplitterAssembly;
 
 @SuppressWarnings("serial")
 public class FetchPipe extends SubAssembly {
@@ -132,7 +134,7 @@ public class FetchPipe extends SubAssembly {
             // Get the status to decide if it's a good fetch
             Comparable status = t.get(_fieldPos);
             if ((status instanceof String) && (UrlStatus.valueOf((String)status) == UrlStatus.FETCHED)) {
-                funcCall.getOutputCollector().add(t.get(_fieldsToCopy));
+                funcCall.getOutputCollector().add(BixoPlatform.clone(t.get(_fieldsToCopy), process));
             }
         }
     }
@@ -176,7 +178,7 @@ public class FetchPipe extends SubAssembly {
                 throw new RuntimeException("Unknown type for fetch status field: " + result.getClass());
             }
             
-            funcCall.getOutputCollector().add(status.getTuple());
+            funcCall.getOutputCollector().add(BixoPlatform.clone(status.getTuple(), process));
         }
     }
 
@@ -202,7 +204,7 @@ public class FetchPipe extends SubAssembly {
             StatusDatum status = new StatusDatum(sd.getUrl(), GroupingKey.makeUrlStatusFromKey(key), sd.getPayload());
             status.setPayload(sd);
             
-            funcCall.getOutputCollector().add(status.getTuple());
+            funcCall.getOutputCollector().add(BixoPlatform.clone(status.getTuple(), process));
         }
     }
 

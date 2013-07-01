@@ -20,7 +20,8 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import com.bixolabs.cascading.Payload;
+import com.scaleunlimited.cascading.Payload;
+
 
 
 public class StatusDatumTest {

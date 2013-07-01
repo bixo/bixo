@@ -16,7 +16,6 @@
  */
 package bixo.utils;
 
-import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -24,48 +23,30 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.BasePlatform;
 
 
 public class CrawlDirUtils {
 	private static final Pattern LOOP_DIRNAME_PATTERN = Pattern
 			.compile("(\\d+)-([^/]+)");
 
-	/**
-	 * Protect against earlier versions of Hadoop returning null if there
-	 * are no sub-directories in <path>
-	 * 
-	 * @param fs
-	 * @param path
-	 * @return
-	 * @throws IOException
-	 */
-	private static FileStatus[] listStatus(FileSystem fs, Path path) throws IOException {
-	    FileStatus[] result = fs.listStatus(path);
-	    if (result == null) {
-	        result = new FileStatus[0];
-	    }
-	    
-	    return result;
-	}
 	
 	
 	/**
 	 * 
-	 * @param fs
+	 * @param platform
 	 * @param outputDir
 	 * @param loopNumber
 	 * @return Directory path <loopNumber>-<timestamp>
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public static Path makeLoopDir(FileSystem fs, Path outputDir, int loopNumber)
-			throws IOException {
+	public static BasePath makeLoopDir(BasePlatform platform, BasePath outputDir, int loopNumber)
+			throws Exception {
 		String timestamp = new SimpleDateFormat("yyyyMMdd'T'HHmmss")
 				.format(new Date());
-		Path loopDir = new Path(outputDir, "" + loopNumber + "-" + timestamp);
-		fs.mkdirs(loopDir);
+		BasePath loopDir = platform.makePath(outputDir, "" + loopNumber + "-" + timestamp);
+		loopDir.mkdirs();
 		return loopDir;
 	}
 
@@ -75,28 +56,23 @@ public class CrawlDirUtils {
 	 * @param outputPath
 	 * @return Path to the latest loop directory (based on the loop number); 
 	 *         null in the case of an error.
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public static Path findLatestLoopDir(FileSystem fs, Path outputPath)
-			throws IOException {
+	public static BasePath findLatestLoopDir(BasePlatform fs, BasePath outputPath)
+			throws Exception {
 		int bestLoop = -1;
-		Path result = null;
+		BasePath result = null;
 
-		FileStatus[] subdirs = listStatus(fs, outputPath);
-		for (FileStatus status : subdirs) {
-			if (!status.isDir()) {
+		BasePath[] paths = outputPath.list();
+		for (BasePath path : paths) {
+			if (!path.isDirectory()) {
 				continue;
 			}
 
-			try {
-				int curLoop = extractLoopNumber(status.getPath());
-				if (curLoop > bestLoop) {
-					bestLoop = curLoop;
-					result = status.getPath();
-				}
-			} catch (InvalidParameterException e) {
-				// ignore, though we shouldn't have random sub-dirs in the
-				// output directory.
+			int curLoop = extractLoopNumber(path);
+			if (curLoop > bestLoop) {
+				bestLoop = curLoop;
+				result = path;
 			}
 		}
 
@@ -106,32 +82,27 @@ public class CrawlDirUtils {
 	/**
 	 * Given a loopNumber, returns the name of the next loop directory. 
 	 * 
-	 * @param fs
+	 * @param platform
 	 * @param outputPath
 	 * @param loopNumber
 	 * @return Name of the next loop directory if one is present; null otherwise. 
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public static Path findNextLoopDir(FileSystem fs, Path outputPath,
-			int loopNumber) throws IOException {
+	public static BasePath findNextLoopDir(BasePlatform platform, BasePath outputPath,
+			int loopNumber) throws Exception {
 		int bestLoop = Integer.MAX_VALUE;
-		Path result = null;
+		BasePath result = null;
 
-		FileStatus[] subdirs = listStatus(fs, outputPath);
-		for (FileStatus status : subdirs) {
-			if (!status.isDir()) {
+		BasePath[] paths = outputPath.list();
+		for (BasePath path : paths) {
+			if (!path.isDirectory()) {
 				continue;
 			}
 
-			try {
-				int curLoop = extractLoopNumber(status.getPath());
-				if ((curLoop > loopNumber) && (curLoop < bestLoop)) {
-					bestLoop = curLoop;
-					result = status.getPath();
-				}
-			} catch (InvalidParameterException e) {
-				// ignore, though we shouldn't have random sub-dirs in the
-				// output directory.
+			int curLoop = extractLoopNumber(path);
+			if ((curLoop > loopNumber) && (curLoop < bestLoop)) {
+				bestLoop = curLoop;
+				result = path;
 			}
 		}
 
@@ -145,7 +116,7 @@ public class CrawlDirUtils {
 	 * @return Loop number for the directory
 	 * @throws InvalidParameterException
 	 */
-	public static int extractLoopNumber(Path inputPath)
+	public static int extractLoopNumber(BasePath inputPath)
 			throws InvalidParameterException {
 		String dirName = inputPath.getName();
 		Matcher dirNameMatcher = LOOP_DIRNAME_PATTERN.matcher(dirName);
@@ -160,37 +131,32 @@ public class CrawlDirUtils {
 	/**
 	 * Return an array of paths to all of the subdirs in crawl dirs found
      * inside of <crawlPath>, where the subdir name == <subdirName>
-	 * @param fs
+	 * @param platform
 	 * @param outputPath
 	 * @param subdirName
 	 * @return Array of directory paths that contain <subdirName>
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-    public static Path[] findAllSubdirs(FileSystem fs, Path outputPath,
-			String subdirName) throws IOException {
-		ArrayList<Path> result = new ArrayList<Path>();
+    public static BasePath[] findAllSubdirs(BasePlatform platform, BasePath outputPath,
+			String subdirName) throws Exception {
+		ArrayList<BasePath> result = new ArrayList<BasePath>();
 
-		FileStatus[] crawldirs = listStatus(fs, outputPath);
-		for (FileStatus status : crawldirs) {
-			if (!status.isDir()) {
+		BasePath[] paths = outputPath.list();
+//		FileStatus[] crawldirs = listStatus(platform, outputPath);
+		for (BasePath path : paths) {
+			if (!path.isDirectory()) {
 				continue;
 			}
 
-			try {
-				// Verify crawl dir name is valid.
-				extractLoopNumber(status.getPath());
-				
-				Path subdirPath = new Path(status.getPath(), subdirName);
-				// isDirectory has been un-depracated in 0.21...
-	            if (fs.exists(subdirPath) && fs.isDirectory(subdirPath)) {
-	                result.add(subdirPath);
-	            }
-			} catch (InvalidParameterException e) {
-				// ignore, though we shouldn't have random sub-dirs in the
-				// output directory.
-			}
+			// Verify crawl dir name is valid.
+			extractLoopNumber(path);
+			
+			BasePath subdirPath = platform.makePath(path, subdirName);
+            if (subdirPath.exists() && subdirPath.isDirectory()) {
+                result.add(subdirPath);
+            }
 		}
 
-		return result.toArray(new Path[result.size()]);
+		return result.toArray(new BasePath[result.size()]);
 	}
 }

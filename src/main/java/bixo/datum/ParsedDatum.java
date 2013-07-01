@@ -21,11 +21,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.scaleunlimited.cascading.PayloadDatum;
+
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
-import com.bixolabs.cascading.PayloadDatum;
 
 @SuppressWarnings("serial")
 public class ParsedDatum extends PayloadDatum {

@@ -21,11 +21,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Properties;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.hadoop.mapred.JobConf;
 
+import bixo.config.BixoPlatform;
 import bixo.fetcher.BaseFetcher;
 import bixo.operations.UrlLengthener;
 import bixo.utils.ConfigUtils;
@@ -34,13 +33,15 @@ import cascading.flow.FlowConnector;
 import cascading.operation.Debug;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
-import cascading.scheme.TextLine;
-import cascading.tap.Lfs;
+import cascading.scheme.local.TextLine;
+import cascading.tap.SinkMode;
 import cascading.tap.SinkTap;
+import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
-import com.bixolabs.cascading.HadoopUtils;
-import com.bixolabs.cascading.NullSinkTap;
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.NullSinkTap;
+
 
 public class LengthenUrlsTool {
 
@@ -103,12 +104,13 @@ public class LengthenUrlsTool {
             pipe = new Each(pipe, new UrlLengthener(fetcher));
             pipe = new Each(pipe, new Debug());
 
-            Lfs sourceTap = new Lfs(new TextLine(new Fields("url")), filename);
+            BixoPlatform platform = new BixoPlatform(true);
+            BasePath filePath = platform.makePath(filename);
+            TextLine textLineLocalScheme = new TextLine(new Fields("url"));
+            Tap sourceTap = platform.makeTap(textLineLocalScheme, filePath, SinkMode.KEEP);
             SinkTap sinkTap = new NullSinkTap(new Fields("url"));
             
-            JobConf conf = HadoopUtils.getDefaultJobConf();
-            Properties props = HadoopUtils.getDefaultProperties(LengthenUrlsTool.class, false, conf);
-            FlowConnector flowConnector = new FlowConnector(props);
+            FlowConnector flowConnector = platform.makeFlowConnector();
             Flow flow = flowConnector.connect(sourceTap, sinkTap, pipe);
 
             flow.complete();

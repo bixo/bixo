@@ -315,31 +315,6 @@
 
 
 	<!-- ================================================================== -->
-	<!-- Hadoop job jar                                                     -->
-	<!-- ================================================================== -->
-
-	<target name="job"
-	        depends="test, test-lr, test-it"
-	        description="--> create a Hadoop ready jar including all libraries we depend on">
-
-		<!-- Always clear out lib, since we have a different set of libraries for the job jar -->
-		<delete dir="${build.dir}/lib" />
-		<copy todir="${build.dir}/lib" flatten="true">
-			<path refid="runtime.classpath" />
-		</copy>
-
-		<jar destfile="${build.dir}/${job.name}" compress="true">
-			<fileset dir="${build.dir.main-classes}" />
-			<fileset dir="${build.dir}" includes="lib/" />
-
-			<manifest>
-				<attribute name="Main-Class" value="${job.main.class}" />
-			</manifest>
-		</jar>
-	</target>
-
-
-	<!-- ================================================================== -->
 	<!-- Install in local Maven repository									-->
 	<!-- ================================================================== -->
 
@@ -451,6 +426,13 @@
 		<!-- copy examples' runtime -->
 		<copy todir="${build.dir.dist}/examples/runtime" flatten="true">
 			<fileset dir="${basedir}/examples/build/runtime" />
+		</copy>
+		<!-- copy ec2 folder minus the support folder -->
+		<copy todir="${build.dir.dist}/ec2">
+			<fileset dir="${basedir}/ec2">
+			    <include name="**" />
+				<exclude name="**/support/**" />
+			</fileset>
 		</copy>
 
 		

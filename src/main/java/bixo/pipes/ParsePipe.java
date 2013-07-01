@@ -18,6 +18,11 @@ package bixo.pipes;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+import com.scaleunlimited.cascading.LoggingFlowReporter;
+import com.scaleunlimited.cascading.NullContext;
+
+import bixo.config.BixoPlatform;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
 import bixo.parser.BaseParser;
@@ -34,9 +39,6 @@ import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
 import cascading.tuple.Fields;
 
-import com.bixolabs.cascading.LoggingFlowProcess;
-import com.bixolabs.cascading.LoggingFlowReporter;
-import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("serial")
 public class ParsePipe extends SubAssembly {
@@ -58,7 +60,7 @@ public class ParsePipe extends SubAssembly {
         public void prepare(FlowProcess flowProcess,
                             OperationCall<NullContext> operationCall) {
             super.prepare(flowProcess, operationCall);
-            _flowProcess = new LoggingFlowProcess((HadoopFlowProcess)flowProcess);
+            _flowProcess = new LoggingFlowProcess(flowProcess);
             _flowProcess.addReporter(new LoggingFlowReporter());
         }
 
@@ -75,7 +77,7 @@ public class ParsePipe extends SubAssembly {
             try {
                 ParsedDatum parseResult = _parser.parse(fetchedDatum);
                 _flowProcess.increment(ParserCounters.DOCUMENTS_PARSED, 1);
-                functionCall.getOutputCollector().add(parseResult.getTuple());
+                functionCall.getOutputCollector().add(BixoPlatform.clone(parseResult.getTuple(), flowProcess));
             } catch (Exception e) {
                 LOGGER.warn("Error processing " + fetchedDatum.getUrl(), e);
                 _flowProcess.increment(ParserCounters.DOCUMENTS_FAILED, 1);

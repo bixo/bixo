@@ -16,9 +16,7 @@
  */
 package bixo.examples.crawl;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.regex.Pattern;
+import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -29,12 +27,9 @@ import org.apache.log4j.PatternLayout;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
-import com.bixolabs.cascading.HadoopUtils;
-
 import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.FetcherMode;
-import bixo.datum.UrlDatum;
+import bixo.config.UserAgent;
 import bixo.datum.UrlStatus;
 import bixo.urls.BaseUrlFilter;
 import bixo.urls.SimpleUrlNormalizer;
@@ -46,60 +41,23 @@ import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 
+import com.bixolabs.cascading.HadoopUtils;
+
 @SuppressWarnings("deprecation")
-public class SimpleCrawlTool {
+public class DemoCrawlTool {
 
-    private static final Logger LOGGER = Logger.getLogger(SimpleCrawlTool.class);
-
+    private static final Logger LOGGER = Logger.getLogger(DemoCrawlTool.class);
     
-    // Filter URLs that fall outside of the target domain
-    @SuppressWarnings("serial")
-    private static class DomainUrlFilter extends BaseUrlFilter {
-
-        private String _domain;
-        private Pattern _suffixExclusionPattern;
-        private Pattern _protocolInclusionPattern;
-
-        public DomainUrlFilter(String domain) {
-            _domain = domain;
-            _suffixExclusionPattern = Pattern.compile("(?i)\\.(pdf|zip|gzip|gz|sit|bz|bz2|tar|tgz|exe)$");
-            _protocolInclusionPattern = Pattern.compile("(?i)^(http|https)://");
-        }
-
-        @Override
-        public boolean isRemove(UrlDatum datum) {
-            String urlAsString = datum.getUrl();
-            
-            // Skip URLs with protocols we don't want to try to process
-            if (!_protocolInclusionPattern.matcher(urlAsString).find()) {
-                return true;
-            }
-
-            if (_suffixExclusionPattern.matcher(urlAsString).find()) {
-                return true;
-            }
-            
-            try {
-                URL url = new URL(urlAsString);
-                String host = url.getHost();
-                return (!host.endsWith(_domain));
-            } catch (MalformedURLException e) {
-                LOGGER.warn("Invalid URL: " + urlAsString);
-                return true;
-            }
-        }
-    }
-
     private static void printUsageAndExit(CmdLineParser parser) {
         parser.printUsage(System.err);
         System.exit(-1);
     }
 
-    // Create log output file in loop directory.
+    // Create log output file (in the local file system).
     private static void setLoopLoggerFile(String outputDirName, int loopNumber) {
         Logger rootLogger = Logger.getRootLogger();
 
-        String filename = String.format("%s/%d-SimpleCrawlTool.log", outputDirName, loopNumber);
+        String filename = String.format("%s/%d-DemoCrawlTool.log", outputDirName, loopNumber);
         FileAppender appender = (FileAppender)rootLogger.getAppender("loop-logger");
         if (appender == null) {
             appender = new FileAppender();
@@ -153,7 +111,7 @@ public class SimpleCrawlTool {
     }
 
     public static void main(String[] args) {
-        SimpleCrawlToolOptions options = new SimpleCrawlToolOptions();
+        DemoCrawlToolOptions options = new DemoCrawlToolOptions();
         CmdLineParser parser = new CmdLineParser(options);
 
         try {
@@ -191,22 +149,34 @@ public class SimpleCrawlTool {
             System.setProperty("bixo.appender", options.getLoggingAppender());
         }
         
+        String logsDir = options.getLogsDir();
+        if (!logsDir.endsWith("/")) {
+            logsDir = logsDir + "/";
+        }
+        
         try {
             JobConf conf = new JobConf();
             Path outputPath = new Path(outputDirName);
             FileSystem fs = outputPath.getFileSystem(conf);
 
+            // First check if the user want to clean
+            if (options.isCleanOutputDir()) {
+                if (fs.exists(outputPath)) {
+                    fs.delete(outputPath, true);
+                }
+            }
+            
             // See if the user isn't starting from scratch then set up the 
             // output directory and create an initial urls subdir.
             if (!fs.exists(outputPath)) {
                 fs.mkdirs(outputPath);
 
-                // Create a "0-<timestamp>" sub-directory with just a /urls subdir
-                // In the /urls dir the input file will have a single URL for the target domain.
+                // Create a "0-<timestamp>" sub-directory with just a /crawldb subdir
+                // In the /crawldb dir the input file will have a single URL for the target domain.
 
                 Path curLoopDir = CrawlDirUtils.makeLoopDir(fs, outputPath, 0);
-                String curLoopDirName = curLoopDir.toUri().toString();
-                setLoopLoggerFile(curLoopDirName, 0);
+                String curLoopDirName = curLoopDir.getName();
+                setLoopLoggerFile(logsDir + curLoopDirName, 0);
 
                 Path crawlDbPath = new Path(curLoopDir, CrawlConfig.CRAWLDB_SUBDIR_NAME);
                 
@@ -243,16 +213,29 @@ public class SimpleCrawlTool {
             // end up in situations where the fetch slows down due to a 'long tail' and by 
             // specifying a crawl duration you know exactly when the crawl will end.
             int crawlDurationInMinutes = options.getCrawlDuration();
-            boolean hasEndTime = crawlDurationInMinutes != SimpleCrawlToolOptions.NO_CRAWL_DURATION;
+            boolean hasEndTime = crawlDurationInMinutes != DemoCrawlToolOptions.NO_CRAWL_DURATION;
             long targetEndTime = hasEndTime ? System.currentTimeMillis() + (crawlDurationInMinutes * CrawlConfig.MILLISECONDS_PER_MINUTE) : 
                 FetcherPolicy.NO_CRAWL_END_TIME;
 
             // By setting up a url filter we only deal with urls that we want to
             // instead of all the urls that we extract.
             BaseUrlFilter urlFilter = null;
-            if (domain != null) {
-                urlFilter = new DomainUrlFilter(domain);
+            List<String> patterns = null;
+            String regexUrlFiltersFile = options.getRegexUrlFiltersFile();
+            if (regexUrlFiltersFile != null) {
+                patterns = RegexUrlFilter.getUrlFilterPatterns(regexUrlFiltersFile);
+            } else {
+                patterns = RegexUrlFilter.getDefaultUrlFilterPatterns();
+                if (domain != null) {
+                    String domainPatterStr = "+(?i)^(http|https)://([a-z0-9]*\\.)*" + domain;
+                    patterns.add(domainPatterStr);
+                } else {
+                    String protocolPatterStr = "+(?i)^(http|https)://*";
+                    patterns.add(protocolPatterStr);
+                    LOGGER.warn("Defaulting to basic url regex filtering (just suffix and protocol");
+                }
             }
+            urlFilter = new RegexUrlFilter(patterns.toArray(new String[patterns.size()]));
 
             // OK, now we're ready to start looping, since we've got our current
             // settings
@@ -267,10 +250,10 @@ public class SimpleCrawlTool {
                 }
 
                 Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, outputPath, curLoop);
-                String curLoopDirName = curLoopDirPath.toUri().toString();
-                setLoopLoggerFile(curLoopDirName, curLoop);
+                String curLoopDirName = curLoopDirPath.getName();
+                setLoopLoggerFile(logsDir+curLoopDirName, curLoop);
 
-                Flow flow = SimpleCrawlWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, options); 
+                Flow flow = DemoCrawlWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, options); 
                 flow.complete();
                 
                 // Writing out .dot files is a good way to verify your flows.

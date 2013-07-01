@@ -81,6 +81,8 @@ import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.Payload;
+
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
 import bixo.config.UserAgent;
@@ -100,7 +102,6 @@ import bixo.utils.EncodingUtils;
 import bixo.utils.EncodingUtils.ExpandedResult;
 import bixo.utils.HttpUtils;
 
-import com.bixolabs.cascading.Payload;
 
 @SuppressWarnings("serial")
 public class SimpleHttpFetcher extends BaseFetcher {
@@ -618,8 +619,8 @@ public class SimpleHttpFetcher extends BaseFetcher {
                 // metrics support for how to do this. Once we fix this, fix
                 // the test to read a smaller (< 20K)
                 // chuck of data.
-                while ((totalRead < targetLength) &&
-                                ((bytesRead = in.read(buffer, 0, Math.min(buffer.length, targetLength - totalRead))) != -1)) {
+                while ((totalRead < targetLength)
+                    && ((bytesRead = in.read(buffer, 0, Math.min(buffer.length, targetLength - totalRead))) != -1)) {
                     readRequests += 1;
                     totalRead += bytesRead;
                     out.write(buffer, 0, bytesRead);

@@ -27,10 +27,11 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import com.scaleunlimited.cascading.PartitioningKey;
+import com.scaleunlimited.cascading.Payload;
+
 import cascading.tuple.Tuple;
 
-import com.bixolabs.cascading.PartitioningKey;
-import com.bixolabs.cascading.Payload;
 
 
 public class FetchSetDatumTest {

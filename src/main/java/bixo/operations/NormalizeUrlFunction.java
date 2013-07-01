@@ -16,6 +16,9 @@
  */
 package bixo.operations;
 
+import com.scaleunlimited.cascading.NullContext;
+
+import bixo.config.BixoPlatform;
 import bixo.datum.UrlDatum;
 import bixo.urls.BaseUrlNormalizer;
 import cascading.flow.FlowProcess;
@@ -23,7 +26,6 @@ import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 
-import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("serial")
 public class NormalizeUrlFunction extends BaseOperation<NullContext> implements Function<NullContext> {
@@ -43,6 +45,6 @@ public class NormalizeUrlFunction extends BaseOperation<NullContext> implements 
         // Create copy, since we're setting a field, and the tuple is going to be unmodifiable.
         UrlDatum result = new UrlDatum(datum);
         result.setUrl(_normalizer.normalize(datum.getUrl()));
-        funCall.getOutputCollector().add(result.getTuple());
+        funCall.getOutputCollector().add(BixoPlatform.clone(result.getTuple(), process));
     }
 }

@@ -20,7 +20,11 @@ import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.NullContext;
+import com.scaleunlimited.cascading.PartitioningKey;
+
 import bixo.config.BaseFetchJobPolicy;
+import bixo.config.BixoPlatform;
 import bixo.config.BaseFetchJobPolicy.FetchSetInfo;
 import bixo.datum.FetchSetDatum;
 import bixo.datum.ScoredUrlDatum;
@@ -32,8 +36,6 @@ import cascading.operation.BufferCall;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.NullContext;
-import com.bixolabs.cascading.PartitioningKey;
 
 /**
  * We get ScoredUrlDatums, grouped by server IP address.
@@ -91,7 +93,7 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
             FetchSetInfo setInfo = _policy.nextFetchSet(scoredDatum);
             if (setInfo != null) {
                 FetchSetDatum result = makeFetchSetDatum(setInfo, newKey, safeHasNext());
-                collector.add(result.getTuple());
+                collector.add(BixoPlatform.clone(result.getTuple(), process));
             }
         }
         
@@ -99,7 +101,7 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
         FetchSetInfo setInfo = _policy.endFetchSet();
         if (setInfo != null) {
             FetchSetDatum result = makeFetchSetDatum(setInfo, newKey, false);
-            collector.add(result.getTuple());
+            collector.add(BixoPlatform.clone(result.getTuple(), process));
         }
     }
 

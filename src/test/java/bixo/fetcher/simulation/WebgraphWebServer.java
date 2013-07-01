@@ -27,10 +27,12 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.mortbay.jetty.HttpException;
-import org.mortbay.jetty.Response;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
+import org.eclipse.jetty.http.HttpException;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+
 
 
 /**
@@ -74,7 +76,7 @@ public class WebgraphWebServer extends SimulationWebServer {
         private static final String URL = "/url/";
 
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
             byte[] bytes = null;
             if (pathInContext.startsWith(NODE)) {
                 String nodeIdStr = pathInContext.substring(NODE.length());

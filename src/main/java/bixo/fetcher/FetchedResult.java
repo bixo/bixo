@@ -18,7 +18,8 @@ package bixo.fetcher;
 
 import java.security.InvalidParameterException;
 
-import com.bixolabs.cascading.Payload;
+import com.scaleunlimited.cascading.Payload;
+
 
 import bixo.datum.HttpHeaders;
 

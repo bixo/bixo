@@ -18,9 +18,11 @@ package bixo.operations;
 
 import org.apache.log4j.Logger;
 
+import cascading.flow.FlowProcess;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
+import bixo.config.BixoPlatform;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.exceptions.BaseFetchException;
@@ -34,11 +36,13 @@ public class ResolveRedirectsTask implements Runnable {
     private String _url;
     private BaseFetcher _fetcher;
     private TupleEntryCollector _collector;
+    private FlowProcess _flowProcess;
 
-    public ResolveRedirectsTask(String url, BaseFetcher fetcher, TupleEntryCollector collector) {
+    public ResolveRedirectsTask(String url, BaseFetcher fetcher, TupleEntryCollector collector, FlowProcess flowProcess) {
         _url = url;
         _fetcher = fetcher;
         _collector = collector;
+        _flowProcess = flowProcess;
     }
 
     @Override
@@ -68,7 +72,7 @@ public class ResolveRedirectsTask implements Runnable {
 
         synchronized (_collector) {
             // collectors aren't thread safe
-            _collector.add(new Tuple(redirectedUrl));
+            _collector.add(BixoPlatform.clone(new Tuple(redirectedUrl), _flowProcess));
         }
     }
 }

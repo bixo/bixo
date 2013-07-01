@@ -22,16 +22,16 @@ import java.io.OutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.http.HttpStatus;
+import org.eclipse.jetty.http.HttpException;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Response;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mortbay.jetty.HttpException;
-import org.mortbay.jetty.Request;
-import org.mortbay.jetty.Response;
-import org.mortbay.jetty.handler.AbstractHandler;
 
 import bixo.config.BaseFetchJobPolicy;
+import bixo.config.BixoPlatform;
 import bixo.config.DefaultFetchJobPolicy;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
@@ -60,26 +60,25 @@ import bixo.robots.BaseRobotsParser;
 import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
+
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
-import cascading.flow.hadoop.HadoopFlowConnector;
-import cascading.flow.hadoop.HadoopFlowProcess;
-import cascading.flow.local.LocalFlowConnector;
 import cascading.pipe.Pipe;
-import cascading.scheme.hadoop.SequenceFile;
+import cascading.tap.SinkMode;
 import cascading.tap.Tap;
-import cascading.tap.hadoop.Hfs;
-import cascading.tap.hadoop.Lfs;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 
-import com.bixolabs.cascading.Payload;
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.BasePlatform;
+import com.scaleunlimited.cascading.Payload;
+
 
 // Long-running test
-@SuppressWarnings("deprecation")
+@SuppressWarnings({ "serial", "rawtypes", "unchecked" })
 public class FetchPipeLRTest extends CascadingTestCase {
     
     private static final String DEFAULT_INPUT_PATH = "build/test/FetchPipeLRTest/in";
@@ -96,7 +95,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
         
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
             if (_permanent) {
                 // Can't use sendRedirect, as that forces it to be a temp redirect.
                 if (response instanceof  Response) {
@@ -116,7 +115,10 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
     @Test
     public void testHeadersInStatus() throws Exception {
-        Lfs in = makeInputData(1, 1);
+  
+        BixoPlatform platform = new BixoPlatform(true);
+
+        Tap in = makeInputData(platform, 1, 1);
 
         Pipe pipe = new Pipe("urlSource");
         BaseFetcher fetcher = new FakeHttpFetcher(false, 1);
@@ -125,16 +127,17 @@ public class FetchPipeLRTest extends CascadingTestCase {
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
         
-        String outputPath = DEFAULT_OUTPUT_PATH;
-        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath, true);
+        BasePath outputPath = platform.makePath(DEFAULT_OUTPUT_PATH);
+        BasePath statusPath = platform.makePath(outputPath, "status");
+        Tap status = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath, SinkMode.REPLACE);
         
         // Finally we can run it.
-        FlowConnector flowConnector = new FlowConnector();
+        FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, null), fetchPipe);
         flow.complete();
         
-        Lfs validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath);
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new JobConf());
+        Tap validate = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         Assert.assertTrue(tupleEntryIterator.hasNext());
         StatusDatum sd = new StatusDatum(tupleEntryIterator.next());
         Assert.assertEquals(UrlStatus.FETCHED, sd.getStatus());
@@ -146,23 +149,26 @@ public class FetchPipeLRTest extends CascadingTestCase {
     @Test
     public void testFetchPipe() throws Exception {
         // System.setProperty("bixo.root.level", "TRACE");
-        
         final int numPages = 10;
         final int port = 8089;
         
-        Lfs in = makeInputData("localhost:" + port, numPages, new Payload());
+        BixoPlatform platform = new BixoPlatform(true);
+        Tap in = makeInputData(platform, "localhost:" + port, numPages, new Payload());
 
         Pipe pipe = new Pipe("urlSource");
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseFetcher fetcher = new SimpleHttpFetcher(ConfigUtils.BIXO_TEST_AGENT);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
         
-        String outputPath = "build/test/FetchPipeTest/testFetchPipe";
-        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
-        Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+        String output = "build/test/FetchPipeTest/testFetchPipe";
+        BasePath outputPath = platform.makePath(output);
+        BasePath statusPath = platform.makePath(outputPath, "status");
+        BasePath contentPath = platform.makePath(outputPath, "content");
+        Tap status = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath, SinkMode.REPLACE);
+        Tap content = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath, SinkMode.REPLACE);
 
         // Finally we can run it.
-        FlowConnector flowConnector = new FlowConnector();
+        FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         TestWebServer webServer = null;
         
@@ -174,8 +180,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
         
         // Verify numPages fetched and numPages status entries were saved.
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
+        Tap validate = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         
         int totalEntries = 0;
         boolean[] fetchedPages = new boolean[numPages];
@@ -198,8 +204,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertEquals(numPages, totalEntries);
         tupleEntryIterator.close();
         
-        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
-        tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
+        validate = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath);
+        tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         totalEntries = 0;
         fetchedPages = new boolean[numPages];
         while (tupleEntryIterator.hasNext()) {
@@ -230,9 +236,10 @@ public class FetchPipeLRTest extends CascadingTestCase {
         final int numPages = 1;
         final int port = 8089;
         
+        BixoPlatform platform = new BixoPlatform(true);
         Payload payload = new Payload();
         payload.put("payload-field-1", 1);
-        Lfs in = makeInputData("localhost:" + port, numPages, payload);
+        Tap in = makeInputData(platform, "localhost:" + port, numPages, payload);
 
         Pipe pipe = new Pipe("urlSource");
         BaseScoreGenerator scorer = new FixedScoreGenerator();
@@ -241,12 +248,15 @@ public class FetchPipeLRTest extends CascadingTestCase {
         BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
         
-        String outputPath = "build/test/FetchPipeTest/testRedirectException";
-        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
-        Tap content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+        String output = "build/test/FetchPipeTest/testRedirectException";
+        BasePath outputPath = platform.makePath(output);
+        BasePath statusPath = platform.makePath(outputPath, "status");
+        BasePath contentPath = platform.makePath(outputPath, "content");
+        Tap status = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath, SinkMode.REPLACE);
+        Tap content = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath, SinkMode.REPLACE);
 
         // Finally we can run it.
-        FlowConnector flowConnector = new FlowConnector();
+        FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         TestWebServer webServer = null;
         
@@ -258,13 +268,13 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
         
         // Verify numPages fetched and numPages status entries were saved.
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
+        Tap validate = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         Assert.assertFalse(tupleEntryIterator.hasNext());
         tupleEntryIterator.close();
         
-        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
-        tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
+        validate = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath);
+        tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         int totalEntries = 0;
         boolean[] fetchedPages = new boolean[numPages];
         while (tupleEntryIterator.hasNext()) {
@@ -300,7 +310,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         final int numPages = 10;
         final int port = 8089;
         
-        Lfs in = makeInputData("localhost:" + port, numPages, null);
+        BixoPlatform platform = new BixoPlatform(true);
+        Tap in = makeInputData(platform, "localhost:" + port, numPages, null);
 
         Pipe pipe = new Pipe("urlSource");
         BaseScoreGenerator scorer = new FixedScoreGenerator();
@@ -313,11 +324,13 @@ public class FetchPipeLRTest extends CascadingTestCase {
         BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
         
-        String outputPath = "build/test/FetchPipeTest/testFetchTerminationPipe";
-        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
+        String output = "build/test/FetchPipeTest/testFetchTerminationPipe";
+        BasePath outputPath = platform.makePath(output);
+        BasePath statusPath = platform.makePath(outputPath, "status");
+        Tap status = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath, SinkMode.REPLACE);
 
         // Finally we can run it.
-        FlowConnector flowConnector = new FlowConnector();
+        FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(in, status, fetchPipe.getStatusTailPipe());
         TestWebServer webServer = null;
         
@@ -332,8 +345,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
             webServer.stop();
         }
         
-        Lfs validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
+        Tap validate = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         int totalEntries = 0;
         while (tupleEntryIterator.hasNext()) {
             TupleEntry entry = tupleEntryIterator.next();
@@ -353,7 +366,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
     public void testPayloads() throws Exception {
         Payload payload = new Payload();
         payload.put("key", "value");
-        Lfs in = makeInputData(1, 1, payload);
+        BixoPlatform platform = new BixoPlatform(true);
+        Tap in = makeInputData(platform, 1, 1, payload);
 
         Pipe pipe = new Pipe("urlSource");
         BaseFetcher fetcher = new FakeHttpFetcher(false, 10);
@@ -362,17 +376,20 @@ public class FetchPipeLRTest extends CascadingTestCase {
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
         
-        String outputPath = "build/test/FetchPipeTest/dual";
-        Tap status = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
-        Tap content = new Hfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+        String output = "build/test/FetchPipeTest/dual";
+        BasePath outputPath = platform.makePath(output);
+        BasePath statusPath = platform.makePath(outputPath, "status");
+        Tap status = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath, SinkMode.REPLACE);
+        BasePath contentPath = platform.makePath(outputPath, "content");
+        Tap content = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath, SinkMode.REPLACE);
 
         // Finally we can run it.
-        FlowConnector flowConnector = new FlowConnector();
+        FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, content), fetchPipe);
         flow.complete();
         
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
+        Tap validate = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         
         int totalEntries = 0;
         while (tupleEntryIterator.hasNext()) {
@@ -388,8 +405,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertEquals(1, totalEntries);
         tupleEntryIterator.close();
         
-        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
-        tupleEntryIterator = validate.openForRead(new JobConf());
+        validate = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath);
+        tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         totalEntries = 0;
         while (tupleEntryIterator.hasNext()) {
             TupleEntry entry = tupleEntryIterator.next();
@@ -408,7 +425,9 @@ public class FetchPipeLRTest extends CascadingTestCase {
     
     @Test
     public void testSkippingURLsByScore() throws Exception {
-        Lfs in = makeInputData(1, 1);
+
+        BixoPlatform platform = new BixoPlatform(true);
+        Tap in = makeInputData(platform, 1, 1);
 
         Pipe pipe = new Pipe("urlSource");
         BaseFetcher fetcher = new FakeHttpFetcher(false, 1);
@@ -417,23 +436,25 @@ public class FetchPipeLRTest extends CascadingTestCase {
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
         
-        String outputPath = DEFAULT_OUTPUT_PATH;
-        Lfs content = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+        BasePath outputPath = platform.makePath(DEFAULT_OUTPUT_PATH);
+        BasePath contentPath = platform.makePath(outputPath, "content");
+        Tap content = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath, SinkMode.REPLACE);
         
         // Finally we can run it.
-        FlowConnector flowConnector = new HadoopFlowConnector();
+        FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(null, content), fetchPipe);
         flow.complete();
         
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
+        Tap validate = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         Assert.assertFalse(tupleEntryIterator.hasNext());
     }
     
     @Test
     public void testDurationLimitSimple() throws Exception {
         // Pretend like we have 10 URLs from the same domain
-        Lfs in = makeInputData(1, 10);
+        BixoPlatform platform = new BixoPlatform(true);
+        Tap in = makeInputData(platform, 1, 10);
 
         // Create the fetch pipe we'll use to process these fake URLs
         Pipe pipe = new Pipe("urlSource");
@@ -448,20 +469,22 @@ public class FetchPipeLRTest extends CascadingTestCase {
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
 
         // Create the output
-        String outputPath = DEFAULT_OUTPUT_PATH;
-        Tap statusSink = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
-        Tap contentSink = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+        BasePath outputPath = platform.makePath(DEFAULT_OUTPUT_PATH);
+        BasePath statusPath = platform.makePath(outputPath, "status");
+        Tap statusSink = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath, SinkMode.REPLACE);
+        BasePath contentPath = platform.makePath(outputPath, "content");
+        Tap contentSink = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath, SinkMode.REPLACE);
 
-        FlowConnector flowConnector = new FlowConnector();
+        FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(statusSink, contentSink), fetchPipe);
         flow.complete();
         
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
+        Tap validate = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         Assert.assertFalse(tupleEntryIterator.hasNext());
         
-        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
-        tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
+        validate = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath);
+        tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         
         int numEntries = 0;
         while (tupleEntryIterator.hasNext()) {
@@ -478,7 +501,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
     public void testMaxUrlsPerServer() throws Exception {
         // Pretend like we have 2 URLs from the same domain
         final int sourceUrls = 2;
-        Lfs in = makeInputData(1, sourceUrls);
+        BixoPlatform platform = new BixoPlatform(true);
+        Tap in = makeInputData(platform, 1, sourceUrls);
 
         // Create the fetch pipe we'll use to process these fake URLs
         Pipe pipe = new Pipe("urlSource");
@@ -493,22 +517,24 @@ public class FetchPipeLRTest extends CascadingTestCase {
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
 
         // Create the output
-        String outputPath = DEFAULT_OUTPUT_PATH;
-        Lfs statusSink = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status", true);
-        Lfs contentSink = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content", true);
+        BasePath outputPath = platform.makePath(DEFAULT_OUTPUT_PATH);
+        BasePath statusPath = platform.makePath(outputPath, "status");
+        Tap statusSink = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath, SinkMode.REPLACE);
+        BasePath contentPath = platform.makePath(outputPath, "content");
+        Tap contentSink = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath, SinkMode.REPLACE);
 
-        FlowConnector flowConnector = new LocalFlowConnector();
+        FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(statusSink, contentSink), fetchPipe);
         flow.complete();
         
-        Lfs validate = new Lfs(new SequenceFile(FetchedDatum.FIELDS), outputPath + "/content");
-        TupleEntryIterator tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
+        Tap validate = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath);
+        TupleEntryIterator tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         Assert.assertTrue(tupleEntryIterator.hasNext());
         tupleEntryIterator.next();
         Assert.assertFalse(tupleEntryIterator.hasNext());
 
-        validate = new Lfs(new SequenceFile(StatusDatum.FIELDS), outputPath + "/status");
-        tupleEntryIterator = validate.openForRead(new HadoopFlowProcess());
+        validate = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath);
+        tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
         
         int numSkippedEntries = 0;
         int numFetchedEntries = 0;
@@ -592,7 +618,6 @@ public class FetchPipeLRTest extends CascadingTestCase {
     }
     */
     
-    @SuppressWarnings("serial")
     private static class SkippedScoreGenerator extends BaseScoreGenerator {
 
         @Override
@@ -614,6 +639,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
             _maxScore = maxScore;
             _rand = new Random();
         }
+     * @throws Exception 
         
         @Override
         public double generateScore(GroupedUrlDatum urlTuple) {
@@ -624,13 +650,14 @@ public class FetchPipeLRTest extends CascadingTestCase {
     }
     **/
     
-    private Lfs makeInputData(int numDomains, int numPages) throws IOException {
-        return makeInputData(numDomains, numPages, null);
+    private Tap makeInputData(BasePlatform platform, int numDomains, int numPages) throws Exception {
+        return makeInputData(platform, numDomains, numPages, null);
     }
     
-    private Lfs makeInputData(int numDomains, int numPages, Payload payload) throws IOException {
-        Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), DEFAULT_INPUT_PATH, true);
-        TupleEntryCollector write = in.openForWrite(new HadoopFlowProcess());
+    private Tap makeInputData(BasePlatform platform, int numDomains, int numPages, Payload payload) throws Exception {
+        BasePath defaultPath = platform.makePath(DEFAULT_INPUT_PATH);
+        Tap in = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), defaultPath, SinkMode.REPLACE);
+        TupleEntryCollector write = in.openForWrite(platform.makeFlowProcess());
         for (int i = 0; i < numDomains; i++) {
             for (int j = 0; j < numPages; j++) {
                 // Use special domain name pattern so code deep inside of operations "knows" not
@@ -643,9 +670,10 @@ public class FetchPipeLRTest extends CascadingTestCase {
         return in;
     }
     
-    private Lfs makeInputData(String domain, int numPages, Payload payload) throws IOException {
-        Lfs in = new Lfs(new SequenceFile(UrlDatum.FIELDS), DEFAULT_INPUT_PATH, true);
-        TupleEntryCollector write = in.openForWrite(new HadoopFlowProcess());
+    private Tap makeInputData(BasePlatform platform, String domain, int numPages, Payload payload) throws Exception {
+        BasePath defaultPath = platform.makePath(DEFAULT_INPUT_PATH);
+        Tap in = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), defaultPath, SinkMode.REPLACE);
+        TupleEntryCollector write = in.openForWrite(platform.makeFlowProcess());
         for (int j = 0; j < numPages; j++) {
             write.add(makeTuple(domain, j, payload));
         }
@@ -671,11 +699,11 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
         
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
             if (pathInContext.endsWith("/robots.txt")) {
                 throw new HttpException(HttpStatus.SC_NOT_FOUND, "No robots.txt");
             } else {
-                super.handle(pathInContext, request, response, dispatch);
+                super.handle(pathInContext, baseRequest, request, response);
             }
         }
     }
@@ -684,7 +712,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
     private static class NoRobotsHtmlResponseHandler extends AbstractHandler {
 
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
             if (pathInContext.endsWith("/robots.txt")) {
                 throw new HttpException(HttpStatus.SC_NOT_FOUND, "No robots.txt");
             } else {
@@ -709,7 +737,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
      * or at least I couldn't see an easy way to make this work.
      */
 
-    @SuppressWarnings({ "serial", "unused" })
+    @SuppressWarnings({"unused" })
     private static class CustomGrouper extends BaseGroupGenerator {
 
         @Override
@@ -747,7 +775,6 @@ public class FetchPipeLRTest extends CascadingTestCase {
     };
     **/
     
-    @SuppressWarnings("serial")
     private static class MaxUrlFetcherPolicy extends FetcherPolicy {
         private int _maxUrls;
         
@@ -763,7 +790,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
     }
     
-    @SuppressWarnings({ "serial", "unused" })
+    @SuppressWarnings({"unused" })
     private static class CustomFetcher extends BaseFetcher {
 
         public CustomFetcher() {

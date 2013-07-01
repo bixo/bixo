@@ -24,6 +24,9 @@ import java.util.Queue;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+
+import bixo.config.BixoPlatform;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
@@ -35,9 +38,9 @@ import bixo.robots.RobotUtils;
 import bixo.utils.DomainInfo;
 import bixo.utils.DomainNames;
 import bixo.utils.GroupingKey;
+import cascading.flow.FlowProcess;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.LoggingFlowProcess;
 
 public class ProcessRobotsTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ProcessRobotsTask.class);
@@ -70,14 +73,14 @@ public class ProcessRobotsTask implements Runnable {
      * @param groupingKey grouping key to use for all entries.
      * @param collector tuple output collector
      */
-    public static void emptyQueue(Queue<GroupedUrlDatum> urls, String groupingKey, TupleEntryCollector collector) {
+    public static void emptyQueue(Queue<GroupedUrlDatum> urls, String groupingKey, TupleEntryCollector collector, FlowProcess process) {
         GroupedUrlDatum datum;
         while ((datum = urls.poll()) != null) {
             ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), groupingKey, UrlStatus.UNFETCHED, 1.0);
             scoreUrl.setPayload(datum.getPayload());
             // TODO KKr - move synchronization up, to avoid lots of contention with other threads?
             synchronized (collector) {
-                collector.add(scoreUrl.getTuple());
+                collector.add(BixoPlatform.clone(scoreUrl.getTuple(), process));
             }
         }
     }
@@ -111,7 +114,7 @@ public class ProcessRobotsTask implements Runnable {
                 
                 LOGGER.debug("Skipping URLs from not-good domain: " + domain);
                 
-                emptyQueue(_urls, GroupingKey.SKIPPED_GROUPING_KEY, _collector);
+                emptyQueue(_urls, GroupingKey.SKIPPED_GROUPING_KEY, _collector, _flowProcess);
             } else {
                 BaseRobotRules robotRules = RobotUtils.getRobotRules(_fetcher, _parser, new URL(domainInfo.getProtocolAndDomain() + "/robots.txt"));
 
@@ -149,7 +152,7 @@ public class ProcessRobotsTask implements Runnable {
 
                     // collectors aren't thread safe
                     synchronized (_collector) {
-                        _collector.add(scoreUrl.getTuple());
+                        _collector.add(BixoPlatform.clone(scoreUrl.getTuple(), _flowProcess));
                     }
                 }
             }
@@ -157,22 +160,22 @@ public class ProcessRobotsTask implements Runnable {
             LOGGER.debug("Unknown host: " + _protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
-            emptyQueue(_urls, GroupingKey.UNKNOWN_HOST_GROUPING_KEY, _collector);
+            emptyQueue(_urls, GroupingKey.UNKNOWN_HOST_GROUPING_KEY, _collector, _flowProcess);
         } catch (MalformedURLException e) {
             LOGGER.debug("Invalid URL: " + _protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
-            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector);
+            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector, _flowProcess);
         } catch (URISyntaxException e) {
             LOGGER.debug("Invalid URI: " + _protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
-            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector);
+            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector, _flowProcess);
         } catch (Exception e) {
             LOGGER.warn("Exception processing " + _protocolAndDomain, e);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
-            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector);
+            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector, _flowProcess);
         } finally {
             _flowProcess.decrement(FetchCounters.DOMAINS_PROCESSING, 1);
         }

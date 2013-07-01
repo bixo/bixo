@@ -36,7 +36,10 @@ public class FetcherPolicy implements Serializable {
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 2;
     public static final int DEFAULT_MAX_REDIRECTS = 20;
     public static final String DEFAULT_ACCEPT_LANGUAGE = "en-us,en-gb,en;q=0.7,*;q=0.3";
-    
+
+    // Min duration (in milliseconds) between page fetches in a single fetch set.
+    public static final long DEFAULT_MIN_PAGE_FETCH_INTERVAL = 1000L;
+
     // How long to wait before a fetch request gets rejected.
     // TODO KKr - calculate this based on the fetcher policy's max URLs/request
     private static final long DEFAULT_REQUEST_TIMEOUT = 100 * 1000L;
@@ -82,6 +85,7 @@ public class FetcherPolicy implements Serializable {
     private FetcherMode _fetcherMode;       // Should we skip URLs when they back up for a domain?
     private long _crawlEndTime;          // When we want the crawl to end
     private RedirectMode _redirectMode;     // What to do about redirects?
+    private long _minPageFetchInterval = DEFAULT_MIN_PAGE_FETCH_INTERVAL;
 
     // =========================================================
 
@@ -124,6 +128,7 @@ public class FetcherPolicy implements Serializable {
         _requestTimeout = DEFAULT_REQUEST_TIMEOUT;
     }
 
+    @Deprecated
     public long getDefaultCrawlDelay() {
         return DEFAULT_CRAWL_DELAY;
     }
@@ -175,10 +180,20 @@ public class FetcherPolicy implements Serializable {
         _maxContentSize = maxContentSize;
     }
     
+    /**
+     * The (default) crawl delay should be specified via the BaseFetchJobPolicy, not the FetcherPolicy
+     * @return
+     */
+    @Deprecated
     public long getCrawlDelay() {
         return _crawlDelay;
     }
     
+    /**
+     * The (default) crawl delay should be specified via the BaseFetchJobPolicy, not the FetcherPolicy
+     * @return
+     */
+    @Deprecated
     public void setCrawlDelay(long crawlDelay) {
         _crawlDelay = crawlDelay;
     }
@@ -238,6 +253,22 @@ public class FetcherPolicy implements Serializable {
     
     public void setFetcherMode(FetcherMode mode) {
         _fetcherMode = mode;
+    }
+    
+    /**
+     * Set the minimum time (in milliseconds) between each page fetch request, when
+     * fetching a FetchSet worth of URLs using a single connection. This gives you
+     * more control over how hard you "hit" a site, independent of the default crawl
+     * delay or the number of requests per connection.
+     * 
+     * @param minPageFetchInterval Minimum interval in milliseconds between requests.
+     */
+    public void seMinPageFetchInterval(long minPageFetchInterval) {
+        _minPageFetchInterval = minPageFetchInterval;
+    }
+    
+    public long getMinPageFetchInterval() {
+        return _minPageFetchInterval;
     }
     
     /**

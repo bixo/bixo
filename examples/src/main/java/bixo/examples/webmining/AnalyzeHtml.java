@@ -26,9 +26,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.Node;
@@ -36,6 +33,7 @@ import org.dom4j.io.SAXWriter;
 
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
+import bixo.examples.crawl.SimpleBodyContentHandler;
 import bixo.parser.DOMParser;
 import cascading.flow.FlowProcess;
 import cascading.operation.OperationCall;
@@ -81,10 +79,8 @@ public class AnalyzeHtml extends DOMParser {
     
     @Override
     protected void process(ParsedDatum datum, Document doc, TupleEntryCollector collector) throws Exception {
-        // Get all of the text from doc, and pass it to getScore()
-        BodyContentHandler bodyContentHandler = new BodyContentHandler();
-        XHTMLContentHandler xhtmlContentHandler =  new XHTMLContentHandler(bodyContentHandler, new Metadata());
-        SAXWriter writer = new SAXWriter(xhtmlContentHandler);
+        SimpleBodyContentHandler bodyContentHandler = new SimpleBodyContentHandler();
+        SAXWriter writer = new SAXWriter(bodyContentHandler);
         writer.write(doc);
 
         float pageScore = getScore(bodyContentHandler.toString());
