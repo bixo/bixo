@@ -22,13 +22,13 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.scaleunlimited.cascading.PartitioningKey;
-
 import bixo.utils.DiskQueue;
 import cascading.flow.hadoop.HadoopFlowProcess;
-import cascading.tap.Hfs;
-import cascading.tap.Lfs;
+import cascading.scheme.hadoop.SequenceFile;
+import cascading.tap.hadoop.Hfs;
 import cascading.tuple.TupleEntryCollector;
+
+import com.scaleunlimited.cascading.PartitioningKey;
 
 
 

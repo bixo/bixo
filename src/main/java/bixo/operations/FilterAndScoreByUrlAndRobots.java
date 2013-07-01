@@ -21,10 +21,6 @@ import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.log4j.Logger;
 
-import com.scaleunlimited.cascading.LoggingFlowProcess;
-import com.scaleunlimited.cascading.LoggingFlowReporter;
-import com.scaleunlimited.cascading.NullContext;
-
 import bixo.config.UserAgent;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
@@ -36,11 +32,15 @@ import bixo.utils.DiskQueue;
 import bixo.utils.GroupingKey;
 import bixo.utils.ThreadedExecutor;
 import cascading.flow.FlowProcess;
-import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
 import cascading.operation.BufferCall;
+import cascading.operation.OperationCall;
 import cascading.tuple.TupleEntry;
+
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+import com.scaleunlimited.cascading.LoggingFlowReporter;
+import com.scaleunlimited.cascading.NullContext;
 
 
 /**
@@ -63,7 +63,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
 	
     private transient ThreadedExecutor _executor;
     private transient LoggingFlowProcess _flowProcess;
-
+    
     public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, BaseRobotsParser parser, BaseScoreGenerator scorer) {
         super(ScoredUrlDatum.FIELDS);
 
@@ -82,6 +82,12 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     }
 
     @Override
+    public boolean isSafe() {
+        // We only want to fetch robots once.
+        return false;
+    }
+    
+    @Override
     public void prepare(FlowProcess flowProcess, cascading.operation.OperationCall<NullContext> operationCall) {
         _executor = new ThreadedExecutor(_fetcher.getMaxThreads(), COMMAND_TIMEOUT);
         
@@ -91,8 +97,10 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         _flowProcess.addReporter(new LoggingFlowReporter());
     }
     
-    @Override
-    public void cleanup(FlowProcess flowProcess, cascading.operation.OperationCall<NullContext> operationCall) {
+    private synchronized void terminate() {
+        if (_executor == null) {
+            return;
+        }
         
         try {
             if (!_executor.terminate(TERMINATE_TIMEOUT)) {
@@ -103,15 +111,35 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
             // losing URLs still to be processed?
             LOGGER.warn("Interrupted while waiting for termination");
             Thread.currentThread().interrupt();
+        } finally {
+            _executor = null;
         }
+    }
+
+    @Override
+    public void flush(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
+        LOGGER.info("Flushing FilterAndScoreByUrlAndRobots");
+        
+        terminate();
+        
+        super.flush(flowProcess, operationCall);
+    }
+    
+    @Override
+    public void cleanup(FlowProcess flowProcess, cascading.operation.OperationCall<NullContext> operationCall) {
+        LOGGER.info("Cleaning up FilterAndScoreByUrlAndRobots");
+        
+        terminate();
         
         _flowProcess.dumpCounters();
+        super.cleanup(flowProcess, operationCall);
     }
     
 	@Override
 	public void operate(FlowProcess flowProcess, BufferCall<NullContext> bufferCall) {
         TupleEntry group = bufferCall.getGroup();
         String protocolAndDomain = group.getString(0);
+        LOGGER.info("Processing tuple group: " + group);
 
         DiskQueue<GroupedUrlDatum> urls = new DiskQueue<GroupedUrlDatum>(MAX_URLS_IN_MEMORY);
         Iterator<TupleEntry> values = bufferCall.getArgumentsIterator();

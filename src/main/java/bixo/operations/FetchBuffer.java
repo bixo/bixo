@@ -383,8 +383,11 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         }
     }
 
-    @Override
-    public void cleanup(FlowProcess process, OperationCall<NullContext> operationCall) {
+    private synchronized void terminate() {
+        if (_executor == null) {
+            return;
+        }
+        
         try {
             // We don't know worst-case for amount of time a worker thread will effectively
             // "sleep" waiting for a FetchTask to be queued up, but we'll add in a bit of
@@ -414,9 +417,28 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             // FUTURE What's the right thing to do here? E.g. do I need to worry about
             // losing URLs still to be processed?
             LOGGER.warn("Interrupted while waiting for termination");
+        } finally {
+            _executor = null;
         }
+    }
+    
+    @Override
+    public void flush(FlowProcess process, OperationCall<NullContext> operationCall) {
+        LOGGER.info("Flushing FetchBuffer");
+        
+        terminate();
+
+        super.flush(process, operationCall);
+    }
+    
+    @Override
+    public void cleanup(FlowProcess process, OperationCall<NullContext> operationCall) {
+        LOGGER.info("Cleaning up FetchBuffer");
+        
+        terminate();
 
         _flowProcess.dumpCounters();
+        super.cleanup(process,  operationCall);
     }
 
     @Override

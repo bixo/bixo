@@ -69,6 +69,8 @@ public class UrlFilter extends BaseOperation<NullContext> implements Filter<Null
 	public void cleanup(FlowProcess process, OperationCall<NullContext> opCall) {
 		LOGGER.info("Ending filtering of URLs");
 		LOGGER.info(String.format("Filtered %d URLs, accepted %d URLs", _numFiltered, _numAccepted));
+		
+		super.cleanup(process, opCall);
 	}
 
 }
