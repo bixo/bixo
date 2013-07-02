@@ -19,19 +19,18 @@ package bixo.examples.crawl;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 import org.hsqldb.Server;
-
-import com.scaleunlimited.cascading.BasePlatform;
 
 import cascading.jdbc.JDBCScheme;
 import cascading.jdbc.JDBCTap;
 import cascading.jdbc.TableDesc;
 import cascading.tap.Tap;
 
+import com.scaleunlimited.cascading.BasePlatform;
 
-@SuppressWarnings("deprecation")
+
+@SuppressWarnings("rawtypes")
 public class JDBCTapFactory {
 
     private static final Logger LOGGER = Logger.getLogger(JDBCTapFactory.class);

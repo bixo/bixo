@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.dom4j.io.SAXWriter;
 
 import com.scaleunlimited.cascading.NullContext;
 
+import bixo.config.BixoPlatform;
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.examples.crawl.SimpleBodyContentHandler;
@@ -64,6 +65,7 @@ public class AnalyzeHtml extends DOMParser {
         super(AnalyzedDatum.FIELDS); 
     }
     
+    @SuppressWarnings("rawtypes")
     @Override
     public void prepare(FlowProcess process, OperationCall<NullContext> opCall) {
         super.prepare(process, opCall);
@@ -78,8 +80,10 @@ public class AnalyzeHtml extends DOMParser {
         _result = new AnalyzedDatum("", 0.0f, new PageResult[0], new Outlink[0]);
     }
     
+    @SuppressWarnings("rawtypes")
     @Override
-    protected void process(ParsedDatum datum, Document doc, TupleEntryCollector collector) throws Exception {
+    protected void process(ParsedDatum datum, Document doc, TupleEntryCollector collector,
+                    FlowProcess process) throws Exception {
         SimpleBodyContentHandler bodyContentHandler = new SimpleBodyContentHandler();
         SAXWriter writer = new SAXWriter(bodyContentHandler);
         writer.write(doc);
@@ -97,7 +101,7 @@ public class AnalyzeHtml extends DOMParser {
         _result.setOutlinks(outlinks);
         _result.setPageResults(pageResults);
         
-        collector.add(_result.getTuple());
+        collector.add(BixoPlatform.clone(_result.getTuple(), process));
     }
 
     @Override

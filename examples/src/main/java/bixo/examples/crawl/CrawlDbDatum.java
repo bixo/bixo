@@ -59,7 +59,7 @@ public class CrawlDbDatum extends BaseDatum {
     }
 
     public void setUrl(String url) {
-        _tupleEntry.set(URL_FIELD, url);
+        _tupleEntry.setString(URL_FIELD, url);
     }
 
     public long getLastFetched() {
@@ -67,7 +67,7 @@ public class CrawlDbDatum extends BaseDatum {
     }
 
     public void setLastFetched(long lastFetched) {
-        _tupleEntry.set(LAST_FETCHED_FIELD, lastFetched);
+        _tupleEntry.setLong(LAST_FETCHED_FIELD, lastFetched);
     }
 
     public long getLastUpdated() {
@@ -75,7 +75,7 @@ public class CrawlDbDatum extends BaseDatum {
     }
 
     public void setLastUpdated(long lastUpdated) {
-        _tupleEntry.set(LAST_UPDATED_FIELD, lastUpdated);
+        _tupleEntry.setLong(LAST_UPDATED_FIELD, lastUpdated);
     }
 
     public UrlStatus getLastStatus() {
@@ -83,7 +83,7 @@ public class CrawlDbDatum extends BaseDatum {
     }
 
     public void setLastStatus(UrlStatus lastStatus) {
-        _tupleEntry.set(LAST_STATUS_FIELD, lastStatus.name());
+        _tupleEntry.setString(LAST_STATUS_FIELD, lastStatus.name());
     }
 
     public int getCrawlDepth() {
@@ -91,7 +91,7 @@ public class CrawlDbDatum extends BaseDatum {
     }
 
     public void setCrawlDepth(int crawlDepth) {
-        _tupleEntry.set(CRAWL_DEPTH, crawlDepth);
+        _tupleEntry.setInteger(CRAWL_DEPTH, crawlDepth);
     }
     
 

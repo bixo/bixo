@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public class AnalyzedDatum extends BaseDatum {
     }
     
     public void setUrl(String url) {
-        _tupleEntry.set(URL_FIELD, url);
+        _tupleEntry.setString(URL_FIELD, url);
     }
     
     public String getUrl() {
@@ -67,7 +67,7 @@ public class AnalyzedDatum extends BaseDatum {
     }
 
     public void setPageScore(float pageScore) {
-        _tupleEntry.set(PAGE_SCORE_FIELD, pageScore);
+        _tupleEntry.setFloat(PAGE_SCORE_FIELD, pageScore);
     }
 
     public float getPageScore() {
@@ -75,23 +75,23 @@ public class AnalyzedDatum extends BaseDatum {
     }
 
     public void setPageResults(PageResult[] results) {
-        _tupleEntry.set(PAGE_RESULTS_FIELD, makeTupleOfPageResults(results));
+        _tupleEntry.setObject(PAGE_RESULTS_FIELD, makeTupleOfPageResults(results));
     }
 
     public PageResult[] getPageResults() {
-        return makePageResultsFromTuple((Tuple)_tupleEntry.get(PAGE_RESULTS_FIELD));
+        return makePageResultsFromTuple((Tuple)_tupleEntry.getObject(PAGE_RESULTS_FIELD));
     }
 
     public void setOutlinks(Outlink[] outlinks) {
-        _tupleEntry.set(OUTLINKS_FIELD, makeTupleOfOutlinks(outlinks));
+        _tupleEntry.setObject(OUTLINKS_FIELD, makeTupleOfOutlinks(outlinks));
     }
 
 
     public Outlink[] getOutlinks() {
-        return makeOutlinksFromTuple((Tuple)_tupleEntry.get(OUTLINKS_FIELD));
+        return makeOutlinksFromTuple((Tuple)_tupleEntry.getObject(OUTLINKS_FIELD));
     }
 
-    private Object makeTupleOfPageResults(PageResult[] results) {
+    private Tuple makeTupleOfPageResults(PageResult[] results) {
         Tuple t = new Tuple();
         for (PageResult pr : results) {
             t.add(pr);
@@ -109,7 +109,7 @@ public class AnalyzedDatum extends BaseDatum {
         return result;
     }
 
-    private Object makeTupleOfOutlinks(Outlink[] outlinks) {
+    private Tuple makeTupleOfOutlinks(Outlink[] outlinks) {
         Tuple t = new Tuple();
         for (Outlink outlink : outlinks) {
             t.add(outlink);

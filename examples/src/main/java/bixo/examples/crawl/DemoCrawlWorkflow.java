@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import bixo.config.BixoPlatform;
@@ -58,6 +59,7 @@ import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
+import cascading.scheme.hadoop.WritableSequenceFile;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
@@ -127,7 +129,7 @@ public class DemoCrawlWorkflow {
     public static Flow createFlow(BasePath curWorkingDirPath, BasePath crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, DemoCrawlToolOptions options) throws Throwable {
 
         BixoPlatform platform = new BixoPlatform(options.isLocalMode());
-//  TODO VMa      platform.setNumReduceTasks(numReduceTasks)
+        platform.resetNumReduceTasks();
 
         // Input : the crawldb
         platform.assertPathExists(crawlDbPath, "CrawlDb doesn't exist");
@@ -183,8 +185,7 @@ public class DemoCrawlWorkflow {
         // are fetched first. If URLs are skipped for any reason(s) lower scoring URLs are skipped.
         BaseScoreGenerator scorer = new FixedScoreGenerator();
 
-        // TODO VMa - get the numReducers and pass that to the FetchPipe
-        FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, 1);
+        FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, platform.getNumReduceTasks());
         Pipe statusPipe = new Pipe("status pipe", fetchPipe.getStatusTailPipe());
         Pipe contentPipe = new Pipe("content pipe", fetchPipe.getContentTailPipe());
         contentPipe = TupleLogger.makePipe(contentPipe, true);
@@ -202,8 +203,6 @@ public class DemoCrawlWorkflow {
         parser.setExtractLanguage(false);
         ParsePipe parsePipe = new ParsePipe(contentPipe, parser);
 
-//        Tap writableSeqFileSink = null;
-//        Pipe writableSeqFileDataPipe = null;
         
         // Create the output map that connects each tail pipe to the appropriate sink, and the
         // list of tail pipes.
@@ -223,13 +222,15 @@ public class DemoCrawlWorkflow {
         
         // Let's output a WritableSequenceFile as an example - this file can
         // then be used as input when working with Mahout.
-//        writableSeqFileDataPipe = new Pipe("writable seqfile data", new Each(parsePipe.getTailPipe(), new CreateWritableSeqFileData()));
-
-        // TODO VMa - set up the writable seq file
-        
-//        BasePath writableSeqFileDataPath = platform.makePath(curWorkingDirPath, CrawlConfig.EXTRACTED_TEXT_SUBDIR_NAME);
-//        writableSeqFileSink = new Hfs(new WritableSequenceFile(new Fields(CrawlConfig.WRITABLE_SEQ_FILE_KEY_FN, CrawlConfig.WRITABLE_SEQ_FILE_VALUE_FN), Text.class, Text.class),
-//                        writableSeqFileDataPath.toString());
+        // For now we only do it when we are running in Hadoop mode
+          Tap writableSeqFileSink = null;
+          Pipe writableSeqFileDataPipe = null;
+            if (!options.isLocalMode()) {
+                writableSeqFileDataPipe = new Pipe("writable seqfile data", new Each(parsePipe.getTailPipe(), new CreateWritableSeqFileData()));
+                BasePath writableSeqFileDataPath = platform.makePath(curWorkingDirPath, CrawlConfig.EXTRACTED_TEXT_SUBDIR_NAME);
+                WritableSequenceFile writableSeqScheme = new WritableSequenceFile(new Fields(CrawlConfig.WRITABLE_SEQ_FILE_KEY_FN, CrawlConfig.WRITABLE_SEQ_FILE_VALUE_FN), Text.class, Text.class);
+                writableSeqFileSink = platform.makeTap(writableSeqScheme, writableSeqFileDataPath, SinkMode.REPLACE);
+            }
         
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction(new SimpleUrlNormalizer(), new SimpleUrlValidator()));
@@ -273,9 +274,10 @@ public class DemoCrawlWorkflow {
         sinkMap.put(outputPipe.getName(), loopCrawldbSink);
         tailPipes.add(outputPipe);
 
-        // TODO VMa -enable this once we have set up the writable seq file
-//        sinkMap.put(writableSeqFileDataPipe.getName(), writableSeqFileSink);
-//        tailPipes.add(writableSeqFileDataPipe);
+        if (!options.isLocalMode()) {
+            sinkMap.put(writableSeqFileDataPipe.getName(), writableSeqFileSink);
+            tailPipes.add(writableSeqFileDataPipe);
+        }
         
         FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(inputSource, sinkMap, tailPipes.toArray(new Pipe[tailPipes.size()]));

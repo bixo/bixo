@@ -53,7 +53,7 @@ public class LinkDatum  extends BaseDatum {
     }
     
     public void setUrl(String url) {
-        _tupleEntry.set(URL_FN, url);
+        _tupleEntry.setString(URL_FN, url);
     }
     
     public String getUrl() {
@@ -61,7 +61,7 @@ public class LinkDatum  extends BaseDatum {
     }
 
     public void setLinkScore(float linkScore) {
-        _tupleEntry.set(LINK_SCORE_FN, linkScore);
+        _tupleEntry.setFloat(LINK_SCORE_FN, linkScore);
     }
     
     public float getLinkScore() {
@@ -69,7 +69,7 @@ public class LinkDatum  extends BaseDatum {
     }
 
     public void setPageScore(float pageScore) {
-        _tupleEntry.set(PAGE_SCORE_FN, pageScore);
+        _tupleEntry.setFloat(PAGE_SCORE_FN, pageScore);
     }
 
     public float getPageScore() {

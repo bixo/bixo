@@ -35,7 +35,7 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "rawtypes"})
 public class UpdateCrawlDbBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
 
     private LoggingFlowProcess _flowProcess;
@@ -48,6 +48,7 @@ public class UpdateCrawlDbBuffer extends BaseOperation<NullContext> implements B
         super(CrawlDbDatum.FIELDS);
     }
     
+    @SuppressWarnings("unchecked")
     @Override
     public void prepare(FlowProcess flowProcess, 
                         OperationCall<NullContext> operationCall) {
@@ -75,7 +76,9 @@ public class UpdateCrawlDbBuffer extends BaseOperation<NullContext> implements B
         UrlStatus status = null;
         float pageScore = 0;
         float linkScore = 0;
-        String url = bufferCall.getGroup().getTuple().getString(0);
+
+        String url = null;
+
         while (iter.hasNext()) {
             TupleEntry entry = iter.next();
             
@@ -85,15 +88,18 @@ public class UpdateCrawlDbBuffer extends BaseOperation<NullContext> implements B
             if (isCrawlDatum) {
                Tuple crawlDbTuple = TupleEntry.select(CrawlDbDatum.FIELDS, entry);
                crawlDbDatum = new CrawlDbDatum(crawlDbTuple);
+               url = crawlDbDatum.getUrl();
             }
             
             if (isStatus) {
                 statusDatum = new StatusDatum(entry);
+                url = statusDatum.getUrl();
             }
 
             if (isAnalyzed) {
                 Tuple analyzedTuple = TupleEntry.select(AnalyzedDatum.FIELDS, entry);
                 analyzedDatum = new AnalyzedDatum(analyzedTuple);
+                url = analyzedDatum.getUrl();
             }
 
             // we could have either status + link or just link tuple entry
@@ -103,10 +109,10 @@ public class UpdateCrawlDbBuffer extends BaseOperation<NullContext> implements B
                 pageScore = linkDatum.getPageScore();
                 // Add up the link scores
                 linkScore += linkDatum.getLinkScore();
+                url = linkDatum.getUrl();
             }
         }
         
-
         long lastFetched = 0;
         if (crawlDbDatum != null) {
             status = crawlDbDatum.getLastStatus();
@@ -128,6 +134,9 @@ public class UpdateCrawlDbBuffer extends BaseOperation<NullContext> implements B
             status = UrlStatus.UNFETCHED;
         }
             
+        if (url == null) {
+            throw new RuntimeException("There's a bug in this code - url shouldn't be null");
+        }
 
         CrawlDbDatum updatedDatum = new CrawlDbDatum(url, lastFetched, status, pageScore, linkScore);
         bufferCall.getOutputCollector().add(updatedDatum.getTuple());

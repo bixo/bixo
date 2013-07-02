@@ -22,13 +22,10 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 
+import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.ParserPolicy;
 import bixo.config.UserAgent;
@@ -46,13 +43,13 @@ import bixo.utils.IoUtils;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
-import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 import cascading.operation.OperationCall;
 import cascading.operation.filter.Limit;
 import cascading.operation.filter.Limit.Context;
+import cascading.operation.regex.RegexParser;
 import cascading.pipe.CoGroup;
 import cascading.pipe.Each;
 import cascading.pipe.Every;
@@ -68,11 +65,9 @@ import cascading.tuple.TupleEntryCollector;
 import com.scaleunlimited.cascading.BasePath;
 import com.scaleunlimited.cascading.BasePlatform;
 import com.scaleunlimited.cascading.BaseSplitter;
-import com.scaleunlimited.cascading.LoggingFlowProcess;
 import com.scaleunlimited.cascading.SplitterAssembly;
 import com.scaleunlimited.cascading.TupleLogger;
 
-@SuppressWarnings("deprecation")
 public class DemoWebMiningWorkflow {
 
     // Max URLs to fetch in local vs. distributed mode.
@@ -127,16 +122,9 @@ public class DemoWebMiningWorkflow {
 
             operationCall.setContext( context );
 
-            LoggingFlowProcess process =  new LoggingFlowProcess(flowProcess);
 
-            int numTasks = 0;
-
-            if( process.isMapper() )
-              numTasks = process.getCurrentNumMappers();
-            else
-              numTasks = process.getCurrentNumReducers();
-
-            int taskNum = process.getCurrentTaskNum();
+            int numTasks = flowProcess.getNumProcessSlices();
+            int taskNum = flowProcess.getCurrentSliceNum();
 
             context.limit = (long) Math.floor( (double) _limit / (double) numTasks );
 
@@ -146,7 +134,6 @@ public class DemoWebMiningWorkflow {
             context.limit += taskNum < remainingLimit ? 1 : 0;
         }
         
-        @SuppressWarnings("rawtypes")
         @Override
         public void operate(FlowProcess flowProcess, FunctionCall<Limit.Context> funcCall) {
             CrawlDbDatum datum = new CrawlDbDatum(funcCall.getArguments());
@@ -188,7 +175,6 @@ public class DemoWebMiningWorkflow {
                 writer.add(datum.getTuple());
             }
 
-            writer.close();
         } catch (IOException e) {
             crawlDbPath.delete(true);
             throw e;
@@ -202,8 +188,8 @@ public class DemoWebMiningWorkflow {
     }
     
     @SuppressWarnings("rawtypes")
-    public static Flow createWebMiningWorkflow(BasePlatform platform, BasePath crawlDbPath, BasePath curLoopDirPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, 
-                    DemoWebMiningOptions options) throws IOException, InterruptedException {
+    public static Flow createWebMiningWorkflow(BixoPlatform platform, BasePath crawlDbPath, BasePath curLoopDirPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, 
+                    DemoWebMiningOptions options) throws Exception {
         
         // Fetch at most 200 pages, max size of 128K, complete mode, from the current dir.
         // HTML only.
@@ -213,16 +199,19 @@ public class DemoWebMiningWorkflow {
         // any results.
         
         boolean isLocal = platform.isLocal();
-        // TODO VMa - enable this 
-//        int numReducers = HadoopUtils.getNumReducers(conf);
-//        conf.setNumReduceTasks(numReducers);
-//        conf.setInt("mapred.min.split.size", 64 * 1024 * 1024);
+        platform.resetNumReduceTasks();
+        platform.setProperty("mapred.min.split.size", 64 * 1024 * 1024);
 
         // Input : the crawldb
         platform.assertPathExists(crawlDbPath, "CrawlDb");
 
-        Tap inputSource = platform.makeTap(new TextDelimited(CrawlDbDatum.FIELDS, "\t", CrawlDbDatum.TYPES), crawlDbPath);
+// TODO VMa - figure out types       Tap inputSource = platform.makeTap(new TextDelimited(CrawlDbDatum.FIELDS, "\t", CrawlDbDatum.TYPES), crawlDbPath);
+        Tap inputSource = platform.makeTap(platform.makeTextScheme(), crawlDbPath);
         Pipe importPipe = new Pipe("import pipe");
+        // Apply a regex to extract the relevant fields 
+        RegexParser crawlDbParser = new RegexParser(CrawlDbDatum.FIELDS, 
+                                                        "^(.*?)\t(.*?)\t(.*?)\t(.*?)\t(.*)");
+        importPipe = new Each(importPipe, new Fields("line"), crawlDbParser);
 
         // Split into tuples that are to be fetched and that have already been fetched
         SplitterAssembly splitter = new SplitterAssembly(importPipe, new SplitFetchedUnfetchedSSCrawlDatums());
@@ -247,8 +236,7 @@ public class DemoWebMiningWorkflow {
         fetcher.setSocketTimeout(CrawlConfig.SOCKET_TIMEOUT);
         fetcher.setConnectionTimeout(CrawlConfig.CONNECTION_TIMEOUT);
 
-        // TODO VMa - set up numReducers - once we can get the right setting, for now set to 1
-        FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, 1);
+        FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, platform.getNumReduceTasks());
         Pipe statusPipe = new Pipe("status pipe", fetchPipe.getStatusTailPipe());
         Pipe contentPipe = new Pipe("content pipe", fetchPipe.getContentTailPipe());
         contentPipe = TupleLogger.makePipe(contentPipe, true);
@@ -294,7 +282,7 @@ public class DemoWebMiningWorkflow {
         sinkMap.put(contentPipe.getName(), contentSink);
         sinkMap.put(resultsPipe.getName(), resultsSink);
 
-        FlowConnector flowConnector = platform.makeFlowConnector()
+        FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(inputSource, sinkMap, updatePipe, statusPipe, contentPipe, resultsPipe);
 
         return flow;
