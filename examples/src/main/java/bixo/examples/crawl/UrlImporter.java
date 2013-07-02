@@ -1,9 +1,10 @@
 package bixo.examples.crawl;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
+
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.BasePlatform;
+import com.scaleunlimited.cascading.NullContext;
 
 import bixo.datum.UrlStatus;
 import bixo.urls.BaseUrlNormalizer;
@@ -18,16 +19,11 @@ import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 import cascading.pipe.Each;
 import cascading.pipe.Pipe;
-import cascading.scheme.SequenceFile;
-import cascading.scheme.TextLine;
-import cascading.tap.Hfs;
+import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
-import com.bixolabs.cascading.HadoopUtils;
-import com.bixolabs.cascading.NullContext;
 
-@SuppressWarnings("deprecation")
 public class UrlImporter {
     private static final Logger LOGGER = Logger.getLogger(UrlImporter.class);
 
@@ -42,6 +38,7 @@ public class UrlImporter {
             _validator = validator;
         }
 
+        @SuppressWarnings("rawtypes")
         @Override
         public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
             String urlAsString = funcCall.getArguments().getString("line");
@@ -58,8 +55,9 @@ public class UrlImporter {
         }
     }
 
-    private Path _inputFilePath;
-    private Path _destDirPath;
+    private BasePath _inputFilePath;
+    private BasePath _destDirPath;
+    private BasePlatform _platform;
 
     /**
      * UrlImporter is a simple class that can be used to import a list of urls into the
@@ -68,27 +66,26 @@ public class UrlImporter {
      * @param inputFilePath : the input text file containing the urls to be imported
      * @param desDirPath : the destination path at which to create the crawl db.
      */
-    public UrlImporter(Path inputFilePath, Path desDirPath) {
+    public UrlImporter(BasePlatform platform, BasePath inputFilePath, BasePath desDirPath) {
+        _platform = platform;
         _inputFilePath = inputFilePath;
         _destDirPath = desDirPath;
     }
 
+    @SuppressWarnings("rawtypes")
     public void importUrls(boolean debug) throws Exception {
-        JobConf conf = HadoopUtils.getDefaultJobConf();
 
-        FileSystem fs = _destDirPath.getFileSystem(conf);
 
         try {
-            Tap urlSource = new Hfs(new TextLine(), _inputFilePath.toString());
+            Tap urlSource = _platform.makeTap(_platform.makeTextScheme(), _inputFilePath);
             Pipe importPipe = new Each("url importer", new Fields("line"), new CreateUrlFromTextFunction(new SimpleUrlNormalizer(), new SimpleUrlValidator()));
 
-            Tap urlSink = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), _destDirPath.toString(), true);
+            Tap urlSink = _platform.makeTap(_platform.makeBinaryScheme(CrawlDbDatum.FIELDS), _destDirPath, SinkMode.REPLACE);
 
-            FlowConnector flowConnector = new FlowConnector(HadoopUtils.getDefaultProperties(UrlImporter.class, debug, conf));
+            FlowConnector flowConnector = _platform.makeFlowConnector();
             Flow flow = flowConnector.connect(urlSource, urlSink, importPipe);
             flow.complete();
         } catch (Exception e) {
-            HadoopUtils.safeRemove(fs, _destDirPath);
             throw e;
         }
     }

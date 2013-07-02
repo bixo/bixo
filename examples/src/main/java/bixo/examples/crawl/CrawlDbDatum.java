@@ -16,11 +16,12 @@
  */
 package bixo.examples.crawl;
 
+import com.scaleunlimited.cascading.BaseDatum;
+
 import bixo.datum.UrlStatus;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 
-import com.bixolabs.cascading.BaseDatum;
 
 @SuppressWarnings("serial")
 public class CrawlDbDatum extends BaseDatum {

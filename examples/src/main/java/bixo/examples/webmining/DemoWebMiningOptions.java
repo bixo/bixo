@@ -24,6 +24,7 @@ public class DemoWebMiningOptions {
     
     private String _workingDir = "build/test/working";
     private String _agentName;
+    private boolean _localMode;
 
     @Option(name = "-workingdir", usage = "path to directory for fetching", required = false)
     public void setWorkingDir(String workingDir) {
@@ -43,6 +44,15 @@ public class DemoWebMiningOptions {
         return _agentName;
     }
     
+    @Option(name = "-localmode", usage = "run in Cascading local mode", required = false)
+    public void setLocalMode(boolean localMode) {
+        _localMode = localMode;
+    }
+
+    public boolean isLocalMode() {
+        return _localMode;
+    }
+
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);

@@ -19,6 +19,8 @@ package bixo.examples.crawl;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.NullContext;
+
 import bixo.datum.ParsedDatum;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
@@ -28,9 +30,8 @@ import cascading.operation.OperationCall;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 
-import com.bixolabs.cascading.NullContext;
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "rawtypes"})
 public class CreateWritableSeqFileData extends BaseOperation<NullContext> implements Function<NullContext> {
     private static final Logger LOGGER = Logger.getLogger(CreateWritableSeqFileData.class);
 

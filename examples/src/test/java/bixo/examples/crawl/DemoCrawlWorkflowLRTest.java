@@ -28,28 +28,25 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.httpclient.HttpStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.HttpException;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.AbstractHandler;
 
-import com.bixolabs.cascading.HadoopUtils;
-
+import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
-import bixo.config.UserAgent;
 import bixo.config.FetcherPolicy.FetcherMode;
+import bixo.config.UserAgent;
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.urls.BaseUrlFilter;
 import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
-import cascading.scheme.SequenceFile;
-import cascading.tap.Hfs;
+import cascading.tap.Tap;
 import cascading.tuple.TupleEntryIterator;
+
+import com.scaleunlimited.cascading.BasePath;
 
 @SuppressWarnings({ "serial", "deprecation" })
 public class DemoCrawlWorkflowLRTest implements Serializable {
@@ -88,19 +85,20 @@ public class DemoCrawlWorkflowLRTest implements Serializable {
         }
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
     public void testNotLosingFetchedUrls() throws Throwable {
         String baseDirName = "build/test/SimpleCrawlWorkflowLRTest/output";
-        JobConf conf = new JobConf();
-        Path baseDirPath = new Path(baseDirName);
-        FileSystem fs = baseDirPath.getFileSystem(conf);
+        
+        BixoPlatform platform = new BixoPlatform(true);
+        
+        BasePath baseDirPath = platform.makePath(baseDirName);
+        baseDirPath.delete(true);
+        BasePath curLoopDirPath = CrawlDirUtils.makeLoopDir(platform, baseDirPath, 0);
+        BasePath crawlDbPath = platform.makePath(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
 
-        HadoopUtils.safeRemove(fs, baseDirPath);
-        Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, baseDirPath, 0);
-        Path crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
-
-        DemoCrawlTool.importOneDomain("localhost:8089", crawlDbPath, conf);
-        curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, baseDirPath, 1);
+        DemoCrawlTool.importOneDomain(platform, "localhost:8089", crawlDbPath);
+        curLoopDirPath = CrawlDirUtils.makeLoopDir(platform, baseDirPath, 1);
 
         FetcherPolicy defaultPolicy = new FetcherPolicy();
         defaultPolicy.setCrawlDelay(1);
@@ -123,14 +121,14 @@ public class DemoCrawlWorkflowLRTest implements Serializable {
             flow.complete();
 
             // Update the crawlDb path
-            crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+            crawlDbPath = platform.makePath(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
 
             // Now we should have an output/1-<timestamp>/ directory, where the
             // /urls dir has 11 entries with
             // one being previously crawled, and the other 10 being pending.
 
-            Hfs crawldbTap = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), crawlDbPath.toString());
-            TupleEntryIterator iter = crawldbTap.openForRead(conf);
+            Tap crawldbTap = platform.makeTap(platform.makeBinaryScheme(CrawlDbDatum.FIELDS), crawlDbPath);
+            TupleEntryIterator iter = crawldbTap.openForRead(platform.makeFlowProcess());
 
             int numFetched = 0;
             int numPending = 0;
@@ -154,15 +152,15 @@ public class DemoCrawlWorkflowLRTest implements Serializable {
             assertEquals(10, numPending);
 
             // Do it one more time, to verify status gets propagated forward.
-            curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, baseDirPath, 2);
+            curLoopDirPath = CrawlDirUtils.makeLoopDir(platform, baseDirPath, 2);
 
             flow = DemoCrawlWorkflow.createFlow(curLoopDirPath, crawlDbPath, defaultPolicy, userAgent, urlFilter, options);
             flow.complete();
             // Update crawldb path
-            crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+            crawlDbPath = platform.makePath(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
 
-            crawldbTap = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), crawlDbPath.toString());
-            iter = crawldbTap.openForRead(conf);
+            crawldbTap = platform.makeTap(platform.makeBinaryScheme(CrawlDbDatum.FIELDS), crawlDbPath);
+            iter = crawldbTap.openForRead(platform.makeFlowProcess());
 
             numFetched = 0;
             numPending = 0;

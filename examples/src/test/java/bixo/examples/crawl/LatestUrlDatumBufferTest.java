@@ -24,36 +24,32 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.junit.Before;
 import org.junit.Test;
 
+import bixo.config.BixoPlatform;
 import bixo.datum.UrlDatum;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
-import cascading.scheme.SequenceFile;
-import cascading.tap.Hfs;
+import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 
-import com.bixolabs.cascading.HadoopUtils;
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.BasePlatform;
 
-@SuppressWarnings("deprecation")
+
 public class LatestUrlDatumBufferTest {
 
     private static final String WORKINGDIR = "build/test/LatestUrlDatumBufferTest";
-    private static final Path _workingDirPath = new Path(WORKINGDIR);
-    private JobConf _conf = new JobConf();
 
     @Before
     public void setUp() throws IOException {
@@ -136,19 +132,23 @@ public class LatestUrlDatumBufferTest {
  */
     
     
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Test
-    public void testOperateWithGroupBy() throws IOException {
+    public void testOperateWithGroupBy() throws Exception {
+        
+        BixoPlatform platform = new BixoPlatform(true);
         
         // Create a temp file with a fetched url
-        Path fetchedDatumsPath = new Path(_workingDirPath, "fetched");
+        BasePath workingDirPath = platform.makePath(WORKINGDIR);
+        BasePath fetchedDatumsPath = platform.makePath(workingDirPath, "fetched");
         ArrayList<UrlDatum> fetchedDatums = new ArrayList<UrlDatum>();
         UrlDatum fetchedDatum1 = new UrlDatum("http://foo.com");
         fetchedDatum1.setPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD, 2L);
         fetchedDatums.add(fetchedDatum1);
-        createDataFile(fetchedDatumsPath.toString(), fetchedDatums);
+        createDataFile(platform, fetchedDatumsPath, fetchedDatums);
         
         // And another with unfetched urls
-        Path unfetchedDatumsPath = new Path(_workingDirPath, "unfetched");
+        BasePath unfetchedDatumsPath = platform.makePath(workingDirPath, "unfetched");
         ArrayList<UrlDatum> unfetchedDatums = new ArrayList<UrlDatum>();
         UrlDatum unfetchedDatum1 = new UrlDatum("http://foo.com");
         unfetchedDatum1.setPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD, 0L);
@@ -157,36 +157,35 @@ public class LatestUrlDatumBufferTest {
         unfetchedDatum2.setPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD, 0L);
         unfetchedDatums.add(unfetchedDatum2);
         
-        createDataFile(unfetchedDatumsPath.toString(), unfetchedDatums);
+        createDataFile(platform, unfetchedDatumsPath, unfetchedDatums);
 
         
         // create a workflow
-        Tap inputSource1 = new Hfs(new SequenceFile(UrlDatum.FIELDS), fetchedDatumsPath.toString());
+        Tap inputSource1 = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), fetchedDatumsPath);
         Pipe fetchedPipe = new Pipe("fetched");
-        Tap inputSource2 = new Hfs(new SequenceFile(UrlDatum.FIELDS), unfetchedDatumsPath.toString());
+        Tap inputSource2 = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), unfetchedDatumsPath);
         Pipe unfetchedPipe = new Pipe("unfetched");
 
         Map<String, Tap> sources = new HashMap<String, Tap>();
         sources.put(fetchedPipe.getName(), inputSource1);
         sources.put(unfetchedPipe.getName(), inputSource2);
 
-        Path resultsPath = new Path(_workingDirPath, "results");
-        Tap resultSink = new Hfs(new SequenceFile(UrlDatum.FIELDS), resultsPath.toString(), true);
+        BasePath resultsPath = platform.makePath(workingDirPath, "results");
+        Tap resultSink = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), resultsPath, SinkMode.REPLACE);
 
         Pipe resultsPipe = new GroupBy("results pipe", Pipe.pipes(fetchedPipe, unfetchedPipe), 
                         new Fields(UrlDatum.URL_FN));
         resultsPipe = new Every(resultsPipe, new LatestUrlDatumBuffer(), Fields.RESULTS);
 
-        Properties props = HadoopUtils.getDefaultProperties(LatestUrlDatumBufferTest.class, false, _conf);
 
-        FlowConnector flowConnector = new FlowConnector(props);
+        FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(sources, resultSink, resultsPipe);
         flow.complete();
         
         // verify that the resulting pipe has the latest tuple
         
-        Tap testSink = new Hfs(new SequenceFile(UrlDatum.FIELDS), resultsPath.toString(), false);
-        TupleEntryIterator reader = testSink.openForRead(_conf);
+        Tap testSink = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), resultsPath);
+        TupleEntryIterator reader = testSink.openForRead(platform.makeFlowProcess());
         int count = 0;
         long latest = 0;
         while (reader.hasNext()) {
@@ -203,9 +202,10 @@ public class LatestUrlDatumBufferTest {
         
     }
     
-    private void createDataFile(String fileName, List<UrlDatum> datums) throws IOException {
-        Tap urlSink = new Hfs(new SequenceFile(UrlDatum.FIELDS), fileName, true);
-        TupleEntryCollector writer = urlSink.openForWrite(_conf);
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void createDataFile(BasePlatform platform, BasePath filePath, List<UrlDatum> datums) throws Exception {
+        Tap urlSink = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), filePath, SinkMode.REPLACE);
+        TupleEntryCollector writer = urlSink.openForWrite(platform.makeFlowProcess());
         for (UrlDatum datum : datums) {
             writer.add(datum.getTuple());
         }

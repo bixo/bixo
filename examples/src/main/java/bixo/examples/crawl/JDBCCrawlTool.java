@@ -19,15 +19,13 @@ package bixo.examples.crawl;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
+import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.config.UserAgent;
@@ -36,9 +34,11 @@ import bixo.urls.BaseUrlFilter;
 import bixo.urls.SimpleUrlNormalizer;
 import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
-import cascading.flow.PlannerException;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
+
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.BasePlatform;
 
 /**
  * JDBCCrawlTool is an example of using Bixo to write a simple crawl tool.
@@ -93,11 +93,12 @@ public class JDBCCrawlTool {
     }
 
 
-    private static void importOneDomain(String targetDomain, Tap urlSink, JobConf conf) throws IOException {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static void importOneDomain(String targetDomain, Tap urlSink, BasePlatform platform) throws Exception {
 
         TupleEntryCollector writer;
         try {
-            writer = urlSink.openForWrite(conf);
+            writer = urlSink.openForWrite(platform.makeFlowProcess());
             SimpleUrlNormalizer normalizer = new SimpleUrlNormalizer();
             CrawlDbDatum datum = new CrawlDbDatum(normalizer.normalize("http://" + targetDomain), 0, 0, UrlStatus.UNFETCHED, 0);
 
@@ -109,6 +110,7 @@ public class JDBCCrawlTool {
     }
 
 
+    @SuppressWarnings("rawtypes")
     public static void main(String[] args) {
         JDBCCrawlToolOptions options = new JDBCCrawlToolOptions();
         CmdLineParser parser = new CmdLineParser(options);
@@ -143,28 +145,27 @@ public class JDBCCrawlTool {
         }
 
         try {
-            JobConf conf = new JobConf();
-            Path outputPath = new Path(outputDirName);
-            FileSystem fs = outputPath.getFileSystem(conf);
+            BixoPlatform platform = new BixoPlatform(options.isLocalMode());
+            BasePath outputPath = platform.makePath(outputDirName);
 
             // See if the user is starting from scratch
             if (options.getDbLocation() == null) {
-                if (fs.exists(outputPath)) {
+                if (outputPath.exists()) {
                     System.out.println("Warning: Previous cycle output dirs exist in : " + outputDirName);
-                    System.out.println("Warning: Delete the output dir before running");
-                    fs.delete(outputPath, true);
+                    System.out.println("Warning: Deleting the output dir before running");
+                    outputPath.delete(true);
                 }
             } else {
-                Path dbLocationPath = new Path(options.getDbLocation());
-                if (!fs.exists(dbLocationPath)) {
-                    fs.mkdirs(dbLocationPath);
+                BasePath dbLocationPath = platform.makePath(options.getDbLocation());
+                if (!dbLocationPath.exists()) {
+                    dbLocationPath.mkdirs();
                 }
             }
 
-            if (!fs.exists(outputPath)) {
-                fs.mkdirs(outputPath);
+            if (!outputPath.exists()) {
+                outputPath.mkdirs();
 
-                Path curLoopDir = CrawlDirUtils.makeLoopDir(fs, outputPath, 0);
+                BasePath curLoopDir = CrawlDirUtils.makeLoopDir(platform, outputPath, 0);
                 String curLoopDirName = curLoopDir.getName();
                 setLoopLoggerFile(logsDir + curLoopDirName, 0);
 
@@ -172,10 +173,10 @@ public class JDBCCrawlTool {
                     System.err.println("For a new crawl the domain needs to be specified" + domain);
                     printUsageAndExit(parser);
                 }
-                importOneDomain(domain, JDBCTapFactory.createUrlsSinkJDBCTap(options.getDbLocation()), conf);
+                importOneDomain(domain, JDBCTapFactory.createUrlsSinkJDBCTap(platform, options.getDbLocation()), platform);
             }
 
-            Path inputPath = CrawlDirUtils.findLatestLoopDir(fs, outputPath);
+            BasePath inputPath = CrawlDirUtils.findLatestLoopDir(platform, outputPath);
 
             if (inputPath == null) {
                 System.err.println("No previous cycle output dirs exist in " + outputDirName);
@@ -228,11 +229,11 @@ public class JDBCCrawlTool {
                     defaultPolicy.setCrawlEndTime(now + perLoopTime);
                 }
 
-                Path curLoopDir = CrawlDirUtils.makeLoopDir(fs, outputPath, curLoop);
+                BasePath curLoopDir = CrawlDirUtils.makeLoopDir(platform, outputPath, curLoop);
                 String curLoopDirName = curLoopDir.getName();
                 setLoopLoggerFile(logsDir+curLoopDirName, curLoop);
 
-                Flow flow = JDBCCrawlWorkflow.createFlow(inputPath, curLoopDir, userAgent, defaultPolicy, urlFilter, 
+                Flow flow = JDBCCrawlWorkflow.createFlow(platform, inputPath, curLoopDir, userAgent, defaultPolicy, urlFilter, 
                                 options.getMaxThreads(), options.isDebugLogging(), options.getDbLocation());
                 flow.complete();
                 // flow.writeDOT("build/valid-flow.dot");
@@ -240,11 +241,6 @@ public class JDBCCrawlTool {
                 // Input for the next round is our current output
                 inputPath = curLoopDir;
             }
-        } catch (PlannerException e) {
-            e.writeDOT("build/failed-flow.dot");
-            System.err.println("PlannerException: " + e.getMessage());
-            e.printStackTrace(System.err);
-            System.exit(-1);
         } catch (Throwable t) {
             System.err.println("Exception running tool: " + t.getMessage());
             t.printStackTrace(System.err);

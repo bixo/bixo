@@ -26,15 +26,16 @@
 	<version>1.0-SNAPSHOT</version>
 	<repositories>
 		<repository>
-			<id>Bixo</id>
-			<name>Bixo GitHub repository</name>
-			<url>http://bixo.github.com/repo/</url>
-		</repository>
-		<repository>
 			<id>Conjars</id>
 			<url>http://conjars.org/repo</url>
 		</repository>
 	</repositories>
+	
+	<properties>
+		<cascading.version>2.1.6</cascading.version>
+        <hadoop.version>1.0.4</hadoop.version>
+        <jetty.version>8.1.8.v20121106</jetty.version>
+	</properties>
 	
 	<dependencies>
 		<dependency>
@@ -58,7 +59,7 @@
 		<dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-core</artifactId>
-            <version>0.20.2</version>
+            <version>${hadoop.version}</version>
 		<scope>provided</scope>
 		<exclusions>
 			<exclusion>
@@ -71,19 +72,15 @@
 		<dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
+			<version>3.6.2</version>
         </dependency>
   
   		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-analyzers</artifactId>
-			<version>2.9.1</version>
+			<version>3.6.2</version>
 		</dependency>
 
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>1.5.8</version>
-		</dependency>
 
 		<dependency>
             <groupId>dom4j</groupId>
@@ -123,14 +120,21 @@
 		<dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-test</artifactId>
-            <version>0.20.2</version>
+            <version>${hadoop.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.mortbay.jetty</groupId>
-            <artifactId>jetty</artifactId>
-            <version>6.1.26</version>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>${jetty.version}</version>
+            <scope>test</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>${jetty.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -145,14 +149,4 @@
         
 	</dependencies>
 	
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.apache.lucene</groupId>
-				<artifactId>lucene-core</artifactId>
-				<version>2.9.1</version>
-			</dependency>
-			
-		</dependencies>
-	</dependencyManagement>
 </project>

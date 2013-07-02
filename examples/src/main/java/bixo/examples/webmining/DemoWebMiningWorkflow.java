@@ -58,20 +58,19 @@ import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
-import cascading.pipe.cogroup.OuterJoin;
-import cascading.scheme.SequenceFile;
-import cascading.scheme.TextDelimited;
-import cascading.scheme.TextLine;
-import cascading.tap.Hfs;
+import cascading.pipe.joiner.OuterJoin;
+import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.BaseSplitter;
-import com.bixolabs.cascading.HadoopUtils;
-import com.bixolabs.cascading.SplitterAssembly;
-import com.bixolabs.cascading.TupleLogger;
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.BasePlatform;
+import com.scaleunlimited.cascading.BaseSplitter;
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+import com.scaleunlimited.cascading.SplitterAssembly;
+import com.scaleunlimited.cascading.TupleLogger;
 
 @SuppressWarnings("deprecation")
 public class DemoWebMiningWorkflow {
@@ -109,7 +108,7 @@ public class DemoWebMiningWorkflow {
         
     }
     
-    @SuppressWarnings("serial")
+    @SuppressWarnings({"serial", "rawtypes"})
     private static class CreateUrlDatumFromCrawlDbDatum extends BaseOperation<Limit.Context> implements Function<Limit.Context> {
 
         private long _limit = 0;
@@ -128,7 +127,7 @@ public class DemoWebMiningWorkflow {
 
             operationCall.setContext( context );
 
-            HadoopFlowProcess process = (HadoopFlowProcess)flowProcess;
+            LoggingFlowProcess process =  new LoggingFlowProcess(flowProcess);
 
             int numTasks = 0;
 
@@ -147,6 +146,7 @@ public class DemoWebMiningWorkflow {
             context.limit += taskNum < remainingLimit ? 1 : 0;
         }
         
+        @SuppressWarnings("rawtypes")
         @Override
         public void operate(FlowProcess flowProcess, FunctionCall<Limit.Context> funcCall) {
             CrawlDbDatum datum = new CrawlDbDatum(funcCall.getArguments());
@@ -161,16 +161,16 @@ public class DemoWebMiningWorkflow {
     }
 
 
-    public static void importSeedUrls(Path crawlDbPath, String fileName) throws IOException, InterruptedException  {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public static void importSeedUrls(BasePlatform platform, BasePath crawlDbPath, String fileName) throws Exception  {
         
         SimpleUrlNormalizer normalizer = new SimpleUrlNormalizer();
-        JobConf defaultJobConf = HadoopUtils.getDefaultJobConf();
         
         InputStream is = null;
         TupleEntryCollector writer = null;
         try {
-            Tap urlSink = new Hfs(new TextLine(), crawlDbPath.toString(), true);
-            writer = urlSink.openForWrite(defaultJobConf);
+            Tap urlSink = platform.makeTap(platform.makeTextScheme(), crawlDbPath, SinkMode.REPLACE);
+            writer = urlSink.openForWrite(platform.makeFlowProcess());
 
             is = DemoWebMiningWorkflow.class.getResourceAsStream(fileName);
             if (is == null) {
@@ -190,7 +190,7 @@ public class DemoWebMiningWorkflow {
 
             writer.close();
         } catch (IOException e) {
-            HadoopUtils.safeRemove(crawlDbPath.getFileSystem(defaultJobConf), crawlDbPath);
+            crawlDbPath.delete(true);
             throw e;
         } finally {
             IoUtils.safeClose(is);
@@ -201,7 +201,8 @@ public class DemoWebMiningWorkflow {
 
     }
     
-    public static Flow createWebMiningWorkflow(Path crawlDbPath, Path curLoopDirPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, 
+    @SuppressWarnings("rawtypes")
+    public static Flow createWebMiningWorkflow(BasePlatform platform, BasePath crawlDbPath, BasePath curLoopDirPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, 
                     DemoWebMiningOptions options) throws IOException, InterruptedException {
         
         // Fetch at most 200 pages, max size of 128K, complete mode, from the current dir.
@@ -211,20 +212,16 @@ public class DemoWebMiningWorkflow {
         // be specified via options.getAnalyzer. From this we'll get outlinks, page score, and
         // any results.
         
-        JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
-        boolean isLocal = HadoopUtils.isJobLocal(conf);
-        int numReducers = HadoopUtils.getNumReducers(conf);
-        conf.setNumReduceTasks(numReducers);
-        conf.setInt("mapred.min.split.size", 64 * 1024 * 1024);
-        Properties props = HadoopUtils.getDefaultProperties(DemoWebMiningWorkflow.class, false, conf);
-        FileSystem fs = crawlDbPath.getFileSystem(conf);
+        boolean isLocal = platform.isLocal();
+        // TODO VMa - enable this 
+//        int numReducers = HadoopUtils.getNumReducers(conf);
+//        conf.setNumReduceTasks(numReducers);
+//        conf.setInt("mapred.min.split.size", 64 * 1024 * 1024);
 
         // Input : the crawldb
-        if (!fs.exists(crawlDbPath)) {
-            throw new RuntimeException("CrawlDb not found");
-        }
+        platform.assertPathExists(crawlDbPath, "CrawlDb");
 
-        Tap inputSource = new Hfs(new TextDelimited(CrawlDbDatum.FIELDS, "\t", CrawlDbDatum.TYPES), crawlDbPath.toString());
+        Tap inputSource = platform.makeTap(new TextDelimited(CrawlDbDatum.FIELDS, "\t", CrawlDbDatum.TYPES), crawlDbPath);
         Pipe importPipe = new Pipe("import pipe");
 
         // Split into tuples that are to be fetched and that have already been fetched
@@ -238,7 +235,7 @@ public class DemoWebMiningWorkflow {
         // from high to low by links score.
         // TODO add unit test
         urlsToFetchPipe = new GroupBy(urlsToFetchPipe, new Fields(CrawlDbDatum.LINKS_SCORE_FIELD), true);
-        long maxToFetch = HadoopUtils.isJobLocal(conf) ? MAX_LOCAL_FETCH : MAX_DISTRIBUTED_FETCH;
+        long maxToFetch = isLocal ? MAX_LOCAL_FETCH : MAX_DISTRIBUTED_FETCH;
         urlsToFetchPipe = new Each(urlsToFetchPipe, new CreateUrlDatumFromCrawlDbDatum(maxToFetch));
 
         BaseScoreGenerator scorer = new LinkScoreGenerator();
@@ -250,7 +247,8 @@ public class DemoWebMiningWorkflow {
         fetcher.setSocketTimeout(CrawlConfig.SOCKET_TIMEOUT);
         fetcher.setConnectionTimeout(CrawlConfig.CONNECTION_TIMEOUT);
 
-        FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, numReducers);
+        // TODO VMa - set up numReducers - once we can get the right setting, for now set to 1
+        FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, 1);
         Pipe statusPipe = new Pipe("status pipe", fetchPipe.getStatusTailPipe());
         Pipe contentPipe = new Pipe("content pipe", fetchPipe.getContentTailPipe());
         contentPipe = TupleLogger.makePipe(contentPipe, true);
@@ -276,18 +274,18 @@ public class DemoWebMiningWorkflow {
 
         
         // output : loop dir specific crawldb
-        Path outCrawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
-        Tap crawlDbSink = new Hfs(new TextLine(), outCrawlDbPath.toString());
+        BasePath outCrawlDbPath = platform.makePath(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+        Tap crawlDbSink = platform.makeTap(platform.makeTextScheme(), outCrawlDbPath, SinkMode.REPLACE);
         // Status, 
-        Path statusDirPath = new Path(curLoopDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
-        Tap statusSink = new Hfs(new TextLine(), statusDirPath.toString());
+        BasePath statusDirPath = platform.makePath(curLoopDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
+        Tap statusSink = platform.makeTap(platform.makeTextScheme(), statusDirPath);
         // Content
-        Path contentDirPath = new Path(curLoopDirPath, CrawlConfig.CONTENT_SUBDIR_NAME);
-        Tap contentSink = new Hfs(new SequenceFile(FetchedDatum.FIELDS), contentDirPath.toString());
+        BasePath contentDirPath = platform.makePath(curLoopDirPath, CrawlConfig.CONTENT_SUBDIR_NAME);
+        Tap contentSink = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentDirPath);
         
         // PageResults
-        Path resultsDirPath = new Path(curLoopDirPath, CrawlConfig.RESULTS_SUBDIR_NAME);
-        Tap resultsSink = new Hfs(new TextLine(), resultsDirPath.toString());
+        BasePath resultsDirPath = platform.makePath(curLoopDirPath, CrawlConfig.RESULTS_SUBDIR_NAME);
+        Tap resultsSink = platform.makeTap(platform.makeTextScheme(), resultsDirPath);
 
         // Create the output map that connects each tail pipe to the appropriate sink.
         Map<String, Tap> sinkMap = new HashMap<String, Tap>();
@@ -296,7 +294,7 @@ public class DemoWebMiningWorkflow {
         sinkMap.put(contentPipe.getName(), contentSink);
         sinkMap.put(resultsPipe.getName(), resultsSink);
 
-        FlowConnector flowConnector = new FlowConnector(props);
+        FlowConnector flowConnector = platform.makeFlowConnector()
         Flow flow = flowConnector.connect(inputSource, sinkMap, updatePipe, statusPipe, contentPipe, resultsPipe);
 
         return flow;

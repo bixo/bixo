@@ -18,6 +18,8 @@ package bixo.examples.crawl;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.NullContext;
+
 import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import cascading.flow.FlowProcess;
@@ -26,9 +28,8 @@ import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 import cascading.operation.OperationCall;
 
-import com.bixolabs.cascading.NullContext;
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "rawtypes"})
 public class CreateCrawlDbDatumFromUrlFunction extends BaseOperation<NullContext> implements Function<NullContext> {
     private static final Logger LOGGER = Logger.getLogger(CreateCrawlDbDatumFromUrlFunction.class);
 

@@ -23,12 +23,13 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 import org.hsqldb.Server;
 
+import com.scaleunlimited.cascading.BasePlatform;
+
 import cascading.jdbc.JDBCScheme;
 import cascading.jdbc.JDBCTap;
 import cascading.jdbc.TableDesc;
 import cascading.tap.Tap;
 
-import com.bixolabs.cascading.HadoopUtils;
 
 @SuppressWarnings("deprecation")
 public class JDBCTapFactory {
@@ -49,26 +50,26 @@ public class JDBCTapFactory {
     private static String _jdbcUrl;
     private static Server _server;
     
-    public static Tap createUrlsSourceJDBCTap(String dbLocation) {
+    public static Tap createUrlsSourceJDBCTap(BasePlatform platform, String dbLocation) {
         String[] primaryKeys = {"url"};
-        return createUrlsTap(primaryKeys, dbLocation);
+        return createUrlsTap(primaryKeys, platform, dbLocation);
 
     }
 
     // Similar to Urls Source Tap except that it doesn't have a primary key - by doing this
     // we 'fool' JDBCTap into thinking that the source and sink url taps aren't the same.
-    public static Tap createUrlsSinkJDBCTap(String dbLocation) {
+    public static Tap createUrlsSinkJDBCTap(BasePlatform platform, String dbLocation) {
         String[] primaryKeys = {};
-        return createUrlsTap(primaryKeys, dbLocation);
+        return createUrlsTap(primaryKeys, platform, dbLocation);
     }
 
-    public static Tap createUrlsSink2JDBCTap(String dbLocation) {
+    public static Tap createUrlsSink2JDBCTap(BasePlatform platform, String dbLocation) {
         String[] primaryKeys = {"lastFetched"};
-        return createUrlsTap(primaryKeys, dbLocation);
+        return createUrlsTap(primaryKeys, platform, dbLocation);
     }
 
-    private static Tap createUrlsTap(String[] primaryKeys, String dbLocation) {
-        initRunEnvironment(dbLocation);
+    private static Tap createUrlsTap(String[] primaryKeys, BasePlatform platform, String dbLocation) {
+        initRunEnvironment(platform, dbLocation);
         
         String driver = JDBC_DRIVER;
         String tableName = "urls";
@@ -80,14 +81,8 @@ public class JDBCTapFactory {
   
     }
     
-    private static void initRunEnvironment(String dbLocation) {
+    private static void initRunEnvironment(BasePlatform platform, String dbLocation) {
         if (_jdbcUrl == null) {
-            JobConf jobConf;
-            try {
-                jobConf = HadoopUtils.getDefaultJobConf();
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to get default job conf: " + e);
-            }
             
             String db = IN_MEM_DB;
             if (dbLocation != null) {
@@ -97,7 +92,8 @@ public class JDBCTapFactory {
                 }
                 db = PERSISTENT_DB_PREFIX + dbLocation + separator + DB_NAME;
             }
-            if (HadoopUtils.isJobLocal(jobConf)) {
+            
+            if (platform.isLocal()) {
                 _jdbcUrl = JDBC_URL_PREFIX + db;
             } else {
 

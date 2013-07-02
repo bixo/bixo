@@ -21,30 +21,29 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
+import org.eclipse.jetty.http.HttpException;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.Before;
 import org.junit.Test;
-import org.mortbay.jetty.Handler;
-import org.mortbay.jetty.HttpException;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
 
+import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
 import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
-import cascading.scheme.SequenceFile;
-import cascading.scheme.TextLine;
-import cascading.tap.Hfs;
+import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 
-import com.bixolabs.cascading.HadoopUtils;
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.BasePlatform;
+
 
 @SuppressWarnings("deprecation")
 public class DemoWebMiningWorkflowTest {
@@ -73,7 +72,7 @@ public class DemoWebMiningWorkflowTest {
         }
         
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext, Request baseReques, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
             
             File file = new File(_baseDir, pathInContext);
             if (!file.exists()) {
@@ -95,6 +94,7 @@ public class DemoWebMiningWorkflowTest {
                 throw new HttpException(500, e.getMessage());
             }
         }
+
     }
 
     private File _workingDir;
@@ -109,17 +109,20 @@ public class DemoWebMiningWorkflowTest {
         _workingDir.mkdirs();
     }
     
+    @SuppressWarnings("rawtypes")
     @Test
     public void testDemoWebMiningWorkflow() throws Exception {
         DemoWebMiningOptions options = new DemoWebMiningOptions();
         options.setWorkingDir(WORKING_DIR);
         options.setAgentName("test-agent");
-        Path workingDirPath = new Path(WORKING_DIR);
-        FileSystem fs = workingDirPath.getFileSystem(new JobConf());
-        DemoWebMiningTool.setupWorkingDir(fs, workingDirPath, "/test-seedurls.txt");
+        options.setLocalMode(true);
         
-        Path latestDirPath = CrawlDirUtils.findLatestLoopDir(fs, workingDirPath);
-        Path crawlDbPath = new Path(latestDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+        BixoPlatform platform = new BixoPlatform(true);
+        BasePath workingDirPath = platform.makePath(WORKING_DIR);
+        DemoWebMiningTool.setupWorkingDir(platform, workingDirPath, "/test-seedurls.txt");
+        
+        BasePath latestDirPath = CrawlDirUtils.findLatestLoopDir(platform, workingDirPath);
+        BasePath crawlDbPath = platform.makePath(latestDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
         
         FetcherPolicy fetcherPolicy = new FetcherPolicy();
         fetcherPolicy.setCrawlDelay(CrawlConfig.DEFAULT_CRAWL_DELAY);
@@ -136,39 +139,39 @@ public class DemoWebMiningWorkflowTest {
         try {
             server = startServer(new DirectoryResponseHandler("src/test/resources/test-pages"), 8089);
             
-            Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, workingDirPath, 1);
+            BasePath curLoopDirPath = CrawlDirUtils.makeLoopDir(platform, workingDirPath, 1);
 
-            Flow flow = DemoWebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options);
+            Flow flow = DemoWebMiningWorkflow.createWebMiningWorkflow(platform, crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options);
             flow.complete();
         
             // validate
-            Path statusPath = new Path(curLoopDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
-            validateEntryCount(statusPath, null, 1, "status", true);
+            BasePath statusPath = platform.makePath(curLoopDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
+            validateEntryCount(platform, statusPath, null, 1, "status", true);
     
-            Path contentPath = new Path(curLoopDirPath, CrawlConfig.CONTENT_SUBDIR_NAME);
-            validateEntryCount(contentPath, FetchedDatum.FIELDS, 1, "content", false);
+            BasePath contentPath = platform.makePath(curLoopDirPath, CrawlConfig.CONTENT_SUBDIR_NAME);
+            validateEntryCount(platform, contentPath, FetchedDatum.FIELDS, 1, "content", false);
 
-            crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
-            validateEntryCount(crawlDbPath, null, 3, "crawldb", true);
+            crawlDbPath = platform.makePath(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+            validateEntryCount(platform, crawlDbPath, null, 3, "crawldb", true);
             
             // run the second loop
-            curLoopDirPath =  CrawlDirUtils.makeLoopDir(fs, workingDirPath, 2);
-            flow = DemoWebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options);
+            curLoopDirPath =  CrawlDirUtils.makeLoopDir(platform, workingDirPath, 2);
+            flow = DemoWebMiningWorkflow.createWebMiningWorkflow(platform, crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options);
             flow.complete();
             
             // validate
-            statusPath = new Path(curLoopDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
-            validateEntryCount(statusPath, null, 2, "status", true);
+            statusPath = platform.makePath(curLoopDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
+            validateEntryCount(platform, statusPath, null, 2, "status", true);
     
-            contentPath = new Path(curLoopDirPath, CrawlConfig.CONTENT_SUBDIR_NAME);
-            validateEntryCount(contentPath, FetchedDatum.FIELDS, 2, "content", false);
+            contentPath = platform.makePath(curLoopDirPath, CrawlConfig.CONTENT_SUBDIR_NAME);
+            validateEntryCount(platform, contentPath, FetchedDatum.FIELDS, 2, "content", false);
 
-            crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
-            validateEntryCount(crawlDbPath, null, 8, "crawldb", true);
-            assertTrue(validatePageScores(crawlDbPath));
+            crawlDbPath = platform.makePath(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+            validateEntryCount(platform, crawlDbPath, null, 8, "crawldb", true);
+            assertTrue(validatePageScores(platform, crawlDbPath));
             
-            Path resultsPath = new Path(curLoopDirPath, CrawlConfig.RESULTS_SUBDIR_NAME);
-            validateEntryCount(resultsPath, null, 3, "page results", true);
+            BasePath resultsPath = platform.makePath(curLoopDirPath, CrawlConfig.RESULTS_SUBDIR_NAME);
+            validateEntryCount(platform, resultsPath, null, 3, "page results", true);
         }  finally {
             if (server != null) {
                 server.stop();
@@ -183,16 +186,17 @@ public class DemoWebMiningWorkflowTest {
         return server;
     }
 
-    private void validateEntryCount(Path dataPath, Fields fields, int expected, String msgStr, boolean isTextLine) throws IOException, InterruptedException {
-        Hfs sourceTap;
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void validateEntryCount(BasePlatform platform, BasePath dataPath, Fields fields, int expected, String msgStr, boolean isTextLine) throws Exception {
+        Tap sourceTap;
         
         if (isTextLine) {
-            sourceTap = new Hfs(new TextLine(), dataPath.toString(), false);
+            sourceTap = platform.makeTap(platform.makeTextScheme(), dataPath);
         } else {
-            sourceTap = new Hfs(new SequenceFile(fields), dataPath.toString(), false);
+            sourceTap = platform.makeTap(platform.makeBinaryScheme(fields), dataPath);
         }
         
-        TupleEntryIterator tupleEntryIterator = sourceTap.openForRead(HadoopUtils.getDefaultJobConf());
+        TupleEntryIterator tupleEntryIterator = sourceTap.openForRead(platform.makeFlowProcess());
         int numEntries = 0;
         while (tupleEntryIterator.hasNext()) {
           tupleEntryIterator.next();
@@ -203,11 +207,12 @@ public class DemoWebMiningWorkflowTest {
         assertEquals(msgStr, expected, numEntries);
     }
 
-    private boolean validatePageScores(Path dataPath) throws IOException, InterruptedException {
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private boolean validatePageScores(BasePlatform platform, BasePath  dataPath) throws Exception {
         boolean allOK = false;
         int verifiedCnt = 0;
-        Hfs sourceTap = new Hfs(new TextLine(), dataPath.toString(), false);
-        TupleEntryIterator tupleEntryIterator = sourceTap.openForRead(HadoopUtils.getDefaultJobConf());
+        Tap sourceTap = platform.makeTap(platform.makeTextScheme(), dataPath);
+        TupleEntryIterator tupleEntryIterator = sourceTap.openForRead(platform.makeFlowProcess());
         while (tupleEntryIterator.hasNext()) {
           TupleEntry next = tupleEntryIterator.next();
           String line = next.getString("line");

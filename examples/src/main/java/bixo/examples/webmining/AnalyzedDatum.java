@@ -16,11 +16,12 @@
  */
 package bixo.examples.webmining;
 
+import com.scaleunlimited.cascading.BaseDatum;
+
 import bixo.datum.Outlink;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 
-import com.bixolabs.cascading.BaseDatum;
 
 @SuppressWarnings("serial")
 public class AnalyzedDatum extends BaseDatum {
