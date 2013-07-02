@@ -31,6 +31,8 @@ import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.io.SAXWriter;
 
+import com.scaleunlimited.cascading.NullContext;
+
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.examples.crawl.SimpleBodyContentHandler;
@@ -39,7 +41,6 @@ import cascading.flow.FlowProcess;
 import cascading.operation.OperationCall;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("serial")
 public class AnalyzeHtml extends DOMParser {

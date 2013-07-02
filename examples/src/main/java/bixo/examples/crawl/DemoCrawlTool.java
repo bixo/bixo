@@ -18,15 +18,13 @@ package bixo.examples.crawl;
 
 import java.util.List;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
+import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.config.UserAgent;
@@ -35,13 +33,13 @@ import bixo.urls.BaseUrlFilter;
 import bixo.urls.SimpleUrlNormalizer;
 import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
-import cascading.flow.PlannerException;
-import cascading.scheme.SequenceFile;
-import cascading.tap.Hfs;
+import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.HadoopUtils;
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.BasePlatform;
+
 
 @SuppressWarnings("deprecation")
 public class DemoCrawlTool {
@@ -87,11 +85,12 @@ public class DemoCrawlTool {
         
     }
 
-    public static void importOneDomain(String targetDomain, Path crawlDbPath, JobConf conf) throws Exception {
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public static void importOneDomain(BasePlatform platform, String targetDomain, BasePath crawlDbPath) throws Exception {
         
         try {
-            Tap urlSink = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), crawlDbPath.toUri().toString(), true);
-            TupleEntryCollector writer = urlSink.openForWrite(conf);
+            Tap urlSink = platform.makeTap(platform.makeBinaryScheme(CrawlDbDatum.FIELDS), crawlDbPath, SinkMode.REPLACE);
+            TupleEntryCollector writer = urlSink.openForWrite(platform.makeFlowProcess());
             SimpleUrlNormalizer normalizer = new SimpleUrlNormalizer();
 
             CrawlDbDatum datum = new CrawlDbDatum(normalizer.normalize("http://" + targetDomain), 0, 0, UrlStatus.UNFETCHED, 0);
@@ -99,17 +98,12 @@ public class DemoCrawlTool {
             writer.add(datum.getTuple());
             writer.close();
         } catch (Exception e) {
-            HadoopUtils.safeRemove(crawlDbPath.getFileSystem(conf), crawlDbPath);
             throw e;
         }
     }
 
-    private static void importUrls(String urlsFile, Path crawlDbPath) throws Exception {
-        Path urlsPath = new Path(urlsFile);
-        UrlImporter urlImporter = new UrlImporter(urlsPath, crawlDbPath);
-        urlImporter.importUrls(false);
-    }
 
+    @SuppressWarnings("rawtypes")
     public static void main(String[] args) {
         DemoCrawlToolOptions options = new DemoCrawlToolOptions();
         CmdLineParser parser = new CmdLineParser(options);
@@ -155,46 +149,45 @@ public class DemoCrawlTool {
         }
         
         try {
-            JobConf conf = new JobConf();
-            Path outputPath = new Path(outputDirName);
-            FileSystem fs = outputPath.getFileSystem(conf);
+            BixoPlatform platform = new BixoPlatform(options.isLocalMode());
+            BasePath outputPath = platform.makePath(outputDirName);
 
             // First check if the user want to clean
             if (options.isCleanOutputDir()) {
-                if (fs.exists(outputPath)) {
-                    fs.delete(outputPath, true);
+                if (outputPath.exists()) {
+                    outputPath.delete(true);
                 }
             }
             
             // See if the user isn't starting from scratch then set up the 
             // output directory and create an initial urls subdir.
-            if (!fs.exists(outputPath)) {
-                fs.mkdirs(outputPath);
+            if (!outputPath.exists()) {
+                outputPath.mkdirs();
 
                 // Create a "0-<timestamp>" sub-directory with just a /crawldb subdir
                 // In the /crawldb dir the input file will have a single URL for the target domain.
 
-                Path curLoopDir = CrawlDirUtils.makeLoopDir(fs, outputPath, 0);
+                BasePath curLoopDir = CrawlDirUtils.makeLoopDir(platform, outputPath, 0);
                 String curLoopDirName = curLoopDir.getName();
                 setLoopLoggerFile(logsDir + curLoopDirName, 0);
-
-                Path crawlDbPath = new Path(curLoopDir, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+                BasePath crawlDbPath = platform.makePath(curLoopDir, CrawlConfig.CRAWLDB_SUBDIR_NAME);
                 
                 if (domain != null) {
-                    importOneDomain(domain, crawlDbPath, conf);
+                    importOneDomain(platform, domain, crawlDbPath);
                 } else {
-                    importUrls(urlsFile, crawlDbPath);
-                }
+                    BasePath urlsPath = platform.makePath(urlsFile);
+                    UrlImporter urlImporter = new UrlImporter(platform, urlsPath, crawlDbPath);
+                    urlImporter.importUrls(false);                }
             }
             
-            Path latestDirPath = CrawlDirUtils.findLatestLoopDir(fs, outputPath);
+            BasePath latestDirPath = CrawlDirUtils.findLatestLoopDir(platform, outputPath);
 
             if (latestDirPath == null) {
                 System.err.println("No previous cycle output dirs exist in " + outputDirName);
                 printUsageAndExit(parser);
             }
 
-            Path crawlDbPath = new Path(latestDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+            BasePath crawlDbPath = platform.makePath(latestDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
 
             // Set up the start and end loop counts.
             int startLoop = CrawlDirUtils.extractLoopNumber(latestDirPath);
@@ -249,7 +242,7 @@ public class DemoCrawlTool {
                     defaultPolicy.setCrawlEndTime(now + perLoopTime);
                 }
 
-                Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, outputPath, curLoop);
+                BasePath curLoopDirPath = CrawlDirUtils.makeLoopDir(platform, outputPath, curLoop);
                 String curLoopDirName = curLoopDirPath.getName();
                 setLoopLoggerFile(logsDir+curLoopDirName, curLoop);
 
@@ -260,13 +253,8 @@ public class DemoCrawlTool {
 //              flow.writeDOT("build/valid-flow.dot");
 
                 // Update crawlDbPath to point to the latest crawl db
-                crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+                crawlDbPath = platform.makePath(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
             }
-        } catch (PlannerException e) {
-            e.writeDOT("build/failed-flow.dot");
-            System.err.println("PlannerException: " + e.getMessage());
-            e.printStackTrace(System.err);
-            System.exit(-1);
         } catch (Throwable t) {
             System.err.println("Exception running tool: " + t.getMessage());
             t.printStackTrace(System.err);

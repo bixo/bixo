@@ -24,6 +24,7 @@ public class DemoStatusToolOptions {
     private boolean _debugLogging = false;
     private boolean _exportDb = false;
     private String _workingDir;
+    private boolean _localMode;
     
     @Option(name = "-d", usage = "debug logging", required = false)
     public void setDebugLogging(boolean debugLogging) {
@@ -52,6 +53,15 @@ public class DemoStatusToolOptions {
         return _exportDb;
     }
     
+    @Option(name = "-localmode", usage = "run in Cascading local mode", required = false)
+    public void setLocalMode(boolean localMode) {
+        _localMode = localMode;
+    }
+
+    public boolean isLocalMode() {
+        return _localMode;
+    }
+
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);

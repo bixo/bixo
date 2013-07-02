@@ -18,6 +18,8 @@ package bixo.examples.webmining;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.NullContext;
+
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
@@ -27,7 +29,6 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("serial")
 public class CreateResultsFunction extends BaseOperation<NullContext> implements Function<NullContext> {

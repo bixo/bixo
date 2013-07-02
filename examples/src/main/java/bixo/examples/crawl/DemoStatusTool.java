@@ -16,27 +16,21 @@
  */
 package bixo.examples.crawl;
 
-import java.io.IOException;
-
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
+import bixo.config.BixoPlatform;
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlStatus;
 import bixo.utils.CrawlDirUtils;
-import cascading.scheme.SequenceFile;
-import cascading.scheme.TextLine;
-import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 
-@SuppressWarnings("deprecation")
+import com.scaleunlimited.cascading.BasePath;
+
 public class DemoStatusTool {
 	private static final Logger LOGGER = Logger.getLogger(DemoStatusTool.class);
 	
@@ -45,11 +39,12 @@ public class DemoStatusTool {
         System.exit(-1);
     }
 
-	private static void processStatus(JobConf conf, Path curDirPath) throws IOException {
-        Path statusPath = new Path(curDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
-        Tap statusTap = new Hfs(new TextLine(), statusPath.toUri().toString());
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+    private static void processStatus(BixoPlatform platform, BasePath curDirPath) throws Exception {
+        BasePath statusPath = platform.makePath(curDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
+        Tap statusTap = platform.makeTap(platform.makeTextScheme(), statusPath);
         
-        TupleEntryIterator iter = statusTap.openForRead(conf);
+        TupleEntryIterator iter = statusTap.openForRead(platform.makeFlowProcess());
         
         LOGGER.info("Analyzing: " +  CrawlConfig.STATUS_SUBDIR_NAME);
         UrlStatus[] statusValues = UrlStatus.values();
@@ -76,12 +71,13 @@ public class DemoStatusTool {
         LOGGER.info("");
     }
 
-    private static void processCrawlDb(JobConf conf, Path curDirPath, boolean exportDb) throws IOException {
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private static void processCrawlDb(BixoPlatform platform, BasePath latestCrawlDirPath, boolean exportDb) throws Exception {
         TupleEntryIterator iter;
         int totalEntries;
-        Path crawlDbPath = new Path(curDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
-        Tap crawldbTap = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), crawlDbPath.toUri().toString());
-        iter = crawldbTap.openForRead(conf);
+        BasePath crawlDbPath = platform.makePath(latestCrawlDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+        Tap crawldbTap = platform.makeTap(platform.makeBinaryScheme(CrawlDbDatum.FIELDS), crawlDbPath);
+        iter = crawldbTap.openForRead(platform.makeFlowProcess());
         totalEntries = 0;
         int fetchedUrls = 0;
         int unfetchedUrls = 0;
@@ -124,27 +120,23 @@ public class DemoStatusTool {
         String crawlDirName = options.getWorkingDir();
 
         try {
-        	JobConf conf = new JobConf();
-        	Path crawlDirPath = new Path(crawlDirName);
-        	FileSystem fs = crawlDirPath.getFileSystem(conf);
+            BixoPlatform platform = new BixoPlatform(options.isLocalMode());
+        	BasePath crawlDirPath = platform.makePath(crawlDirName);
 
-        	if (!fs.exists(crawlDirPath)) {
-    			System.err.println("Prior crawl output directory does not exist: " + crawlDirName);
-    			System.exit(-1);
-        	}
+        	platform.assertPathExists(crawlDirPath, "Prior crawl output directory does not exist");
         	
         	// Skip Hadoop/Cascading DEBUG messages.
         	Logger.getRootLogger().setLevel(Level.INFO);
         	
         	boolean exportDb = options.isExportDb();
         	if (exportDb) {
-        	    Path latestCrawlDirPath = CrawlDirUtils.findLatestLoopDir(fs, crawlDirPath);
-        	    processCrawlDb(conf, latestCrawlDirPath, exportDb);
+        	    BasePath latestCrawlDirPath = CrawlDirUtils.findLatestLoopDir(platform, crawlDirPath);
+        	    processCrawlDb(platform, latestCrawlDirPath, exportDb);
         	} else {
             	int prevLoop = -1;
-            	Path curDirPath = null;
-            	while ((curDirPath = CrawlDirUtils.findNextLoopDir(fs, crawlDirPath, prevLoop)) != null) {
-            		String curDirName = curDirPath.toUri().toString();
+            	BasePath curDirPath = null;
+            	while ((curDirPath = CrawlDirUtils.findNextLoopDir(platform, crawlDirPath, prevLoop)) != null) {
+            		String curDirName = curDirPath.getAbsolutePath();
             		LOGGER.info("");
             		LOGGER.info("================================================================");
             		LOGGER.info("Processing " + curDirName);
@@ -158,8 +150,8 @@ public class DemoStatusTool {
             		prevLoop = curLoop;
             		
             		// Process the status and crawldb in curPath
-            		processStatus(conf, curDirPath);
-                    processCrawlDb(conf, curDirPath, exportDb);
+            		processStatus(platform, curDirPath);
+                    processCrawlDb(platform, curDirPath, exportDb);
                     
             	}
         	}

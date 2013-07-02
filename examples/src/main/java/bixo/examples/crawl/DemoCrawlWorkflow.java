@@ -17,20 +17,15 @@
 package bixo.examples.crawl;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 
+import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.ParserPolicy;
 import bixo.config.UserAgent;
@@ -40,7 +35,6 @@ import bixo.datum.UrlDatum;
 import bixo.fetcher.SimpleHttpFetcher;
 import bixo.operations.BaseScoreGenerator;
 import bixo.operations.FixedScoreGenerator;
-import bixo.operations.NormalizeUrlFunction;
 import bixo.operations.UrlFilter;
 import bixo.parser.BoilerpipeContentExtractor;
 import bixo.parser.HtmlContentExtractor;
@@ -64,22 +58,19 @@ import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
-import cascading.scheme.SequenceFile;
-import cascading.scheme.TextLine;
-import cascading.scheme.WritableSequenceFile;
-import cascading.tap.Hfs;
+import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 
-import com.bixolabs.cascading.BaseSplitter;
-import com.bixolabs.cascading.HadoopUtils;
-import com.bixolabs.cascading.NullContext;
-import com.bixolabs.cascading.SplitterAssembly;
-import com.bixolabs.cascading.TupleLogger;
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.BaseSplitter;
+import com.scaleunlimited.cascading.NullContext;
+import com.scaleunlimited.cascading.SplitterAssembly;
+import com.scaleunlimited.cascading.TupleLogger;
 
 
-@SuppressWarnings("deprecation")
+
 public class DemoCrawlWorkflow {
 
     private static final Logger LOGGER = Logger.getLogger(DemoCrawlWorkflow.class);
@@ -101,7 +92,7 @@ public class DemoCrawlWorkflow {
         }
     }
 
-    @SuppressWarnings("serial")
+    @SuppressWarnings({"serial", "rawtypes"})
     private static class CreateUrlDatumFromCrawlDbFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 
         public CreateUrlDatumFromCrawlDbFunction() {
@@ -132,20 +123,17 @@ public class DemoCrawlWorkflow {
     }
 
     
-    public static Flow createFlow(Path curWorkingDirPath, Path crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, DemoCrawlToolOptions options) throws Throwable {
-        JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
-        int numReducers = HadoopUtils.getNumReducers(conf);
-        conf.setNumReduceTasks(numReducers);
-        Properties props = HadoopUtils.getDefaultProperties(DemoCrawlWorkflow.class, options.isDebugLogging(), conf);
-        FileSystem fs = curWorkingDirPath.getFileSystem(conf);
+    @SuppressWarnings("rawtypes")
+    public static Flow createFlow(BasePath curWorkingDirPath, BasePath crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, DemoCrawlToolOptions options) throws Throwable {
+
+        BixoPlatform platform = new BixoPlatform(options.isLocalMode());
+//  TODO VMa      platform.setNumReduceTasks(numReduceTasks)
 
         // Input : the crawldb
-        if (!fs.exists(crawlDbPath)) {
-            throw new RuntimeException("CrawlDb doesn't exist at " + crawlDbPath);
-        }
+        platform.assertPathExists(crawlDbPath, "CrawlDb doesn't exist");
 
         // Our crawl db is defined by the CrawlDbDatum
-        Tap inputSource = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), crawlDbPath.toString());
+        Tap inputSource = platform.makeTap(platform.makeBinaryScheme(CrawlDbDatum.FIELDS), crawlDbPath);
         Pipe importPipe = new Pipe("import pipe");
 
         // Split into tuples that are to be fetched and that have already been fetched
@@ -165,17 +153,17 @@ public class DemoCrawlWorkflow {
         //      content
         //      parse
         //      status
-        Path outCrawlDbPath = new Path(curWorkingDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
-        Tap loopCrawldbSink = new Hfs(new SequenceFile(CrawlDbDatum.FIELDS), outCrawlDbPath.toString());
+        BasePath outCrawlDbPath = platform.makePath(curWorkingDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+        Tap loopCrawldbSink = platform.makeTap(platform.makeBinaryScheme(CrawlDbDatum.FIELDS), outCrawlDbPath, SinkMode.REPLACE);
 
-        Path contentDirPath = new Path(curWorkingDirPath, CrawlConfig.CONTENT_SUBDIR_NAME);
-        Tap contentSink = new Hfs(new SequenceFile(FetchedDatum.FIELDS), contentDirPath.toString());
+        BasePath contentDirPath = platform.makePath(curWorkingDirPath, CrawlConfig.CONTENT_SUBDIR_NAME);
+        Tap contentSink = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentDirPath, SinkMode.REPLACE);
 
-        Path parseDirPath = new Path(curWorkingDirPath, CrawlConfig.PARSE_SUBDIR_NAME);
-        Tap parseSink = new Hfs(new SequenceFile(ParsedDatum.FIELDS), parseDirPath.toString());
+        BasePath parseDirPath = platform.makePath(curWorkingDirPath, CrawlConfig.PARSE_SUBDIR_NAME);
+        Tap parseSink = platform.makeTap(platform.makeBinaryScheme(ParsedDatum.FIELDS), parseDirPath, SinkMode.REPLACE);
 
-        Path statusDirPath = new Path(curWorkingDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
-        Tap statusSink = new Hfs(new TextLine(), statusDirPath.toString());
+        BasePath statusDirPath = platform.makePath(curWorkingDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
+        Tap statusSink = platform.makeTap(platform.makeTextScheme(), statusDirPath, SinkMode.REPLACE);
 
         // Create the sub-assembly that runs the fetch job
         SimpleHttpFetcher fetcher = new SimpleHttpFetcher(options.getMaxThreads(), fetcherPolicy, userAgent);
@@ -195,7 +183,8 @@ public class DemoCrawlWorkflow {
         // are fetched first. If URLs are skipped for any reason(s) lower scoring URLs are skipped.
         BaseScoreGenerator scorer = new FixedScoreGenerator();
 
-        FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, numReducers);
+        // TODO VMa - get the numReducers and pass that to the FetchPipe
+        FetchPipe fetchPipe = new FetchPipe(urlsToFetchPipe, scorer, fetcher, 1);
         Pipe statusPipe = new Pipe("status pipe", fetchPipe.getStatusTailPipe());
         Pipe contentPipe = new Pipe("content pipe", fetchPipe.getContentTailPipe());
         contentPipe = TupleLogger.makePipe(contentPipe, true);
@@ -213,8 +202,8 @@ public class DemoCrawlWorkflow {
         parser.setExtractLanguage(false);
         ParsePipe parsePipe = new ParsePipe(contentPipe, parser);
 
-        Tap writableSeqFileSink = null;
-        Pipe writableSeqFileDataPipe = null;
+//        Tap writableSeqFileSink = null;
+//        Pipe writableSeqFileDataPipe = null;
         
         // Create the output map that connects each tail pipe to the appropriate sink, and the
         // list of tail pipes.
@@ -226,19 +215,21 @@ public class DemoCrawlWorkflow {
             Pipe textParsePipe = new Pipe("text parse data", parsePipe.getTailPipe());
             textParsePipe = new Each(textParsePipe, new Fields(ParsedDatum.PARSED_TEXT_FN), new RegexReplace(new Fields(ParsedDatum.PARSED_TEXT_FN), "[\\r\\n\\t]+", " ", true), Fields.REPLACE);
             textParsePipe = new Each(textParsePipe, new Fields(ParsedDatum.URL_FN, ParsedDatum.PARSED_TEXT_FN), new Identity());
-            Path textParsePath = new Path(curWorkingDirPath, CrawlConfig.HTML_SUBDIR_NAME);
-            Tap textParseTap = new Hfs(new TextLine(), textParsePath.toString(), true);
+            BasePath textParsePath = platform.makePath(curWorkingDirPath, CrawlConfig.HTML_SUBDIR_NAME);
+            Tap textParseTap = platform.makeTap(platform.makeTextScheme(), textParsePath, SinkMode.REPLACE);
             sinkMap.put(textParsePipe.getName(), textParseTap);
             tailPipes.add(textParsePipe);
         }
         
         // Let's output a WritableSequenceFile as an example - this file can
         // then be used as input when working with Mahout.
-        writableSeqFileDataPipe = new Pipe("writable seqfile data", new Each(parsePipe.getTailPipe(), new CreateWritableSeqFileData()));
+//        writableSeqFileDataPipe = new Pipe("writable seqfile data", new Each(parsePipe.getTailPipe(), new CreateWritableSeqFileData()));
 
-        Path writableSeqFileDataPath = new Path(curWorkingDirPath, CrawlConfig.EXTRACTED_TEXT_SUBDIR_NAME);
-        writableSeqFileSink = new Hfs(new WritableSequenceFile(new Fields(CrawlConfig.WRITABLE_SEQ_FILE_KEY_FN, CrawlConfig.WRITABLE_SEQ_FILE_VALUE_FN), Text.class, Text.class),
-                        writableSeqFileDataPath.toString());
+        // TODO VMa - set up the writable seq file
+        
+//        BasePath writableSeqFileDataPath = platform.makePath(curWorkingDirPath, CrawlConfig.EXTRACTED_TEXT_SUBDIR_NAME);
+//        writableSeqFileSink = new Hfs(new WritableSequenceFile(new Fields(CrawlConfig.WRITABLE_SEQ_FILE_KEY_FN, CrawlConfig.WRITABLE_SEQ_FILE_VALUE_FN), Text.class, Text.class),
+//                        writableSeqFileDataPath.toString());
         
         Pipe urlFromOutlinksPipe = new Pipe("url from outlinks", parsePipe.getTailPipe());
         urlFromOutlinksPipe = new Each(urlFromOutlinksPipe, new CreateUrlDatumFromOutlinksFunction(new SimpleUrlNormalizer(), new SimpleUrlValidator()));
@@ -282,10 +273,11 @@ public class DemoCrawlWorkflow {
         sinkMap.put(outputPipe.getName(), loopCrawldbSink);
         tailPipes.add(outputPipe);
 
-        sinkMap.put(writableSeqFileDataPipe.getName(), writableSeqFileSink);
-        tailPipes.add(writableSeqFileDataPipe);
+        // TODO VMa -enable this once we have set up the writable seq file
+//        sinkMap.put(writableSeqFileDataPipe.getName(), writableSeqFileSink);
+//        tailPipes.add(writableSeqFileDataPipe);
         
-        FlowConnector flowConnector = new FlowConnector(props);
+        FlowConnector flowConnector = platform.makeFlowConnector();
         Flow flow = flowConnector.connect(inputSource, sinkMap, tailPipes.toArray(new Pipe[tailPipes.size()]));
 
         return flow;

@@ -20,9 +20,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -30,11 +27,15 @@ import org.apache.tika.parser.html.HtmlParser;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
+import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.config.UserAgent;
 import bixo.utils.CrawlDirUtils;
 import cascading.flow.Flow;
+
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.BasePlatform;
 
 @SuppressWarnings("deprecation")
 public class DemoWebMiningTool {
@@ -46,24 +47,24 @@ public class DemoWebMiningTool {
         System.exit(-1);
     }
 
-    static void setupWorkingDir(FileSystem fs, Path workingDirPath, String seedUrlsfileName) throws Exception {
+    static void setupWorkingDir(BasePlatform platform, BasePath workingDirPath, String seedUrlsfileName) throws Exception {
         
         // Check if we already have a crawldb
-        Path crawlDbPath = null;
-        Path loopDirPath = CrawlDirUtils.findLatestLoopDir(fs, workingDirPath);
+        BasePath crawlDbPath = null;
+        BasePath loopDirPath = CrawlDirUtils.findLatestLoopDir(platform, workingDirPath);
         if (loopDirPath != null) {
             // Clear out any previous loop directory, so we're always starting from scratch
             LOGGER.info("deleting existing working dir");
             while (loopDirPath != null) {
-                fs.delete(loopDirPath, true);
-                loopDirPath = CrawlDirUtils.findLatestLoopDir(fs, workingDirPath);
+                loopDirPath.delete(true);
+                loopDirPath = CrawlDirUtils.findLatestLoopDir(platform, workingDirPath);
             }
         } 
 
         // Create a "0-<timestamp>" loop sub-directory and import the seed urls
-        loopDirPath = CrawlDirUtils.makeLoopDir(fs, workingDirPath, 0);
-        crawlDbPath = new Path(loopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
-        DemoWebMiningWorkflow.importSeedUrls(crawlDbPath, seedUrlsfileName);
+        loopDirPath = CrawlDirUtils.makeLoopDir(platform, workingDirPath, 0);
+        crawlDbPath = platform.makePath(loopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+        DemoWebMiningWorkflow.importSeedUrls(platform, crawlDbPath, seedUrlsfileName);
 
 
     }
@@ -73,6 +74,7 @@ public class DemoWebMiningTool {
         printUsageAndExit(parser);
     }
 
+    @SuppressWarnings("rawtypes")
     public static void main(String[] args) throws IOException {
         
         DemoWebMiningOptions options = new DemoWebMiningOptions();
@@ -88,19 +90,17 @@ public class DemoWebMiningTool {
         // Build and run the flow.
         
         try {
-            
-            Path workingDirPath = new Path(options.getWorkingDir());
+            BixoPlatform platform = new BixoPlatform(options.isLocalMode());
+            BasePath workingDirPath = platform.makePath(options.getWorkingDir());
 
-            JobConf conf = new JobConf();
-            FileSystem fs = workingDirPath.getFileSystem(conf);
-            setupWorkingDir(fs, workingDirPath, CrawlConfig.SEED_URLS_FILENAME);
+            setupWorkingDir(platform, workingDirPath, CrawlConfig.SEED_URLS_FILENAME);
  
-            Path latestDirPath = CrawlDirUtils.findLatestLoopDir(fs, workingDirPath);
+            BasePath latestDirPath = CrawlDirUtils.findLatestLoopDir(platform, workingDirPath);
             if (latestDirPath == null) {
                 error("No previous cycle output dirs exist in " + workingDirPath, parser);
             }
             
-            Path crawlDbPath = new Path(latestDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+            BasePath crawlDbPath = platform.makePath(latestDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
             
             UserAgent userAgent = new UserAgent(options.getAgentName(), CrawlConfig.EMAIL_ADDRESS, CrawlConfig.WEB_ADDRESS);
             
@@ -120,12 +120,12 @@ public class DemoWebMiningTool {
 
             // Let's limit our crawl to two loops 
             for (int curLoop = 1; curLoop <= 2; curLoop++) {
-                Path curLoopDirPath = CrawlDirUtils.makeLoopDir(fs, workingDirPath, curLoop);
-                Flow flow = DemoWebMiningWorkflow.createWebMiningWorkflow(crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options);
+                BasePath curLoopDirPath = CrawlDirUtils.makeLoopDir(platform, workingDirPath, curLoop);
+                Flow flow = DemoWebMiningWorkflow.createWebMiningWorkflow(platform, crawlDbPath, curLoopDirPath, fetcherPolicy, userAgent, options);
                 flow.complete();
 
                 // Update crawlDbPath to point to the latest crawl db
-                crawlDbPath = new Path(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
+                crawlDbPath = platform.makePath(curLoopDirPath, CrawlConfig.CRAWLDB_SUBDIR_NAME);
             }
             
         } catch (Exception e) {

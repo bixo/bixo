@@ -18,6 +18,8 @@ package bixo.examples.webmining;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.NullContext;
+
 import bixo.datum.Outlink;
 import bixo.urls.SimpleUrlNormalizer;
 import bixo.urls.SimpleUrlValidator;
@@ -28,7 +30,6 @@ import cascading.operation.FunctionCall;
 import cascading.operation.OperationCall;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.NullContext;
 
 @SuppressWarnings("serial")
 public class CreateLinkDatumFromOutlinksFunction extends BaseOperation<NullContext> implements Function<NullContext> {

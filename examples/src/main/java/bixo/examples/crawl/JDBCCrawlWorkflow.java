@@ -20,9 +20,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 
 import bixo.config.FetcherPolicy;
@@ -53,21 +50,18 @@ import cascading.pipe.Each;
 import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
-import cascading.scheme.SequenceFile;
-import cascading.scheme.TextLine;
-import cascading.tap.Hfs;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 
-import com.bixolabs.cascading.HadoopUtils;
-import com.bixolabs.cascading.NullContext;
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.BasePlatform;
+import com.scaleunlimited.cascading.NullContext;
 
-@SuppressWarnings("deprecation")
 public class JDBCCrawlWorkflow {
     private static final Logger LOGGER = Logger.getLogger(JDBCCrawlWorkflow.class);
 
-    @SuppressWarnings("serial")
+    @SuppressWarnings({"serial", "rawtypes"})
     private static class BestUrlToFetchBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
         
         private long _numSelected = 0;
@@ -114,19 +108,20 @@ public class JDBCCrawlWorkflow {
     }
 
     
-    public static Flow createFlow(Path inputDir, Path curLoopDirPath, UserAgent userAgent, FetcherPolicy fetcherPolicy,
+    @SuppressWarnings("rawtypes")
+    public static Flow createFlow(BasePlatform platform, BasePath inputDir, BasePath curLoopDirPath, UserAgent userAgent, FetcherPolicy fetcherPolicy,
                     BaseUrlFilter urlFilter, int maxThreads, boolean debug, String persistentDbLocation) throws Throwable {
-        JobConf conf = HadoopUtils.getDefaultJobConf(CrawlConfig.CRAWL_STACKSIZE_KB);
-        int numReducers = HadoopUtils.getNumReducers(conf);
-        conf.setNumReduceTasks(numReducers);
 
-        FileSystem fs = curLoopDirPath.getFileSystem(conf);
+        // TODO VMa - fix this
+//        int numReducers = HadoopUtils.getNumReducers(conf);
+//        conf.setNumReduceTasks(numReducers);
 
-        if (!fs.exists(inputDir)) {
+
+        if (!inputDir.exists()) {
             throw new IllegalStateException(String.format("Input directory %s doesn't exist", inputDir));
         }
 
-        Tap inputSource = JDBCTapFactory.createUrlsSourceJDBCTap(persistentDbLocation);
+        Tap inputSource = JDBCTapFactory.createUrlsSourceJDBCTap(platform, persistentDbLocation);
 
         // Read _everything_ in initially
         // Group on the url, and select the best urls to best
@@ -134,24 +129,25 @@ public class JDBCCrawlWorkflow {
         importPipe = new GroupBy(importPipe, new Fields(CrawlDbDatum.URL_FIELD));
         importPipe = new Every(importPipe, new BestUrlToFetchBuffer(), Fields.RESULTS);
 
-        Path contentPath = new Path(curLoopDirPath, CrawlConfig.CONTENT_SUBDIR_NAME);
-        Tap contentSink = new Hfs(new SequenceFile(FetchedDatum.FIELDS), contentPath.toString());
+        BasePath contentPath = platform.makePath(curLoopDirPath, CrawlConfig.CONTENT_SUBDIR_NAME);
+        Tap contentSink = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath);
 
-        Path parsePath = new Path(curLoopDirPath, CrawlConfig.PARSE_SUBDIR_NAME);
-        Tap parseSink = new Hfs(new SequenceFile(ParsedDatum.FIELDS), parsePath.toString());
+        BasePath parsePath = platform.makePath(curLoopDirPath, CrawlConfig.PARSE_SUBDIR_NAME);
+        Tap parseSink = platform.makeTap(platform.makeBinaryScheme(ParsedDatum.FIELDS), parsePath);
         
-        Path statusDirPath = new Path(curLoopDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
-        Tap statusSink = new Hfs(new TextLine(), statusDirPath.toString());
+        BasePath statusDirPath = platform.makePath(curLoopDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
+        Tap statusSink = platform.makeTap(platform.makeTextScheme(), statusDirPath);
 
         // NOTE: The source and sink for CrawlDbDatums is essentially the same database -
         // since cascading doesn't allow you to use the same tap for source and 
         // sink we fake it by creating two separate taps.
-        Tap urlSink = JDBCTapFactory.createUrlsSinkJDBCTap(persistentDbLocation);
+        Tap urlSink = JDBCTapFactory.createUrlsSinkJDBCTap(platform, persistentDbLocation);
 
         // Create the sub-assembly that runs the fetch job
         BaseFetcher fetcher = new SimpleHttpFetcher(maxThreads, fetcherPolicy, userAgent);
         BaseScoreGenerator scorer = new FixedScoreGenerator();
-        FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, numReducers);
+        // TODO VMa - fix numReducers once we have that sorted out  - for now use 1
+        FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, 1);
 
         Pipe statusPipe = new Pipe("status pipe", fetchPipe.getStatusTailPipe());
 
@@ -184,7 +180,7 @@ public class JDBCCrawlWorkflow {
         sinkMap.put(outputPipe.getName(), urlSink);
         
         // Finally we can run it.
-        FlowConnector flowConnector = new FlowConnector(HadoopUtils.getDefaultProperties(JDBCCrawlWorkflow.class, debug, conf));
+        FlowConnector flowConnector = platform.makeFlowConnector();
         return flowConnector.connect(inputSource, sinkMap, statusPipe, fetchPipe.getContentTailPipe(), parsePipe.getTailPipe(), outputPipe);
             
     }
