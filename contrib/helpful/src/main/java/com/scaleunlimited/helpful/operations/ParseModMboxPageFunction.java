@@ -30,6 +30,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import com.scaleunlimited.cascading.NullContext;
+
 import bixo.datum.FetchedDatum;
 import bixo.datum.UrlDatum;
 import cascading.flow.FlowProcess;
@@ -38,9 +40,8 @@ import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 import cascading.tuple.TupleEntry;
 
-import com.bixolabs.cascading.NullContext;
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "rawtypes"})
 public class ParseModMboxPageFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 	private static final Logger LOGGER = Logger.getLogger(ParseModMboxPageFunction.class);
 	

@@ -20,6 +20,8 @@ import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.NullContext;
+
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
@@ -29,9 +31,8 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
-import com.bixolabs.cascading.NullContext;
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "rawtypes"})
 public class CalcMessageScoreBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
 	private static final Logger LOGGER = Logger.getLogger(CalcMessageScoreBuffer.class);
 		
@@ -41,7 +42,7 @@ public class CalcMessageScoreBuffer extends BaseOperation<NullContext> implement
 		super(OUTPUT_FIELDS);
 	}
 	
-	@Override
+    @Override
 	public void operate(FlowProcess process, BufferCall<NullContext> bufferCall) {
 		String email = null;
 		String name = null;
