@@ -98,7 +98,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
             
             // Give threads a chance to run, as otherwise we might call verify() before one of the ProcessRobotsTask
             // threads has been started.
-            op.cleanup(fp, oc);
+            op.flush(fp, oc);
             
             Mockito.verify(fp, Mockito.times(maxThreads)).increment(FetchCounters.DOMAINS_PROCESSING, 1);
         } finally {
@@ -143,7 +143,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
             
             // Give threads a chance to run, as otherwise we might call verify() before one of the ProcessRobotsTask
             // threads has been started.
-            op.cleanup(fp, oc);
+            op.flush(fp, oc);
             
             Mockito.verify(collector).add(Mockito.argThat(new MatchBlockedByRobotsKey()));
         } finally {

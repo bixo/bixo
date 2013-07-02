@@ -54,7 +54,7 @@
 	</repositories>
 	
 	<properties>
-		<cascading.version>2.1.6</cascading.version>
+		<cascading.version>2.2.0-wip-66</cascading.version>
         <hadoop.version>1.0.4</hadoop.version>
         <jetty.version>8.1.8.v20121106</jetty.version>
 	</properties>
@@ -79,6 +79,13 @@
                     <artifactId>log4j</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+ 
+         <dependency>
+            <groupId>cascading</groupId>
+            <artifactId>cascading-local</artifactId>
+            <version>${cascading.version}</version>
+            <!-- This can't be test scope, due to BasePlatform using local APIs -->
         </dependency>
  
        <dependency>

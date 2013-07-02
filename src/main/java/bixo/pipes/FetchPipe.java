@@ -21,11 +21,6 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.scaleunlimited.cascading.BaseSplitter;
-import com.scaleunlimited.cascading.NullContext;
-import com.scaleunlimited.cascading.NullSinkTap;
-import com.scaleunlimited.cascading.SplitterAssembly;
-
 import bixo.config.BaseFetchJobPolicy;
 import bixo.config.BixoPlatform;
 import bixo.config.DefaultFetchJobPolicy;
@@ -62,6 +57,11 @@ import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
+
+import com.scaleunlimited.cascading.BaseSplitter;
+import com.scaleunlimited.cascading.NullContext;
+import com.scaleunlimited.cascading.NullSinkTap;
+import com.scaleunlimited.cascading.SplitterAssembly;
 
 
 @SuppressWarnings("serial")
@@ -247,9 +247,9 @@ public class FetchPipe extends SubAssembly {
         fetchPipe = new Every(fetchPipe, new FetchBuffer(fetcher), Fields.RESULTS);
 
         Pipe fetchedContent = new Pipe(CONTENT_PIPE_NAME, new Each(fetchPipe, new FilterErrorsFunction()));
-
+        
         Pipe fetchedStatus = new Pipe("fetched status", new Each(fetchPipe, new MakeStatusFunction()));
-
+        
         // We need to merge URLs from the LHS of the splitter (never fetched) so that our status pipe
         // gets status for every URL we put into this sub-assembly.
         Pipe skippedStatus = new Pipe("skipped status", new Each(splitter.getLHSPipe(), new MakeSkippedStatus()));

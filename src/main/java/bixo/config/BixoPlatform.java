@@ -51,7 +51,6 @@ public class BixoPlatform extends BasePlatform {
     private BasePlatform _platform;
     private JobConf _hadoopJobConf = null;
 
-    
     public BixoPlatform(boolean local) throws Exception {
         super(BixoPlatform.class);
         if (local) {

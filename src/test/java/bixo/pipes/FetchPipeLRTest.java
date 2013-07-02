@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ import bixo.utils.GroupingKey;
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
+import cascading.flow.FlowDef;
 import cascading.pipe.Pipe;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
@@ -74,6 +75,7 @@ import cascading.tuple.TupleEntryIterator;
 
 import com.scaleunlimited.cascading.BasePath;
 import com.scaleunlimited.cascading.BasePlatform;
+import com.scaleunlimited.cascading.NullSinkTap;
 import com.scaleunlimited.cascading.Payload;
 
 
@@ -115,7 +117,6 @@ public class FetchPipeLRTest extends CascadingTestCase {
 
     @Test
     public void testHeadersInStatus() throws Exception {
-  
         BixoPlatform platform = new BixoPlatform(true);
 
         Tap in = makeInputData(platform, 1, 1);
@@ -132,8 +133,15 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Tap status = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath, SinkMode.REPLACE);
         
         // Finally we can run it.
+        FlowDef flowDef = new FlowDef();
+        flowDef.setName("testHeadersInStatus");
+        flowDef.addSource(pipe, in);
+        flowDef.addTailSink(fetchPipe.getStatusTailPipe(), status);
+        flowDef.addTailSink(fetchPipe.getContentTailPipe(), new NullSinkTap());
+        
         FlowConnector flowConnector = platform.makeFlowConnector();
-        Flow flow = flowConnector.connect(in, FetchPipe.makeSinkMap(status, null), fetchPipe);
+        Flow flow = flowConnector.connect(flowDef);
+        flow.writeDOT("build/test/FetchPipeLRTest/testHeadersInStatus/flow.dot");
         flow.complete();
         
         Tap validate = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath);
