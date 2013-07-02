@@ -226,4 +226,11 @@ public class BixoPlatform extends BasePlatform {
         _platform.setNumReduceTasks(numReduceTasks);
     }
 
+    public int getNumReduceTasks() {
+        if (_platform instanceof LocalPlatform) {
+            return 1;
+        }
+        
+        return _hadoopJobConf.getNumReduceTasks();
+    }
 }
