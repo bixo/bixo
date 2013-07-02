@@ -170,6 +170,7 @@
 					<include name="**/*Test.java" />
 					<exclude name="**/Abstract*.java" />
 					<exclude name="**/*LRTest.java" />
+					<exclude name="**/*HadoopTest.java" />
 				</fileset>
 			</batchtest>
 			<batchtest fork="yes"
