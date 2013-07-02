@@ -31,7 +31,7 @@ import cascading.operation.OperationCall;
 import cascading.tuple.TupleEntry;
 
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "rawtypes"})
 public class LatestUrlDatumBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
     private static final Logger LOGGER = Logger.getLogger(LatestUrlDatumBuffer.class);
 

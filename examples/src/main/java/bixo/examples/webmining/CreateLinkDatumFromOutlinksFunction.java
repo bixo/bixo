@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ public class CreateLinkDatumFromOutlinksFunction extends BaseOperation<NullConte
         super(LinkDatum.FIELDS);
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void prepare(FlowProcess process, OperationCall<NullContext> operationCall) {
         LOGGER.info("Starting creation of outlink URLs");
@@ -48,11 +49,13 @@ public class CreateLinkDatumFromOutlinksFunction extends BaseOperation<NullConte
         _validator = new SimpleUrlValidator();
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void cleanup(FlowProcess process, OperationCall<NullContext> operationCall) {
         LOGGER.info("Ending creation of outlink URLs");
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
         

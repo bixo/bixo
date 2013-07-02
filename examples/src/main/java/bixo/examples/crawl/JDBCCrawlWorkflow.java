@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
@@ -55,7 +56,6 @@ import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 
 import com.scaleunlimited.cascading.BasePath;
-import com.scaleunlimited.cascading.BasePlatform;
 import com.scaleunlimited.cascading.NullContext;
 
 public class JDBCCrawlWorkflow {
@@ -109,13 +109,10 @@ public class JDBCCrawlWorkflow {
 
     
     @SuppressWarnings("rawtypes")
-    public static Flow createFlow(BasePlatform platform, BasePath inputDir, BasePath curLoopDirPath, UserAgent userAgent, FetcherPolicy fetcherPolicy,
+    public static Flow createFlow(BixoPlatform platform, BasePath inputDir, BasePath curLoopDirPath, UserAgent userAgent, FetcherPolicy fetcherPolicy,
                     BaseUrlFilter urlFilter, int maxThreads, boolean debug, String persistentDbLocation) throws Throwable {
 
-        // TODO VMa - fix this
-//        int numReducers = HadoopUtils.getNumReducers(conf);
-//        conf.setNumReduceTasks(numReducers);
-
+        platform.resetNumReduceTasks();
 
         if (!inputDir.exists()) {
             throw new IllegalStateException(String.format("Input directory %s doesn't exist", inputDir));
@@ -146,8 +143,7 @@ public class JDBCCrawlWorkflow {
         // Create the sub-assembly that runs the fetch job
         BaseFetcher fetcher = new SimpleHttpFetcher(maxThreads, fetcherPolicy, userAgent);
         BaseScoreGenerator scorer = new FixedScoreGenerator();
-        // TODO VMa - fix numReducers once we have that sorted out  - for now use 1
-        FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, 1);
+        FetchPipe fetchPipe = new FetchPipe(importPipe, scorer, fetcher, platform.getNumReduceTasks());
 
         Pipe statusPipe = new Pipe("status pipe", fetchPipe.getStatusTailPipe());
 

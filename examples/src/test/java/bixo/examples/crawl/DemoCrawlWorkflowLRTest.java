@@ -28,11 +28,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.httpclient.HttpStatus;
+import org.eclipse.jetty.http.HttpException;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.Test;
-import org.mortbay.jetty.Handler;
-import org.mortbay.jetty.HttpException;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.AbstractHandler;
 
 import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
@@ -59,7 +60,7 @@ public class DemoCrawlWorkflowLRTest implements Serializable {
         private static final String ANCHOR_TEMPLATE = "<a href=\"/page-%d.html\"></a>\n";
 
         @Override
-        public void handle(String pathInContext, HttpServletRequest request, HttpServletResponse response, int dispatch) throws HttpException, IOException {
+        public void handle(String pathInContext,  Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws HttpException, IOException {
             if (pathInContext.equals("/")) {
                 response.sendRedirect("/page-1.html");
             } else {
@@ -88,7 +89,7 @@ public class DemoCrawlWorkflowLRTest implements Serializable {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
     public void testNotLosingFetchedUrls() throws Throwable {
-        String baseDirName = "build/test/SimpleCrawlWorkflowLRTest/output";
+        String baseDirName = "build/test/DemoCrawlWorkflowLRTest/output";
         
         BixoPlatform platform = new BixoPlatform(true);
         
@@ -113,6 +114,7 @@ public class DemoCrawlWorkflowLRTest implements Serializable {
 
         DemoCrawlToolOptions options = new DemoCrawlToolOptions();
         options.setUseBoilerpipe(true);
+        options.setLocalMode(true);
         UserAgent userAgent = new UserAgent("test", "test@domain.com", "http://test.domain.com");
         Server server = null;
         try {

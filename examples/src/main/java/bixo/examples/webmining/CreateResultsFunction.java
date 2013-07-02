@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ public class CreateResultsFunction extends BaseOperation<NullContext> implements
         super(new Fields("line"));
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void prepare(FlowProcess process, OperationCall<NullContext> operationCall) {
         LOGGER.info("Starting creation of PageResults output");
@@ -45,6 +46,7 @@ public class CreateResultsFunction extends BaseOperation<NullContext> implements
         
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
         
