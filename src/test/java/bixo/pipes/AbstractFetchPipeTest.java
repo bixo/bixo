@@ -28,7 +28,6 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.Assert;
-import org.junit.Test;
 
 import bixo.config.BaseFetchJobPolicy;
 import bixo.config.BixoPlatform;
@@ -60,7 +59,6 @@ import bixo.robots.BaseRobotsParser;
 import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
-
 import cascading.CascadingTestCase;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -81,10 +79,10 @@ import com.scaleunlimited.cascading.Payload;
 
 // Long-running test
 @SuppressWarnings({ "serial", "rawtypes", "unchecked" })
-public class FetchPipeLRTest extends CascadingTestCase {
+public abstract class AbstractFetchPipeTest extends CascadingTestCase {
     
-    private static final String DEFAULT_INPUT_PATH = "build/test/FetchPipeLRTest/in";
-    private static final String DEFAULT_OUTPUT_PATH = "build/test/FetchPipeLRTest/out";
+    private static final String BASE_INPUT_PATH = "build/test/FetchPipeTest/";
+    private static final String BASE_OUTPUT_PATH = "build/test/FetchPipeTest/";
 
     private class RedirectResponseHandler extends AbstractHandler {
         
@@ -115,11 +113,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         }
     }
 
-    @Test
-    public void testHeadersInStatus() throws Exception {
-        BixoPlatform platform = new BixoPlatform(true);
-
-        Tap in = makeInputData(platform, 1, 1);
+    protected void testHeadersInStatus(BasePlatform platform) throws Exception {
+        Tap in = makeInputData(platform, "testHeadersInStatus", 1, 1);
 
         Pipe pipe = new Pipe("urlSource");
         BaseFetcher fetcher = new FakeHttpFetcher(false, 1);
@@ -128,7 +123,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
         
-        BasePath outputPath = platform.makePath(DEFAULT_OUTPUT_PATH);
+        
+        BasePath outputPath = makeOutputPath(platform, "testHeadersInStatus");
         BasePath statusPath = platform.makePath(outputPath, "status");
         Tap status = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath, SinkMode.REPLACE);
         
@@ -154,14 +150,12 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertTrue(headers.getNames().size() > 0);
     }
     
-    @Test
-    public void testFetchPipe() throws Exception {
+    protected void testFetchPipe(BixoPlatform platform) throws Exception {
         // System.setProperty("bixo.root.level", "TRACE");
         final int numPages = 10;
         final int port = 8089;
         
-        BixoPlatform platform = new BixoPlatform(true);
-        Tap in = makeInputData(platform, "localhost:" + port, numPages, new Payload());
+        Tap in = makeInputData(platform, "testFetchPipe", "localhost:" + port, numPages, new Payload());
 
         Pipe pipe = new Pipe("urlSource");
         BaseScoreGenerator scorer = new FixedScoreGenerator();
@@ -237,17 +231,15 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertEquals(numPages, totalEntries);
     }
     
-    @Test
-    public void testRedirectException() throws Exception {
+    protected void testRedirectException(BixoPlatform platform) throws Exception {
         // System.setProperty("bixo.root.level", "TRACE");
         
         final int numPages = 1;
         final int port = 8089;
         
-        BixoPlatform platform = new BixoPlatform(true);
         Payload payload = new Payload();
         payload.put("payload-field-1", 1);
-        Tap in = makeInputData(platform, "localhost:" + port, numPages, payload);
+        Tap in = makeInputData(platform, "testRedirectException", "localhost:" + port, numPages, payload);
 
         Pipe pipe = new Pipe("urlSource");
         BaseScoreGenerator scorer = new FixedScoreGenerator();
@@ -311,29 +303,26 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertEquals(numPages, totalEntries);
     }
     
-    @Test
-    public void testFetchTerminationPipe() throws Exception {
+    protected void testTerminatingFetchPipe(BixoPlatform platform) throws Exception {
         // System.setProperty("bixo.root.level", "TRACE");
         
         final int numPages = 10;
         final int port = 8089;
         
-        BixoPlatform platform = new BixoPlatform(true);
-        Tap in = makeInputData(platform, "localhost:" + port, numPages, null);
+        Tap in = makeInputData(platform, "testTerminatingFetchPipe", "localhost:" + port, numPages, null);
 
         Pipe pipe = new Pipe("urlSource");
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         
         FetcherPolicy policy = new FetcherPolicy();
-        policy.setCrawlEndTime(System.currentTimeMillis() + 20000);
+        policy.setCrawlEndTime(System.currentTimeMillis() + 50000);
         // Assume we should only need 10ms for fetching all 10 URLs.
         policy.setRequestTimeout(10);
         
         BaseFetcher fetcher = new SimpleHttpFetcher(1, policy, ConfigUtils.BIXO_TEST_AGENT);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
         
-        String output = "build/test/FetchPipeTest/testFetchTerminationPipe";
-        BasePath outputPath = platform.makePath(output);
+        BasePath outputPath = makeOutputPath(platform, "testTerminatingFetchPipe");
         BasePath statusPath = platform.makePath(outputPath, "status");
         Tap status = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath, SinkMode.REPLACE);
 
@@ -370,12 +359,10 @@ public class FetchPipeLRTest extends CascadingTestCase {
         // Assert.assertEquals(numPages, totalEntries);
     }
     
-    @Test
-    public void testPayloads() throws Exception {
+    protected void testPayloads(BixoPlatform platform) throws Exception {
         Payload payload = new Payload();
         payload.put("key", "value");
-        BixoPlatform platform = new BixoPlatform(true);
-        Tap in = makeInputData(platform, 1, 1, payload);
+        Tap in = makeInputData(platform, "testPayloads", 1, 1, payload);
 
         Pipe pipe = new Pipe("urlSource");
         BaseFetcher fetcher = new FakeHttpFetcher(false, 10);
@@ -431,11 +418,8 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertEquals(1, totalEntries);
     }
     
-    @Test
-    public void testSkippingURLsByScore() throws Exception {
-
-        BixoPlatform platform = new BixoPlatform(true);
-        Tap in = makeInputData(platform, 1, 1);
+    protected void testSkippingURLsByScore(BixoPlatform platform) throws Exception {
+        Tap in = makeInputData(platform, "testSkippingURLsByScore", 1, 1);
 
         Pipe pipe = new Pipe("urlSource");
         BaseFetcher fetcher = new FakeHttpFetcher(false, 1);
@@ -444,7 +428,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
         
-        BasePath outputPath = platform.makePath(DEFAULT_OUTPUT_PATH);
+        BasePath outputPath = makeOutputPath(platform, "testSkippingURLsByScore");
         BasePath contentPath = platform.makePath(outputPath, "content");
         Tap content = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath, SinkMode.REPLACE);
         
@@ -458,11 +442,9 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertFalse(tupleEntryIterator.hasNext());
     }
     
-    @Test
-    public void testDurationLimitSimple() throws Exception {
+    protected void testDurationLimitSimple(BixoPlatform platform) throws Exception {
         // Pretend like we have 10 URLs from the same domain
-        BixoPlatform platform = new BixoPlatform(true);
-        Tap in = makeInputData(platform, 1, 10);
+        Tap in = makeInputData(platform, "testDurationLimitSimple", 1, 10);
 
         // Create the fetch pipe we'll use to process these fake URLs
         Pipe pipe = new Pipe("urlSource");
@@ -477,7 +459,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
 
         // Create the output
-        BasePath outputPath = platform.makePath(DEFAULT_OUTPUT_PATH);
+        BasePath outputPath = makeOutputPath(platform, "testDurationLimitSimple");
         BasePath statusPath = platform.makePath(outputPath, "status");
         Tap statusSink = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath, SinkMode.REPLACE);
         BasePath contentPath = platform.makePath(outputPath, "content");
@@ -505,12 +487,10 @@ public class FetchPipeLRTest extends CascadingTestCase {
         Assert.assertEquals(10, numEntries);
     }
     
-    @Test
-    public void testMaxUrlsPerServer() throws Exception {
+    protected void testMaxUrlsPerServer(BixoPlatform platform) throws Exception {
         // Pretend like we have 2 URLs from the same domain
         final int sourceUrls = 2;
-        BixoPlatform platform = new BixoPlatform(true);
-        Tap in = makeInputData(platform, 1, sourceUrls);
+        Tap in = makeInputData(platform, "testMaxUrlsPerServer", 1, sourceUrls);
 
         // Create the fetch pipe we'll use to process these fake URLs
         Pipe pipe = new Pipe("urlSource");
@@ -525,7 +505,7 @@ public class FetchPipeLRTest extends CascadingTestCase {
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
 
         // Create the output
-        BasePath outputPath = platform.makePath(DEFAULT_OUTPUT_PATH);
+        BasePath outputPath = makeOutputPath(platform, "testMaxUrlsPerServer");
         BasePath statusPath = platform.makePath(outputPath, "status");
         Tap statusSink = platform.makeTap(platform.makeBinaryScheme(StatusDatum.FIELDS), statusPath, SinkMode.REPLACE);
         BasePath contentPath = platform.makePath(outputPath, "content");
@@ -658,12 +638,13 @@ public class FetchPipeLRTest extends CascadingTestCase {
     }
     **/
     
-    private Tap makeInputData(BasePlatform platform, int numDomains, int numPages) throws Exception {
-        return makeInputData(platform, numDomains, numPages, null);
+    private Tap makeInputData(BasePlatform platform, String testname, int numDomains, int numPages) throws Exception {
+        return makeInputData(platform, testname, numDomains, numPages, null);
     }
     
-    private Tap makeInputData(BasePlatform platform, int numDomains, int numPages, Payload payload) throws Exception {
-        BasePath defaultPath = platform.makePath(DEFAULT_INPUT_PATH);
+    private Tap makeInputData(BasePlatform platform, String testname, int numDomains, int numPages, Payload payload) throws Exception {
+        String platformName = platform.getClass().getSimpleName();
+        BasePath defaultPath = platform.makePath(BASE_INPUT_PATH + testname + "/" + platformName + "/in");
         Tap in = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), defaultPath, SinkMode.REPLACE);
         TupleEntryCollector write = in.openForWrite(platform.makeFlowProcess());
         for (int i = 0; i < numDomains; i++) {
@@ -678,8 +659,9 @@ public class FetchPipeLRTest extends CascadingTestCase {
         return in;
     }
     
-    private Tap makeInputData(BasePlatform platform, String domain, int numPages, Payload payload) throws Exception {
-        BasePath defaultPath = platform.makePath(DEFAULT_INPUT_PATH);
+    private Tap makeInputData(BasePlatform platform, String testname, String domain, int numPages, Payload payload) throws Exception {
+        String platformName = platform.getClass().getSimpleName();
+        BasePath defaultPath = platform.makePath(BASE_INPUT_PATH + testname + "/" + platformName + "/in");
         Tap in = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), defaultPath, SinkMode.REPLACE);
         TupleEntryCollector write = in.openForWrite(platform.makeFlowProcess());
         for (int j = 0; j < numPages; j++) {
@@ -690,6 +672,12 @@ public class FetchPipeLRTest extends CascadingTestCase {
         return in;
     }
     
+    private BasePath makeOutputPath(BasePlatform platform, String testname) throws Exception {
+        String platformName = platform.getClass().getSimpleName();
+        return platform.makePath(BASE_OUTPUT_PATH + testname + "/" + platformName + "/out");
+    }
+
+
     private Tuple makeTuple(String domain, int pageNumber, Payload payload) {
         UrlDatum url = new UrlDatum("http://" + domain + "/page-" + pageNumber + ".html?size=10");
         url.setPayload(payload);
