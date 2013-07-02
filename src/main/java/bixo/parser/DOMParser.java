@@ -42,7 +42,7 @@ import cascading.tuple.Fields;
 import cascading.tuple.TupleEntryCollector;
 
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "rawtypes"})
 public abstract class DOMParser extends BaseOperation<NullContext> implements Function<NullContext> {
 
     /**
@@ -132,7 +132,7 @@ public abstract class DOMParser extends BaseOperation<NullContext> implements Fu
         
         try {
             Document parsedContent = _reader.read(is);
-            process(_input, parsedContent, funcCall.getOutputCollector());
+            process(_input, parsedContent, funcCall.getOutputCollector(), process);
         } catch (Exception e) {
             handleException(_input, e, funcCall.getOutputCollector());
         } finally {
@@ -141,7 +141,6 @@ public abstract class DOMParser extends BaseOperation<NullContext> implements Fu
 
     }
     
-    // TODO VMa - change interface to pass in FlowProcess as well.
     
     /**
      * The _input ParsedDatum was successfully converted into a Dom4J Document.
@@ -151,8 +150,9 @@ public abstract class DOMParser extends BaseOperation<NullContext> implements Fu
      * @param datum Input datum, which wraps a Cascading Tuple.
      * @param doc Result of converting incoming XML document to a Dom4J Document
      * @param collector Collector to use if you want to emit tuples.
+     * @param process The FlowProcess for this operation.
      */
-    protected abstract void process(ParsedDatum datum, Document doc, TupleEntryCollector collector) throws Exception;
+    protected abstract void process(ParsedDatum datum, Document doc, TupleEntryCollector collector, FlowProcess process) throws Exception;
     
     /**
      * An exception occurred while parsing or processing the _input ParsedDatum. Options are to
