@@ -19,6 +19,8 @@ package com.scaleunlimited.helpful.operations;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import com.scaleunlimited.cascading.NullContext;
+
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
@@ -28,9 +30,8 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
-import com.bixolabs.cascading.NullContext;
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "rawtypes"})
 public class SumScoresBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
 	private static final Fields OUTPUT_FIELDS = new Fields(FieldNames.EMAIL_ADDRESS, FieldNames.EMAIL_NAME, FieldNames.SUMMED_SCORE);
 

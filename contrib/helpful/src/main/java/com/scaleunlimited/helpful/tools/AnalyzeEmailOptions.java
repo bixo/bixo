@@ -26,6 +26,7 @@ public class AnalyzeEmailOptions {
     private String _inputFile;
     private String _outputDir;
     private String _agentName;
+    private boolean _localMode = false;
     
 
     @Option(name = "-d", usage = "debug logging", required = false)
@@ -48,6 +49,11 @@ public class AnalyzeEmailOptions {
         _agentName = agentName;
     }
 
+    @Option(name = "-localmode", usage = "run in Cascading local mode [optional: default=false]", required = false)
+    public void setLocalMode(boolean localMode) {
+        _localMode  = localMode;
+    }
+
     public String getInputFile() {
         return _inputFile;
     }
@@ -62,6 +68,10 @@ public class AnalyzeEmailOptions {
     
     public boolean isDebugLogging() {
         return _debugLogging;
+    }
+    
+    public boolean isLocalMode() {
+        return _localMode;
     }
     
     @Override

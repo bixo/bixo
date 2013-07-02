@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,18 @@
  */
 package com.scaleunlimited.helpful.tools;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.Properties;
 
-import org.apache.hadoop.mapred.ClusterStatus;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 
+import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
-import bixo.datum.StatusDatum;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.SimpleHttpFetcher;
@@ -42,8 +37,6 @@ import bixo.pipes.FetchPipe;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
 import cascading.flow.FlowProcess;
-import cascading.flow.MultiMapReducePlanner;
-import cascading.flow.PlannerException;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
@@ -53,13 +46,12 @@ import cascading.pipe.Every;
 import cascading.pipe.GroupBy;
 import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
-import cascading.scheme.SequenceFile;
-import cascading.scheme.TextLine;
-import cascading.tap.Hfs;
+import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
-import com.bixolabs.cascading.NullContext;
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.NullContext;
 import com.scaleunlimited.helpful.operations.CalcMessageScoreBuffer;
 import com.scaleunlimited.helpful.operations.FieldNames;
 import com.scaleunlimited.helpful.operations.MboxSplitterFunction;
@@ -83,7 +75,7 @@ public class AnalyzeEmail {
 	private static final String SPLITTER_PIPE_NAME = "Split emails pipe";
 	private static final String ANALYZER_PIPE_NAME = "Analyze emails pipe";
 
-	@SuppressWarnings("serial")
+	@SuppressWarnings({"serial", "rawtypes"})
 	private static class LoadUrlFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 		public LoadUrlFunction() {
             super(UrlDatum.FIELDS);
@@ -123,51 +115,13 @@ public class AnalyzeEmail {
         System.exit(-1);
     }
 
-    private static JobConf getDefaultJobConf() throws IOException {
-        JobClient jobClient = new JobClient(new JobConf());
-        ClusterStatus status = jobClient.getClusterStatus();
-        int trackers = status.getTaskTrackers();
-
-        JobConf conf = new JobConf();
-        conf.setNumMapTasks(trackers * 10);
-        
-        conf.setNumReduceTasks((trackers * conf.getInt("mapred.tasktracker.reduce.tasks.maximum", 2)));
-        
-        conf.setMapSpeculativeExecution( false );
-        conf.setReduceSpeculativeExecution( false );
-        conf.set("mapred.child.java.opts", "-server -Xmx512m -Xss128k");
-
-        // Should match the value used for Xss above. Note no 'k' suffix for the ulimit command.
-        // New support that one day will be in Hadoop.
-        conf.set("mapred.child.ulimit.stack", "128");
-
-        return conf;
-    }
-
-    private static Properties getDefaultProperties(AnalyzeEmailOptions options, JobConf conf) throws IOException {
-        Properties properties = new Properties();
-
-        // Use special Cascading hack to control logging levels
-        if( options.isDebugLogging() ) {
-            properties.put("log4j.logger", "cascading=DEBUG,sharethis=DEBUG,bixo=TRACE");
-        } else {
-            properties.put("log4j.logger", "cascading=INFO,sharethis=INFO,bixo=INFO");
-        }
-
-        FlowConnector.setApplicationJarClass(properties, AnalyzeEmail.class);
-
-        // Propagate properties into the Hadoop JobConf
-        MultiMapReducePlanner.setJobConf(properties, conf);
-
-        return properties;
-    }
-
 
 
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	@SuppressWarnings("rawtypes")
+    public static void main(String[] args) {
 		AnalyzeEmailOptions options = new AnalyzeEmailOptions();
         CmdLineParser parser = new CmdLineParser(options);
         
@@ -182,8 +136,10 @@ public class AnalyzeEmail {
         String outputDirName = options.getOutputDir();
 
         try {
+            BixoPlatform platform = new BixoPlatform(options.isLocalMode());
             // Create the input (source tap), which is just a text file reader
-            Tap sourceTap = new Hfs(new TextLine(), inputFileName);
+            BasePath inputPath = platform.makePath(inputFileName);
+            Tap sourceTap = platform.makeTap(platform.makeTextScheme(), inputPath);
             
             // Create the sub-assembly that runs the fetch job
             UserAgent userAgent = new UserAgent(options.getAgentName(), EMAIL_ADDRESS, WEB_ADDRESS);
@@ -231,10 +187,15 @@ public class AnalyzeEmail {
             analysisPipe = new GroupBy(analysisPipe, new Fields(FieldNames.SUMMED_SCORE), true);
 
             // Create the sink taps
-            Tap pageStatusSinkTap = new Hfs(new TextLine(StatusDatum.FIELDS.size()), outputDirName + "/page-status", true);
-            Tap mboxStatusSinkTap = new Hfs(new TextLine(StatusDatum.FIELDS.size()), outputDirName + "/mbox-status", true);
-            Tap contentSinkTap = new Hfs(new SequenceFile(FetchedDatum.FIELDS), outputDirName + "/content", true);
-            Tap analyzerSinkTap = new Hfs(new TextLine(), outputDirName + "/analysis", true);
+            BasePath outputPath = platform.makePath(outputDirName);
+            Tap pageStatusSinkTap = platform.makeTap(platform.makeTextScheme(), 
+                            platform.makePath(outputPath, "page-status"), SinkMode.REPLACE);
+            Tap mboxStatusSinkTap = platform.makeTap(platform.makeTextScheme(), 
+                            platform.makePath(outputPath, "mbox-status"), SinkMode.REPLACE);
+            Tap contentSinkTap = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), 
+                            platform.makePath(outputPath, "content"), SinkMode.REPLACE);
+            Tap analyzerSinkTap = platform.makeTap(platform.makeTextScheme(), 
+                            platform.makePath(outputPath, "analysis"), SinkMode.REPLACE);
 
             HashMap<String, Tap> sinkTapMap = new HashMap<String, Tap>(2);
             sinkTapMap.put(MBOX_PAGE_STATUS_PIPE_NAME, pageStatusSinkTap);
@@ -245,15 +206,10 @@ public class AnalyzeEmail {
             LOGGER.info("Running fetch job with " + options);
 
             // Finally we can run it.
-            JobConf conf = getDefaultJobConf();
-            FlowConnector flowConnector = new FlowConnector(getDefaultProperties(options, conf));
+            FlowConnector flowConnector = platform.makeFlowConnector();
             Flow flow = flowConnector.connect(sourceTap, sinkTapMap, splitterPipe, mboxPageStatusPipe, analysisPipe);
             flow.writeDOT("build/goodFlow.dot");
             flow.complete();
-        } catch (PlannerException e) {
-            System.err.println("PlannerException running AnalyzeEmail: " + e.getMessage());
-            e.writeDOT("build/failedFlow.dot");
-            System.exit(-1);
         } catch (Throwable t) {
             System.err.println("Exception running AnalyzeEmail: " + t.getMessage());
             t.printStackTrace(System.err);

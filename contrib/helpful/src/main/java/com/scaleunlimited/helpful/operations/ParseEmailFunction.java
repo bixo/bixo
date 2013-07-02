@@ -32,6 +32,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import com.scaleunlimited.cascading.NullContext;
+
 import bixo.datum.FetchedDatum;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
@@ -41,9 +43,8 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 
-import com.bixolabs.cascading.NullContext;
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "rawtypes"})
 public class ParseEmailFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 	private static final Logger LOGGER = Logger.getLogger(ParseEmailFunction.class);
 	

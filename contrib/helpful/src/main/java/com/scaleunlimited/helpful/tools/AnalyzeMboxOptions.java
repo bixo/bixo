@@ -25,6 +25,7 @@ public class AnalyzeMboxOptions {
 
     private String _inputFile;
     private String _outputDir;
+    private boolean _localMode= false;
     
 
     @Option(name = "-d", usage = "debug logging", required = false)
@@ -42,6 +43,11 @@ public class AnalyzeMboxOptions {
         _outputDir = outputDir;
     }
 
+    @Option(name = "-localmode", usage = "run in Cascading local mode [optional: default=false]", required = false)
+    public void setLocalMode(boolean localMode) {
+        _localMode  = localMode;
+    }
+
     public String getInputFile() {
         return _inputFile;
     }
@@ -54,7 +60,10 @@ public class AnalyzeMboxOptions {
         return _debugLogging;
     }
     
-
+    public boolean isLocalMode() {
+        return _localMode;
+    }
+    
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);

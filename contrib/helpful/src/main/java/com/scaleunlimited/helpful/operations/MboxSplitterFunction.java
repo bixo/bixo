@@ -25,6 +25,8 @@ import java.io.UnsupportedEncodingException;
 
 import org.apache.log4j.Logger;
 
+import com.scaleunlimited.cascading.NullContext;
+
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import cascading.flow.FlowProcess;
@@ -34,7 +36,6 @@ import cascading.operation.FunctionCall;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.NullContext;
 
 /**
  * Cascading function to split a single mbox file into N entries, one per each email. This then
@@ -42,7 +43,7 @@ import com.bixolabs.cascading.NullContext;
  * can then use the metadata returned from the Parser.parse() call to get subject, etc.
  *
  */
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "rawtypes"})
 public class MboxSplitterFunction extends BaseOperation<NullContext> implements Function<NullContext> {
 	private static final Logger LOGGER = Logger.getLogger(MboxSplitterFunction.class);
 	

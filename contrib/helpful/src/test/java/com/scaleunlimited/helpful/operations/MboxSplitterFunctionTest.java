@@ -35,12 +35,13 @@ import cascading.operation.FunctionCall;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
-import com.bixolabs.cascading.NullContext;
+import com.scaleunlimited.cascading.NullContext;
 import com.scaleunlimited.helpful.operations.MboxSplitterFunction;
 
 public class MboxSplitterFunctionTest {
 
-	private FlowProcess _process;
+	@SuppressWarnings("rawtypes")
+    private FlowProcess _process;
 	private TupleEntryCollector _collector;
 	private FunctionCall<NullContext> _funcCall;
 	
