@@ -43,11 +43,12 @@
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
 		
-		<dependency>
-            <groupId>cascading</groupId>
-            <artifactId>cascading-11-jdbc</artifactId>
-            <version>0.0.4</version>
-        </dependency>
+		<!-- cascading-11-jdbc is based on Cascading 1.x and needs to be updated -->
+<!-- 		<dependency> -->
+<!--             <groupId>cascading</groupId> -->
+<!--             <artifactId>cascading-11-jdbc</artifactId> -->
+<!--             <version>0.0.4</version> -->
+<!--         </dependency> -->
 
 		<dependency>
             <groupId>hsqldb</groupId>

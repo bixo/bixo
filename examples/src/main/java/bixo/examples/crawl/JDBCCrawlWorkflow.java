@@ -59,6 +59,7 @@ import com.scaleunlimited.cascading.BasePath;
 import com.scaleunlimited.cascading.NullContext;
 
 public class JDBCCrawlWorkflow {
+    /*
     private static final Logger LOGGER = Logger.getLogger(JDBCCrawlWorkflow.class);
 
     @SuppressWarnings({"serial", "rawtypes"})
@@ -180,5 +181,5 @@ public class JDBCCrawlWorkflow {
         return flowConnector.connect(inputSource, sinkMap, statusPipe, fetchPipe.getContentTailPipe(), parsePipe.getTailPipe(), outputPipe);
             
     }
-
+*/
 }

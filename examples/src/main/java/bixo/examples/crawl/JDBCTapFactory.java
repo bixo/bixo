@@ -16,23 +16,24 @@
  */
 package bixo.examples.crawl;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
-import org.apache.log4j.Logger;
-import org.hsqldb.Server;
-
-import cascading.jdbc.JDBCScheme;
-import cascading.jdbc.JDBCTap;
-import cascading.jdbc.TableDesc;
-import cascading.tap.Tap;
-
-import com.scaleunlimited.cascading.BasePlatform;
+//import java.net.InetAddress;
+//import java.net.UnknownHostException;
+//
+//import org.apache.log4j.Logger;
+//import org.hsqldb.Server;
+//
+//import cascading.jdbc.JDBCScheme;
+//import cascading.jdbc.JDBCTap;
+//import cascading.jdbc.TableDesc;
+//import cascading.tap.Tap;
+//
+//import com.scaleunlimited.cascading.BasePlatform;
 
 
 @SuppressWarnings("rawtypes")
 public class JDBCTapFactory {
 
+    /*
     private static final Logger LOGGER = Logger.getLogger(JDBCTapFactory.class);
     private static final String JDBC_URL_PREFIX = "jdbc:hsqldb:";
     private static final String DB_NAME = "sitecrawler";
@@ -122,4 +123,5 @@ public class JDBCTapFactory {
             _server.shutdown();
         }
     }
+    */
 }

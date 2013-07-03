@@ -16,29 +16,29 @@
  */
 package bixo.examples.crawl;
 
-import java.io.IOException;
-import java.util.List;
-
-import org.apache.log4j.FileAppender;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-
-import bixo.config.BixoPlatform;
-import bixo.config.FetcherPolicy;
-import bixo.config.FetcherPolicy.FetcherMode;
-import bixo.config.UserAgent;
-import bixo.datum.UrlStatus;
-import bixo.urls.BaseUrlFilter;
-import bixo.urls.SimpleUrlNormalizer;
-import bixo.utils.CrawlDirUtils;
-import cascading.flow.Flow;
-import cascading.tap.Tap;
-import cascading.tuple.TupleEntryCollector;
-
-import com.scaleunlimited.cascading.BasePath;
-import com.scaleunlimited.cascading.BasePlatform;
+//import java.io.IOException;
+//import java.util.List;
+//
+//import org.apache.log4j.FileAppender;
+//import org.apache.log4j.Logger;
+//import org.apache.log4j.PatternLayout;
+//import org.kohsuke.args4j.CmdLineException;
+//import org.kohsuke.args4j.CmdLineParser;
+//
+//import bixo.config.BixoPlatform;
+//import bixo.config.FetcherPolicy;
+//import bixo.config.FetcherPolicy.FetcherMode;
+//import bixo.config.UserAgent;
+//import bixo.datum.UrlStatus;
+//import bixo.urls.BaseUrlFilter;
+//import bixo.urls.SimpleUrlNormalizer;
+//import bixo.utils.CrawlDirUtils;
+//import cascading.flow.Flow;
+//import cascading.tap.Tap;
+//import cascading.tuple.TupleEntryCollector;
+//
+//import com.scaleunlimited.cascading.BasePath;
+//import com.scaleunlimited.cascading.BasePlatform;
 
 /**
  * JDBCCrawlTool is an example of using Bixo to write a simple crawl tool.
@@ -46,10 +46,11 @@ import com.scaleunlimited.cascading.BasePlatform;
  * This tool uses an in-memory hsqldb to demonstrate how one could use a 
  * database to maintain the crawl db. 
  *  
- * 
+ * NOTE:This tool relies on cascading-jdbc which hasn't been updated for Cascading 2.x.
+ * Until we have a version of cascading-jdbc that works with Cascading 2.x, the tool will be commented
  */
-@SuppressWarnings("deprecation")
 public class JDBCCrawlTool {
+    /*
     private static final Logger LOGGER = Logger.getLogger(JDBCCrawlTool.class);
 
     private static void printUsageAndExit(CmdLineParser parser) {
@@ -248,5 +249,5 @@ public class JDBCCrawlTool {
         }
         JDBCTapFactory.shutdown();
     }
-
+*/
 }

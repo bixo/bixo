@@ -22,6 +22,7 @@ import org.kohsuke.args4j.Option;
 
 public class JDBCCrawlToolOptions extends BaseCrawlToolOptions {
 
+    /*
     private String _dbLocation = null;
     
 
@@ -39,5 +40,5 @@ public class JDBCCrawlToolOptions extends BaseCrawlToolOptions {
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);
     }
-
+*/
 }
