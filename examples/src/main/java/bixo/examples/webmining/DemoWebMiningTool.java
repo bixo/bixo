@@ -90,7 +90,7 @@ public class DemoWebMiningTool {
         // Build and run the flow.
         
         try {
-            BixoPlatform platform = new BixoPlatform(options.isLocalMode());
+            BixoPlatform platform = new BixoPlatform(options.getPlatformMode());
             BasePath workingDirPath = platform.makePath(options.getWorkingDir());
 
             setupWorkingDir(platform, workingDirPath, CrawlConfig.SEED_URLS_FILENAME);

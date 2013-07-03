@@ -64,7 +64,7 @@ public class AnalyzeMbox {
         String outputDirName = options.getOutputDir();
         
         try {
-            BixoPlatform platform = new BixoPlatform(options.isLocalMode());
+            BixoPlatform platform = new BixoPlatform(options.getPlatformMode());
             // Create the input (source tap), which is just a sequence file reader. We assume
         	// that the file already has the results of splitting the mbox file into emails.
             BasePath inputPath = platform.makePath(inputFileName);

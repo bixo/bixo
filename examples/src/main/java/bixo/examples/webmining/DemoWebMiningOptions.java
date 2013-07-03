@@ -20,11 +20,13 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
+import bixo.config.BixoPlatform.Platform;
+
 public class DemoWebMiningOptions {
     
     private String _workingDir = "build/test/working";
     private String _agentName;
-    private boolean _localMode;
+    private boolean _localPlatformMode;
 
     @Option(name = "-workingdir", usage = "path to directory for fetching", required = false)
     public void setWorkingDir(String workingDir) {
@@ -44,13 +46,20 @@ public class DemoWebMiningOptions {
         return _agentName;
     }
     
-    @Option(name = "-localmode", usage = "run in Cascading local mode", required = false)
-    public void setLocalMode(boolean localMode) {
-        _localMode = localMode;
+    @Option(name = "-localplatform", usage = "Use BixoPlatform in Local mode [optional: default=false]", required = false)
+    public void setLocalPlatformMode(boolean mode) {
+        _localPlatformMode = mode;
     }
 
-    public boolean isLocalMode() {
-        return _localMode;
+    public boolean isLocalPlatformMode() {
+        return _localPlatformMode;
+    }
+
+    public Platform getPlatformMode() {
+        if (_localPlatformMode) {
+            return Platform.Local;
+        }
+        return Platform.Hadoop;
     }
 
     @Override

@@ -128,7 +128,7 @@ public class DemoCrawlWorkflow {
     @SuppressWarnings("rawtypes")
     public static Flow createFlow(BasePath curWorkingDirPath, BasePath crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, DemoCrawlToolOptions options) throws Throwable {
 
-        BixoPlatform platform = new BixoPlatform(options.isLocalMode());
+        BixoPlatform platform = new BixoPlatform(options.getPlatformMode());
         platform.resetNumReduceTasks();
 
         // Input : the crawldb
@@ -225,7 +225,7 @@ public class DemoCrawlWorkflow {
         // For now we only do it when we are running in Hadoop mode
           Tap writableSeqFileSink = null;
           Pipe writableSeqFileDataPipe = null;
-            if (!options.isLocalMode()) {
+            if (!options.isLocalPlatformMode()) {
                 writableSeqFileDataPipe = new Pipe("writable seqfile data", new Each(parsePipe.getTailPipe(), new CreateWritableSeqFileData()));
                 BasePath writableSeqFileDataPath = platform.makePath(curWorkingDirPath, CrawlConfig.EXTRACTED_TEXT_SUBDIR_NAME);
                 WritableSequenceFile writableSeqScheme = new WritableSequenceFile(new Fields(CrawlConfig.WRITABLE_SEQ_FILE_KEY_FN, CrawlConfig.WRITABLE_SEQ_FILE_VALUE_FN), Text.class, Text.class);
@@ -274,7 +274,7 @@ public class DemoCrawlWorkflow {
         sinkMap.put(outputPipe.getName(), loopCrawldbSink);
         tailPipes.add(outputPipe);
 
-        if (!options.isLocalMode()) {
+        if (!options.isLocalPlatformMode()) {
             sinkMap.put(writableSeqFileDataPipe.getName(), writableSeqFileSink);
             tailPipes.add(writableSeqFileDataPipe);
         }

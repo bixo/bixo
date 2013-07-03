@@ -36,6 +36,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.Test;
 
 import bixo.config.BixoPlatform;
+import bixo.config.BixoPlatform.Platform;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
 import bixo.config.UserAgent;
@@ -91,7 +92,7 @@ public class DemoCrawlWorkflowLRTest implements Serializable {
     public void testNotLosingFetchedUrls() throws Throwable {
         String baseDirName = "build/test/DemoCrawlWorkflowLRTest/output";
         
-        BixoPlatform platform = new BixoPlatform(true);
+        BixoPlatform platform = new BixoPlatform(Platform.Local);
         
         BasePath baseDirPath = platform.makePath(baseDirName);
         baseDirPath.delete(true);
@@ -114,7 +115,7 @@ public class DemoCrawlWorkflowLRTest implements Serializable {
 
         DemoCrawlToolOptions options = new DemoCrawlToolOptions();
         options.setUseBoilerpipe(true);
-        options.setLocalMode(true);
+        options.setLocalPlatformMode(true);
         UserAgent userAgent = new UserAgent("test", "test@domain.com", "http://test.domain.com");
         Server server = null;
         try {

@@ -20,6 +20,8 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
+import bixo.config.BixoPlatform.Platform;
+
 public class DemoStatusToolOptions {
     private boolean _debugLogging = false;
     private boolean _exportDb = false;
@@ -60,6 +62,13 @@ public class DemoStatusToolOptions {
 
     public boolean isLocalMode() {
         return _localMode;
+    }
+
+    public Platform getPlatformMode() {
+        if (_localMode) {
+            return Platform.Local;
+        }
+        return Platform.Hadoop;
     }
 
     @Override

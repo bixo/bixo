@@ -20,12 +20,14 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
+import bixo.config.BixoPlatform.Platform;
+
 public class AnalyzeMboxOptions {
     private boolean _debugLogging = false;
 
     private String _inputFile;
     private String _outputDir;
-    private boolean _localMode= false;
+    private boolean _localPlatformMode = false;
     
 
     @Option(name = "-d", usage = "debug logging", required = false)
@@ -43,9 +45,9 @@ public class AnalyzeMboxOptions {
         _outputDir = outputDir;
     }
 
-    @Option(name = "-localmode", usage = "run in Cascading local mode [optional: default=false]", required = false)
-    public void setLocalMode(boolean localMode) {
-        _localMode  = localMode;
+    @Option(name = "-localplatform", usage = "Use BixoPlatform in Local mode [optional: default=false]", required = false)
+    public void setLocalPlatformMode(boolean mode) {
+        _localPlatformMode = mode;
     }
 
     public String getInputFile() {
@@ -60,10 +62,17 @@ public class AnalyzeMboxOptions {
         return _debugLogging;
     }
     
-    public boolean isLocalMode() {
-        return _localMode;
+    public boolean isLocalPlatformMode() {
+        return _localPlatformMode;
     }
-    
+
+    public Platform getPlatformMode() {
+        if (_localPlatformMode) {
+            return Platform.Local;
+        }
+        return Platform.Hadoop;
+    }
+
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);

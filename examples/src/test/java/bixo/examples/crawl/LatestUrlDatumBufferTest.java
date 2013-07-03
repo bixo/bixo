@@ -30,6 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import bixo.config.BixoPlatform;
+import bixo.config.BixoPlatform.Platform;
 import bixo.datum.UrlDatum;
 import cascading.flow.Flow;
 import cascading.flow.FlowConnector;
@@ -136,7 +137,7 @@ public class LatestUrlDatumBufferTest {
     @Test
     public void testOperateWithGroupBy() throws Exception {
         
-        BixoPlatform platform = new BixoPlatform(true);
+        BixoPlatform platform = new BixoPlatform(Platform.Local);
         
         // Create a temp file with a fetched url
         BasePath workingDirPath = platform.makePath(WORKINGDIR);

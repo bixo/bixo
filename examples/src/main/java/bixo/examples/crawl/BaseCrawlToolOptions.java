@@ -20,6 +20,9 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
+import bixo.config.BixoPlatform;
+import bixo.config.BixoPlatform.Platform;
+
 public class BaseCrawlToolOptions {
 
     public static final int NO_CRAWL_DURATION = 0;
@@ -40,7 +43,7 @@ public class BaseCrawlToolOptions {
     private boolean _useBoilerpipe = false;
     private String _regexUrlFiltersFile = null;;
     private String _logsDir = DEFAULT_LOGS_DIR;
-    private boolean _localMode;
+    private boolean _localPlatformMode;
 
     
     @Option(name = "-domain", usage = "domain to crawl (e.g. cnn.com)", required = false)
@@ -103,9 +106,9 @@ public class BaseCrawlToolOptions {
         _logsDir = logsDir;
     }
 
-    @Option(name = "-local", usage = "Use BixoPlatform in local mode [optional: default=false]", required = false)
-    public void setLocalMode(boolean localMode) {
-        _localMode = localMode;
+    @Option(name = "-localplatform", usage = "Use BixoPlatform in Local mode [optional: default=false]", required = false)
+    public void setLocalPlatformMode(boolean mode) {
+        _localPlatformMode = mode;
     }
 
     public String getOutputDir() {
@@ -158,10 +161,16 @@ public class BaseCrawlToolOptions {
         
     }
     
-    public boolean isLocalMode() {
-        return _localMode;
+    public boolean isLocalPlatformMode() {
+        return _localPlatformMode;
     }
 
+    public Platform getPlatformMode() {
+        if (_localPlatformMode) {
+            return Platform.Local;
+        }
+        return Platform.Hadoop;
+    }
     
     @Override
     public String toString() {

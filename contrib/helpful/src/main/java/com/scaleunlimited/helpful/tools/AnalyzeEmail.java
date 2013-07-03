@@ -136,7 +136,7 @@ public class AnalyzeEmail {
         String outputDirName = options.getOutputDir();
 
         try {
-            BixoPlatform platform = new BixoPlatform(options.isLocalMode());
+            BixoPlatform platform = new BixoPlatform(options.getPlatformMode());
             // Create the input (source tap), which is just a text file reader
             BasePath inputPath = platform.makePath(inputFileName);
             Tap sourceTap = platform.makeTap(platform.makeTextScheme(), inputPath);

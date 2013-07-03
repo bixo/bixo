@@ -115,9 +115,9 @@ public class DemoWebMiningWorkflowTest {
         DemoWebMiningOptions options = new DemoWebMiningOptions();
         options.setWorkingDir(WORKING_DIR);
         options.setAgentName("test-agent");
-        options.setLocalMode(true);
+        options.setLocalPlatformMode(true);
         
-        BixoPlatform platform = new BixoPlatform(true);
+        BixoPlatform platform = new BixoPlatform(options.getPlatformMode());
         BasePath workingDirPath = platform.makePath(WORKING_DIR);
         DemoWebMiningTool.setupWorkingDir(platform, workingDirPath, "/test-seedurls.txt");
         

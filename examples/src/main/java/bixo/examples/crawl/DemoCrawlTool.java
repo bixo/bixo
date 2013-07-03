@@ -149,7 +149,7 @@ public class DemoCrawlTool {
         }
         
         try {
-            BixoPlatform platform = new BixoPlatform(options.isLocalMode());
+            BixoPlatform platform = new BixoPlatform(options.getPlatformMode());
             BasePath outputPath = platform.makePath(outputDirName);
 
             // First check if the user want to clean
