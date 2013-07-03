@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 
 import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.BasePlatform;
 
 public class DemoStatusTool {
 	private static final Logger LOGGER = Logger.getLogger(DemoStatusTool.class);
@@ -40,7 +41,7 @@ public class DemoStatusTool {
     }
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-    private static void processStatus(BixoPlatform platform, BasePath curDirPath) throws Exception {
+    private static void processStatus(BasePlatform platform, BasePath curDirPath) throws Exception {
         BasePath statusPath = platform.makePath(curDirPath, CrawlConfig.STATUS_SUBDIR_NAME);
         Tap statusTap = platform.makeTap(platform.makeTextScheme(), statusPath);
         
