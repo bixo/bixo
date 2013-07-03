@@ -19,6 +19,7 @@ package bixo.pipes;
 import org.junit.Test;
 
 import bixo.config.BixoPlatform;
+import bixo.config.BixoPlatform.Platform;
 
 
 @SuppressWarnings("serial")
@@ -27,42 +28,42 @@ public class FetchPipeLocalTest extends AbstractFetchPipeTest {
 
     @Test
     public void testHeadersInStatus() throws Exception {
-        testHeadersInStatus(new BixoPlatform(true));
+        testHeadersInStatus(new BixoPlatform(Platform.Local));
     }
     
     @Test
     public void testFetchPipe() throws Exception {
-        testFetchPipe(new BixoPlatform(true));
+        testFetchPipe(new BixoPlatform(Platform.Local));
     }
     
     @Test
     public void testRedirectException() throws Exception {
-        testRedirectException(new BixoPlatform(true));
+        testRedirectException(new BixoPlatform(Platform.Local));
     }
     
     @Test
     public void testTerminatingFetchPipe() throws Exception {
-        testTerminatingFetchPipe(new BixoPlatform(true));
+        testTerminatingFetchPipe(new BixoPlatform(Platform.Local));
     }
     
     @Test
     public void testPayloads() throws Exception {
-        testPayloads(new BixoPlatform(true));
+        testPayloads(new BixoPlatform(Platform.Local));
     }
     
     @Test
     public void testSkippingURLsByScore() throws Exception {
-        testSkippingURLsByScore(new BixoPlatform(true));
+        testSkippingURLsByScore(new BixoPlatform(Platform.Local));
     }
     
     @Test
     public void testDurationLimitSimple() throws Exception {
-        testDurationLimitSimple(new BixoPlatform(true));
+        testDurationLimitSimple(new BixoPlatform(Platform.Local));
     }
     
     @Test
     public void testMaxUrlsPerServer() throws Exception {
-        testMaxUrlsPerServer(new BixoPlatform(true));
+        testMaxUrlsPerServer(new BixoPlatform(Platform.Local));
     }
     
     // TODO KKr- re-enable this test when we know how to make it work for
@@ -70,7 +71,7 @@ public class FetchPipeLocalTest extends AbstractFetchPipeTest {
     /**
     @Test
     public void testPassingAllStatus() throws Exception {
-        testPassingAllStatus(new BixoPlatform(true));
+        testPassingAllStatus(new BixoPlatform(Platform.Local));
     }
     */
     

@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,13 @@
  */
 package bixo.fetcher;
 
-import java.io.File;
-import java.io.IOException;
-
 import junit.framework.Assert;
 
-import org.apache.hadoop.mapred.JobConf;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import com.scaleunlimited.cascading.BasePath;
-
 import bixo.config.BixoPlatform;
+import bixo.config.BixoPlatform.Platform;
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
 import bixo.datum.FetchedDatum;
@@ -48,6 +43,8 @@ import cascading.tap.Tap;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
 
+import com.scaleunlimited.cascading.BasePath;
+
 @SuppressWarnings("deprecation")
 public class FetcherTest {
     private static final Logger LOGGER = Logger.getLogger(FetcherTest.class);
@@ -67,9 +64,10 @@ public class FetcherTest {
         }
     }
         
+    @SuppressWarnings("rawtypes")
     private String makeCrawlDb(String workingFolder, String input) throws Exception {
 
-        BixoPlatform platform = new BixoPlatform(true);
+        BixoPlatform platform = new BixoPlatform(Platform.Local);
         
         // We don't want to regenerate this DB all the time.
         BasePath workingPath = platform.makePath(workingFolder);
@@ -90,6 +88,7 @@ public class FetcherTest {
         return crawlDBPath.getAbsolutePath();
     }
     
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
     public void testStaleConnection() throws Exception {
         System.setProperty("bixo.root.level", "TRACE");
@@ -97,8 +96,7 @@ public class FetcherTest {
         String workingFolder = "build/it/FetcherTest/testStaleConnection/working";
         String input = makeCrawlDb(workingFolder, "src/it/resources/apple-pages.txt");
         
-        BixoPlatform platform = new BixoPlatform(true);
-        BasePath workingPath = platform.makePath(workingFolder);
+        BixoPlatform platform = new BixoPlatform(Platform.Local);
         BasePath inputPath = platform.makePath(input);
 
         Tap in = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), inputPath);
@@ -144,13 +142,14 @@ public class FetcherTest {
         }
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
     public void testRunFetcher() throws Exception {
         System.setProperty("bixo.root.level", "TRACE");
         
         String workingFolder = "build/test-it/FetcherTest/testRunFetcher";
         String input = makeCrawlDb(workingFolder, "src/it/resources/top10urls.txt");
-        BixoPlatform platform = new BixoPlatform(true);
+        BixoPlatform platform = new BixoPlatform(Platform.Local);
         BasePath workingPath = platform.makePath(workingFolder);
         BasePath inputPath = platform.makePath(input);
         Tap in = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), inputPath);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,14 @@ import java.net.URL;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.hadoop.mapred.JobConf;
 import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
 import org.junit.Test;
 
-import com.scaleunlimited.cascading.BasePath;
-
 import bixo.config.BixoPlatform;
+import bixo.config.BixoPlatform.Platform;
 import bixo.datum.ContentBytes;
 import bixo.datum.FetchedDatum;
 import bixo.datum.HttpHeaders;
@@ -44,14 +42,16 @@ import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 
-@SuppressWarnings("deprecation")
+import com.scaleunlimited.cascading.BasePath;
+
+@SuppressWarnings("serial")
 public class ParsePipeTest extends CascadingTestCase {
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
 	@Test
     public void testParserPipe() throws Exception {
 
-        BixoPlatform platform = new BixoPlatform(true);
+        BixoPlatform platform = new BixoPlatform(Platform.Local);
         
 
         Pipe pipe = new Pipe("parse_source");

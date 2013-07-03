@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import org.apache.commons.io.IOUtils;
 
 import bixo.config.BixoPlatform;
+import bixo.config.BixoPlatform.Platform;
 import bixo.fetcher.BaseFetcher;
 import bixo.operations.UrlLengthener;
 import bixo.utils.ConfigUtils;
@@ -104,7 +105,7 @@ public class LengthenUrlsTool {
             pipe = new Each(pipe, new UrlLengthener(fetcher));
             pipe = new Each(pipe, new Debug());
 
-            BixoPlatform platform = new BixoPlatform(true);
+            BixoPlatform platform = new BixoPlatform(Platform.Local);
             BasePath filePath = platform.makePath(filename);
             TextLine textLineLocalScheme = new TextLine(new Fields("url"));
             Tap sourceTap = platform.makeTap(textLineLocalScheme, filePath, SinkMode.KEEP);

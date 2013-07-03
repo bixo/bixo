@@ -45,15 +45,20 @@ import com.scaleunlimited.cascading.local.LocalPlatform;
 @SuppressWarnings({"rawtypes"})
 public class BixoPlatform extends BasePlatform {
 
+    public enum Platform {
+        Local,
+        Hadoop
+    }
+    
     private static final long CASCADING_LOCAL_JOB_POLLING_INTERVAL = 100;
     private static final long LOCAL_HADOOP_JOB_POLLING_INTERVAL = 100;
     
     private BasePlatform _platform;
     private JobConf _hadoopJobConf = null;
 
-    public BixoPlatform(boolean local) throws Exception {
+    public BixoPlatform(Platform platform) throws Exception {
         super(BixoPlatform.class);
-        if (local) {
+        if (platform == Platform.Local) {
             _platform = new LocalPlatform(BixoPlatform.class);
             setJobPollingInterval(CASCADING_LOCAL_JOB_POLLING_INTERVAL);
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,13 @@
  */
 package bixo.pipes;
 
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.apache.log4j.Logger;
 
-import com.scaleunlimited.cascading.BasePath;
-import com.scaleunlimited.cascading.NullContext;
-
 import bixo.config.BixoPlatform;
-import bixo.datum.FetchedDatum;
+import bixo.config.BixoPlatform.Platform;
 import bixo.datum.UrlDatum;
 import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
@@ -44,6 +40,9 @@ import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 
+import com.scaleunlimited.cascading.BasePath;
+import com.scaleunlimited.cascading.NullContext;
+
 
 public class RunFakeFetchPipe {
     private static final Logger LOGGER = Logger.getLogger(RunFakeFetchPipe.class);
@@ -55,6 +54,7 @@ public class RunFakeFetchPipe {
             super(UrlDatum.FIELDS);
         }
 
+        @SuppressWarnings("rawtypes")
         @Override
         public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
             String urlAsString = funcCall.getArguments().getString("line");
@@ -74,6 +74,7 @@ public class RunFakeFetchPipe {
     /**
      * @param args
      */
+    @SuppressWarnings("rawtypes")
     public static void main(String[] args) {
         try {
             URL path = RunFakeFetchPipe.class.getResource("/" + args[0]);
@@ -82,7 +83,7 @@ public class RunFakeFetchPipe {
                 System.exit(-1);
             }
 
-            BixoPlatform platform = new BixoPlatform(true);
+            BixoPlatform platform = new BixoPlatform(Platform.Local);
             
             BasePath inputPath = platform.makePath(path.getFile());
             Tap in = platform.makeTap(platform.makeTextScheme(), inputPath);

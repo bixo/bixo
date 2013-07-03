@@ -19,6 +19,7 @@ package bixo.pipes;
 import org.junit.Test;
 
 import bixo.config.BixoPlatform;
+import bixo.config.BixoPlatform.Platform;
 
 
 @SuppressWarnings("serial")
@@ -27,42 +28,42 @@ public class FetchPipeHadoopTest extends AbstractFetchPipeTest {
 
     @Test
     public void testHeadersInStatus() throws Exception {
-        testHeadersInStatus(new BixoPlatform(false));
+        testHeadersInStatus(new BixoPlatform(Platform.Hadoop));
     }
     
     @Test
     public void testFetchPipe() throws Exception {
-        testFetchPipe(new BixoPlatform(false));
+        testFetchPipe(new BixoPlatform(Platform.Hadoop));
     }
     
     @Test
     public void testRedirectException() throws Exception {
-        testRedirectException(new BixoPlatform(false));
+        testRedirectException(new BixoPlatform(Platform.Hadoop));
     }
     
     @Test
     public void testTerminatingFetchPipe() throws Exception {
-        testTerminatingFetchPipe(new BixoPlatform(false));
+        testTerminatingFetchPipe(new BixoPlatform(Platform.Hadoop));
     }
     
     @Test
     public void testPayloads() throws Exception {
-        testPayloads(new BixoPlatform(false));
+        testPayloads(new BixoPlatform(Platform.Hadoop));
     }
     
     @Test
     public void testSkippingURLsByScore() throws Exception {
-        testSkippingURLsByScore(new BixoPlatform(false));
+        testSkippingURLsByScore(new BixoPlatform(Platform.Hadoop));
     }
     
     @Test
     public void testDurationLimitSimple() throws Exception {
-        testDurationLimitSimple(new BixoPlatform(false));
+        testDurationLimitSimple(new BixoPlatform(Platform.Hadoop));
     }
     
     @Test
     public void testMaxUrlsPerServer() throws Exception {
-        testMaxUrlsPerServer(new BixoPlatform(false));
+        testMaxUrlsPerServer(new BixoPlatform(Platform.Hadoop));
     }
     
     // TODO KKr- re-enable this test when we know how to make it work for
@@ -70,7 +71,7 @@ public class FetchPipeHadoopTest extends AbstractFetchPipeTest {
     /**
     @Test
     public void testPassingAllStatus() throws Exception {
-        testPassingAllStatus(new BixoPlatform(false));
+        testPassingAllStatus(new BixoPlatform(Platform.Hadoop));
     }
     */
     

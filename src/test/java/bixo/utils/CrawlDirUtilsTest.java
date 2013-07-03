@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2012 Scale Unlimited
+ * Copyright 2009-2013 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,20 @@
 package bixo.utils;
 
 
-import java.io.IOException;
-
 import junit.framework.Assert;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import bixo.config.BixoPlatform;
+import bixo.config.BixoPlatform.Platform;
+
 import com.scaleunlimited.cascading.BasePath;
 import com.scaleunlimited.cascading.BasePlatform;
 
-import bixo.config.BixoPlatform;
 
 
-
-@SuppressWarnings("deprecation")
 public class CrawlDirUtilsTest {
     
     BasePlatform _platform;
@@ -40,7 +38,7 @@ public class CrawlDirUtilsTest {
     
     @Before
     public void setUp() throws Exception {
-        _platform = new BixoPlatform(true);
+        _platform = new BixoPlatform(Platform.Local);
         _outputPath = _platform.makePath("./build/CrawlDirUtilsTest");
         _outputPath.mkdirs();
     }
