@@ -145,7 +145,7 @@ public class ExportDocsMahout2Mongo  {
                 Vector value = (Vector)record.getSecond().get();
                 //String url = currentClusterConf.vectorNameToURL(vector.getName());
                 //Vector value = vector.getDelegate();
-                Iterator<Vector.Element> vi = value.iterateNonZero();//a very sparse vector so don't waist time on empty elements
+                Iterator<Vector.Element> vi = value.nonZeroes().iterator();//a very sparse vector so don't waist time on empty elements
                 int vcount = 0;
                 int docId = 0;
                 ArrayList simDocs = new ArrayList();
@@ -236,7 +236,7 @@ public class ExportDocsMahout2Mongo  {
 
     public static ArrayList getTermVector( Vector v, DBCollection dictionary ){
         ArrayList termVector = new ArrayList();
-        Iterator<Vector.Element> vi = v.iterateNonZero();//a very sparse vector so don't waist time on empty elements
+        Iterator<Vector.Element> vi = v.nonZeroes().iterator();//a very sparse vector so don't waist time on empty elements
         while (vi.hasNext() ){
             Vector.Element ve = vi.next();
             int tokenId = ve.index();

@@ -58,7 +58,7 @@ public class CreateUrlDatumFromStatusFunction extends BaseOperation<NullContext>
         
         long fetchTime = statusTime; // Not exactly true... since in some cases we
                     // may not have fetched the url. But because we are sharing this logic
-                    // between the JDBCCrawlTool and the DemoCrawlAndMinerTool, we use the value
+                    // between the JDBCCrawlTool and the PinterestCrawlAndMinerTool, we use the value
                     // of the fetchTime while selecting the "latest" url. Newly added urls
                     // have a fetchTime of 0, so in order to preserve say a SKIPPED status
                     // we set the fetch time here.

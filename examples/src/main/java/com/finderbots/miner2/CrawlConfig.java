@@ -25,6 +25,7 @@ public class CrawlConfig {
     public static final String STATUS_SUBDIR_NAME = "status";
     public static final String PARSE_SUBDIR_NAME = "parse";
     public static final String MINER_SUBDIR_NAME = "miner";
+    public static final String MINER2_SUBDIR_NAME = "miner2";
 
     public static final String MAHOUT_SUBDIR_NAME = "mahout";
 
