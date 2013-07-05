@@ -68,11 +68,14 @@ public class CrawlDirUtils {
 			if (!path.isDirectory()) {
 				continue;
 			}
-
+			try {
 			int curLoop = extractLoopNumber(path);
 			if (curLoop > bestLoop) {
 				bestLoop = curLoop;
 				result = path;
+			}
+			} catch (InvalidParameterException e) {
+			    // Ignore - we could have non loop-dir dirs
 			}
 		}
 
