@@ -18,14 +18,9 @@ package bixo.examples.webmining;
 
 import java.util.Iterator;
 
-import com.scaleunlimited.cascading.LoggingFlowProcess;
-import com.scaleunlimited.cascading.LoggingFlowReporter;
-import com.scaleunlimited.cascading.NullContext;
-
 import bixo.datum.StatusDatum;
 import bixo.datum.UrlStatus;
 import cascading.flow.FlowProcess;
-import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
 import cascading.operation.BufferCall;
@@ -33,6 +28,10 @@ import cascading.operation.OperationCall;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
+
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+import com.scaleunlimited.cascading.LoggingFlowReporter;
+import com.scaleunlimited.cascading.NullContext;
 
 
 @SuppressWarnings({"serial", "rawtypes"})

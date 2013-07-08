@@ -20,15 +20,13 @@ package bixo.examples.webmining;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.shingle.ShingleAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.tokenattributes.TermAttribute;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.util.Version;
 
 
@@ -39,31 +37,34 @@ public class PhraseShingleAnalyzer  {
     private Analyzer _analyzer;
 
     public PhraseShingleAnalyzer(int maxWordsInShingle) {
-        Set<String> noStopWords = Collections.emptySet();
-        _analyzer = new ShingleAnalyzerWrapper(new StandardAnalyzer(Version.LUCENE_29, noStopWords), maxWordsInShingle);
+        _analyzer = new ShingleAnalyzerWrapper(new StandardAnalyzer(Version.LUCENE_42), maxWordsInShingle);
     }
  
     public PhraseShingleAnalyzer() {
        this(MAX_WORDS_IN_SHINGLE);
     }
 
+    
     public List<String> getTermList(String contentText) {
-        TokenStream stream = _analyzer.tokenStream("content", new StringReader(contentText));
-        TermAttribute termAtt = (TermAttribute)stream.addAttribute(TermAttribute.class);
-
         List<String> result = new ArrayList<String>(contentText.length() / 10);
         
         try {
+            TokenStream stream = _analyzer.tokenStream("content", new StringReader(contentText));
+            CharTermAttribute termAtt = (CharTermAttribute) stream.addAttribute(CharTermAttribute.class);
+
+            stream.reset();
             while (stream.incrementToken()) {
-                if (termAtt.termLength() > 0) {
-                    String term = termAtt.term();
-                    result.add(term);
+                if (termAtt.length() > 0) {
+                    String term = termAtt.toString();
+                        result.add(term);
                 }
             }
+            stream.end();
+            stream.close();
         } catch (IOException e) {
             throw new RuntimeException("Impossible error", e);
         }
-        
+
         return result;
     }
 

@@ -20,7 +20,6 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
-import bixo.config.BixoPlatform;
 import bixo.config.BixoPlatform.Platform;
 
 public class BaseCrawlToolOptions {
