@@ -19,12 +19,9 @@ package bixo.operations;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.hadoop.mapred.JobConf;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
-
-import com.scaleunlimited.cascading.NullContext;
 
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
@@ -37,15 +34,17 @@ import bixo.robots.BaseRobotsParser;
 import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
-import cascading.flow.hadoop.HadoopFlowProcess;
+import cascading.flow.FlowProcess;
+import cascading.flow.FlowProcess.NullFlowProcess;
 import cascading.operation.BufferCall;
 import cascading.operation.OperationCall;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
+import com.scaleunlimited.cascading.NullContext;
 
-@SuppressWarnings("deprecation")
+
 public class FilterAndScoreByUrlAndRobotsTest {
     private static final String CRLF = "\r\n";
 
@@ -64,7 +63,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
         return iterValues;
     }
     
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
     public void testUsingAllThreads() throws Exception {
         final int maxThreads = 10;
@@ -74,8 +73,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, parser, scorer);
         
-        HadoopFlowProcess fp = Mockito.mock(HadoopFlowProcess.class);
-        Mockito.when(fp.getJobConf()).thenReturn(new JobConf());
+        FlowProcess fp = Mockito.mock(NullFlowProcess.class);
         
         OperationCall<NullContext> oc = Mockito.mock(OperationCall.class);
         BufferCall<NullContext> bc = Mockito.mock(BufferCall.class);
@@ -106,7 +104,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
         }
     }
     
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Test
     public void testBlockedRobots() throws Exception {
         final int maxThreads = 1;
@@ -116,8 +114,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, parser, scorer);
         
-        HadoopFlowProcess fp = Mockito.mock(HadoopFlowProcess.class);
-        Mockito.when(fp.getJobConf()).thenReturn(new JobConf());
+        FlowProcess fp = Mockito.mock(NullFlowProcess.class);
         
         OperationCall<NullContext> oc = Mockito.mock(OperationCall.class);
         BufferCall<NullContext> bc = Mockito.mock(BufferCall.class);

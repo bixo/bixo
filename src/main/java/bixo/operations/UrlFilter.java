@@ -43,7 +43,8 @@ public class UrlFilter extends BaseOperation<NullContext> implements Filter<Null
 		_filter = filter;
 	}
 
-	@Override
+	@SuppressWarnings("rawtypes")
+    @Override
 	public void prepare(FlowProcess process, OperationCall<NullContext> opCall) {
 		LOGGER.info("Starting filtering of URLs");
 
@@ -51,7 +52,8 @@ public class UrlFilter extends BaseOperation<NullContext> implements Filter<Null
 		_numAccepted = 0;
 	}
 	
-	@Override
+	@SuppressWarnings("rawtypes")
+    @Override
 	public boolean isRemove(FlowProcess process, FilterCall<NullContext> filterCall) {
 		UrlDatum datum = new UrlDatum(filterCall.getArguments());
 		if (_filter.isRemove(datum)) {
@@ -65,7 +67,8 @@ public class UrlFilter extends BaseOperation<NullContext> implements Filter<Null
 		}
 	}
 	
-	@Override
+	@SuppressWarnings("rawtypes")
+    @Override
 	public void cleanup(FlowProcess process, OperationCall<NullContext> opCall) {
 		LOGGER.info("Ending filtering of URLs");
 		LOGGER.info(String.format("Filtered %d URLs, accepted %d URLs", _numFiltered, _numAccepted));

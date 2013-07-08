@@ -51,6 +51,7 @@ public class LoadUrlsFunction extends BaseOperation<NullContext> implements Func
         this(Integer.MAX_VALUE);
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
         if (_numUrls >= _maxUrls) {

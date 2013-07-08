@@ -24,6 +24,7 @@ import cascading.tuple.Tuple;
 
 public interface IFetchMgr {
     
+    @SuppressWarnings("rawtypes")
     public LoggingFlowProcess getProcess();
     
     public void collect(Tuple tuple);

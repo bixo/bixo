@@ -31,16 +31,12 @@ import junit.framework.Assert;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.ccil.cowan.tagsoup.Parser;
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Node;
 import org.dom4j.XPath;
 import org.dom4j.io.SAXReader;
-import org.dom4j.io.SAXWriter;
 import org.hsqldb.lib.StringInputStream;
 import org.junit.Test;
 

@@ -132,7 +132,7 @@ public class FetchPipe extends SubAssembly {
             Tuple t = funcCall.getArguments().getTuple();
             
             // Get the status to decide if it's a good fetch
-            Comparable status = t.get(_fieldPos);
+            Object status = t.getObject(_fieldPos);
             if ((status instanceof String) && (UrlStatus.valueOf((String)status) == UrlStatus.FETCHED)) {
                 funcCall.getOutputCollector().add(BixoPlatform.clone(t.get(_fieldsToCopy), process));
             }
@@ -159,7 +159,7 @@ public class FetchPipe extends SubAssembly {
             
             // Get the fetch status that we hang on the end of the tuple,
             // after all of the FetchedDatum fields.
-            Comparable result = entry.get(_fieldPos);
+            Object result = entry.getObject(_fieldPos);
             StatusDatum status;
             
             // Note: Here we share the payload of the FetchedDatum with the
@@ -189,6 +189,7 @@ public class FetchPipe extends SubAssembly {
             super(StatusDatum.FIELDS);
         }
 
+        @SuppressWarnings("rawtypes")
         @Override
         public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
             ScoredUrlDatum sd = new ScoredUrlDatum(funcCall.getArguments());
@@ -289,6 +290,7 @@ public class FetchPipe extends SubAssembly {
      * @param fetchedSink Tap where fetched content will be sent (can be null)
      * @return Map usable in FlowConnector.connect() call.
      */
+    @SuppressWarnings("rawtypes")
     public static Map<String, Tap> makeSinkMap(Tap statusSink, Tap fetchedSink) {
         HashMap<String, Tap> result = new HashMap<String, Tap>(2);
         

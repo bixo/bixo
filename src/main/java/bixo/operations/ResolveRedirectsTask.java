@@ -30,6 +30,7 @@ import bixo.exceptions.HttpFetchException;
 import bixo.exceptions.RedirectFetchException;
 import bixo.fetcher.BaseFetcher;
 
+@SuppressWarnings("rawtypes")
 public class ResolveRedirectsTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ResolveRedirectsTask.class);
     

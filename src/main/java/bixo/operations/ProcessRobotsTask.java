@@ -42,6 +42,7 @@ import cascading.flow.FlowProcess;
 import cascading.tuple.TupleEntryCollector;
 
 
+@SuppressWarnings("rawtypes")
 public class ProcessRobotsTask implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ProcessRobotsTask.class);
 

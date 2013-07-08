@@ -68,7 +68,7 @@ public class UrlDatum extends PayloadDatum {
     }
 
     public void setUrl(String url) {
-        _tupleEntry.set(URL_FN, url);
+        _tupleEntry.setString(URL_FN, url);
     }
 
 }

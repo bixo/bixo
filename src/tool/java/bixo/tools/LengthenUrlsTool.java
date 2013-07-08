@@ -62,6 +62,7 @@ public class LengthenUrlsTool {
     /**
      * @param args - URL to fetch, or path to file of URLs
      */
+    @SuppressWarnings("rawtypes")
     public static void main(String[] args) {
         try {
             String url = null;

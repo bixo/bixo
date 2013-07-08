@@ -87,7 +87,7 @@ public class FetchSetDatum extends BaseDatum {
             result.add(datum.getTuple());
         }
         
-        _tupleEntry.set(URLS_FN, result);
+        _tupleEntry.setObject(URLS_FN, result);
     }
     
     public long getFetchTime() {
@@ -95,7 +95,7 @@ public class FetchSetDatum extends BaseDatum {
     }
     
     public void setFetchTime(long fetchTime) {
-        _tupleEntry.set(FETCH_TIME_FN, fetchTime);
+        _tupleEntry.setLong(FETCH_TIME_FN, fetchTime);
     }
     
     public long getFetchDelay() {
@@ -103,7 +103,7 @@ public class FetchSetDatum extends BaseDatum {
     }
 
     public void setFetchDelay(long fetchDelay) {
-        _tupleEntry.set(FETCH_DELAY_FN, fetchDelay);
+        _tupleEntry.setLong(FETCH_DELAY_FN, fetchDelay);
     }
 
     public int getGroupingKey() {
@@ -111,7 +111,7 @@ public class FetchSetDatum extends BaseDatum {
     }
 
     public void setGroupingKey(int groupingKey) {
-        _tupleEntry.set(GROUPING_KEY_FN, groupingKey);
+        _tupleEntry.setInteger(GROUPING_KEY_FN, groupingKey);
     }
 
     public String getGroupingRef() {
@@ -119,7 +119,7 @@ public class FetchSetDatum extends BaseDatum {
     }
     
     public void setGroupingRef(String groupingRef) {
-        _tupleEntry.set(GROUPING_REF_FN, groupingRef);
+        _tupleEntry.setString(GROUPING_REF_FN, groupingRef);
     }
     
     public boolean isLastList() {
@@ -127,7 +127,7 @@ public class FetchSetDatum extends BaseDatum {
     }
 
     public void setLastList(boolean lastList) {
-        _tupleEntry.set(LAST_LIST_FN, lastList);
+        _tupleEntry.setBoolean(LAST_LIST_FN, lastList);
     }
 
     public boolean isSkipped() {
@@ -135,7 +135,7 @@ public class FetchSetDatum extends BaseDatum {
     }
     
     public void setSkipped(boolean skipped) {
-        _tupleEntry.set(SKIPPED_FN, skipped);
+        _tupleEntry.setBoolean(SKIPPED_FN, skipped);
     }
 
     // ==================================================

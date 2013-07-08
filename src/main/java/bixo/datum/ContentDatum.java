@@ -103,7 +103,7 @@ public class ContentDatum extends PayloadDatum implements Serializable {
             throw new InvalidParameterException("baseUrl cannot be null");
         }
 
-        _tupleEntry.set(BASE_URL_FN, baseUrl);
+        _tupleEntry.setString(BASE_URL_FN, baseUrl);
     }
     
     public String getFetchedUrl() {
@@ -115,7 +115,7 @@ public class ContentDatum extends PayloadDatum implements Serializable {
             throw new InvalidParameterException("fetchedUrl cannot be null");
         }
 
-        _tupleEntry.set(FETCHED_URL_FN, fetchedUrl);
+        _tupleEntry.setString(FETCHED_URL_FN, fetchedUrl);
     }
     
     public byte[] getContentBytes() {
@@ -131,7 +131,7 @@ public class ContentDatum extends PayloadDatum implements Serializable {
             throw new InvalidParameterException("content cannot be null");
         }
 
-        _tupleEntry.set(CONTENT_FN, content);
+        _tupleEntry.setObject(CONTENT_FN, content);
     }
     
     public String getContentType() {
@@ -143,11 +143,11 @@ public class ContentDatum extends PayloadDatum implements Serializable {
             throw new InvalidParameterException("contentType cannot be null");
         }
 
-        _tupleEntry.set(CONTENT_TYPE_FN, contentType);
+        _tupleEntry.setString(CONTENT_TYPE_FN, contentType);
     }
     
     public HttpHeaders getHeaders() {
-        return new HttpHeaders((Tuple)_tupleEntry.get(HTTP_HEADERS_FN));
+        return new HttpHeaders((Tuple)_tupleEntry.getObject(HTTP_HEADERS_FN));
     }
 
     public void setHeaders(HttpHeaders headers) {
@@ -155,7 +155,7 @@ public class ContentDatum extends PayloadDatum implements Serializable {
             throw new InvalidParameterException("headers cannot be null");
         }
 
-        _tupleEntry.set(HTTP_HEADERS_FN, headers.toTuple());
+        _tupleEntry.setObject(HTTP_HEADERS_FN, headers.toTuple());
     }
 
     public String getHostAddress() {
@@ -163,7 +163,7 @@ public class ContentDatum extends PayloadDatum implements Serializable {
     }
 
     public void setHostAddress(String hostAddress) {
-        _tupleEntry.set(HOST_ADDRESS_FN, hostAddress);
+        _tupleEntry.setString(HOST_ADDRESS_FN, hostAddress);
     }
 
     @Override

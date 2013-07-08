@@ -29,7 +29,7 @@ import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
 
-@SuppressWarnings({ "serial" })
+@SuppressWarnings({ "serial", "rawtypes" })
 public class GroupFunction extends BaseOperation<NullContext> implements Function<NullContext> {
     private static final Logger LOGGER = Logger.getLogger(GroupFunction.class);
 

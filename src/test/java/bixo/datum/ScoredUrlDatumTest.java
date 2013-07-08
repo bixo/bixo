@@ -22,12 +22,14 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
+import bixo.config.BixoPlatform;
+import bixo.config.BixoPlatform.Platform;
 import bixo.utils.DiskQueue;
-import cascading.flow.hadoop.HadoopFlowProcess;
-import cascading.scheme.hadoop.SequenceFile;
-import cascading.tap.hadoop.Hfs;
+import cascading.tap.SinkMode;
+import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 
+import com.scaleunlimited.cascading.BasePath;
 import com.scaleunlimited.cascading.PartitioningKey;
 
 
@@ -52,7 +54,17 @@ public class ScoredUrlDatumTest {
     }
     
     @Test
-    public void testCascadingSerialization() throws Exception {
+    public void testCascadingHadoopSerialization() throws Exception {
+        testSerialization(Platform.Hadoop);
+    }
+    
+    @Test
+    public void testCascadingLocalSerialization() throws Exception {
+        testSerialization(Platform.Local);
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private void testSerialization(Platform  platformMode) throws Exception {
         List<ScoredUrlDatum> urls = new LinkedList<ScoredUrlDatum>();
         ScoredUrlDatum url = new ScoredUrlDatum("http://domain.com/page-1", "key", UrlStatus.UNFETCHED, 1.0);
         urls.add(url);
@@ -61,8 +73,10 @@ public class ScoredUrlDatumTest {
         PartitioningKey groupingKey = new PartitioningKey("key", 1);
         FetchSetDatum pfd = new FetchSetDatum(urls, fetchTime, 1000, groupingKey.getValue(), groupingKey.getRef());
         
-        Hfs in = new Hfs(new SequenceFile(FetchSetDatum.FIELDS), "build/test/ScoredUrlDatumTest/testCascadingSerialization/in", true);
-        TupleEntryCollector write = in.openForWrite(new HadoopFlowProcess());
+        BixoPlatform platform = new BixoPlatform(platformMode);
+        BasePath path = platform.makePath("build/test/ScoredUrlDatumTest/testCascadingSerialization/in");
+        Tap in = platform.makeTap(platform.makeBinaryScheme(FetchSetDatum.FIELDS), path, SinkMode.REPLACE);
+        TupleEntryCollector write = in.openForWrite(platform.makeFlowProcess());
         write.add(pfd.getTuple());
         write.close();
     }

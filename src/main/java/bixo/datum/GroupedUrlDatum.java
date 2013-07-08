@@ -68,7 +68,7 @@ public class GroupedUrlDatum extends UrlDatum implements Serializable, Comparabl
     }
 
     public void setGroupKey(String groupKey) {
-        _tupleEntry.set(GROUP_KEY_FN, groupKey);
+        _tupleEntry.setString(GROUP_KEY_FN, groupKey);
     }
     
     public static Fields getGroupingField() {

@@ -64,7 +64,7 @@ public class ScoredUrlDatum extends GroupedUrlDatum implements Serializable {
     }
 
     public void setStatus(UrlStatus status) {
-        _tupleEntry.set(STATUS_FN, status.name());
+        _tupleEntry.setString(STATUS_FN, status.name());
     }
     
     public double getScore() {
@@ -72,7 +72,7 @@ public class ScoredUrlDatum extends GroupedUrlDatum implements Serializable {
     }
 
     public void setScore(double score) {
-        _tupleEntry.set(SCORE_FN, score);
+        _tupleEntry.setDouble(SCORE_FN, score);
     }
 
     public static Fields getSortingField() {

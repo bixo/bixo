@@ -38,6 +38,7 @@ public class NormalizeUrlFunction extends BaseOperation<NullContext> implements 
         _normalizer = normalizer;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void operate(FlowProcess process, FunctionCall<NullContext> funCall) {
         UrlDatum datum = new UrlDatum(funCall.getArguments());

@@ -27,10 +27,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import com.scaleunlimited.cascading.LoggingFlowProcess;
-import com.scaleunlimited.cascading.LoggingFlowReporter;
-import com.scaleunlimited.cascading.NullContext;
-
 import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
@@ -40,7 +36,6 @@ import bixo.fetcher.SimpleHttpFetcher;
 import bixo.hadoop.FetchCounters;
 import bixo.utils.ThreadedExecutor;
 import cascading.flow.FlowProcess;
-import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
@@ -49,8 +44,12 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntryCollector;
 
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+import com.scaleunlimited.cascading.LoggingFlowReporter;
+import com.scaleunlimited.cascading.NullContext;
 
-@SuppressWarnings("serial")
+
+@SuppressWarnings({"serial", "rawtypes"})
 public class UrlLengthener extends BaseOperation<NullContext> implements Function<NullContext> {
     private static final Logger LOGGER = Logger.getLogger(UrlLengthener.class);
     
@@ -120,6 +119,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
         _urlShorteners = loadUrlShorteners();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void prepare(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
         super.prepare(flowProcess, operationCall);

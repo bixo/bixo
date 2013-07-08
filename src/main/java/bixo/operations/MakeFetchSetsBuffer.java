@@ -61,6 +61,7 @@ public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements B
         _numReduceTasks = numReduceTasks;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void operate(FlowProcess process, BufferCall<NullContext> buffCall) {
         Iterator<TupleEntry> values = buffCall.getArgumentsIterator();

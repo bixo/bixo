@@ -25,11 +25,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.log4j.Logger;
 
-import com.scaleunlimited.cascading.BaseDatum;
-import com.scaleunlimited.cascading.LoggingFlowProcess;
-import com.scaleunlimited.cascading.LoggingFlowReporter;
-import com.scaleunlimited.cascading.NullContext;
-
 import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.FetcherMode;
@@ -44,7 +39,6 @@ import bixo.hadoop.FetchCounters;
 import bixo.utils.DiskQueue;
 import bixo.utils.ThreadedExecutor;
 import cascading.flow.FlowProcess;
-import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Buffer;
 import cascading.operation.BufferCall;
@@ -54,8 +48,13 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
+import com.scaleunlimited.cascading.BaseDatum;
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+import com.scaleunlimited.cascading.LoggingFlowReporter;
+import com.scaleunlimited.cascading.NullContext;
 
-@SuppressWarnings( { "serial" })
+
+@SuppressWarnings( { "serial", "rawtypes" })
 public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<NullContext>, IFetchMgr {
     private static Logger LOGGER = Logger.getLogger(FetchBuffer.class);
 
@@ -299,6 +298,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         return false;
     }
 
+    @SuppressWarnings({"unchecked" })
     @Override
     public void prepare(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
         super.prepare(flowProcess, operationCall);

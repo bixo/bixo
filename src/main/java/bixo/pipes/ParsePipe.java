@@ -18,10 +18,6 @@ package bixo.pipes;
 
 import org.apache.log4j.Logger;
 
-import com.scaleunlimited.cascading.LoggingFlowProcess;
-import com.scaleunlimited.cascading.LoggingFlowReporter;
-import com.scaleunlimited.cascading.NullContext;
-
 import bixo.config.BixoPlatform;
 import bixo.datum.FetchedDatum;
 import bixo.datum.ParsedDatum;
@@ -29,7 +25,6 @@ import bixo.parser.BaseParser;
 import bixo.parser.ParserCounters;
 import bixo.parser.SimpleParser;
 import cascading.flow.FlowProcess;
-import cascading.flow.hadoop.HadoopFlowProcess;
 import cascading.operation.BaseOperation;
 import cascading.operation.Function;
 import cascading.operation.FunctionCall;
@@ -39,8 +34,12 @@ import cascading.pipe.Pipe;
 import cascading.pipe.SubAssembly;
 import cascading.tuple.Fields;
 
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+import com.scaleunlimited.cascading.LoggingFlowReporter;
+import com.scaleunlimited.cascading.NullContext;
 
-@SuppressWarnings("serial")
+
+@SuppressWarnings({"serial", "rawtypes"})
 public class ParsePipe extends SubAssembly {
     private static final Logger LOGGER = Logger.getLogger(ParsePipe.class);
     
@@ -56,6 +55,7 @@ public class ParsePipe extends SubAssembly {
             _parser = parser;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public void prepare(FlowProcess flowProcess,
                             OperationCall<NullContext> operationCall) {

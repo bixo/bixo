@@ -48,7 +48,7 @@ import com.scaleunlimited.cascading.NullContext;
  *
  */
 
-@SuppressWarnings("serial")
+@SuppressWarnings({"serial", "rawtypes"})
 public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> implements Buffer<NullContext> {
 	private static final Logger LOGGER = Logger.getLogger(FilterAndScoreByUrlAndRobots.class);
 	
@@ -87,6 +87,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         return false;
     }
     
+    @SuppressWarnings("unchecked")
     @Override
     public void prepare(FlowProcess flowProcess, cascading.operation.OperationCall<NullContext> operationCall) {
         _executor = new ThreadedExecutor(_fetcher.getMaxThreads(), COMMAND_TIMEOUT);

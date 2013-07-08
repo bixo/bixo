@@ -81,8 +81,6 @@ import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.log4j.Logger;
 
-import com.scaleunlimited.cascading.Payload;
-
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
 import bixo.config.UserAgent;
@@ -101,6 +99,8 @@ import bixo.exceptions.UrlFetchException;
 import bixo.utils.EncodingUtils;
 import bixo.utils.EncodingUtils.ExpandedResult;
 import bixo.utils.HttpUtils;
+
+import com.scaleunlimited.cascading.Payload;
 
 
 @SuppressWarnings("serial")

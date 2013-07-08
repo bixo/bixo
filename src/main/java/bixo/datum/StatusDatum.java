@@ -83,7 +83,7 @@ public class StatusDatum extends PayloadDatum {
     }
 
     public void setUrl(String url) {
-        _tupleEntry.set(URL_FN, url);
+        _tupleEntry.setString(URL_FN, url);
     }
 
     public UrlStatus getStatus() {
@@ -91,18 +91,18 @@ public class StatusDatum extends PayloadDatum {
     }
 
     public void setStatus(UrlStatus status) {
-        _tupleEntry.set(STATUS_FN, status.name());
+        _tupleEntry.setString(STATUS_FN, status.name());
     }
     
     public HttpHeaders getHeaders() {
-        return new HttpHeaders((Tuple)_tupleEntry.get(HEADERS_FN));
+        return new HttpHeaders((Tuple)_tupleEntry.getObject(HEADERS_FN));
     }
 
     public void setHeaders(HttpHeaders headers) {
         if (headers == null) {
-            _tupleEntry.set(HEADERS_FN, null);
+            _tupleEntry.setObject(HEADERS_FN, null);
         } else {
-            _tupleEntry.set(HEADERS_FN, headers.toTuple());
+            _tupleEntry.setObject(HEADERS_FN, headers.toTuple());
         }
     }
     
@@ -111,7 +111,7 @@ public class StatusDatum extends PayloadDatum {
     }
 
     public void setException(BaseFetchException e) {
-        _tupleEntry.set(EXCEPTION_FN, e);
+        _tupleEntry.setObject(EXCEPTION_FN, e);
     }
     
     public long getStatusTime() {
@@ -119,7 +119,7 @@ public class StatusDatum extends PayloadDatum {
     }
     
     public void setStatusTime(long statusTime) {
-        _tupleEntry.set(STATUS_TIME_FN, statusTime);
+        _tupleEntry.setLong(STATUS_TIME_FN, statusTime);
     }
     
     public String getHostAddress() {
@@ -127,7 +127,7 @@ public class StatusDatum extends PayloadDatum {
     }
     
     public void setHostAddress(String hostAddress) {
-        _tupleEntry.set(HOST_ADDRESS_FN, hostAddress);
+        _tupleEntry.setString(HOST_ADDRESS_FN, hostAddress);
     }
 
 }

@@ -102,7 +102,6 @@ public class RunFakeFetchPipe {
 
             BasePath contentPath = platform.makePath(outputPath, "content");
             Tap content = platform.makeTap(platform.makeTextScheme(), contentPath, SinkMode.REPLACE);
-//            Tap content = new Hfs(new TextLine(null, FetchedDatum.FIELDS), outputPath + "/content", true);
             
             // Finally we can run it.
             FlowConnector flowConnector = platform.makeFlowConnector();
