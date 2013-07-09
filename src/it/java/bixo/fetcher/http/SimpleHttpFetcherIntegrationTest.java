@@ -30,7 +30,7 @@ public class SimpleHttpFetcherIntegrationTest {
     @Test
     public final void testNoDomain() {
         BaseFetcher fetcher = new SimpleHttpFetcher(1, ConfigUtils.BIXO_IT_AGENT);
-        String url = "http://www.facebookxxxxx.com";
+        String url = "http://www.bogusbixodomainxxxxx.com";
         
         try {
             fetcher.get(new ScoredUrlDatum(url));
