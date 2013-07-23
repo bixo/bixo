@@ -419,7 +419,8 @@ public abstract class AbstractFetchPipeTest extends CascadingTestCase {
     }
     
     protected void testSkippingURLsByScore(BixoPlatform platform) throws Exception {
-        Tap in = makeInputData(platform, "testSkippingURLsByScore", 1, 1);
+        // Create four pages, for domain0/page0, domain0/page1, domain1/page0, domain1/page1
+        Tap in = makeInputData(platform, "testSkippingURLsByScore", 2, 2);
 
         Pipe pipe = new Pipe("urlSource");
         BaseFetcher fetcher = new FakeHttpFetcher(false, 1);
@@ -439,7 +440,34 @@ public abstract class AbstractFetchPipeTest extends CascadingTestCase {
         
         Tap validate = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), contentPath);
         TupleEntryIterator tupleEntryIterator = validate.openForRead(platform.makeFlowProcess());
+        Assert.assertTrue(tupleEntryIterator.hasNext());
+        TupleEntry te = tupleEntryIterator.next();
+        String url = te.getString(FetchedDatum.URL_FN);
+        Assert.assertTrue(url.contains("bixo-test-domain-1.com/page-1.html"));
+        
+        // Should only be one resulting page (for domain 1, page 1).
         Assert.assertFalse(tupleEntryIterator.hasNext());
+    }
+    
+    private static class SkippedScoreGenerator extends BaseScoreGenerator {
+
+        /* Skip everything from the first domain, and then conditionally skip
+         * URLs based on pattern, so some are rejected and some aren't.
+         * (non-Javadoc)
+         * @see bixo.operations.BaseScoreGenerator#generateScore(java.lang.String, java.lang.String, java.lang.String)
+         */
+        @Override
+        public double generateScore(String domain, String pld, String url) {
+            if (domain.equals("bixo-test-domain-0.com")) {
+                return BaseScoreGenerator.SKIP_SCORE;
+            } else if (url == null) {
+                return 1.0;
+            } else if (url.contains("page-0.html")) {
+                return BaseScoreGenerator.SKIP_SCORE;
+            } else {
+                return 1.0;
+            }
+        }
     }
     
     protected void testDurationLimitSimple(BixoPlatform platform) throws Exception {
@@ -605,14 +633,6 @@ public abstract class AbstractFetchPipeTest extends CascadingTestCase {
         Assert.assertEquals(10, numEntries);
     }
     */
-    
-    private static class SkippedScoreGenerator extends BaseScoreGenerator {
-
-        @Override
-        public double generateScore(String domain, String pld, String url) {
-            return BaseScoreGenerator.SKIP_SCORE;
-        }
-    }
     
     /**
     @SuppressWarnings("serial")

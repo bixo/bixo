@@ -143,9 +143,14 @@ public class ProcessRobotsTask implements Runnable {
                         counter = FetchCounters.URLS_BLOCKED;
                         scoreUrl = new ScoredUrlDatum(url, GroupingKey.BLOCKED_GROUPING_KEY, UrlStatus.SKIPPED_BLOCKED, 0.0);
                     } else {
-                        counter = FetchCounters.URLS_ACCEPTED;
                         double score = _scorer.generateScore(domain, pld, datum);
-                        scoreUrl = new ScoredUrlDatum(url, validKey, UrlStatus.UNFETCHED, score);
+                        if (score == BaseScoreGenerator.SKIP_SCORE) {
+                            counter = FetchCounters.URLS_SKIPPED;
+                            scoreUrl = new ScoredUrlDatum(url, GroupingKey.SKIPPED_GROUPING_KEY, UrlStatus.UNFETCHED, score);
+                        } else {
+                            counter = FetchCounters.URLS_ACCEPTED;
+                            scoreUrl = new ScoredUrlDatum(url, validKey, UrlStatus.UNFETCHED, score);
+                        }
                     }
                     
                     scoreUrl.setPayload(datum.getPayload());
