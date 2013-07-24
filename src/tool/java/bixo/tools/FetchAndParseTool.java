@@ -97,6 +97,8 @@ public class FetchAndParseTool {
         ParserPolicy parserPolicy = new ParserPolicy(MAX_PARSE_DURATION);
         SimpleParser parser = new SimpleParser(parserPolicy);
 
+        SimpleParser rawParser = new SimpleParser(parserPolicy, true);
+        
         // Create Boilperpipe content extractor
         SimpleParser bpParser = new SimpleParser(new BoilerpipeContentExtractor(), new NullLinkExtractor(), parserPolicy);
         
@@ -134,10 +136,11 @@ public class FetchAndParseTool {
         		                parsed.getLanguage(), parsed.getParsedText().length()));
         		
         		ParsedDatum bpParsed = bpParser.parse(result);
+        		ParsedDatum rawParsed = rawParser.parse(result);
         		
         		if (interactive) {
         		    while (true) {
-        		        System.out.print("Next action - (d)ump regular, dump (b)oilerpipe, (e)xit: ");
+        		        System.out.print("Next action - (d)ump regular, dump (b)oilerpipe, dump (r)aw, (e)xit: ");
         		        String action = readInputLine();
         		        if (action.startsWith("e") || (action.length() == 0)) {
         		            break;
@@ -148,6 +151,10 @@ public class FetchAndParseTool {
                         } else if (action.startsWith("b")) {
                             System.out.println("=====================================================================");
                             System.out.println(bpParsed.getParsedText());
+                            System.out.println("=====================================================================");
+                        } else if (action.startsWith("r")) {
+                            System.out.println("=====================================================================");
+                            System.out.println(rawParsed.getParsedText());
                             System.out.println("=====================================================================");
         		        } else {
         		            System.out.println("Unknown command - " + action);
