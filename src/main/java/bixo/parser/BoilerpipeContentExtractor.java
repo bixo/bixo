@@ -121,7 +121,7 @@ public class BoilerpipeContentExtractor extends BaseContentExtractor {
      */
     @Override
     public String getContent() {
-        TextDocument textDocument = _bpContentHandler.toTextDocument();
+        TextDocument textDocument = _bpContentHandler.getTextDocument();
         return textDocument.getText(true, false);
     }
 

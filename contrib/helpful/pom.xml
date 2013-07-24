@@ -23,7 +23,7 @@
 	<artifactId>helpful</artifactId>
 	<name>helpful</name>
 	<packaging>jar</packaging>
-	<version>1.0-SNAPSHOT</version>
+	<version>0.9.0</version>
 	<repositories>
 		<repository>
 			<id>Conjars</id>
@@ -39,7 +39,7 @@
 		<dependency>
 			<groupId>bixo</groupId>
 			<artifactId>bixo-core</artifactId>
-			<version>1.0-SNAPSHOT</version>
+			<version>0.9.0</version>
 		</dependency>
 		
 		<dependency>
