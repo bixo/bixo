@@ -26,7 +26,7 @@ public class DemoStatusToolOptions {
     private boolean _debugLogging = false;
     private boolean _exportDb = false;
     private String _workingDir;
-    private boolean _localMode;
+    private boolean _localPlatformMode;
     
     @Option(name = "-d", usage = "debug logging", required = false)
     public void setDebugLogging(boolean debugLogging) {
@@ -55,17 +55,17 @@ public class DemoStatusToolOptions {
         return _exportDb;
     }
     
-    @Option(name = "-localmode", usage = "run in Cascading local mode", required = false)
-    public void setLocalMode(boolean localMode) {
-        _localMode = localMode;
+    @Option(name = "-localplatform", usage = "Use BixoPlatform in Local mode [optional: default=false]", required = false)
+    public void setLocalPlatformMode(boolean mode) {
+        _localPlatformMode = mode;
     }
 
-    public boolean isLocalMode() {
-        return _localMode;
+    public boolean isLocalPlatformMode() {
+        return _localPlatformMode;
     }
 
     public Platform getPlatformMode() {
-        if (_localMode) {
+        if (_localPlatformMode) {
             return Platform.Local;
         }
         return Platform.Hadoop;
