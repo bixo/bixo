@@ -484,10 +484,6 @@
 				        output="${build.dir.it-classes-eclipse}" />
 				<source path="${basedir}/src/it/resources"
 				        output="${build.dir.it-classes-eclipse}" />
-				<source path="${basedir}/${tool.src.dir}"
-				        output="${build.dir.tool-classes-eclipse}" />
-				<source path="${basedir}/${tool.res.dir}"
-				        output="${build.dir.tool-classes-eclipse}" />
 
 				<!-- extras -->
 				<!-- we do not yet have extra modules, but it is just a question of time :) -->

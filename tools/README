@@ -1,0 +1,26 @@
+The "tools" folder contains a set of tools that are based on Bixo and are useful to verify 
+the functionality of core components in Bixo.
+
+ExtractDmozAdultDomains
+
+ExtractDmozDomains.
+
+FetchAndParseTool
+
+LengthenUrlsTool
+
+ProcessRobotsTool
+
+RunUrlNormalizerTool
+
+
+
+
+
+To create an Eclipse project:
+
+  % cd <path to Bixo>/tools
+  % ant eclipse
+
+after which you would import the project into your Eclipse workspace.
+
