@@ -18,7 +18,9 @@ package bixo.examples.crawl;
 
 import java.util.Iterator;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import com.scaleunlimited.cascading.NullContext;
 
@@ -33,7 +35,7 @@ import cascading.tuple.TupleEntry;
 
 @SuppressWarnings({"serial", "rawtypes"})
 public class LatestUrlDatumBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
-    private static final Logger LOGGER = Logger.getLogger(LatestUrlDatumBuffer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LatestUrlDatumBuffer.class);
 
     private int _numIgnored;
     private int _numLater;

@@ -16,7 +16,9 @@
  */
 package bixo.examples.crawl;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.scaleunlimited.cascading.NullContext;
 
@@ -32,7 +34,7 @@ import cascading.operation.OperationCall;
 
 @SuppressWarnings({"serial", "rawtypes"})
 public class CreateUrlDatumFromStatusFunction extends BaseOperation<NullContext> implements Function<NullContext> {
-    private static final Logger LOGGER = Logger.getLogger(CreateUrlDatumFromStatusFunction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateUrlDatumFromStatusFunction.class);
 
     private int _numCreated;
 

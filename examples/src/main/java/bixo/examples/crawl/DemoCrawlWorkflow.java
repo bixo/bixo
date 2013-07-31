@@ -24,7 +24,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
@@ -75,7 +76,7 @@ import com.scaleunlimited.cascading.TupleLogger;
 
 public class DemoCrawlWorkflow {
 
-    private static final Logger LOGGER = Logger.getLogger(DemoCrawlWorkflow.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DemoCrawlWorkflow.class);
 
 
     @SuppressWarnings("serial")
@@ -148,6 +149,7 @@ public class DemoCrawlWorkflow {
         urlsToFetchPipe = new Each(urlsToFetchPipe, new CreateUrlDatumFromCrawlDbFunction());
         // A TupleLogger is a good way to follow the tuples around in a flow. You can enable the output
         // of tuples by setting options.setDebugLogging() to true.
+        TupleLogger tupleLogger = new TupleLogger();
         urlsToFetchPipe = TupleLogger.makePipe(urlsToFetchPipe, true);
         
         // Create the output sinks :

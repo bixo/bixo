@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 
 import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;

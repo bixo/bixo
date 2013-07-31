@@ -29,7 +29,8 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.datum.UrlDatum;
 import bixo.urls.BaseUrlFilter;
@@ -37,7 +38,7 @@ import bixo.urls.BaseUrlFilter;
 // Filter URLs that fall outside of the target domain
 @SuppressWarnings("serial")
 public class RegexUrlFilter extends BaseUrlFilter {
-    private static final Logger LOGGER = Logger.getLogger(RegexUrlFilter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RegexUrlFilter.class);
 
     private static final String INCLUDE_CHAR = "+";
     private static final String EXCLUDE_CHAR = "-";

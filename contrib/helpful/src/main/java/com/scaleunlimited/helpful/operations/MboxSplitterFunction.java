@@ -23,7 +23,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import com.scaleunlimited.cascading.NullContext;
 
@@ -45,7 +47,7 @@ import cascading.tuple.TupleEntryCollector;
  */
 @SuppressWarnings({"serial", "rawtypes"})
 public class MboxSplitterFunction extends BaseOperation<NullContext> implements Function<NullContext> {
-	private static final Logger LOGGER = Logger.getLogger(MboxSplitterFunction.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(MboxSplitterFunction.class);
 	
 	private static final String MBOX_MIME_TYPE = "application/mbox";
 	private static final String MBOX_RECORD_DIVIDER = "From ";

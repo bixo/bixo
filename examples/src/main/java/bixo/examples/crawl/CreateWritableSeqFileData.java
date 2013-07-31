@@ -17,7 +17,8 @@
 package bixo.examples.crawl;
 
 import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.scaleunlimited.cascading.NullContext;
 
@@ -33,7 +34,7 @@ import cascading.tuple.Tuple;
 
 @SuppressWarnings({"serial", "rawtypes"})
 public class CreateWritableSeqFileData extends BaseOperation<NullContext> implements Function<NullContext> {
-    private static final Logger LOGGER = Logger.getLogger(CreateWritableSeqFileData.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateWritableSeqFileData.class);
 
     public CreateWritableSeqFileData() {
         super(new Fields(CrawlConfig.WRITABLE_SEQ_FILE_KEY_FN, CrawlConfig.WRITABLE_SEQ_FILE_VALUE_FN));

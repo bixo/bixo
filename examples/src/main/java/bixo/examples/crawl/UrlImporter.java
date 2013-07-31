@@ -1,6 +1,8 @@
 package bixo.examples.crawl;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.scaleunlimited.cascading.BasePath;
 import com.scaleunlimited.cascading.BasePlatform;
@@ -25,7 +27,7 @@ import cascading.tuple.Fields;
 
 
 public class UrlImporter {
-    private static final Logger LOGGER = Logger.getLogger(UrlImporter.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UrlImporter.class);
 
     @SuppressWarnings("serial")
     private static class CreateUrlFromTextFunction extends BaseOperation<NullContext> implements Function<NullContext> {

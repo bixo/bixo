@@ -16,7 +16,9 @@
  */
 package bixo.examples.webmining;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.scaleunlimited.cascading.NullContext;
 
@@ -33,7 +35,7 @@ import cascading.tuple.TupleEntryCollector;
 
 @SuppressWarnings("serial")
 public class CreateLinkDatumFromOutlinksFunction extends BaseOperation<NullContext> implements Function<NullContext> {
-    private static final Logger LOGGER = Logger.getLogger(CreateLinkDatumFromOutlinksFunction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateLinkDatumFromOutlinksFunction.class);
     private transient SimpleUrlNormalizer _normalizer;
     private transient SimpleUrlValidator _validator;
 

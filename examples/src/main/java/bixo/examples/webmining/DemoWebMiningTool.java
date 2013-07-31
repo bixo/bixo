@@ -20,12 +20,13 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.html.HtmlParser;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
@@ -40,7 +41,7 @@ import com.scaleunlimited.cascading.BasePlatform;
 @SuppressWarnings("deprecation")
 public class DemoWebMiningTool {
 
-    private static final Logger LOGGER = Logger.getLogger(DemoWebMiningTool.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DemoWebMiningTool.class);
 
     private static void printUsageAndExit(CmdLineParser parser) {
         parser.printUsage(System.err);

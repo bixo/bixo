@@ -19,7 +19,6 @@ package bixo.examples.crawl;
 //import java.net.InetAddress;
 //import java.net.UnknownHostException;
 //
-//import org.apache.log4j.Logger;
 //import org.hsqldb.Server;
 //
 //import cascading.jdbc.JDBCScheme;

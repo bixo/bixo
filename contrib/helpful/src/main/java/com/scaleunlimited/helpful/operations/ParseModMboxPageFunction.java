@@ -21,10 +21,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.html.HtmlParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -43,7 +44,7 @@ import cascading.tuple.TupleEntry;
 
 @SuppressWarnings({"serial", "rawtypes"})
 public class ParseModMboxPageFunction extends BaseOperation<NullContext> implements Function<NullContext> {
-	private static final Logger LOGGER = Logger.getLogger(ParseModMboxPageFunction.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ParseModMboxPageFunction.class);
 	
 	private List<String> _ids = new ArrayList<String>();
 	

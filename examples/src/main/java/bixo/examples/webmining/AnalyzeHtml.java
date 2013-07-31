@@ -25,11 +25,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.io.SAXWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.scaleunlimited.cascading.NullContext;
 
@@ -46,7 +47,7 @@ import cascading.tuple.TupleEntryCollector;
 @SuppressWarnings("serial")
 public class AnalyzeHtml extends DOMParser {
     
-    private static final Logger LOGGER = Logger.getLogger(AnalyzeHtml.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AnalyzeHtml.class);
 
     private static final Pattern IMG_SUFFIX_EXCLUSION_PATTERN =
         Pattern.compile("(?i)\\.(gif|jpg|jpeg|bmp|png|ico)$");

@@ -17,9 +17,10 @@
 package bixo.examples.crawl;
 
 import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.config.BixoPlatform;
 import bixo.datum.StatusDatum;
@@ -33,7 +34,7 @@ import com.scaleunlimited.cascading.BasePath;
 import com.scaleunlimited.cascading.BasePlatform;
 
 public class DemoStatusTool {
-	private static final Logger LOGGER = Logger.getLogger(DemoStatusTool.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DemoStatusTool.class);
 	
     private static void printUsageAndExit(CmdLineParser parser) {
         parser.printUsage(System.err);
@@ -127,7 +128,7 @@ public class DemoStatusTool {
         	platform.assertPathExists(crawlDirPath, "Prior crawl output directory does not exist");
         	
         	// Skip Hadoop/Cascading DEBUG messages.
-        	Logger.getRootLogger().setLevel(Level.INFO);
+            org.apache.log4j.Logger.getRootLogger().setLevel(Level.INFO);
         	
         	boolean exportDb = options.isExportDb();
         	if (exportDb) {

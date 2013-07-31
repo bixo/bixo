@@ -16,7 +16,9 @@
  */
 package bixo.examples.webmining;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.scaleunlimited.cascading.NullContext;
 
@@ -32,7 +34,7 @@ import cascading.tuple.TupleEntryCollector;
 
 @SuppressWarnings("serial")
 public class CreateResultsFunction extends BaseOperation<NullContext> implements Function<NullContext> {
-    private static final Logger LOGGER = Logger.getLogger(CreateResultsFunction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CreateResultsFunction.class);
 
     public CreateResultsFunction() {
         super(new Fields("line"));

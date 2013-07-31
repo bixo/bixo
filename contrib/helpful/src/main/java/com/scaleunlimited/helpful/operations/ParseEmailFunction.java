@@ -23,10 +23,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.mbox.MboxParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -46,7 +47,7 @@ import cascading.tuple.TupleEntry;
 
 @SuppressWarnings({"serial", "rawtypes"})
 public class ParseEmailFunction extends BaseOperation<NullContext> implements Function<NullContext> {
-	private static final Logger LOGGER = Logger.getLogger(ParseEmailFunction.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ParseEmailFunction.class);
 	
 	private static final Fields OUTPUT_FIELDS = new Fields(FieldNames.MESSAGE_ID, FieldNames.EMAIL_ADDRESS, FieldNames.EMAIL_NAME, FieldNames.SCORE);
 

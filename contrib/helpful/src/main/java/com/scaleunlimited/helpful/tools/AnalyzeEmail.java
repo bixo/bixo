@@ -20,9 +20,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
@@ -60,7 +61,7 @@ import com.scaleunlimited.helpful.operations.ParseModMboxPageFunction;
 import com.scaleunlimited.helpful.operations.SumScoresBuffer;
 
 public class AnalyzeEmail {
-	private static final Logger LOGGER = Logger.getLogger(AnalyzeEmail.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(AnalyzeEmail.class);
 	
 	private static final String WEB_ADDRESS = "http://wiki.github.com/bixo/bixo/bixocrawler";
 

@@ -18,7 +18,9 @@ package com.scaleunlimited.helpful.operations;
 
 import java.util.Iterator;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import com.scaleunlimited.cascading.NullContext;
 
@@ -34,7 +36,7 @@ import cascading.tuple.TupleEntry;
 
 @SuppressWarnings({"serial", "rawtypes"})
 public class CalcMessageScoreBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
-	private static final Logger LOGGER = Logger.getLogger(CalcMessageScoreBuffer.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CalcMessageScoreBuffer.class);
 		
 	private static final Fields OUTPUT_FIELDS = new Fields(FieldNames.EMAIL_ADDRESS, FieldNames.EMAIL_NAME, FieldNames.SCORE);
 

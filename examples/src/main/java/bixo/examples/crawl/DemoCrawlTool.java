@@ -19,10 +19,11 @@ package bixo.examples.crawl;
 import java.util.List;
 
 import org.apache.log4j.FileAppender;
-import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
@@ -44,7 +45,7 @@ import com.scaleunlimited.cascading.BasePlatform;
 @SuppressWarnings("deprecation")
 public class DemoCrawlTool {
 
-    private static final Logger LOGGER = Logger.getLogger(DemoCrawlTool.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DemoCrawlTool.class);
     
     private static void printUsageAndExit(CmdLineParser parser) {
         parser.printUsage(System.err);
@@ -53,8 +54,8 @@ public class DemoCrawlTool {
 
     // Create log output file (in the local file system).
     private static void setLoopLoggerFile(String outputDirName, int loopNumber) {
-        Logger rootLogger = Logger.getRootLogger();
 
+        org.apache.log4j.Logger rootLogger = org.apache.log4j.Logger.getRootLogger();
         String filename = String.format("%s/%d-DemoCrawlTool.log", outputDirName, loopNumber);
         FileAppender appender = (FileAppender)rootLogger.getAppender("loop-logger");
         if (appender == null) {
