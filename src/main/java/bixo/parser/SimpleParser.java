@@ -26,13 +26,14 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.log4j.Logger;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlMapper;
 import org.apache.tika.parser.html.IdentityHtmlMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.config.ParserPolicy;
 import bixo.datum.FetchedDatum;
@@ -41,7 +42,7 @@ import bixo.utils.IoUtils;
 
 @SuppressWarnings("serial")
 public class SimpleParser extends BaseParser {
-    private static final Logger LOGGER = Logger.getLogger(SimpleParser.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleParser.class);
 
     /**
      * Fixed version of Tika 1.0's IdentityHtmlMapper

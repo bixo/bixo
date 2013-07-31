@@ -22,7 +22,8 @@ import java.net.URISyntaxException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Helps to deal with all the hadoop configuration related lookups.
@@ -30,7 +31,7 @@ import org.apache.log4j.Logger;
  */
 public class HadoopConfigured {
 
-    private static Logger LOGGER = Logger.getLogger(HadoopConfigured.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(HadoopConfigured.class);
 
     private Configuration _conf;
 

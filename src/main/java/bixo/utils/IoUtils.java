@@ -22,10 +22,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class IoUtils {
-    private static final Logger LOGGER = Logger.getLogger(IoUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(IoUtils.class);
     
     public static void safeClose(InputStream is) {
         if (is == null) {

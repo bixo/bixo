@@ -20,9 +20,10 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import com.scaleunlimited.cascading.Level;
 import com.scaleunlimited.cascading.LoggingFlowProcess;
 
 import bixo.datum.FetchedDatum;
@@ -41,7 +42,7 @@ import cascading.tuple.Tuple;
  *
  */
 public class FetchTask implements Runnable {
-    private static final Logger LOGGER = Logger.getLogger(FetchTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FetchTask.class);
 
     private IFetchMgr _fetchMgr;
     private BaseFetcher _httpFetcher;
@@ -86,7 +87,7 @@ public class FetchTask implements Runnable {
                     process.increment(FetchCounters.FETCHED_TIME, (int)deltaTime);
                     process.increment(FetchCounters.URLS_FETCHED, 1);
                     process.increment(FetchCounters.FETCHED_BYTES, result.getContentLength());
-                    process.setStatus(Level.TRACE, "Fetched " + result);
+                    process.setStatus(Level.SLF4J_TRACE, "Fetched " + result);
 
                     status = UrlStatus.FETCHED.toString();
                     

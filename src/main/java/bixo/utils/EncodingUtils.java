@@ -23,10 +23,12 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class EncodingUtils {
-    private static final Logger LOGGER = Logger.getLogger(EncodingUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EncodingUtils.class);
     
     private static final int EXPECTED_GZIP_COMPRESSION_RATIO= 5;
     private static final int EXPECTED_DEFLATE_COMPRESSION_RATIO= 5;

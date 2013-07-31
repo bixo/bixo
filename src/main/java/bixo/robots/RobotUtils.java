@@ -19,7 +19,8 @@ package bixo.robots;
 import java.net.URL;
 
 import org.apache.http.HttpStatus;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.UserAgent;
@@ -32,7 +33,7 @@ import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.SimpleHttpFetcher;
 
 public class RobotUtils {
-    private static final Logger LOGGER = Logger.getLogger(RobotUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RobotUtils.class);
     
     // Some robots.txt files are > 64K, amazingly enough.
     private static final int MAX_ROBOTS_SIZE = 128 * 1024;

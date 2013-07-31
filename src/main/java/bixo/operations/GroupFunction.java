@@ -16,7 +16,9 @@
  */
 package bixo.operations;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.scaleunlimited.cascading.NullContext;
 
@@ -31,7 +33,7 @@ import cascading.operation.FunctionCall;
 
 @SuppressWarnings({ "serial", "rawtypes" })
 public class GroupFunction extends BaseOperation<NullContext> implements Function<NullContext> {
-    private static final Logger LOGGER = Logger.getLogger(GroupFunction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GroupFunction.class);
 
     private final BaseGroupGenerator _generator;
 

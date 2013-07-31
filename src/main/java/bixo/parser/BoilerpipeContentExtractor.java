@@ -1,8 +1,9 @@
 package bixo.parser;
 
-import org.apache.log4j.Logger;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.sax.BodyContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
@@ -18,7 +19,7 @@ import de.l3s.boilerpipe.extractors.ExtractorBase;
  */
 @SuppressWarnings("serial")
 public class BoilerpipeContentExtractor extends BaseContentExtractor {
-    private static final Logger LOGGER = Logger.getLogger(BoilerpipeContentExtractor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(BoilerpipeContentExtractor.class);
     
     
     private Class<? extends ExtractorBase> _extractorClass;

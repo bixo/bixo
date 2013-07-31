@@ -24,7 +24,6 @@ import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
 import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
@@ -33,11 +32,13 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.DefaultHtmlMapper;
 import org.apache.tika.parser.html.HtmlMapper;
 import org.apache.tika.sax.TeeContentHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.datum.ParsedDatum;
 
 class TikaCallable implements Callable<ParsedDatum> {
-    private static final Logger LOGGER = Logger.getLogger(TikaCallable.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TikaCallable.class);
     
     private static class CustomHtmlMapper extends DefaultHtmlMapper {
         

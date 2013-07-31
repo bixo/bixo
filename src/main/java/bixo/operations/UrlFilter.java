@@ -16,7 +16,9 @@
  */
 package bixo.operations;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.scaleunlimited.cascading.NullContext;
 
@@ -32,7 +34,7 @@ import cascading.operation.OperationCall;
 
 @SuppressWarnings("serial")
 public class UrlFilter extends BaseOperation<NullContext> implements Filter<NullContext> {
-	private static final Logger LOGGER = Logger.getLogger(UrlFilter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(UrlFilter.class);
 	
 	private BaseUrlFilter _filter;
 

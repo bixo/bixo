@@ -21,7 +21,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.apache.http.HttpStatus;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.scaleunlimited.cascading.Payload;
 
@@ -38,7 +39,7 @@ import bixo.exceptions.UrlFetchException;
 
 @SuppressWarnings("serial")
 public class LoggingFetcher extends BaseFetcher {
-    private static final Logger LOGGER = Logger.getLogger(LoggingFetcher.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingFetcher.class);
     
     public static final String FAKE_CONTENT_LOCATION = "Fake-LoggingFetcher";
     

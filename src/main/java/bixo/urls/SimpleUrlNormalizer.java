@@ -23,13 +23,15 @@ import java.net.URLDecoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import bixo.utils.StringUtils;
 
 @SuppressWarnings("serial")
 public class SimpleUrlNormalizer extends BaseUrlNormalizer {
-    private static final Logger LOGGER = Logger.getLogger(SimpleUrlNormalizer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleUrlNormalizer.class);
     
     // http://en.wikipedia.org/wiki/Percent-encoding - full set of reserved chars is:
     // !    *   '   (   )   ;   :   @   &   =   +   $   ,   /   ?   %   #   [   ]

@@ -25,7 +25,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
@@ -51,7 +52,7 @@ import com.scaleunlimited.cascading.NullContext;
 
 @SuppressWarnings({"serial", "rawtypes"})
 public class UrlLengthener extends BaseOperation<NullContext> implements Function<NullContext> {
-    private static final Logger LOGGER = Logger.getLogger(UrlLengthener.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UrlLengthener.class);
     
     public static final String URL_FN = "url";
     

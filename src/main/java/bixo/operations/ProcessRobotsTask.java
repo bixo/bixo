@@ -22,7 +22,9 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Queue;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import com.scaleunlimited.cascading.LoggingFlowProcess;
 
@@ -44,7 +46,7 @@ import cascading.tuple.TupleEntryCollector;
 
 @SuppressWarnings("rawtypes")
 public class ProcessRobotsTask implements Runnable {
-    private static final Logger LOGGER = Logger.getLogger(ProcessRobotsTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProcessRobotsTask.class);
 
     private String _protocolAndDomain;
     private BaseScoreGenerator _scorer;

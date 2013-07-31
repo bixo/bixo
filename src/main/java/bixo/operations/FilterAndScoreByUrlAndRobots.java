@@ -19,7 +19,9 @@ package bixo.operations;
 import java.util.Iterator;
 import java.util.concurrent.RejectedExecutionException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import bixo.config.UserAgent;
 import bixo.datum.GroupedUrlDatum;
@@ -50,7 +52,7 @@ import com.scaleunlimited.cascading.NullContext;
 
 @SuppressWarnings({"serial", "rawtypes"})
 public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> implements Buffer<NullContext> {
-	private static final Logger LOGGER = Logger.getLogger(FilterAndScoreByUrlAndRobots.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(FilterAndScoreByUrlAndRobots.class);
 	
     private static final long COMMAND_TIMEOUT = RobotUtils.getMaxFetchTime();
     private static final long TERMINATE_TIMEOUT = COMMAND_TIMEOUT;

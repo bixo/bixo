@@ -18,8 +18,9 @@ package bixo.fetcher;
 
 import junit.framework.Assert;
 
-import org.apache.log4j.Logger;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.config.BixoPlatform;
 import bixo.config.BixoPlatform.Platform;
@@ -47,7 +48,7 @@ import com.scaleunlimited.cascading.BasePath;
 
 @SuppressWarnings("deprecation")
 public class FetcherTest {
-    private static final Logger LOGGER = Logger.getLogger(FetcherTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(FetcherTest.class);
     
     private static final String URL_DB_NAME = "url_db";
 

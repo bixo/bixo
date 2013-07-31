@@ -16,7 +16,9 @@
  */
 package bixo.pipes;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.config.BixoPlatform;
 import bixo.datum.FetchedDatum;
@@ -41,7 +43,7 @@ import com.scaleunlimited.cascading.NullContext;
 
 @SuppressWarnings({"serial", "rawtypes"})
 public class ParsePipe extends SubAssembly {
-    private static final Logger LOGGER = Logger.getLogger(ParsePipe.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ParsePipe.class);
     
     public static final String PARSE_PIPE_NAME = "parse_pipe";
 

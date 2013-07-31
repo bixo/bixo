@@ -19,7 +19,9 @@ package bixo.operations;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import com.scaleunlimited.cascading.NullContext;
 
@@ -35,7 +37,7 @@ import cascading.operation.FunctionCall;
 // TODO KKr - combine/resolve delta with UrlImporter
 @SuppressWarnings("serial")
 public class LoadUrlsFunction extends BaseOperation<NullContext> implements Function<NullContext> {
-    private static final Logger LOGGER = Logger.getLogger(LoadUrlsFunction.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoadUrlsFunction.class);
 
     private int _maxUrls;
     private int _numUrls;

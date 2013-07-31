@@ -31,7 +31,9 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 // FUTURE KKr - worry about multi-threaded access. Could wrap syncronized(_memoryQueue)
 // around most class bodies (also synchronized(_backingStore) for file methods.
@@ -45,7 +47,7 @@ import org.apache.log4j.Logger;
  *
  */
 public class DiskQueue<E extends Serializable> extends AbstractQueue<E> {
-    private static final Logger LOGGER = Logger.getLogger(DiskQueue.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DiskQueue.class);
 
     public static final float DEFAULT_REFILL_RATIO = 0.75f;
     

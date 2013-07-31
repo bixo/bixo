@@ -19,7 +19,9 @@ package bixo.pipes;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import bixo.config.BixoPlatform;
 import bixo.config.BixoPlatform.Platform;
@@ -45,7 +47,7 @@ import com.scaleunlimited.cascading.NullContext;
 
 
 public class RunFakeFetchPipe {
-    private static final Logger LOGGER = Logger.getLogger(RunFakeFetchPipe.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RunFakeFetchPipe.class);
 
     @SuppressWarnings("serial")
     private static class CreateUrlFunction extends BaseOperation<NullContext> implements Function<NullContext> {

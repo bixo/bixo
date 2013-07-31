@@ -22,14 +22,15 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.http.HttpStatus;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.datum.HttpHeaders;
 import bixo.datum.UrlStatus;
 
 @SuppressWarnings({ "serial" })
 public class HttpFetchException extends BaseFetchException implements WritableComparable<HttpFetchException> {
-    private static final Logger LOGGER = Logger.getLogger(HttpFetchException.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpFetchException.class);
     
     private int _httpStatus;
     private HttpHeaders _httpHeaders;

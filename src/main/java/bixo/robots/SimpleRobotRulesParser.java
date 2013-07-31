@@ -26,14 +26,16 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import bixo.robots.SimpleRobotRules.RobotRulesMode;
 
 
 @SuppressWarnings("serial")
 public class SimpleRobotRulesParser extends BaseRobotsParser {
-    private static final Logger LOGGER = Logger.getLogger(SimpleRobotRulesParser.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleRobotRulesParser.class);
     
     private enum RobotDirective {
         USER_AGENT,

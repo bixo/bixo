@@ -16,7 +16,9 @@
  */
 package bixo.operations;
 
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cascading.flow.FlowProcess;
 import cascading.tuple.Tuple;
@@ -32,7 +34,7 @@ import bixo.fetcher.BaseFetcher;
 
 @SuppressWarnings("rawtypes")
 public class ResolveRedirectsTask implements Runnable {
-    private static final Logger LOGGER = Logger.getLogger(ResolveRedirectsTask.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ResolveRedirectsTask.class);
     
     private String _url;
     private BaseFetcher _fetcher;

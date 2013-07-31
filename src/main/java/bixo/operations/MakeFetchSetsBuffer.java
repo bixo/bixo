@@ -18,7 +18,9 @@ package bixo.operations;
 
 import java.util.Iterator;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import com.scaleunlimited.cascading.NullContext;
 import com.scaleunlimited.cascading.PartitioningKey;
@@ -46,7 +48,7 @@ import cascading.tuple.TupleEntryCollector;
  */
 @SuppressWarnings( { "serial" })
 public class MakeFetchSetsBuffer extends BaseOperation<NullContext> implements Buffer<NullContext> {
-    private static final Logger LOGGER = Logger.getLogger(MakeFetchSetsBuffer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MakeFetchSetsBuffer.class);
 
     private int _numReduceTasks;
     private BaseFetchJobPolicy _policy;

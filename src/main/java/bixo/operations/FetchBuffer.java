@@ -23,7 +23,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import bixo.config.BixoPlatform;
 import bixo.config.FetcherPolicy;
@@ -56,7 +58,7 @@ import com.scaleunlimited.cascading.NullContext;
 
 @SuppressWarnings( { "serial", "rawtypes" })
 public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<NullContext>, IFetchMgr {
-    private static Logger LOGGER = Logger.getLogger(FetchBuffer.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(FetchBuffer.class);
 
     private class QueuedFetchSetsComparator implements Comparator<FetchSetDatum> {
 

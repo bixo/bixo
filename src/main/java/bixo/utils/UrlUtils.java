@@ -20,10 +20,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public class UrlUtils {
-    private static final Logger LOGGER = Logger.getLogger(UrlUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UrlUtils.class);
 
     private static final Pattern IGNORED_PROTOCOL_PATTERN = Pattern.compile("(?i)^(javascript|mailto|about):");
     

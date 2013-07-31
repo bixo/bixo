@@ -79,7 +79,8 @@ import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
@@ -105,7 +106,7 @@ import com.scaleunlimited.cascading.Payload;
 
 @SuppressWarnings("serial")
 public class SimpleHttpFetcher extends BaseFetcher {
-    private static Logger LOGGER = Logger.getLogger(SimpleHttpFetcher.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(SimpleHttpFetcher.class);
 
     // We tried 10 seconds for all of these, but got a number of connection/read timeouts for
     // sites that would have eventually worked, so bumping it up to 30 seconds.

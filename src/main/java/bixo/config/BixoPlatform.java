@@ -42,7 +42,7 @@ import com.scaleunlimited.cascading.LoggingFlowProcess;
 import com.scaleunlimited.cascading.hadoop.HadoopPlatform;
 import com.scaleunlimited.cascading.local.LocalPlatform;
 
-@SuppressWarnings({"rawtypes"})
+@SuppressWarnings({"rawtypes", "serial"})
 public class BixoPlatform extends BasePlatform {
 
     public enum Platform {
@@ -202,6 +202,11 @@ public class BixoPlatform extends BasePlatform {
     }
 
     @Override
+    public Tap makeTemplateTap(Tap tap, String pattern, Fields fields) throws Exception {
+        return _platform.makeTemplateTap(tap, pattern, fields);
+    }
+
+    @Override
     public Scheme makeTextScheme() throws Exception {
         return _platform.makeTextScheme();
     }
@@ -231,11 +236,18 @@ public class BixoPlatform extends BasePlatform {
         _platform.setNumReduceTasks(numReduceTasks);
     }
 
-    public int getNumReduceTasks() {
-        if (_platform instanceof LocalPlatform) {
-            return 1;
-        }
-        
-        return _hadoopJobConf.getNumReduceTasks();
+    @Override
+    public int getNumReduceTasks() throws Exception {
+        return _platform.getNumReduceTasks();
+    }
+
+    @Override
+    public String shareLocalDir(String localDirName) {
+        return _platform.shareLocalDir(localDirName);
+    }
+
+    @Override
+    public String copySharedDirToLocal(FlowProcess flowProcess, String sharedDirName) {
+        return _platform.copySharedDirToLocal(flowProcess, sharedDirName);
     }
 }

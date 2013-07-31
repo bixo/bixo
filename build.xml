@@ -155,6 +155,8 @@
 		       failureProperty="tests.failed">
 			<sysproperty key="net.sourceforge.cobertura.datafile"
 			             file="${reports.dir}/bixo_coverage.ser" />
+	      	<sysproperty key="java.security.krb5.realm" value="" />
+	       	<sysproperty key="java.security.krb5.kdc" value="" />
 			<classpath>
 				<pathelement location="${instrumented.dir}" />
 				<pathelement location="${build.dir.main-classes}" />
@@ -237,6 +239,8 @@
 		       dir="${basedir}"
 		       errorProperty="tests.failed"
 		       failureProperty="tests.failed">
+	      	<sysproperty key="java.security.krb5.realm" value="" />
+	       	<sysproperty key="java.security.krb5.kdc" value="" />
 			<classpath>
 				<pathelement location="${build.dir.main-classes}" />
 				<pathelement location="${build.dir.test-classes}" />

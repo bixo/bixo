@@ -21,7 +21,8 @@ import java.net.URL;
 import java.util.Random;
 
 import org.apache.http.HttpStatus;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.scaleunlimited.cascading.Payload;
 
@@ -39,7 +40,7 @@ import bixo.utils.ConfigUtils;
 
 @SuppressWarnings("serial")
 public class FakeHttpFetcher extends BaseFetcher {
-    private static Logger LOGGER = Logger.getLogger(FakeHttpFetcher.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(FakeHttpFetcher.class);
 
     private boolean _randomFetching;
     private Random _rand;
