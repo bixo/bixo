@@ -62,7 +62,28 @@ public class BixoPlatform extends BasePlatform {
             _platform = new LocalPlatform(BixoPlatform.class);
             setJobPollingInterval(CASCADING_LOCAL_JOB_POLLING_INTERVAL);
         } else {
-            _hadoopJobConf = new JobConf();
+        	 _hadoopJobConf = jobConf;
+             HadoopPlatform hp = new HadoopPlatform(BixoPlatform.class, _hadoopJobConf);
+             _platform = hp;
+             
+             // Special configuration for Hadoop.
+             
+             if (isLocal()) {
+                 setNumReduceTasks(1);
+                 setJobPollingInterval(LOCAL_HADOOP_JOB_POLLING_INTERVAL);
+             } else {
+                 setNumReduceTasks(BasePlatform.CLUSTER_REDUCER_COUNT);
+             }
+             
+             hp.setMapSpeculativeExecution(false);
+             hp.setReduceSpeculativeExecution(false);
+        }
+        
+    }
+    
+    public BixoPlatform(JobConf jobConf) throws Exception {
+    	super(BixoPlatform.class);
+            _hadoopJobConf = jobConf;
             HadoopPlatform hp = new HadoopPlatform(BixoPlatform.class, _hadoopJobConf);
             _platform = hp;
             
@@ -77,8 +98,6 @@ public class BixoPlatform extends BasePlatform {
             
             hp.setMapSpeculativeExecution(false);
             hp.setReduceSpeculativeExecution(false);
-        }
-        
     }
     
     public static Tuple clone(Tuple t, FlowProcess flowProcess) {
