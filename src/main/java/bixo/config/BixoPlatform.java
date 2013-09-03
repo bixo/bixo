@@ -22,6 +22,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.util.Date;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
 
@@ -45,6 +46,8 @@ import com.scaleunlimited.cascading.local.LocalPlatform;
 @SuppressWarnings({"rawtypes", "serial"})
 public class BixoPlatform extends BasePlatform {
 
+    // TODO Replace these with LocalPlatform.PLATFORM_TYPE and
+    // HadoopPlatform.PLATFORM_TYPE?
     public enum Platform {
         Local,
         Hadoop
@@ -62,23 +65,37 @@ public class BixoPlatform extends BasePlatform {
             _platform = new LocalPlatform(BixoPlatform.class);
             setJobPollingInterval(CASCADING_LOCAL_JOB_POLLING_INTERVAL);
         } else {
-            _hadoopJobConf = new JobConf();
-            HadoopPlatform hp = new HadoopPlatform(BixoPlatform.class, _hadoopJobConf);
-            _platform = hp;
-            
-            // Special configuration for Hadoop.
-            
-            if (isLocal()) {
-                setNumReduceTasks(1);
-                setJobPollingInterval(LOCAL_HADOOP_JOB_POLLING_INTERVAL);
-            } else {
-                setNumReduceTasks(BasePlatform.CLUSTER_REDUCER_COUNT);
-            }
-            
-            hp.setMapSpeculativeExecution(false);
-            hp.setReduceSpeculativeExecution(false);
+            configureHadoopPlatform(new JobConf());
         }
         
+    }
+
+    public BixoPlatform(Configuration conf) throws Exception {
+        super(BixoPlatform.class);
+        configureHadoopPlatform(new JobConf(conf));
+    }
+    
+    private void configureHadoopPlatform(JobConf jobConf) throws Exception {
+        _hadoopJobConf = jobConf;
+        HadoopPlatform hp = new HadoopPlatform(BixoPlatform.class, _hadoopJobConf);
+        _platform = hp;
+        
+        // Special configuration for Hadoop.
+        
+        if (isLocal()) {
+            setNumReduceTasks(1);
+            setJobPollingInterval(LOCAL_HADOOP_JOB_POLLING_INTERVAL);
+        } else {
+            setNumReduceTasks(BasePlatform.CLUSTER_REDUCER_COUNT);
+        }
+        
+        hp.setMapSpeculativeExecution(false);
+        hp.setReduceSpeculativeExecution(false);
+    }
+    
+    @Override
+    public String getPlatformType() {
+        return _platform.getPlatformType();
     }
     
     public static Tuple clone(Tuple t, FlowProcess flowProcess) {
