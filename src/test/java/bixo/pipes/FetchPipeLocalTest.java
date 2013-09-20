@@ -28,42 +28,42 @@ public class FetchPipeLocalTest extends AbstractFetchPipeTest {
 
     @Test
     public void testHeadersInStatus() throws Exception {
-        testHeadersInStatus(new BixoPlatform(Platform.Local));
+        testHeadersInStatus(new BixoPlatform(FetchPipeLocalTest.class, Platform.Local));
     }
     
     @Test
     public void testFetchPipe() throws Exception {
-        testFetchPipe(new BixoPlatform(Platform.Local));
+        testFetchPipe(new BixoPlatform(FetchPipeLocalTest.class, Platform.Local));
     }
     
     @Test
     public void testRedirectException() throws Exception {
-        testRedirectException(new BixoPlatform(Platform.Local));
+        testRedirectException(new BixoPlatform(FetchPipeLocalTest.class, Platform.Local));
     }
     
     @Test
     public void testTerminatingFetchPipe() throws Exception {
-        testTerminatingFetchPipe(new BixoPlatform(Platform.Local));
+        testTerminatingFetchPipe(new BixoPlatform(FetchPipeLocalTest.class, Platform.Local));
     }
     
     @Test
     public void testPayloads() throws Exception {
-        testPayloads(new BixoPlatform(Platform.Local));
+        testPayloads(new BixoPlatform(FetchPipeLocalTest.class, Platform.Local));
     }
     
     @Test
     public void testSkippingURLsByScore() throws Exception {
-        testSkippingURLsByScore(new BixoPlatform(Platform.Local));
+        testSkippingURLsByScore(new BixoPlatform(FetchPipeLocalTest.class, Platform.Local));
     }
     
     @Test
     public void testDurationLimitSimple() throws Exception {
-        testDurationLimitSimple(new BixoPlatform(Platform.Local));
+        testDurationLimitSimple(new BixoPlatform(FetchPipeLocalTest.class, Platform.Local));
     }
     
     @Test
     public void testMaxUrlsPerServer() throws Exception {
-        testMaxUrlsPerServer(new BixoPlatform(Platform.Local));
+        testMaxUrlsPerServer(new BixoPlatform(FetchPipeLocalTest.class, Platform.Local));
     }
     
     // TODO KKr- re-enable this test when we know how to make it work for

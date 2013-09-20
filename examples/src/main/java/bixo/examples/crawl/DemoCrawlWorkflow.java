@@ -129,7 +129,7 @@ public class DemoCrawlWorkflow {
     @SuppressWarnings("rawtypes")
     public static Flow createFlow(BasePath curWorkingDirPath, BasePath crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, DemoCrawlToolOptions options) throws Throwable {
 
-        BixoPlatform platform = new BixoPlatform(options.getPlatformMode());
+        BixoPlatform platform = new BixoPlatform(DemoCrawlWorkflow.class, options.getPlatformMode());
         platform.resetNumReduceTasks();
 
         // Input : the crawldb

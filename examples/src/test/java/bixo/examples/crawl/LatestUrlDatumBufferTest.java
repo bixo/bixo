@@ -137,7 +137,7 @@ public class LatestUrlDatumBufferTest {
     @Test
     public void testOperateWithGroupBy() throws Exception {
         
-        BixoPlatform platform = new BixoPlatform(Platform.Local);
+        BixoPlatform platform = new BixoPlatform(LatestUrlDatumBufferTest.class, Platform.Local);
         
         // Create a temp file with a fetched url
         BasePath workingDirPath = platform.makePath(WORKINGDIR);

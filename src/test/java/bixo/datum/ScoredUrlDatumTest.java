@@ -73,7 +73,7 @@ public class ScoredUrlDatumTest {
         PartitioningKey groupingKey = new PartitioningKey("key", 1);
         FetchSetDatum pfd = new FetchSetDatum(urls, fetchTime, 1000, groupingKey.getValue(), groupingKey.getRef());
         
-        BixoPlatform platform = new BixoPlatform(platformMode);
+        BixoPlatform platform = new BixoPlatform(ScoredUrlDatumTest.class, platformMode);
         BasePath path = platform.makePath("build/test/ScoredUrlDatumTest/testCascadingSerialization/in");
         Tap in = platform.makeTap(platform.makeBinaryScheme(FetchSetDatum.FIELDS), path, SinkMode.REPLACE);
         TupleEntryCollector write = in.openForWrite(platform.makeFlowProcess());

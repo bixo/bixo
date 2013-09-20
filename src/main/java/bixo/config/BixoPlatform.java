@@ -59,25 +59,25 @@ public class BixoPlatform extends BasePlatform {
     private BasePlatform _platform;
     private JobConf _hadoopJobConf = null;
 
-    public BixoPlatform(Platform platform) throws Exception {
-        super(BixoPlatform.class);
+    public BixoPlatform(Class applicationJarClass, Platform platform) throws Exception {
+        super(applicationJarClass);
         if (platform == Platform.Local) {
-            _platform = new LocalPlatform(BixoPlatform.class);
+            _platform = new LocalPlatform(applicationJarClass);
             setJobPollingInterval(CASCADING_LOCAL_JOB_POLLING_INTERVAL);
         } else {
-            configureHadoopPlatform(new JobConf());
+            configureHadoopPlatform(applicationJarClass, new JobConf());
         }
         
     }
 
-    public BixoPlatform(Configuration conf) throws Exception {
-        super(BixoPlatform.class);
-        configureHadoopPlatform(new JobConf(conf));
+    public BixoPlatform(Class applicationJarClass, Configuration conf) throws Exception {
+        super(applicationJarClass);
+        configureHadoopPlatform(applicationJarClass, new JobConf(conf));
     }
     
-    private void configureHadoopPlatform(JobConf jobConf) throws Exception {
+    private void configureHadoopPlatform(Class applicationJarClass, JobConf jobConf) throws Exception {
         _hadoopJobConf = jobConf;
-        HadoopPlatform hp = new HadoopPlatform(BixoPlatform.class, _hadoopJobConf);
+        HadoopPlatform hp = new HadoopPlatform(applicationJarClass, _hadoopJobConf);
         _platform = hp;
         
         // Special configuration for Hadoop.

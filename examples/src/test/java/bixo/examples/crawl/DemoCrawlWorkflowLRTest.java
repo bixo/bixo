@@ -92,7 +92,7 @@ public class DemoCrawlWorkflowLRTest implements Serializable {
     public void testNotLosingFetchedUrls() throws Throwable {
         String baseDirName = "build/test/DemoCrawlWorkflowLRTest/output";
         
-        BixoPlatform platform = new BixoPlatform(Platform.Local);
+        BixoPlatform platform = new BixoPlatform(DemoCrawlWorkflowLRTest.class, Platform.Local);
         
         BasePath baseDirPath = platform.makePath(baseDirName);
         baseDirPath.delete(true);

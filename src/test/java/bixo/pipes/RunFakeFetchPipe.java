@@ -85,7 +85,7 @@ public class RunFakeFetchPipe {
                 System.exit(-1);
             }
 
-            BixoPlatform platform = new BixoPlatform(Platform.Local);
+            BixoPlatform platform = new BixoPlatform(RunFakeFetchPipe.class, Platform.Local);
             
             BasePath inputPath = platform.makePath(path.getFile());
             Tap in = platform.makeTap(platform.makeTextScheme(), inputPath);

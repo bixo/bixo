@@ -68,7 +68,7 @@ public class FetcherTest {
     @SuppressWarnings("rawtypes")
     private String makeCrawlDb(String workingFolder, String input) throws Exception {
 
-        BixoPlatform platform = new BixoPlatform(Platform.Local);
+        BixoPlatform platform = new BixoPlatform(FetcherTest.class, Platform.Local);
         
         // We don't want to regenerate this DB all the time.
         BasePath workingPath = platform.makePath(workingFolder);
@@ -97,7 +97,7 @@ public class FetcherTest {
         String workingFolder = "build/it/FetcherTest/testStaleConnection/working";
         String input = makeCrawlDb(workingFolder, "src/it/resources/apple-pages.txt");
         
-        BixoPlatform platform = new BixoPlatform(Platform.Local);
+        BixoPlatform platform = new BixoPlatform(FetcherTest.class, Platform.Local);
         BasePath inputPath = platform.makePath(input);
 
         Tap in = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), inputPath);
@@ -150,7 +150,7 @@ public class FetcherTest {
         
         String workingFolder = "build/test-it/FetcherTest/testRunFetcher";
         String input = makeCrawlDb(workingFolder, "src/it/resources/top10urls.txt");
-        BixoPlatform platform = new BixoPlatform(Platform.Local);
+        BixoPlatform platform = new BixoPlatform(FetcherTest.class, Platform.Local);
         BasePath workingPath = platform.makePath(workingFolder);
         BasePath inputPath = platform.makePath(input);
         Tap in = platform.makeTap(platform.makeBinaryScheme(UrlDatum.FIELDS), inputPath);

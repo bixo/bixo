@@ -38,7 +38,7 @@ public class CrawlDirUtilsTest {
     
     @Before
     public void setUp() throws Exception {
-        _platform = new BixoPlatform(Platform.Local);
+        _platform = new BixoPlatform(CrawlDirUtilsTest.class, Platform.Local);
         _outputPath = _platform.makePath("./build/CrawlDirUtilsTest");
         _outputPath.mkdirs();
     }

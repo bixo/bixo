@@ -122,7 +122,7 @@ public class DemoStatusTool {
         String crawlDirName = options.getWorkingDir();
 
         try {
-            BixoPlatform platform = new BixoPlatform(options.getPlatformMode());
+            BixoPlatform platform = new BixoPlatform(DemoStatusTool.class, options.getPlatformMode());
         	BasePath crawlDirPath = platform.makePath(crawlDirName);
 
         	platform.assertPathExists(crawlDirPath, "Prior crawl output directory does not exist");

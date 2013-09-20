@@ -28,42 +28,42 @@ public class FetchPipeHadoopTest extends AbstractFetchPipeTest {
 
     @Test
     public void testHeadersInStatus() throws Exception {
-        testHeadersInStatus(new BixoPlatform(Platform.Hadoop));
+        testHeadersInStatus(new BixoPlatform(FetchPipeHadoopTest.class, Platform.Hadoop));
     }
     
     @Test
     public void testFetchPipe() throws Exception {
-        testFetchPipe(new BixoPlatform(Platform.Hadoop));
+        testFetchPipe(new BixoPlatform(FetchPipeHadoopTest.class, Platform.Hadoop));
     }
     
     @Test
     public void testRedirectException() throws Exception {
-        testRedirectException(new BixoPlatform(Platform.Hadoop));
+        testRedirectException(new BixoPlatform(FetchPipeHadoopTest.class, Platform.Hadoop));
     }
     
     @Test
     public void testTerminatingFetchPipe() throws Exception {
-        testTerminatingFetchPipe(new BixoPlatform(Platform.Hadoop));
+        testTerminatingFetchPipe(new BixoPlatform(FetchPipeHadoopTest.class, Platform.Hadoop));
     }
     
     @Test
     public void testPayloads() throws Exception {
-        testPayloads(new BixoPlatform(Platform.Hadoop));
+        testPayloads(new BixoPlatform(FetchPipeHadoopTest.class, Platform.Hadoop));
     }
     
     @Test
     public void testSkippingURLsByScore() throws Exception {
-        testSkippingURLsByScore(new BixoPlatform(Platform.Hadoop));
+        testSkippingURLsByScore(new BixoPlatform(FetchPipeHadoopTest.class, Platform.Hadoop));
     }
     
     @Test
     public void testDurationLimitSimple() throws Exception {
-        testDurationLimitSimple(new BixoPlatform(Platform.Hadoop));
+        testDurationLimitSimple(new BixoPlatform(FetchPipeHadoopTest.class, Platform.Hadoop));
     }
     
     @Test
     public void testMaxUrlsPerServer() throws Exception {
-        testMaxUrlsPerServer(new BixoPlatform(Platform.Hadoop));
+        testMaxUrlsPerServer(new BixoPlatform(FetchPipeHadoopTest.class, Platform.Hadoop));
     }
     
     // TODO KKr- re-enable this test when we know how to make it work for

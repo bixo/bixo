@@ -51,7 +51,7 @@ public class ParsePipeTest extends CascadingTestCase {
 	@Test
     public void testParserPipe() throws Exception {
 
-        BixoPlatform platform = new BixoPlatform(Platform.Local);
+        BixoPlatform platform = new BixoPlatform(ParsePipeTest.class, Platform.Local);
         
 
         Pipe pipe = new Pipe("parse_source");
