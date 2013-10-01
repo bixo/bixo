@@ -23,11 +23,17 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.scaleunlimited.cascading.BasePath;
 import com.scaleunlimited.cascading.BasePlatform;
 
 
 public class CrawlDirUtils {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(CrawlDirUtils.class);
+    
 	private static final Pattern LOOP_DIRNAME_PATTERN = Pattern
 			.compile("(\\d+)-([^/]+)");
 
@@ -52,13 +58,13 @@ public class CrawlDirUtils {
 
 	/**
 	 * 
-	 * @param fs
+     * @param platform
 	 * @param outputPath
 	 * @return Path to the latest loop directory (based on the loop number); 
 	 *         null in the case of an error.
 	 * @throws Exception 
 	 */
-	public static BasePath findLatestLoopDir(BasePlatform fs, BasePath outputPath)
+	public static BasePath findLatestLoopDir(BasePlatform platform, BasePath outputPath)
 			throws Exception {
 		int bestLoop = -1;
 		BasePath result = null;
@@ -145,18 +151,21 @@ public class CrawlDirUtils {
 		ArrayList<BasePath> result = new ArrayList<BasePath>();
 
 		BasePath[] paths = outputPath.list();
-//		FileStatus[] crawldirs = listStatus(platform, outputPath);
 		for (BasePath path : paths) {
 			if (!path.isDirectory()) {
 				continue;
 			}
 
-			// Verify crawl dir name is valid.
-			extractLoopNumber(path);
-			
-			BasePath subdirPath = platform.makePath(path, subdirName);
-            if (subdirPath.exists() && subdirPath.isDirectory()) {
-                result.add(subdirPath);
+            try {
+                // Verify crawl dir name is valid.
+                extractLoopNumber(path);
+
+                BasePath subdirPath = platform.makePath(path, subdirName);
+                if (subdirPath.exists() && subdirPath.isDirectory()) {
+                    result.add(subdirPath);
+                }
+            } catch (InvalidParameterException e) {
+                LOGGER.debug("Ignoring directory :" + path.getName());
             }
 		}
 
