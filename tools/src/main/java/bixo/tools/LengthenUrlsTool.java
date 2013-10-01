@@ -106,7 +106,7 @@ public class LengthenUrlsTool {
             pipe = new Each(pipe, new UrlLengthener(fetcher));
             pipe = new Each(pipe, new Debug());
 
-            BixoPlatform platform = new BixoPlatform(Platform.Local);
+            BixoPlatform platform = new BixoPlatform(LengthenUrlsTool.class, Platform.Local);
             BasePath filePath = platform.makePath(filename);
             TextLine textLineLocalScheme = new TextLine(new Fields("url"));
             Tap sourceTap = platform.makeTap(textLineLocalScheme, filePath, SinkMode.KEEP);
