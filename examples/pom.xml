@@ -23,7 +23,7 @@
 	<artifactId>bixo-examples</artifactId>
 	<name>Bixo Examples</name>
 	<packaging>jar</packaging>
-	<version>0.9.1</version>
+	<version>1.0-SNAPSHOT</version>
 	<repositories>
 		<repository>
 			<id>Conjars</id>
@@ -40,7 +40,7 @@
 		<dependency>
 			<groupId>bixo</groupId>
 			<artifactId>bixo-core</artifactId>
-			<version>0.9.1</version>
+			<version>1.0-SNAPSHOT</version>
 		</dependency>
 		
 		<!-- cascading-11-jdbc is based on Cascading 1.x and needs to be updated -->
