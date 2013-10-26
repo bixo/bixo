@@ -1,0 +1,10 @@
+Bixo Change Log
+
+Release 0.9.1
+- Changed DemoStatusTool parameter -localmode to -localplatform (vmagotra)
+- Added new "raw dump" option to FetchAndParseTool (kkrugler)
+- Switched to slf4j for all logging, versus log4j (vmagotra)
+- Removed buggy support for auto-setting main class in BixoPlatform (Iulian via vmagotra)
+- Switched to Cascading 2.2.0 (vmagotra)
+- Added this CHANGES file to project (kkrugler)
+
