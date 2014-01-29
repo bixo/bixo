@@ -229,7 +229,7 @@ public class FetchPipe extends SubAssembly {
     
     public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseFetcher fetcher, BaseFetcher robotsFetcher, BaseRobotsParser parser,
                     BaseFetchJobPolicy fetchJobPolicy, int numReducers) {
-        
+        super(urlProvider);
         Pipe robotsPipe = new Each(urlProvider, new GroupFunction(new GroupByDomain()));
         robotsPipe = new GroupBy("Grouping URLs by IP/delay", robotsPipe, GroupedUrlDatum.getGroupingField());
         robotsPipe = new Every(robotsPipe, new FilterAndScoreByUrlAndRobots(robotsFetcher, parser, scorer), Fields.RESULTS);
