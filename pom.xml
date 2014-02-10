@@ -54,7 +54,7 @@
 	</repositories>
 
 	<properties>
-		<cascading.version>2.2.0</cascading.version>
+		<cascading.version>2.2.1</cascading.version>
 		<tika.version>1.4</tika.version>
 		<hadoop.version>1.0.4</hadoop.version>
 		<jetty.version>8.1.8.v20121106</jetty.version>
