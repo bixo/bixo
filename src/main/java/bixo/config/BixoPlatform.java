@@ -267,4 +267,18 @@ public class BixoPlatform extends BasePlatform {
     public String copySharedDirToLocal(FlowProcess flowProcess, String sharedDirName) {
         return _platform.copySharedDirToLocal(flowProcess, sharedDirName);
     }
+
+    public String getProperty(String name) {
+        return _platform.getProperty(name);
+    }
+
+    public void setProperty(String name, int value) {
+        _platform.setProperty(name, value);
+    }
+
+    public void setProperty(String name, String value) {
+        _platform.setProperty(name, value);
+    }
+    
+    
 }
