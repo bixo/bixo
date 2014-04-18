@@ -67,12 +67,15 @@ public class BixoPlatform extends BasePlatform {
         } else {
             configureHadoopPlatform(applicationJarClass, new JobConf());
         }
-        
     }
 
     public BixoPlatform(Class applicationJarClass, Configuration conf) throws Exception {
+        this(applicationJarClass, new JobConf(conf));
+    }
+    
+    public BixoPlatform(Class applicationJarClass, JobConf conf) throws Exception {
         super(applicationJarClass);
-        configureHadoopPlatform(applicationJarClass, new JobConf(conf));
+        configureHadoopPlatform(applicationJarClass, conf);
     }
     
     private void configureHadoopPlatform(Class applicationJarClass, JobConf jobConf) throws Exception {
