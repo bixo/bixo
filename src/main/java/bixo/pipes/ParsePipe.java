@@ -99,6 +99,7 @@ public class ParsePipe extends SubAssembly {
     }
     
     public ParsePipe(Pipe fetcherPipe, BaseParser parser) {
+        super(fetcherPipe);
         Pipe parsePipe = new Pipe(PARSE_PIPE_NAME, fetcherPipe);
 
         ParseFunction parserFunction = new ParseFunction(parser);
