@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -81,6 +82,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     private transient LoggingFlowProcess _flowProcess;
     private transient TupleEntryCollector _collector;
     private transient ThreadedExecutor _executor;
+    private transient Semaphore _semaphore;
 
     /**
      * Return a SimpleHttpFetcher that's appropriate for lengthening URLs.
@@ -129,11 +131,14 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
         _flowProcess.addReporter(new LoggingFlowReporter());
 
         _executor = new ThreadedExecutor(_maxThreads, COMMAND_TIMEOUT);
+        _semaphore = new Semaphore(1);
+        _semaphore.acquireUninterruptibly();
     }
     
     @Override
     public void flush(FlowProcess flowProcess, OperationCall<NullContext> perationCall) {
         try {
+            _semaphore.release();
             if (!_executor.terminate(TERMINATE_TIMEOUT)) {
                 LOGGER.warn("Had to do a hard shutdown of robots fetching");
             }
@@ -142,6 +147,8 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
             // losing URLs still to be processed?
             LOGGER.warn("Interrupted while waiting for termination");
             Thread.currentThread().interrupt();
+        } finally {
+            _semaphore.acquireUninterruptibly();
         }
         
         super.flush(flowProcess, perationCall);
@@ -149,47 +156,58 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     
     @Override
     public void cleanup(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
-        _flowProcess.dumpCounters();
+        try {
+            _semaphore.release();
+            _flowProcess.dumpCounters();
+        } finally {
+            _semaphore.acquireUninterruptibly();
+        }
+        
         super.cleanup(flowProcess, operationCall);
     }
     
     @Override
     public void operate(FlowProcess flowProcess, FunctionCall<NullContext> functionCall) {
-        _collector = functionCall.getOutputCollector();
-
-        String url = functionCall.getArguments().getTuple().getString(0);
-        
-        // Figure out if this is a URL from a shortener service.
-        // If so, then we want to try to lengthen it.
-        // If not, see if it looks like shortened URL, and try anyway.
-        
-        Matcher m = HOSTNAME_PATTERN.matcher(url);
-        if (!m.find()) {
-            emitTuple(url);
-            return;
-        }
-
-        String hostname = m.group(1);
-        if (!_urlShorteners.contains(hostname)) {
-            // FUTURE - see if this looks like a shortened URL
-            emitTuple(url);
-            return;
-        }
-        
         try {
-            ResolveRedirectsTask task = new ResolveRedirectsTask(url, _fetcher, _collector, _flowProcess);
-            _executor.execute(task);
-        } catch (RejectedExecutionException e) {
-            // should never happen.
-            LOGGER.error("Redirection handling pool rejected our request for " + url);
-            _flowProcess.increment(FetchCounters.URLS_REJECTED, 1);
+            _semaphore.release();
+            _collector = functionCall.getOutputCollector();
+    
+            String url = functionCall.getArguments().getTuple().getString(0);
             
-            emitTuple(url);
-        } catch (Throwable t) {
-            LOGGER.error("Caught an unexpected throwable - redirection code rejected our request for " + url, t);
-            _flowProcess.increment(FetchCounters.URLS_REJECTED, 1);
+            // Figure out if this is a URL from a shortener service.
+            // If so, then we want to try to lengthen it.
+            // If not, see if it looks like shortened URL, and try anyway.
             
-            emitTuple(url);
+            Matcher m = HOSTNAME_PATTERN.matcher(url);
+            if (!m.find()) {
+                emitTuple(url);
+                return;
+            }
+    
+            String hostname = m.group(1);
+            if (!_urlShorteners.contains(hostname)) {
+                // FUTURE - see if this looks like a shortened URL
+                emitTuple(url);
+                return;
+            }
+            
+            try {
+                ResolveRedirectsTask task = new ResolveRedirectsTask(url, _fetcher, _collector, _flowProcess, _semaphore);
+                _executor.execute(task);
+            } catch (RejectedExecutionException e) {
+                // should never happen.
+                LOGGER.error("Redirection handling pool rejected our request for " + url);
+                _flowProcess.increment(FetchCounters.URLS_REJECTED, 1);
+                
+                emitTuple(url);
+            } catch (Throwable t) {
+                LOGGER.error("Caught an unexpected throwable - redirection code rejected our request for " + url, t);
+                _flowProcess.increment(FetchCounters.URLS_REJECTED, 1);
+                
+                emitTuple(url);
+            }
+        } finally {
+            _semaphore.acquireUninterruptibly();
         }
     }
     
@@ -215,8 +233,11 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     
 
     private void emitTuple(String url) {
-        synchronized(_collector) {
+        try {
+            _semaphore.acquireUninterruptibly();
             _collector.add(BixoPlatform.clone(new Tuple(url), _flowProcess));
+        } finally {
+            _semaphore.release();
         }
     }
     

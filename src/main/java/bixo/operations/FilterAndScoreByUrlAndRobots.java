@@ -18,6 +18,9 @@ package bixo.operations;
 
 import java.util.Iterator;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +68,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
 	
     private transient ThreadedExecutor _executor;
     private transient LoggingFlowProcess _flowProcess;
+    private transient Semaphore _semaphore;
     
     public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, BaseRobotsParser parser, BaseScoreGenerator scorer) {
         super(ScoredUrlDatum.FIELDS);
@@ -98,6 +102,8 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         // supports logging in local mode, and a setStatus() call.
         _flowProcess = new LoggingFlowProcess(flowProcess);
         _flowProcess.addReporter(new LoggingFlowReporter());
+        _semaphore = new Semaphore(1);
+        _semaphore.acquireUninterruptibly();
     }
     
     private synchronized void terminate() {
@@ -122,8 +128,13 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     @Override
     public void flush(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
         LOGGER.info("Flushing FilterAndScoreByUrlAndRobots");
-        
-        terminate();
+
+        try {
+            _semaphore.release();
+            terminate();
+        } finally {
+            _semaphore.acquireUninterruptibly();
+        }
         
         super.flush(flowProcess, operationCall);
     }
@@ -132,7 +143,12 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     public void cleanup(FlowProcess flowProcess, cascading.operation.OperationCall<NullContext> operationCall) {
         LOGGER.info("Cleaning up FilterAndScoreByUrlAndRobots");
         
-        terminate();
+        try {
+            _semaphore.release();
+            terminate();
+        } finally {
+            _semaphore.acquireUninterruptibly();
+        }
         
         _flowProcess.dumpCounters();
         super.cleanup(flowProcess, operationCall);
@@ -151,20 +167,23 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         }
         
         try {
-            Runnable doRobots = new ProcessRobotsTask(protocolAndDomain, _scorer, urls, _fetcher, _parser, bufferCall.getOutputCollector(), _flowProcess);
+            _semaphore.release();
+            Runnable doRobots = new ProcessRobotsTask(protocolAndDomain, _scorer, urls, _fetcher, _parser, bufferCall.getOutputCollector(), _flowProcess, _semaphore);
             _executor.execute(doRobots);
         } catch (RejectedExecutionException e) {
             // should never happen.
             LOGGER.error("Robots handling pool rejected our request for " + protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, urls.size());
-            ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector(), flowProcess);
+            ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector(), flowProcess, _semaphore);
         } catch (Throwable t) {
            LOGGER.error("Caught an unexpected throwable - robots handling rejected our request for " + protocolAndDomain, t);
            _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
            _flowProcess.increment(FetchCounters.URLS_REJECTED, urls.size());
-           ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector(), flowProcess);
-      } 
+           ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector(), flowProcess, _semaphore);
+      } finally {
+          _semaphore.acquireUninterruptibly();
+      }
 	}
 
 	

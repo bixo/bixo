@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -282,6 +283,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     private transient ConcurrentHashMap<String, Long> _pendingRefs;
     
     private transient AtomicBoolean _keepCollecting;
+    private transient Semaphore _semaphore;
     
     public FetchBuffer(BaseFetcher fetcher) {
         // We're going to output a tuple that contains a FetchedDatum, plus meta-data,
@@ -315,6 +317,9 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         _activeRefs = new ConcurrentHashMap<String, Long>();
         
         _keepCollecting = new AtomicBoolean(true);
+        
+        _semaphore = new Semaphore(1);
+        _semaphore.acquireUninterruptibly();
     }
 
     @Override
@@ -324,64 +329,72 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         _collector = buffCall.getOutputCollector();
         FetcherPolicy fetcherPolicy = _fetcher.getFetcherPolicy();
         
-        // Each value is a PreFetchedDatum that contains a set of URLs to fetch in one request from
-        // a single server, plus other values needed to set state properly.
-        while (!Thread.interrupted() && !fetcherPolicy.isTerminateFetch() && !values.isEmpty()) {
-            FetchSetDatum datum = values.nextOrNull(_fetcherMode);
+        try {
+            _semaphore.release(); //allow _collector.add by any thread during this call
             
-            try {
-                if (datum == null) {
-                    trace("Nothing ready to fetch, sleeping...");
-                    process.keepAlive();
-                    Thread.sleep(NOTHING_TO_FETCH_SLEEP_TIME);
-                } else {
-                    List<ScoredUrlDatum> urls = datum.getUrls();
-                    String ref = datum.getGroupingRef();
-                    trace("Processing %d URLs for %s", urls.size(), ref);
-
-                    Runnable doFetch = new FetchTask(this, _fetcher, urls, ref);
-                    if (datum.isLastList()) {
-                        makeActive(ref, 0L);
-                        trace("Executing fetch of %d URLs from %s (last batch)", urls.size(), ref);
+            // Each value is a PreFetchedDatum that contains a set of URLs to fetch in one request from
+            // a single server, plus other values needed to set state properly.
+            while (!Thread.interrupted() && !fetcherPolicy.isTerminateFetch() && !values.isEmpty()) {
+                FetchSetDatum datum = values.nextOrNull(_fetcherMode);
+                
+                try {
+                    if (datum == null) {
+                        trace("Nothing ready to fetch, sleeping...");
+                        process.keepAlive();
+                        Thread.sleep(NOTHING_TO_FETCH_SLEEP_TIME);
                     } else {
-                        Long nextFetchTime = System.currentTimeMillis() + datum.getFetchDelay();
-                        makeActive(ref, nextFetchTime);
-                        trace("Executing fetch of %d URLs from %s (next fetch time %d)", urls.size(), ref, nextFetchTime);
+                        List<ScoredUrlDatum> urls = datum.getUrls();
+                        String ref = datum.getGroupingRef();
+                        trace("Processing %d URLs for %s", urls.size(), ref);
+    
+                        Runnable doFetch = new FetchTask(this, _fetcher, urls, ref);
+                        if (datum.isLastList()) {
+                            makeActive(ref, 0L);
+                            trace("Executing fetch of %d URLs from %s (last batch)", urls.size(), ref);
+                        } else {
+                            Long nextFetchTime = System.currentTimeMillis() + datum.getFetchDelay();
+                            makeActive(ref, nextFetchTime);
+                            trace("Executing fetch of %d URLs from %s (next fetch time %d)", urls.size(), ref, nextFetchTime);
+                        }
+    
+                        long startTime = System.currentTimeMillis();
+    
+                        try {
+                            _executor.execute(doFetch);
+                        } catch (RejectedExecutionException e) {
+                            // should never happen.
+                            LOGGER.error("Fetch pool rejected our fetch list for " + ref);
+    
+                            finished(ref);
+                            skipUrls(urls, UrlStatus.SKIPPED_DEFERRED, String.format("Execution rejection skipped %d URLs", urls.size()));
+                        }
+    
+                        // Adjust for how long it took to get the request queued.
+                        adjustActive(ref, System.currentTimeMillis() - startTime);
                     }
-
-                    long startTime = System.currentTimeMillis();
-
-                    try {
-                        _executor.execute(doFetch);
-                    } catch (RejectedExecutionException e) {
-                        // should never happen.
-                        LOGGER.error("Fetch pool rejected our fetch list for " + ref);
-
-                        finished(ref);
-                        skipUrls(urls, UrlStatus.SKIPPED_DEFERRED, String.format("Execution rejection skipped %d URLs", urls.size()));
-                    }
-
-                    // Adjust for how long it took to get the request queued.
-                    adjustActive(ref, System.currentTimeMillis() - startTime);
+                } catch (InterruptedException e) {
+                    LOGGER.warn("FetchBuffer interrupted!");
+                    Thread.currentThread().interrupt();
                 }
-            } catch (InterruptedException e) {
-                LOGGER.warn("FetchBuffer interrupted!");
-                Thread.currentThread().interrupt();
             }
-        }
-        
-        // Skip all URLs that we've got left.
-        if (!values.isEmpty()) {
-            trace("Found unprocessed URLs");
             
-            UrlStatus status = Thread.interrupted() ? UrlStatus.SKIPPED_INTERRUPTED : UrlStatus.SKIPPED_TIME_LIMIT;
-            
-            while (!values.isEmpty()) {
-                FetchSetDatum datum = values.drain();
-                List<ScoredUrlDatum> urls = datum.getUrls();
-                trace("Skipping %d urls from %s (e.g. %s) ", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
-                skipUrls(urls, status, null);
+            // Skip all URLs that we've got left.
+            if (!values.isEmpty()) {
+                trace("Found unprocessed URLs");
+                
+                UrlStatus status = Thread.interrupted() ? UrlStatus.SKIPPED_INTERRUPTED : UrlStatus.SKIPPED_TIME_LIMIT;
+                
+                while (!values.isEmpty()) {
+                    FetchSetDatum datum = values.drain();
+                    List<ScoredUrlDatum> urls = datum.getUrls();
+                    trace("Skipping %d urls from %s (e.g. %s) ", urls.size(), datum.getGroupingRef(), urls.get(0).getUrl());
+                    skipUrls(urls, status, null);
+                }
             }
+        } finally {
+            // It's not legal to call _collector.add until Cascading calls another method on this object.
+            // We have to use a semaphore because we're not guaranteed to have the same thread call the next method.
+            _semaphore.acquireUninterruptibly();
         }
     }
 
@@ -428,7 +441,12 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     public void flush(FlowProcess process, OperationCall<NullContext> operationCall) {
         LOGGER.info("Flushing FetchBuffer");
         
-        terminate();
+        try {
+            _semaphore.release();
+            terminate();
+        } finally {
+            _semaphore.acquireUninterruptibly();
+        }
 
         super.flush(process, operationCall);
     }
@@ -437,7 +455,12 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     public void cleanup(FlowProcess process, OperationCall<NullContext> operationCall) {
         LOGGER.info("Cleaning up FetchBuffer");
         
-        terminate();
+        try {
+            _semaphore.release();
+            terminate();
+        } finally {
+            _semaphore.acquireUninterruptibly();
+        }
 
         _flowProcess.dumpCounters();
         super.cleanup(process,  operationCall);
@@ -463,15 +486,19 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
 
     @Override
     public void collect(Tuple tuple) {
-        // Prevent two bad things from happening:
+        // Prevent three bad things from happening:
         // 1. Somebody changes _keepCollecting after we've tested that it's true
         // 2. Two people calling collector.add() at the same time (it's not thread safe)
-        synchronized (_keepCollecting) {
+        // 3. collector.add() being called when Cascading doesn't allow it
+        try {
+            _semaphore.acquireUninterruptibly();
             if (_keepCollecting.get()) {
                 _collector.add(BixoPlatform.clone(tuple, _flowProcess));
             } else {
                 LOGGER.warn("Losing an entry: " + tuple);
             }
+        } finally {
+            _semaphore.release();
         }
     }
 
@@ -481,11 +508,16 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     }
     
     private void skipUrls(List<ScoredUrlDatum> urls, UrlStatus status, String traceMsg) {
-        for (ScoredUrlDatum datum : urls) {
-            FetchedDatum result = new FetchedDatum(datum);
-            Tuple tuple = result.getTuple();
-            tuple.add(status.toString());
-            _collector.add(BixoPlatform.clone(tuple, _flowProcess));
+        try {
+            _semaphore.acquireUninterruptibly();
+            for (ScoredUrlDatum datum : urls) {
+                FetchedDatum result = new FetchedDatum(datum);
+                Tuple tuple = result.getTuple();
+                tuple.add(status.toString());
+                _collector.add(BixoPlatform.clone(tuple, _flowProcess));
+            }
+        } finally {
+            _semaphore.release();
         }
 
         _flowProcess.increment(FetchCounters.URLS_SKIPPED, urls.size());

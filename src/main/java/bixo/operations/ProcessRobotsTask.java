@@ -21,6 +21,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Queue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,9 +57,10 @@ public class ProcessRobotsTask implements Runnable {
     private TupleEntryCollector _collector;
     private BaseRobotsParser _parser;
     private LoggingFlowProcess _flowProcess;
+    private Semaphore _semaphore;
 
     public ProcessRobotsTask(String protocolAndDomain, BaseScoreGenerator scorer, Queue<GroupedUrlDatum> urls, BaseFetcher fetcher, 
-                    BaseRobotsParser parser, TupleEntryCollector collector, LoggingFlowProcess flowProcess) {
+                    BaseRobotsParser parser, TupleEntryCollector collector, LoggingFlowProcess flowProcess, Semaphore semaphore) {
         _protocolAndDomain = protocolAndDomain;
         _scorer = scorer;
         _urls = urls;
@@ -65,6 +68,7 @@ public class ProcessRobotsTask implements Runnable {
         _parser = parser;
         _collector = collector;
         _flowProcess = flowProcess;
+        _semaphore = semaphore;
     }
 
     /**
@@ -75,15 +79,19 @@ public class ProcessRobotsTask implements Runnable {
      * @param urls Queue of URLs to empty out
      * @param groupingKey grouping key to use for all entries.
      * @param collector tuple output collector
+     * @param semaphore TODO
      */
-    public static void emptyQueue(Queue<GroupedUrlDatum> urls, String groupingKey, TupleEntryCollector collector, FlowProcess process) {
+    public static void emptyQueue(Queue<GroupedUrlDatum> urls, String groupingKey, TupleEntryCollector collector, FlowProcess process, Semaphore semaphore) {
         GroupedUrlDatum datum;
         while ((datum = urls.poll()) != null) {
             ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), groupingKey, UrlStatus.UNFETCHED, 1.0);
             scoreUrl.setPayload(datum.getPayload());
             // TODO KKr - move synchronization up, to avoid lots of contention with other threads?
-            synchronized (collector) {
+            try {
+                semaphore.acquireUninterruptibly();
                 collector.add(BixoPlatform.clone(scoreUrl.getTuple(), process));
+            } finally {
+                semaphore.release();
             }
         }
     }
@@ -117,7 +125,7 @@ public class ProcessRobotsTask implements Runnable {
                 
                 LOGGER.debug("Skipping URLs from not-good domain: " + domain);
                 
-                emptyQueue(_urls, GroupingKey.SKIPPED_GROUPING_KEY, _collector, _flowProcess);
+                emptyQueue(_urls, GroupingKey.SKIPPED_GROUPING_KEY, _collector, _flowProcess, _semaphore);
             } else {
                 BaseRobotRules robotRules = RobotUtils.getRobotRules(_fetcher, _parser, new URL(domainInfo.getProtocolAndDomain() + "/robots.txt"));
 
@@ -158,9 +166,12 @@ public class ProcessRobotsTask implements Runnable {
                     scoreUrl.setPayload(datum.getPayload());
                     _flowProcess.increment(counter, 1);
 
-                    // collectors aren't thread safe
-                    synchronized (_collector) {
+                    // collectors aren't thread safe and can only be called when certain calls are in progress.
+                    try {
+                        _semaphore.acquireUninterruptibly();
                         _collector.add(BixoPlatform.clone(scoreUrl.getTuple(), _flowProcess));
+                    } finally {
+                        _semaphore.release();
                     }
                 }
             }
@@ -168,22 +179,22 @@ public class ProcessRobotsTask implements Runnable {
             LOGGER.debug("Unknown host: " + _protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
-            emptyQueue(_urls, GroupingKey.UNKNOWN_HOST_GROUPING_KEY, _collector, _flowProcess);
+            emptyQueue(_urls, GroupingKey.UNKNOWN_HOST_GROUPING_KEY, _collector, _flowProcess, _semaphore);
         } catch (MalformedURLException e) {
             LOGGER.debug("Invalid URL: " + _protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
-            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector, _flowProcess);
+            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector, _flowProcess, _semaphore);
         } catch (URISyntaxException e) {
             LOGGER.debug("Invalid URI: " + _protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
-            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector, _flowProcess);
+            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector, _flowProcess, _semaphore);
         } catch (Exception e) {
             LOGGER.warn("Exception processing " + _protocolAndDomain, e);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, _urls.size());
-            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector, _flowProcess);
+            emptyQueue(_urls, GroupingKey.INVALID_URL_GROUPING_KEY, _collector, _flowProcess, _semaphore);
         } finally {
             _flowProcess.decrement(FetchCounters.DOMAINS_PROCESSING, 1);
         }
