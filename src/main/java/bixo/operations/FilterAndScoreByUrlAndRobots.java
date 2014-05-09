@@ -19,8 +19,6 @@ package bixo.operations;
 import java.util.Iterator;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +67,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     private transient ThreadedExecutor _executor;
     private transient LoggingFlowProcess _flowProcess;
     private transient Semaphore _semaphore;
+    private transient AsynchronousTupleEntryCollector _collector;
     
     public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, BaseRobotsParser parser, BaseScoreGenerator scorer) {
         super(ScoredUrlDatum.FIELDS);
@@ -104,6 +103,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         _flowProcess.addReporter(new LoggingFlowReporter());
         _semaphore = new Semaphore(1);
         _semaphore.acquireUninterruptibly();
+        _collector = new AsynchronousTupleEntryCollector("Filter and score by URL collector", _semaphore);
     }
     
     private synchronized void terminate() {
@@ -122,6 +122,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
             Thread.currentThread().interrupt();
         } finally {
             _executor = null;
+            _collector.finished();
         }
     }
 
@@ -156,6 +157,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     
 	@Override
 	public void operate(FlowProcess flowProcess, BufferCall<NullContext> bufferCall) {
+	    _collector.setCollector(bufferCall.getOutputCollector());
         TupleEntry group = bufferCall.getGroup();
         String protocolAndDomain = group.getString(0);
         LOGGER.info("Processing tuple group: " + group);
@@ -168,19 +170,19 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         
         try {
             _semaphore.release();
-            Runnable doRobots = new ProcessRobotsTask(protocolAndDomain, _scorer, urls, _fetcher, _parser, bufferCall.getOutputCollector(), _flowProcess, _semaphore);
+            Runnable doRobots = new ProcessRobotsTask(protocolAndDomain, _scorer, urls, _fetcher, _parser, _collector, _flowProcess);
             _executor.execute(doRobots);
         } catch (RejectedExecutionException e) {
             // should never happen.
             LOGGER.error("Robots handling pool rejected our request for " + protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, urls.size());
-            ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector(), flowProcess, _semaphore);
+            ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, _collector, flowProcess);
         } catch (Throwable t) {
            LOGGER.error("Caught an unexpected throwable - robots handling rejected our request for " + protocolAndDomain, t);
            _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
            _flowProcess.increment(FetchCounters.URLS_REJECTED, urls.size());
-           ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector(), flowProcess, _semaphore);
+           ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, _collector, flowProcess);
       } finally {
           _semaphore.acquireUninterruptibly();
       }

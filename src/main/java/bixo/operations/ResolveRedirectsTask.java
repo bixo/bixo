@@ -17,14 +17,11 @@
 package bixo.operations;
 
 
-import java.util.concurrent.Semaphore;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cascading.flow.FlowProcess;
 import cascading.tuple.Tuple;
-import cascading.tuple.TupleEntryCollector;
 
 import bixo.config.BixoPlatform;
 import bixo.datum.FetchedDatum;
@@ -40,16 +37,14 @@ public class ResolveRedirectsTask implements Runnable {
     
     private String _url;
     private BaseFetcher _fetcher;
-    private TupleEntryCollector _collector;
+    private AsynchronousTupleEntryCollector _collector;
     private FlowProcess _flowProcess;
-    private Semaphore _semaphore;
 
-    public ResolveRedirectsTask(String url, BaseFetcher fetcher, TupleEntryCollector collector, FlowProcess flowProcess, Semaphore semaphore) {
+    public ResolveRedirectsTask(String url, BaseFetcher fetcher, AsynchronousTupleEntryCollector collector, FlowProcess flowProcess) {
         _url = url;
         _fetcher = fetcher;
         _collector = collector;
         _flowProcess = flowProcess;
-        _semaphore = semaphore;
     }
 
     @Override
@@ -77,12 +72,6 @@ public class ResolveRedirectsTask implements Runnable {
             LOGGER.debug("Exception processing redirect for " + _url + ": " + e.getMessage(), e);
         }
 
-        try {
-            // collectors aren't thread safe
-            _semaphore.acquireUninterruptibly();
-            _collector.add(BixoPlatform.clone(new Tuple(redirectedUrl), _flowProcess));
-        } finally {
-            _semaphore.release();
-        }
+        _collector.add(BixoPlatform.clone(new Tuple(redirectedUrl), _flowProcess));
     }
 }

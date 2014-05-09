@@ -44,7 +44,6 @@ import cascading.operation.FunctionCall;
 import cascading.operation.OperationCall;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
-import cascading.tuple.TupleEntryCollector;
 
 import com.scaleunlimited.cascading.LoggingFlowProcess;
 import com.scaleunlimited.cascading.LoggingFlowReporter;
@@ -80,7 +79,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     private Set<String> _urlShorteners;
 
     private transient LoggingFlowProcess _flowProcess;
-    private transient TupleEntryCollector _collector;
+    private transient AsynchronousTupleEntryCollector _collector;
     private transient ThreadedExecutor _executor;
     private transient Semaphore _semaphore;
 
@@ -133,6 +132,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
         _executor = new ThreadedExecutor(_maxThreads, COMMAND_TIMEOUT);
         _semaphore = new Semaphore(1);
         _semaphore.acquireUninterruptibly();
+        _collector = new AsynchronousTupleEntryCollector("URL lengthening collector", _semaphore);
     }
     
     @Override
@@ -158,6 +158,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     public void cleanup(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
         try {
             _semaphore.release();
+            _collector.finished();
             _flowProcess.dumpCounters();
         } finally {
             _semaphore.acquireUninterruptibly();
@@ -170,7 +171,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     public void operate(FlowProcess flowProcess, FunctionCall<NullContext> functionCall) {
         try {
             _semaphore.release();
-            _collector = functionCall.getOutputCollector();
+            _collector.setCollector(functionCall.getOutputCollector());
     
             String url = functionCall.getArguments().getTuple().getString(0);
             
@@ -192,7 +193,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
             }
             
             try {
-                ResolveRedirectsTask task = new ResolveRedirectsTask(url, _fetcher, _collector, _flowProcess, _semaphore);
+                ResolveRedirectsTask task = new ResolveRedirectsTask(url, _fetcher, _collector, _flowProcess);
                 _executor.execute(task);
             } catch (RejectedExecutionException e) {
                 // should never happen.
@@ -233,12 +234,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     
 
     private void emitTuple(String url) {
-        try {
-            _semaphore.acquireUninterruptibly();
-            _collector.add(BixoPlatform.clone(new Tuple(url), _flowProcess));
-        } finally {
-            _semaphore.release();
-        }
+        _collector.add(BixoPlatform.clone(new Tuple(url), _flowProcess));
     }
     
 }

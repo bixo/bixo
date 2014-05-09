@@ -49,7 +49,6 @@ import cascading.operation.OperationCall;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
-import cascading.tuple.TupleEntryCollector;
 
 import com.scaleunlimited.cascading.BaseDatum;
 import com.scaleunlimited.cascading.LoggingFlowProcess;
@@ -276,7 +275,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
 
     private transient ThreadedExecutor _executor;
     private transient LoggingFlowProcess _flowProcess;
-    private transient TupleEntryCollector _collector;
+    private transient AsynchronousTupleEntryCollector _collector;
 
     private transient Object _refLock;
     private transient ConcurrentHashMap<String, Long> _activeRefs;
@@ -297,7 +296,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     @Override
     public boolean isSafe() {
         // We definitely DO NOT want to be called multiple times for the same
-        // scored datum, so let Cascading 1.1 know that the output from us should
+        // scored datum, so let Cascading know that the output from us should
         // be stashed in tempHfs if need be.
         return false;
     }
@@ -320,13 +319,14 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         
         _semaphore = new Semaphore(1);
         _semaphore.acquireUninterruptibly();
+        _collector = new AsynchronousTupleEntryCollector("FetchBuffer collector", _semaphore);
     }
 
     @Override
     public void operate(FlowProcess process, BufferCall<NullContext> buffCall) {
         QueuedValues values = new QueuedValues(buffCall.getArgumentsIterator());
 
-        _collector = buffCall.getOutputCollector();
+        _collector.setCollector(buffCall.getOutputCollector());
         FetcherPolicy fetcherPolicy = _fetcher.getFetcherPolicy();
         
         try {
@@ -428,6 +428,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             synchronized (_keepCollecting) {
                 _keepCollecting.set(false);
             }
+            _collector.finished();
         } catch (InterruptedException e) {
             // FUTURE What's the right thing to do here? E.g. do I need to worry about
             // losing URLs still to be processed?
@@ -486,19 +487,13 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
 
     @Override
     public void collect(Tuple tuple) {
-        // Prevent three bad things from happening:
-        // 1. Somebody changes _keepCollecting after we've tested that it's true
-        // 2. Two people calling collector.add() at the same time (it's not thread safe)
-        // 3. collector.add() being called when Cascading doesn't allow it
-        try {
-            _semaphore.acquireUninterruptibly();
+        // Keeps somebody from changing _keepCollecting after we've tested that it's true
+        synchronized (_keepCollecting) {
             if (_keepCollecting.get()) {
                 _collector.add(BixoPlatform.clone(tuple, _flowProcess));
             } else {
                 LOGGER.warn("Losing an entry: " + tuple);
             }
-        } finally {
-            _semaphore.release();
         }
     }
 
@@ -508,17 +503,13 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     }
     
     private void skipUrls(List<ScoredUrlDatum> urls, UrlStatus status, String traceMsg) {
-        try {
-            _semaphore.acquireUninterruptibly();
-            for (ScoredUrlDatum datum : urls) {
-                FetchedDatum result = new FetchedDatum(datum);
-                Tuple tuple = result.getTuple();
-                tuple.add(status.toString());
-                _collector.add(BixoPlatform.clone(tuple, _flowProcess));
-            }
-        } finally {
-            _semaphore.release();
+        for (ScoredUrlDatum datum : urls) {
+            FetchedDatum result = new FetchedDatum(datum);
+            Tuple tuple = result.getTuple();
+            tuple.add(status.toString());
+            _collector.add(BixoPlatform.clone(tuple, _flowProcess));
         }
+        
 
         _flowProcess.increment(FetchCounters.URLS_SKIPPED, urls.size());
         if (status == UrlStatus.SKIPPED_PER_SERVER_LIMIT) {
