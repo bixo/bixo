@@ -22,6 +22,7 @@ public class AsynchronousTupleEntryCollector extends TupleEntryCollector {
     private Thread thread;
     private AtomicInteger operationThreads = new AtomicInteger();
     private Semaphore semaphore = new Semaphore(1);
+    private boolean running = true;
     
     public AsynchronousTupleEntryCollector(String threadName) {
         semaphore.acquireUninterruptibly();
@@ -29,7 +30,7 @@ public class AsynchronousTupleEntryCollector extends TupleEntryCollector {
         thread = new Thread(threadName) {
             public void run() {                
                 try {
-                    while (true) {
+                    while (running) {
                         Operation op = operations.take();
 
                         try {
@@ -108,15 +109,14 @@ public class AsynchronousTupleEntryCollector extends TupleEntryCollector {
      * Call when this is finished.
      */
     private void finished() {
-        while (thread.isAlive()) {
-            // We interrupt several times in case the interrupts get swallowed by buggy library code that doens't handle interrupts correctly
-            thread.interrupt();
-            try {
-                thread.join(200);
-            } catch (InterruptedException e) {
-                // re-set interruption state
-                Thread.currentThread().interrupt();
-            }
+        operations.add(new Finish());
+            
+        thread.interrupt();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            // re-set interruption state
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -179,6 +179,12 @@ public class AsynchronousTupleEntryCollector extends TupleEntryCollector {
     private class Close extends Operation {
         public void apply() {
             collector.close();
+        }
+    }
+    
+    private class Finish extends Operation {
+        public void apply() {
+            running = false;
         }
     }
 }
