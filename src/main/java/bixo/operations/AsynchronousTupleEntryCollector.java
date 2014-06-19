@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
@@ -18,33 +20,37 @@ public class AsynchronousTupleEntryCollector extends TupleEntryCollector {
     private TupleEntryCollector collector;
     private BlockingQueue<Operation> operations = new LinkedBlockingQueue<Operation>();
     private Thread thread;
+    private AtomicInteger operationThreads = new AtomicInteger();
+    private Semaphore semaphore = new Semaphore(1);
     
-    public AsynchronousTupleEntryCollector(String threadName, final Semaphore semaphore) {        
+    public AsynchronousTupleEntryCollector(String threadName) {
+        semaphore.acquireUninterruptibly();
+        
         thread = new Thread(threadName) {
             public void run() {                
                 try {
                     while (true) {
                         Operation op = operations.take();
+
                         try {
-                            semaphore.acquireUninterruptibly();
-                            
-                            for (; op != null; op = operations.poll()) {
-                                op.apply();
-                            }
+                            waitForCollection();
+
+                            op.apply();
+
                         } finally {
-                            semaphore.release();
+                            doneCollecting();
                         }
+
                     }
                 } catch (InterruptedException e) {
                     try {
-                        //finish the queue before exiting.
-                        semaphore.acquireUninterruptibly();
+                        waitForCollection();
                         
                         for (Operation op = operations.poll(); op != null; op = operations.poll()) {
                             op.apply();
                         }
                     } finally {
-                        semaphore.release();
+                        doneCollecting();
                     }
                 }
             }
@@ -82,6 +88,51 @@ public class AsynchronousTupleEntryCollector extends TupleEntryCollector {
         throw new UnsupportedOperationException();
     }
     
+    public void allowCollection() {
+        int operations = operationThreads.getAndIncrement();
+        
+        if (operations == 0) {
+            semaphore.release();
+        }
+    }
+
+    public void pauseCollection() {
+        int operations = operationThreads.decrementAndGet();
+        
+        if (operations == 0) {
+            semaphore.acquireUninterruptibly();
+        } 
+    }
+
+    /**
+     * Call when this is finished.
+     */
+    private void finished() {
+        while (thread.isAlive()) {
+            // We interrupt several times in case the interrupts get swallowed by buggy library code that doens't handle interrupts correctly
+            thread.interrupt();
+            try {
+                thread.join(200);
+            } catch (InterruptedException e) {
+                // re-set interruption state
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    public void finishCollection() {
+        finished();
+        pauseCollection();
+    }
+
+    private void waitForCollection() {
+        semaphore.acquireUninterruptibly();
+    }
+
+    private void doneCollecting() {
+        semaphore.release();
+    }
+
     private abstract class Operation {
         public abstract void apply();
     }
@@ -128,19 +179,6 @@ public class AsynchronousTupleEntryCollector extends TupleEntryCollector {
     private class Close extends Operation {
         public void apply() {
             collector.close();
-        }
-    }
-
-    /**
-     * Call when this is finished.
-     */
-    public void finished() {
-        thread.interrupt();
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            // re-set interruption state
-            Thread.currentThread().interrupt();
         }
     }
 }

@@ -267,7 +267,6 @@
 	<!-- ================================================================== -->
 
 	<target name="jar"
-	        depends="test, test-lr, test-it"
 	        description="--> create the bixo-core jar with no dependencies">
 
 		<tstamp>

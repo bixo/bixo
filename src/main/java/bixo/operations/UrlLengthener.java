@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -81,7 +80,6 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     private transient LoggingFlowProcess _flowProcess;
     private transient AsynchronousTupleEntryCollector _collector;
     private transient ThreadedExecutor _executor;
-    private transient Semaphore _semaphore;
 
     /**
      * Return a SimpleHttpFetcher that's appropriate for lengthening URLs.
@@ -130,15 +128,13 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
         _flowProcess.addReporter(new LoggingFlowReporter());
 
         _executor = new ThreadedExecutor(_maxThreads, COMMAND_TIMEOUT);
-        _semaphore = new Semaphore(1);
-        _semaphore.acquireUninterruptibly();
-        _collector = new AsynchronousTupleEntryCollector("URL lengthening collector", _semaphore);
+        _collector = new AsynchronousTupleEntryCollector("URL lengthening collector");
     }
     
     @Override
     public void flush(FlowProcess flowProcess, OperationCall<NullContext> perationCall) {
         try {
-            _semaphore.release();
+            _collector.allowCollection();
             if (!_executor.terminate(TERMINATE_TIMEOUT)) {
                 LOGGER.warn("Had to do a hard shutdown of robots fetching");
             }
@@ -148,7 +144,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
             LOGGER.warn("Interrupted while waiting for termination");
             Thread.currentThread().interrupt();
         } finally {
-            _semaphore.acquireUninterruptibly();
+            _collector.finishCollection();
         }
         
         super.flush(flowProcess, perationCall);
@@ -157,11 +153,10 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     @Override
     public void cleanup(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
         try {
-            _semaphore.release();
-            _collector.finished();
+            _collector.allowCollection();
             _flowProcess.dumpCounters();
         } finally {
-            _semaphore.acquireUninterruptibly();
+            _collector.finishCollection();
         }
         
         super.cleanup(flowProcess, operationCall);
@@ -170,8 +165,8 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
     @Override
     public void operate(FlowProcess flowProcess, FunctionCall<NullContext> functionCall) {
         try {
-            _semaphore.release();
             _collector.setCollector(functionCall.getOutputCollector());
+            _collector.allowCollection();
     
             String url = functionCall.getArguments().getTuple().getString(0);
             
@@ -208,7 +203,7 @@ public class UrlLengthener extends BaseOperation<NullContext> implements Functio
                 emitTuple(url);
             }
         } finally {
-            _semaphore.acquireUninterruptibly();
+            _collector.finishCollection();
         }
     }
     

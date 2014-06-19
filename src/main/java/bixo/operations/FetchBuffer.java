@@ -21,7 +21,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
@@ -282,8 +281,6 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     private transient ConcurrentHashMap<String, Long> _pendingRefs;
     
     private transient AtomicBoolean _keepCollecting;
-    private transient Semaphore _semaphore;
-    
     public FetchBuffer(BaseFetcher fetcher) {
         // We're going to output a tuple that contains a FetchedDatum, plus meta-data,
         // plus a result that could be a string, a status, or an exception
@@ -317,9 +314,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         
         _keepCollecting = new AtomicBoolean(true);
         
-        _semaphore = new Semaphore(1);
-        _semaphore.acquireUninterruptibly();
-        _collector = new AsynchronousTupleEntryCollector("FetchBuffer collector", _semaphore);
+        _collector = new AsynchronousTupleEntryCollector("FetchBuffer collector");
     }
 
     @Override
@@ -330,7 +325,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         FetcherPolicy fetcherPolicy = _fetcher.getFetcherPolicy();
         
         try {
-            _semaphore.release(); //allow _collector.add by any thread during this call
+            _collector.allowCollection();
             
             // Each value is a PreFetchedDatum that contains a set of URLs to fetch in one request from
             // a single server, plus other values needed to set state properly.
@@ -392,9 +387,7 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
                 }
             }
         } finally {
-            // It's not legal to call _collector.add until Cascading calls another method on this object.
-            // We have to use a semaphore because we're not guaranteed to have the same thread call the next method.
-            _semaphore.acquireUninterruptibly();
+            _collector.pauseCollection();
         }
     }
 
@@ -428,7 +421,6 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
             synchronized (_keepCollecting) {
                 _keepCollecting.set(false);
             }
-            _collector.finished();
         } catch (InterruptedException e) {
             // FUTURE What's the right thing to do here? E.g. do I need to worry about
             // losing URLs still to be processed?
@@ -443,24 +435,24 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
         LOGGER.info("Flushing FetchBuffer");
         
         try {
-            _semaphore.release();
+            _collector.allowCollection();
             terminate();
         } finally {
-            _semaphore.acquireUninterruptibly();
+            _collector.finishCollection();
         }
 
         super.flush(process, operationCall);
     }
-    
+
     @Override
     public void cleanup(FlowProcess process, OperationCall<NullContext> operationCall) {
         LOGGER.info("Cleaning up FetchBuffer");
         
         try {
-            _semaphore.release();
+            _collector.allowCollection();
             terminate();
         } finally {
-            _semaphore.acquireUninterruptibly();
+            _collector.finishCollection();
         }
 
         _flowProcess.dumpCounters();

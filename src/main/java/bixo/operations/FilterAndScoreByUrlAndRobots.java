@@ -18,7 +18,6 @@ package bixo.operations;
 
 import java.util.Iterator;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.Semaphore;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +65,6 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
 	
     private transient ThreadedExecutor _executor;
     private transient LoggingFlowProcess _flowProcess;
-    private transient Semaphore _semaphore;
     private transient AsynchronousTupleEntryCollector _collector;
     
     public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, BaseRobotsParser parser, BaseScoreGenerator scorer) {
@@ -101,9 +99,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         // supports logging in local mode, and a setStatus() call.
         _flowProcess = new LoggingFlowProcess(flowProcess);
         _flowProcess.addReporter(new LoggingFlowReporter());
-        _semaphore = new Semaphore(1);
-        _semaphore.acquireUninterruptibly();
-        _collector = new AsynchronousTupleEntryCollector("Filter and score by URL collector", _semaphore);
+        _collector = new AsynchronousTupleEntryCollector("Filter and score by URL collector");
     }
     
     private synchronized void terminate() {
@@ -122,7 +118,6 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
             Thread.currentThread().interrupt();
         } finally {
             _executor = null;
-            _collector.finished();
         }
     }
 
@@ -131,10 +126,10 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         LOGGER.info("Flushing FilterAndScoreByUrlAndRobots");
 
         try {
-            _semaphore.release();
+            _collector.allowCollection();
             terminate();
         } finally {
-            _semaphore.acquireUninterruptibly();
+            _collector.finishCollection();
         }
         
         super.flush(flowProcess, operationCall);
@@ -145,10 +140,10 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         LOGGER.info("Cleaning up FilterAndScoreByUrlAndRobots");
         
         try {
-            _semaphore.release();
+            _collector.allowCollection();
             terminate();
         } finally {
-            _semaphore.acquireUninterruptibly();
+            _collector.finishCollection();
         }
         
         _flowProcess.dumpCounters();
@@ -169,7 +164,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         }
         
         try {
-            _semaphore.release();
+            _collector.allowCollection();
             Runnable doRobots = new ProcessRobotsTask(protocolAndDomain, _scorer, urls, _fetcher, _parser, _collector, _flowProcess);
             _executor.execute(doRobots);
         } catch (RejectedExecutionException e) {
@@ -184,7 +179,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
            _flowProcess.increment(FetchCounters.URLS_REJECTED, urls.size());
            ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, _collector, flowProcess);
       } finally {
-          _semaphore.acquireUninterruptibly();
+          _collector.pauseCollection();
       }
 	}
 
