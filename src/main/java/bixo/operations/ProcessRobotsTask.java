@@ -41,7 +41,6 @@ import bixo.utils.DomainInfo;
 import bixo.utils.DomainNames;
 import bixo.utils.GroupingKey;
 import cascading.flow.FlowProcess;
-import cascading.tuple.TupleEntryCollector;
 
 
 @SuppressWarnings("rawtypes")
@@ -52,12 +51,12 @@ public class ProcessRobotsTask implements Runnable {
     private BaseScoreGenerator _scorer;
     private Queue<GroupedUrlDatum> _urls;
     private BaseFetcher _fetcher;
-    private TupleEntryCollector _collector;
+    private AsynchronousTupleEntryCollector _collector;
     private BaseRobotsParser _parser;
     private LoggingFlowProcess _flowProcess;
 
     public ProcessRobotsTask(String protocolAndDomain, BaseScoreGenerator scorer, Queue<GroupedUrlDatum> urls, BaseFetcher fetcher, 
-                    BaseRobotsParser parser, TupleEntryCollector collector, LoggingFlowProcess flowProcess) {
+                    BaseRobotsParser parser, AsynchronousTupleEntryCollector collector, LoggingFlowProcess flowProcess) {
         _protocolAndDomain = protocolAndDomain;
         _scorer = scorer;
         _urls = urls;
@@ -76,15 +75,13 @@ public class ProcessRobotsTask implements Runnable {
      * @param groupingKey grouping key to use for all entries.
      * @param collector tuple output collector
      */
-    public static void emptyQueue(Queue<GroupedUrlDatum> urls, String groupingKey, TupleEntryCollector collector, FlowProcess process) {
+    public static void emptyQueue(Queue<GroupedUrlDatum> urls, String groupingKey, AsynchronousTupleEntryCollector collector, FlowProcess process) {
         GroupedUrlDatum datum;
         while ((datum = urls.poll()) != null) {
             ScoredUrlDatum scoreUrl = new ScoredUrlDatum(datum.getUrl(), groupingKey, UrlStatus.UNFETCHED, 1.0);
             scoreUrl.setPayload(datum.getPayload());
-            // TODO KKr - move synchronization up, to avoid lots of contention with other threads?
-            synchronized (collector) {
-                collector.add(BixoPlatform.clone(scoreUrl.getTuple(), process));
-            }
+           
+            collector.add(BixoPlatform.clone(scoreUrl.getTuple(), process));
         }
     }
 
@@ -158,10 +155,7 @@ public class ProcessRobotsTask implements Runnable {
                     scoreUrl.setPayload(datum.getPayload());
                     _flowProcess.increment(counter, 1);
 
-                    // collectors aren't thread safe
-                    synchronized (_collector) {
-                        _collector.add(BixoPlatform.clone(scoreUrl.getTuple(), _flowProcess));
-                    }
+                    _collector.add(BixoPlatform.clone(scoreUrl.getTuple(), _flowProcess));
                 }
             }
         } catch (UnknownHostException e) {

@@ -65,6 +65,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
 	
     private transient ThreadedExecutor _executor;
     private transient LoggingFlowProcess _flowProcess;
+    private transient AsynchronousTupleEntryCollector _collector;
     
     public FilterAndScoreByUrlAndRobots(UserAgent userAgent, int maxThreads, BaseRobotsParser parser, BaseScoreGenerator scorer) {
         super(ScoredUrlDatum.FIELDS);
@@ -98,6 +99,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         // supports logging in local mode, and a setStatus() call.
         _flowProcess = new LoggingFlowProcess(flowProcess);
         _flowProcess.addReporter(new LoggingFlowReporter());
+        _collector = new AsynchronousTupleEntryCollector("Filter and score by URL collector");
     }
     
     private synchronized void terminate() {
@@ -122,8 +124,13 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     @Override
     public void flush(FlowProcess flowProcess, OperationCall<NullContext> operationCall) {
         LOGGER.info("Flushing FilterAndScoreByUrlAndRobots");
-        
-        terminate();
+
+        try {
+            _collector.allowCollection();
+            terminate();
+        } finally {
+            _collector.finishCollection();
+        }
         
         super.flush(flowProcess, operationCall);
     }
@@ -132,7 +139,12 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     public void cleanup(FlowProcess flowProcess, cascading.operation.OperationCall<NullContext> operationCall) {
         LOGGER.info("Cleaning up FilterAndScoreByUrlAndRobots");
         
-        terminate();
+        try {
+            _collector.allowCollection();
+            terminate();
+        } finally {
+            _collector.finishCollection();
+        }
         
         _flowProcess.dumpCounters();
         super.cleanup(flowProcess, operationCall);
@@ -140,6 +152,7 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
     
 	@Override
 	public void operate(FlowProcess flowProcess, BufferCall<NullContext> bufferCall) {
+	    _collector.setCollector(bufferCall.getOutputCollector());
         TupleEntry group = bufferCall.getGroup();
         String protocolAndDomain = group.getString(0);
         LOGGER.info("Processing tuple group: " + group);
@@ -151,20 +164,23 @@ public class FilterAndScoreByUrlAndRobots extends BaseOperation<NullContext> imp
         }
         
         try {
-            Runnable doRobots = new ProcessRobotsTask(protocolAndDomain, _scorer, urls, _fetcher, _parser, bufferCall.getOutputCollector(), _flowProcess);
+            _collector.allowCollection();
+            Runnable doRobots = new ProcessRobotsTask(protocolAndDomain, _scorer, urls, _fetcher, _parser, _collector, _flowProcess);
             _executor.execute(doRobots);
         } catch (RejectedExecutionException e) {
             // should never happen.
             LOGGER.error("Robots handling pool rejected our request for " + protocolAndDomain);
             _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
             _flowProcess.increment(FetchCounters.URLS_REJECTED, urls.size());
-            ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector(), flowProcess);
+            ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, _collector, flowProcess);
         } catch (Throwable t) {
            LOGGER.error("Caught an unexpected throwable - robots handling rejected our request for " + protocolAndDomain, t);
            _flowProcess.increment(FetchCounters.DOMAINS_REJECTED, 1);
            _flowProcess.increment(FetchCounters.URLS_REJECTED, urls.size());
-           ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, bufferCall.getOutputCollector(), flowProcess);
-      } 
+           ProcessRobotsTask.emptyQueue(urls, GroupingKey.DEFERRED_GROUPING_KEY, _collector, flowProcess);
+      } finally {
+          _collector.pauseCollection();
+      }
 	}
 
 	
