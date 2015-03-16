@@ -42,6 +42,11 @@
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
 		
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.2</version>
+        </dependency>
 
 		<!-- Provided dependencies -->
 
@@ -80,10 +85,11 @@
 		    </exclusions>
 		</dependency>
 
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.2</version>
+		<dependency>
+            <groupId>ant-eclipse</groupId>
+            <artifactId>ant-eclipse-jvm1.2</artifactId>
+            <version>1.0</version>
+            <scope>provided</scope>
         </dependency>
 
 		<!-- Test dependencies -->
@@ -109,14 +115,6 @@
             <scope>test</scope>
         </dependency>
 
-		<!-- Eclipse project generation dependencies -->
-
-		<dependency>
-            <groupId>ant-eclipse</groupId>
-            <artifactId>ant-eclipse-jvm1.2</artifactId>
-            <version>1.0</version>
-            <scope>eclipse</scope>
-        </dependency>
         
 	</dependencies>
 	

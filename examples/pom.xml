@@ -132,6 +132,13 @@
 		    </exclusions>
 		</dependency>
 
+		<dependency>
+            <groupId>ant-eclipse</groupId>
+            <artifactId>ant-eclipse-jvm1.2</artifactId>
+            <version>1.0</version>
+            <scope>provided</scope>
+        </dependency>
+
 		<!-- Test dependencies -->
 
 		<dependency>
@@ -169,15 +176,6 @@
             <scope>test</scope>
         </dependency>
 
-		<!-- Eclipse project generation dependencies -->
-
-		<dependency>
-            <groupId>ant-eclipse</groupId>
-            <artifactId>ant-eclipse-jvm1.2</artifactId>
-            <version>1.0</version>
-            <scope>eclipse</scope>
-        </dependency>
-        
 	</dependencies>
 	
 </project>

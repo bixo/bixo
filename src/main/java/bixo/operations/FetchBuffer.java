@@ -437,7 +437,8 @@ public class FetchBuffer extends BaseOperation<NullContext> implements Buffer<Nu
     public void cleanup(FlowProcess process, OperationCall<NullContext> operationCall) {
         LOGGER.info("Cleaning up FetchBuffer");
         
-        terminate();
+        // TODO - do we need the terminate here? Shouldn't, right?
+        // terminate();
 
         _flowProcess.dumpCounters();
         super.cleanup(process,  operationCall);

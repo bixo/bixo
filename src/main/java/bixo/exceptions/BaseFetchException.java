@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2013 Scale Unlimited
+ * Copyright 2009-2015 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,47 +23,42 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
 
 import bixo.datum.UrlStatus;
 
 @SuppressWarnings({ "serial" })
 public abstract class BaseFetchException extends Exception {
+    
     private String _url = "";
-    private Exception _exception;
+    private String _msg = "";
+    private Throwable _cause = null;
     
 	protected BaseFetchException() {
-		super();
-		
-        _exception = new Exception();
+		this("");
     }
     
     protected BaseFetchException(String url) {
-    	super();
-    	
-        _exception = new Exception();
-        _url = url;
+    	this(url, "");
     }
     
     protected BaseFetchException(String url, String msg) {
-    	super(msg);
-    	
-        _exception = new Exception(msg);
-        _url = url;
+    	this(url, msg, null);
     }
     
     protected BaseFetchException(String url, Exception e) {
-    	super(e);
-    	
-        _exception = new Exception(e);
-        _url = url;
+    	this(url, "", e);
     }
     
     protected BaseFetchException(String url, String msg, Exception e) {
-    	super(msg, e);
+        super();
+        
+        // We have to set the cause to null because otherwise the cause
+        // is auto-set to be "this", and Kryo will recurse forever trying
+        // to serialize it.
+    	initCause(null);
     	
-        _exception = new Exception(msg, e);
+    	_cause = e;
+    	_msg = msg;
         _url = url;
     }
     
@@ -79,60 +74,20 @@ public abstract class BaseFetchException extends Exception {
     public abstract UrlStatus mapToUrlStatus();
 
     @Override
-	public boolean equals(Object obj) {
-		return _exception.equals(obj);
-	}
-
-	@Override
-	public Throwable getCause() {
-		return _exception.getCause();
-	}
-
-	@Override
-	public String getLocalizedMessage() {
-		return _exception.getLocalizedMessage();
-	}
-
-	@Override
-	public String getMessage() {
-		return _exception.getMessage();
-	}
-
-	@Override
-	public StackTraceElement[] getStackTrace() {
-		return _exception.getStackTrace();
-	}
-
-	@Override
-	public int hashCode() {
-		return _exception.hashCode();
-	}
-
-	@Override
-	public Throwable initCause(Throwable cause) {
-		return _exception.initCause(cause);
-	}
-
-	@Override
-	public void printStackTrace() {
-		_exception.printStackTrace();
-	}
-
-	@Override
-	public void printStackTrace(PrintStream s) {
-		_exception.printStackTrace(s);
-	}
-
-	@Override
-	public void printStackTrace(PrintWriter s) {
-		_exception.printStackTrace(s);
-	}
-
-	@Override
-	public void setStackTrace(StackTraceElement[] stackTrace) {
-		_exception.setStackTrace(stackTrace);
-	}
-
+    public String getMessage() {
+        return _msg;
+    }
+    
+    @Override
+    public String getLocalizedMessage() {
+        return getMessage();
+    }
+    
+    @Override
+    public Throwable getCause() {
+        return _cause;
+    }
+    
 	@Override
 	public String toString() {
         String message = getLocalizedMessage();
@@ -146,21 +101,26 @@ public abstract class BaseFetchException extends Exception {
     	ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(serialized));
     	
     	try {
-    		_exception = (Exception)ois.readObject();
+    	    _cause = (Throwable)ois.readObject();
     	} catch (ClassNotFoundException e) {
     		throw new IOException(e);
     	}
     	
+    	_msg = input.readUTF();
         _url = input.readUTF();
     }
     
     protected void writeBaseFields(DataOutput output) throws IOException {
+        // Write out the Throwable cause
     	ByteArrayOutputStream bos = new ByteArrayOutputStream();
     	ObjectOutputStream oos = new ObjectOutputStream(bos);
-    	oos.writeObject(_exception);
+    	oos.writeObject(_cause);
     	byte[] serialized = bos.toByteArray();
     	output.writeInt(serialized.length);
     	output.write(bos.toByteArray());
+    	
+    	// Write out the message, and our URL
+    	output.writeUTF(_msg);
         output.writeUTF(_url);
     }
     

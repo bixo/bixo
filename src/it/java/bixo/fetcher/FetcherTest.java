@@ -165,6 +165,8 @@ public class FetcherTest {
 
         UserAgent userAgent = new FirefoxUserAgent();
         BaseFetcher fetcher = new SimpleHttpFetcher(10, userAgent);
+        // Microsoft has a really big home page.
+        fetcher.setDefaultMaxContentSize(256 * 1024);
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, 1);
 

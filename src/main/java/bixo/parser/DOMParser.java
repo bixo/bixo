@@ -16,6 +16,7 @@
  */
 package bixo.parser;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import javax.xml.XMLConstants;
@@ -23,7 +24,6 @@ import javax.xml.XMLConstants;
 import org.ccil.cowan.tagsoup.Parser;
 import org.dom4j.Document;
 import org.dom4j.io.SAXReader;
-import org.hsqldb.lib.StringInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -128,9 +128,10 @@ public abstract class DOMParser extends BaseOperation<NullContext> implements Fu
     @Override
     public void operate(FlowProcess process, FunctionCall<NullContext> funcCall) {
         _input.setTupleEntry(funcCall.getArguments());
-        InputStream is = new StringInputStream(_input.getParsedText());
+        InputStream is = null;
         
         try {
+            is = new ByteArrayInputStream(_input.getParsedText().getBytes("UTF-8"));
             Document parsedContent = _reader.read(is);
             process(_input, parsedContent, funcCall.getOutputCollector(), process);
         } catch (Exception e) {
@@ -138,7 +139,6 @@ public abstract class DOMParser extends BaseOperation<NullContext> implements Fu
         } finally {
             IoUtils.safeClose(is);
         }
-
     }
     
     

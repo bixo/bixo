@@ -110,7 +110,14 @@ public class FetchTask implements Runnable {
                     process.increment(FetchCounters.URLS_FAILED, 1);
 
                     // We can do this because each of the concrete subclasses of BaseFetchException implements
-                    // WritableComparable
+                    // WritableComparable/ But we need to clear out the cause of the exception if it's the
+                    // exception itself, as that can cause a circular reference for when we use Kryo (in local
+                    // mode) to serialize things.
+                    Throwable cause = e.getCause();
+                    if (cause == e) {
+                        e.initCause(null);
+                    }
+                    
                     status = (Comparable)e;
                 } catch (Exception e) {
                     LOGGER.warn("Unexpected exception while fetching " + item.getUrl(), e);

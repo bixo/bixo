@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2013 Scale Unlimited
+ * Copyright 2009-2015 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,12 +34,15 @@ import cascading.flow.local.LocalFlowProcess;
 import cascading.scheme.Scheme;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
+import cascading.tap.partition.Partition;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 
 import com.scaleunlimited.cascading.BasePath;
 import com.scaleunlimited.cascading.BasePlatform;
+import com.scaleunlimited.cascading.Level;
 import com.scaleunlimited.cascading.LoggingFlowProcess;
+import com.scaleunlimited.cascading.TupleLogger;
 import com.scaleunlimited.cascading.hadoop.HadoopPlatform;
 import com.scaleunlimited.cascading.local.LocalPlatform;
 
@@ -57,16 +60,29 @@ public class BixoPlatform extends BasePlatform {
     private static final long LOCAL_HADOOP_JOB_POLLING_INTERVAL = 100;
     
     private BasePlatform _platform;
-    private JobConf _hadoopJobConf = null;
+    private Level _logLevel;
 
     public BixoPlatform(Class applicationJarClass, Platform platform) throws Exception {
+        this(applicationJarClass, platform, Level.SLF4J_DEBUG);
+    }
+    
+    public BixoPlatform(Class applicationJarClass, Platform platform, Level logLevel) throws Exception {
         super(applicationJarClass);
+        
         if (platform == Platform.Local) {
             _platform = new LocalPlatform(applicationJarClass);
             setJobPollingInterval(CASCADING_LOCAL_JOB_POLLING_INTERVAL);
         } else {
             configureHadoopPlatform(applicationJarClass, new JobConf());
         }
+        
+        configureLogLevel(logLevel);
+    }
+
+    private void configureLogLevel(Level logLevel) {
+        // Control TupleLogger settings
+        _logLevel = logLevel;
+        setLogLevel(_logLevel, TupleLogger.class.getName());
     }
 
     public BixoPlatform(Class applicationJarClass, Configuration conf) throws Exception {
@@ -74,13 +90,18 @@ public class BixoPlatform extends BasePlatform {
     }
     
     public BixoPlatform(Class applicationJarClass, JobConf conf) throws Exception {
+        this(applicationJarClass, conf, Level.SLF4J_DEBUG);
+    }
+    
+    public BixoPlatform(Class applicationJarClass, JobConf conf, Level logLevel) throws Exception {
         super(applicationJarClass);
+
         configureHadoopPlatform(applicationJarClass, conf);
+        configureLogLevel(logLevel);
     }
     
     private void configureHadoopPlatform(Class applicationJarClass, JobConf jobConf) throws Exception {
-        _hadoopJobConf = jobConf;
-        HadoopPlatform hp = new HadoopPlatform(applicationJarClass, _hadoopJobConf);
+        HadoopPlatform hp = new HadoopPlatform(applicationJarClass, jobConf);
         _platform = hp;
         
         // Special configuration for Hadoop.
@@ -94,6 +115,16 @@ public class BixoPlatform extends BasePlatform {
         
         hp.setMapSpeculativeExecution(false);
         hp.setReduceSpeculativeExecution(false);
+        
+        // We don't need all of the debug level output from Cascading
+        setLogLevel(Level.SLF4J_INFO, "cascading");
+        
+        // Turn down noise from Hadoop & Cascading
+        setLogLevel(Level.SLF4J_INFO, "org.apache.hadoop.conf.Configuration", "cascading.pipe.joiner.InnerJoin");
+        
+        // We get WARN logging for every trapped record, which can be many GBs if we have millions
+        // of these. So crank it up to ERROR level.
+        setLogLevel(Level.SLF4J_ERROR, "cascading.flow.stream.TrapHandler");
     }
     
     @Override
@@ -282,6 +313,58 @@ public class BixoPlatform extends BasePlatform {
     public void setProperty(String name, String value) {
         _platform.setProperty(name, value);
     }
-    
+
+    @Override
+    public void setProperty(String name, boolean value) {
+        _platform.setProperty(name, value);
+    }
+
+    @Override
+    public boolean getBooleanProperty(String name) {
+        return _platform.getBooleanProperty(name);
+    }
+
+    @Override
+    public int getIntProperty(String name) {
+        return _platform.getIntProperty(name);
+    }
+
+    @Override
+    public File getLogDir() {
+        return _platform.getLogDir();
+    }
+
+    @Override
+    public Tap makePartitionTap(Tap tap, Partition partition) throws Exception {
+        return _platform.makePartitionTap(tap, partition);
+    }
+
+    @Override
+    public Tap makePartitionTap(Tap tap, Partition partition, SinkMode sinkMode) throws Exception {
+        return _platform.makePartitionTap(tap, partition, sinkMode);
+    }
+
+    @Override
+    public Tap makeTap(Scheme scheme, BasePath path) throws Exception {
+        return _platform.makeTap(scheme, path);
+    }
+
+    @Override
+    public void setJobPollingInterval(long interval) {
+        _platform.setJobPollingInterval(interval);
+    }
+
+    @Override
+    public void setLogDir(File logDir) {
+        _platform.setLogDir(logDir);
+        
+    }
+
+    @Override
+    public void setLogLevel(Level level, String... packageNames) {
+        _platform.setLogLevel(level, packageNames);
+        
+    }
+
     
 }

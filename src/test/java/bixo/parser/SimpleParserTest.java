@@ -16,6 +16,7 @@
  */
 package bixo.parser;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -37,7 +38,6 @@ import org.dom4j.DocumentHelper;
 import org.dom4j.Node;
 import org.dom4j.XPath;
 import org.dom4j.io.SAXReader;
-import org.hsqldb.lib.StringInputStream;
 import org.junit.Test;
 
 import bixo.config.ParserPolicy;
@@ -466,7 +466,8 @@ public class SimpleParserTest {
 		
 		compareTermsInStrings("SimpleHttpEquiv Content", parsedDatum.getParsedText());
 		
-		Assert.assertEquals("ja", parsedDatum.getLanguage());
+		// In Tika 1.5 or later, the HTTP header has priority over what's in any <meta http-equiv="Content-Language" xxx> data
+		Assert.assertEquals("en", parsedDatum.getLanguage());
 
     }
 
@@ -517,7 +518,7 @@ public class SimpleParserTest {
         SAXReader reader = new SAXReader(new Parser());
         reader.setEncoding("UTF-8");
         String htmlWithMarkup = parsedDatum.getParsedText();
-        Document doc = reader.read(new StringInputStream(htmlWithMarkup));
+        Document doc = reader.read(new ByteArrayInputStream(htmlWithMarkup.getBytes("UTF-8")));
         
         // We have to do helicopter stunts since HTML has a global namespace on it, set
         // at the <html> element level.
