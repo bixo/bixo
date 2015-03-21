@@ -544,7 +544,7 @@ public class SimpleParserTest {
         byte[] bytes = new byte[(int) file.length()];
         DataInputStream in = new DataInputStream(new FileInputStream(file));
         in.readFully(bytes);
-
+        in.close();
         String url = path.toExternalForm().toString();
         FetchedDatum fetchedDatum = new FetchedDatum(url, url, System.currentTimeMillis(), new HttpHeaders(), new ContentBytes(bytes), "text/html", 0);
         return fetchedDatum;

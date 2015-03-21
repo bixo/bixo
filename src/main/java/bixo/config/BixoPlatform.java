@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.security.InvalidParameterException;
 import java.util.Date;
 
 import org.apache.hadoop.conf.Configuration;
@@ -201,10 +202,45 @@ public class BixoPlatform extends BasePlatform {
         }
     }
 
+    public void assertPathExists(BasePath path, String description) {
+        if (!(path.exists())) {
+            throw new InvalidParameterException(String.format("%s doesn't exist: %s", description, path));
+        }
+    }
+
+    @Override
+    public String copySharedDirToLocal(FlowProcess flowProcess, String sharedDirName) {
+        return _platform.copySharedDirToLocal(flowProcess, sharedDirName);
+    }
+
+    @Override
+    public boolean getBooleanProperty(String name) {
+        return _platform.getBooleanProperty(name);
+    }
 
     @Override
     public File getDefaultLogDir() {
         return _platform.getDefaultLogDir();
+    }
+
+    @Override
+    public int getIntProperty(String name) {
+        return _platform.getIntProperty(name);
+    }
+
+    @Override
+    public File getLogDir() {
+        return _platform.getLogDir();
+    }
+
+    @Override
+    public int getNumReduceTasks() throws Exception {
+        return _platform.getNumReduceTasks();
+    }
+
+    @Override
+    public String getProperty(String name) {
+        return _platform.getProperty(name);
     }
 
     @Override
@@ -238,6 +274,16 @@ public class BixoPlatform extends BasePlatform {
     }
 
     @Override
+    public Tap makePartitionTap(Tap parentTap, Partition partition) throws Exception {
+        return _platform.makePartitionTap(parentTap, partition);
+    }
+
+    @Override
+    public Tap makePartitionTap(Tap parentTap, Partition partition, SinkMode mode) throws Exception {
+        return _platform.makePartitionTap(parentTap, partition, mode);
+    }
+
+    @Override
     public BasePath makePath(String path) throws Exception {
         return _platform.makePath(path);
     }
@@ -248,10 +294,16 @@ public class BixoPlatform extends BasePlatform {
     }
 
     @Override
+    public Tap makeTap(Scheme scheme, BasePath path) throws Exception {
+        return _platform.makeTap(scheme, path);
+    }
+
+    @Override
     public Tap makeTap(Scheme scheme, BasePath path, SinkMode mode) throws Exception {
         return _platform.makeTap(scheme, path, mode);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public Tap makeTemplateTap(Tap tap, String pattern, Fields fields) throws Exception {
         return _platform.makeTemplateTap(tap, pattern, fields);
@@ -263,90 +315,23 @@ public class BixoPlatform extends BasePlatform {
     }
 
     @Override
-    public Scheme makeTextScheme(boolean isEnableCompression) throws Exception {
-        return _platform.makeTextScheme(isEnableCompression);
+    public Scheme makeTextScheme(boolean enableCompression) throws Exception {
+        return _platform.makeTextScheme(enableCompression);
     }
 
     @Override
-    public boolean rename(BasePath srcPath, BasePath destPath) throws Exception {
-        return _platform.rename(srcPath, destPath);
+    public boolean rename(BasePath src, BasePath dst) throws Exception {
+        return _platform.rename(src, dst);
     }
 
     @Override
     public void resetNumReduceTasks() throws Exception {
-        _platform.resetNumReduceTasks();        
+        _platform.resetNumReduceTasks();
     }
 
     @Override
-    public void setFlowPriority(FlowPriority flowPriority) throws Exception {
-        _platform.setFlowPriority(flowPriority);
-    }
-
-    @Override
-    public void setNumReduceTasks(int numReduceTasks) throws Exception {
-        _platform.setNumReduceTasks(numReduceTasks);
-    }
-
-    @Override
-    public int getNumReduceTasks() throws Exception {
-        return _platform.getNumReduceTasks();
-    }
-
-    @Override
-    public String shareLocalDir(String localDirName) {
-        return _platform.shareLocalDir(localDirName);
-    }
-
-    @Override
-    public String copySharedDirToLocal(FlowProcess flowProcess, String sharedDirName) {
-        return _platform.copySharedDirToLocal(flowProcess, sharedDirName);
-    }
-
-    public String getProperty(String name) {
-        return _platform.getProperty(name);
-    }
-
-    public void setProperty(String name, int value) {
-        _platform.setProperty(name, value);
-    }
-
-    public void setProperty(String name, String value) {
-        _platform.setProperty(name, value);
-    }
-
-    @Override
-    public void setProperty(String name, boolean value) {
-        _platform.setProperty(name, value);
-    }
-
-    @Override
-    public boolean getBooleanProperty(String name) {
-        return _platform.getBooleanProperty(name);
-    }
-
-    @Override
-    public int getIntProperty(String name) {
-        return _platform.getIntProperty(name);
-    }
-
-    @Override
-    public File getLogDir() {
-        return _platform.getLogDir();
-    }
-
-    @Override
-    public Tap makePartitionTap(Tap tap, Partition partition) throws Exception {
-        return _platform.makePartitionTap(tap, partition);
-    }
-
-    @Override
-    public Tap makePartitionTap(Tap tap, Partition partition, SinkMode sinkMode) throws Exception {
-        return _platform.makePartitionTap(tap, partition, sinkMode);
-    }
-
-    @Override
-    public Tap makeTap(Scheme scheme, BasePath path) throws Exception {
-        return _platform.makeTap(scheme, path);
+    public void setFlowPriority(FlowPriority priority) throws Exception {
+        _platform.setFlowPriority(priority);
     }
 
     @Override
@@ -357,14 +342,36 @@ public class BixoPlatform extends BasePlatform {
     @Override
     public void setLogDir(File logDir) {
         _platform.setLogDir(logDir);
-        
     }
 
     @Override
     public void setLogLevel(Level level, String... packageNames) {
         _platform.setLogLevel(level, packageNames);
-        
     }
 
-    
+    @Override
+    public void setNumReduceTasks(int numReduceTasks) throws Exception {
+        _platform.setNumReduceTasks(numReduceTasks);
+    }
+
+    @Override
+    public void setProperty(String name, String value) {
+        _platform.setProperty(name, value);
+    }
+
+    @Override
+    public void setProperty(String name, int value) {
+        _platform.setProperty(name, value);
+    }
+
+    @Override
+    public void setProperty(String name, boolean value) {
+        _platform.setProperty(name, value);
+    }
+
+    @Override
+    public String shareLocalDir(String localDirName) {
+        return _platform.shareLocalDir(localDirName);
+    }
+
 }

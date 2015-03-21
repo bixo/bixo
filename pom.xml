@@ -37,15 +37,9 @@
 	</scm>
 	<packaging>jar</packaging>
 	<!-- Must be kept in sync with "version" value in build.properties -->
-	<version>1.0-SNAPSHOT</version>
+	<version>0.9-SNAPSHOT</version>
 
 	<repositories>
-		<repository>
-			<id>Bixo</id>
-			<name>Bixo GitHub repository</name>
-			<url>http://bixo.github.com/repo/</url>
-		</repository>
-
 		<repository>
 			<id>Conjars</id>
 			<name>Cascading repository</name>
@@ -55,9 +49,11 @@
 
 	<properties>
 		<cascading.version>2.6.3</cascading.version>
-		<tika.version>1.7</tika.version>
+		<cascading.utils>2.6.0</cascading.utils>
 		<hadoop.version>2.4.1</hadoop.version>
 		<jetty.version>8.1.8.v20121106</jetty.version>
+		<slf4j.version>1.7.10</slf4j.version>
+		<tika.version>1.7</tika.version>
 	</properties>
 
 	<dependencyManagement>
@@ -72,12 +68,6 @@
 						<artifactId>log4j</artifactId>
 					</exclusion>
 				</exclusions>
-			</dependency>
-
-			<dependency>
-				<groupId>cascading</groupId>
-				<artifactId>cascading-local</artifactId>
-				<version>${cascading.version}</version>
 			</dependency>
 
 			<dependency>
@@ -108,12 +98,6 @@
 				<groupId>org.apache.httpcomponents</groupId>
 				<artifactId>httpclient</artifactId>
 				<version>4.2.5</version>
-			</dependency>
-
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>slf4j-log4j12</artifactId>
-				<version>1.7.2</version>
 			</dependency>
 
 			<dependency>
@@ -151,6 +135,12 @@
 				<groupId>org.apache.hadoop</groupId>
 				<artifactId>hadoop-client</artifactId>
 				<version>${hadoop.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>javax.servlet</groupId>
+						<artifactId>servlet-api</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 
 		</dependencies>
@@ -167,14 +157,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>cascading</groupId>
-			<artifactId>cascading-local</artifactId>
-		</dependency>
-
-		<dependency>
 			<groupId>com.scaleunlimited</groupId>
 			<artifactId>cascading.utils</artifactId>
-			<version>2.5.4</version>
+			<version>${cascading.utils}</version>
 		</dependency>
 
 		<dependency>
@@ -202,6 +187,12 @@
 			<artifactId>commons-io</artifactId>
 		</dependency>
 
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+
 		<!-- For DOMParser -->
 		<dependency>
 			<groupId>dom4j</groupId>
@@ -227,13 +218,14 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
+			<version>${slf4j.version}</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.7</version>
+			<version>4.10</version>
 			<scope>test</scope>
 		</dependency>
 

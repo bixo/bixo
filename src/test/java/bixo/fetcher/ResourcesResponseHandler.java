@@ -60,7 +60,7 @@ public class ResourcesResponseHandler extends AbstractHandler {
             byte[] bytes = new byte[(int) file.length()];
             DataInputStream in = new DataInputStream(new FileInputStream(file));
             in.readFully(bytes);
-            
+            in.close();
             response.setContentLength(bytes.length);
             if (file.getName().endsWith(".png")) {
                 response.setContentType("image/png");
