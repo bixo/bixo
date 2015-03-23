@@ -25,6 +25,7 @@ import com.scaleunlimited.cascading.NullContext;
 import bixo.datum.Outlink;
 import bixo.datum.ParsedDatum;
 import bixo.datum.UrlDatum;
+import bixo.datum.UrlStatus;
 import bixo.urls.BaseUrlNormalizer;
 import bixo.urls.BaseUrlValidator;
 import cascading.flow.FlowProcess;
@@ -75,6 +76,8 @@ public class CreateUrlDatumFromOutlinksFunction extends BaseOperation<NullContex
             if (_validator.isValid(url)) {
                 UrlDatum urlDatum = new UrlDatum(url);
                 urlDatum.setPayload(datum.getPayload());
+                urlDatum.setPayloadValue(CrawlDbDatum.LAST_STATUS_FIELD, UrlStatus.UNFETCHED.name());
+                urlDatum.setPayloadValue(CrawlDbDatum.LAST_FETCHED_FIELD, Long.valueOf(0));
                 collector.add(urlDatum.getTuple());
             }
         }
