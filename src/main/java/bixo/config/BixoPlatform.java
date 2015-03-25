@@ -20,7 +20,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.security.InvalidParameterException;
 import java.util.Date;
 
 import org.apache.hadoop.conf.Configuration;
@@ -199,12 +198,6 @@ public class BixoPlatform extends BasePlatform {
         } else {
             // FUTURE - add support for Serializable types
             throw new RuntimeException(String.format("Field value of type %s at position %d can't be cloned, unknown type", value.getClass().getName(), index));
-        }
-    }
-
-    public void assertPathExists(BasePath path, String description) {
-        if (!(path.exists())) {
-            throw new InvalidParameterException(String.format("%s doesn't exist: %s", description, path));
         }
     }
 

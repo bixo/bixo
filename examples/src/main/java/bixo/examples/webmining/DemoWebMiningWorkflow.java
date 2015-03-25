@@ -203,7 +203,7 @@ public class DemoWebMiningWorkflow {
         platform.setProperty("mapred.min.split.size", 64 * 1024 * 1024);
 
         // Input : the crawldb
-        platform.assertPathExists(crawlDbPath, "CrawlDb");
+        crawlDbPath.assertExists("CrawlDb");
 
 // TODO VMa - figure out types       Tap inputSource = platform.makeTap(new TextDelimited(CrawlDbDatum.FIELDS, "\t", CrawlDbDatum.TYPES), crawlDbPath);
         Tap inputSource = platform.makeTap(platform.makeTextScheme(), crawlDbPath);

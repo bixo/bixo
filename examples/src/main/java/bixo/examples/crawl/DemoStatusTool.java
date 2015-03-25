@@ -125,7 +125,7 @@ public class DemoStatusTool {
             BixoPlatform platform = new BixoPlatform(DemoStatusTool.class, options.getPlatformMode());
         	BasePath crawlDirPath = platform.makePath(crawlDirName);
 
-        	platform.assertPathExists(crawlDirPath, "Prior crawl output directory does not exist");
+        	crawlDirPath.assertExists("Prior crawl output directory does not exist");
         	
         	// Skip Hadoop/Cascading DEBUG messages.
             org.apache.log4j.Logger.getRootLogger().setLevel(Level.INFO);

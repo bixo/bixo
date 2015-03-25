@@ -133,7 +133,7 @@ public class DemoCrawlWorkflow {
         platform.resetNumReduceTasks();
 
         // Input : the crawldb
-        platform.assertPathExists(crawlDbPath, "CrawlDb doesn't exist");
+        crawlDbPath.assertExists("CrawlDb doesn't exist");
 
         // Our crawl db is defined by the CrawlDbDatum
         Tap inputSource = platform.makeTap(platform.makeBinaryScheme(CrawlDbDatum.FIELDS), crawlDbPath);
