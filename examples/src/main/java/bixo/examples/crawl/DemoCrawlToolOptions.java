@@ -20,10 +20,13 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
+import com.scaleunlimited.cascading.BasePlatform;
+
 public class DemoCrawlToolOptions extends BaseCrawlToolOptions {
 
     private boolean _cleanOutputDir = false;
     private boolean _generateHTML = false;
+    private int _numReduceTasks = BasePlatform.CLUSTER_REDUCER_COUNT;
     
     @Option(name = "-clean", usage = "Delete the output dir if it exists - WARNING:you won't be prompted!", required = false)
     public void setCleanOutputDir(boolean cleanOutputDir) {
@@ -41,6 +44,15 @@ public class DemoCrawlToolOptions extends BaseCrawlToolOptions {
 
     public boolean isGenerateHTML() {
         return _generateHTML  ;
+    }
+    
+    @Option(name = "-numreducetasks", usage = "Number of reduce tasks", required = true)
+    public void setNumReduceTasks(int numReduceTasks) {
+        _numReduceTasks  = numReduceTasks;
+    }
+
+    public int getNumReduceTasks() {
+        return _numReduceTasks;
     }
     
     @Override

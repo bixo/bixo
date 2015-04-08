@@ -199,7 +199,7 @@ public class DemoWebMiningWorkflow {
         // any results.
         
         boolean isLocal = platform.isLocal();
-        platform.resetNumReduceTasks();
+        platform.setNumReduceTasks(options.getNumReduceTasks());
         platform.setProperty("mapred.min.split.size", 64 * 1024 * 1024);
 
         // Input : the crawldb

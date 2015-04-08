@@ -130,7 +130,7 @@ public class DemoCrawlWorkflow {
     public static Flow createFlow(BasePath curWorkingDirPath, BasePath crawlDbPath, FetcherPolicy fetcherPolicy, UserAgent userAgent, BaseUrlFilter urlFilter, DemoCrawlToolOptions options) throws Throwable {
 
         BixoPlatform platform = new BixoPlatform(DemoCrawlWorkflow.class, options.getPlatformMode());
-        platform.resetNumReduceTasks();
+        platform.setNumReduceTasks(options.getNumReduceTasks());
 
         // Input : the crawldb
         crawlDbPath.assertExists("CrawlDb doesn't exist");
@@ -149,7 +149,6 @@ public class DemoCrawlWorkflow {
         urlsToFetchPipe = new Each(urlsToFetchPipe, new CreateUrlDatumFromCrawlDbFunction());
         // A TupleLogger is a good way to follow the tuples around in a flow. You can enable the output
         // of tuples by setting options.setDebugLogging() to true.
-        TupleLogger tupleLogger = new TupleLogger();
         urlsToFetchPipe = TupleLogger.makePipe(urlsToFetchPipe, true);
         
         // Create the output sinks :

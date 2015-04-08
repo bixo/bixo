@@ -20,6 +20,8 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.args4j.Option;
 
+import com.scaleunlimited.cascading.BasePlatform;
+
 import bixo.config.BixoPlatform.Platform;
 
 public class DemoWebMiningOptions {
@@ -27,6 +29,7 @@ public class DemoWebMiningOptions {
     private String _workingDir = "build/test/working";
     private String _agentName;
     private boolean _localPlatformMode;
+    private int _numReduceTasks = BasePlatform.CLUSTER_REDUCER_COUNT;
 
     @Option(name = "-workingdir", usage = "path to directory for fetching", required = false)
     public void setWorkingDir(String workingDir) {
@@ -61,6 +64,16 @@ public class DemoWebMiningOptions {
         }
         return Platform.Hadoop;
     }
+
+    @Option(name = "-numreducetasks", usage = "Number of reduce tasks", required = true)
+    public void setNumReducers(int numReduceTasks) {
+        _numReduceTasks  = numReduceTasks;
+    }
+
+    public int getNumReduceTasks() {
+        return _numReduceTasks;
+    }
+    
 
     @Override
     public String toString() {
