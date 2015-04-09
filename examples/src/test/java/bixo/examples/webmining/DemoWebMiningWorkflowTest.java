@@ -93,7 +93,7 @@ public class DemoWebMiningWorkflowTest {
                 byte[] bytes = new byte[(int) file.length()];
                 DataInputStream in = new DataInputStream(new FileInputStream(file));
                 in.readFully(bytes);
-                
+                in.close();
                 response.setContentLength(bytes.length);
                 response.setContentType("text/html");
                 response.setStatus(200);
