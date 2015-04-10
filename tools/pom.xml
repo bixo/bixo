@@ -23,7 +23,7 @@
 	<artifactId>bixo-tools</artifactId>
 	<name>Bixo Tools</name>
 	<packaging>jar</packaging>
-	<version>0.9.2</version>
+	<version>0.9-SNAPSHOT</version>
 	<repositories>
 		<repository>
 			<id>Conjars</id>
@@ -39,7 +39,7 @@
 		<dependency>
 			<groupId>bixo</groupId>
 			<artifactId>bixo-core</artifactId>
-			<version>0.9.2</version>
+			<version>0.9-SNAPSHOT</version>
 		</dependency>
 		
         <dependency>
