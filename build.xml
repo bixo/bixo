@@ -432,14 +432,6 @@
 		<copy todir="${build.dir.dist}/examples/runtime" flatten="true">
 			<fileset dir="${basedir}/examples/build/runtime" />
 		</copy>
-		<!-- copy ec2 folder minus the support folder -->
-		<copy todir="${build.dir.dist}/ec2">
-			<fileset dir="${basedir}/ec2">
-			    <include name="**" />
-				<exclude name="**/support/**" />
-			</fileset>
-		</copy>
-
 		
 		<tar longfile="gnu" compression="gzip" destfile="${build.release.file}">
 			<tarfileset dir="${build.dir.dist}">
