@@ -1,5 +1,14 @@
 Bixo Change Log
 
+Release 0.9.2
+- Deleted EC2 support files (vmagotra).
+- Added required option for the the number of reduce tasks in DemoCrawlTool and DemoWebminingTool (vmagotra)
+- Fixed bug in CreateUrlDatumFromOutlinksFunction where it wasn't setting up the fetched status and last fetched fields (al_hendry via vmagotra)
+- Switched to cascading.utils 2.6.0 (vmagotra)
+- Updated to Hadoop 2.4.1, Cascading 2.6.3, Tika 1.7 (kkrugler)
+- Delegate property-related methods in BixoPlatform to underlying Platform (pull from rockwalrus)
+- Declared SubAssembly input pipes for FetchPipe and ParsePipe SubAssemblies - Cascading 2.2 requirement (pull from rockwalrus)
+
 Release 0.9.1
 - Changed DemoStatusTool parameter -localmode to -localplatform (vmagotra)
 - Added new "raw dump" option to FetchAndParseTool (kkrugler)
