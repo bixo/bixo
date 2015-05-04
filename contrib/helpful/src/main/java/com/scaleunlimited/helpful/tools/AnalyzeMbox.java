@@ -68,7 +68,7 @@ public class AnalyzeMbox {
             // Create the input (source tap), which is just a sequence file reader. We assume
         	// that the file already has the results of splitting the mbox file into emails.
             BasePath inputPath = platform.makePath(inputFileName);
-            platform.assertPathExists(inputPath, "input file");
+            inputPath.assertExists("input file");
             Tap sourceTap = platform.makeTap(platform.makeBinaryScheme(FetchedDatum.FIELDS), inputPath);
             
             Pipe pipe = new Pipe("Email Analyzer");
