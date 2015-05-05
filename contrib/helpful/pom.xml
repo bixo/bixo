@@ -23,7 +23,7 @@
 	<artifactId>helpful</artifactId>
 	<name>bixo-helpful</name>
 	<packaging>jar</packaging>
-	<version>0.9.2</version>
+	<version>0.9-SNAPSHOT</version>
 	<repositories>
 		<repository>
 			<id>Conjars</id>
@@ -33,7 +33,7 @@
 	
 	<properties>
         <hadoop.version>2.4.1</hadoop.version>
-        <bixo.version>0.9.2</bixo.version>
+        <bixo.version>0.9-SNAPSHOT</bixo.version>
 	</properties>
 	
 	<dependencies>
