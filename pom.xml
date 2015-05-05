@@ -37,7 +37,7 @@
 	</scm>
 	<packaging>jar</packaging>
 	<!-- Must be kept in sync with "version" value in build.properties -->
-	<version>0.9-SNAPSHOT</version>
+	<version>0.9.2</version>
 
 	<repositories>
 		<repository>
