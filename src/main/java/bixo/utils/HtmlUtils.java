@@ -45,6 +45,10 @@ public class HtmlUtils {
     private static final Pattern META_DC_LANGUAGE_PATTERN = Pattern
     .compile("(?is)<meta\\s+name\\s*=\\s*['\\\"]\\s*dc.language['\\\"]\\s+content\\s*=\\s*['\\\"]([^'\"]+)['\\\"]");
 
+    private HtmlUtils() {
+        // Enforce class isn't instantiated
+    }
+    
     public static boolean hasNoArchiveMetaTags(String htmlText) {
         Matcher m = META_ROBOTS_PATTERN.matcher(htmlText);
         if (m.find()) {

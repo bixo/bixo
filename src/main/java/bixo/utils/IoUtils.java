@@ -29,6 +29,10 @@ import org.slf4j.LoggerFactory;
 public class IoUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(IoUtils.class);
     
+    private IoUtils() {
+        // Enforce class isn't instantiated
+    }
+
     public static void safeClose(InputStream is) {
         if (is == null) {
             return;

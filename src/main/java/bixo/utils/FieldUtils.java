@@ -20,6 +20,10 @@ import cascading.tuple.Fields;
 
 public class FieldUtils {
 
+    private FieldUtils() {
+        // Enforce class isn't instantiated
+    }
+    
     public static Fields add(Fields fields, String... moreFieldNames) {
         Fields moreFields = new Fields(moreFieldNames);
         return fields.append(moreFields);

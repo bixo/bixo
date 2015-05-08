@@ -20,6 +20,10 @@ import org.apache.tika.mime.MediaType;
 
 public class HttpUtils {
     
+    private HttpUtils() {
+        // Enforce class isn't instantiated
+    }
+    
     public static String getMimeTypeFromContentType(String contentType) {
         String result = "";
         MediaType mt = MediaType.parse(contentType);

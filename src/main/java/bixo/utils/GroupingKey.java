@@ -49,6 +49,10 @@ public class GroupingKey {
     
     private static final String UNSET_DURATION = "unset";
     
+    private GroupingKey() {
+        // Enforce class isn't instantiated
+    }
+    
     public static boolean isSpecialKey(String key) {
         return key.startsWith(KEY_PREFIX);
     }

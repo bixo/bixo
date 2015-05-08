@@ -102,6 +102,11 @@ public class DomainNames {
 
     private static final Pattern IPV4_ADDRESS_PATTERN = Pattern.compile("(?:\\d{1,3}\\.){3}\\d{1,3}");
 
+    private DomainNames() {
+        // Enforce class isn't instantiated
+    }
+    
+    
     // TODO CSc Rename this getDomainPld?
     /**
      * Extract the PLD (paid-level domain) from the hostname. If the format isn't recognized,

@@ -37,6 +37,9 @@ public class CrawlDirUtils {
 	private static final Pattern LOOP_DIRNAME_PATTERN = Pattern
 			.compile("(\\d+)-([^/]+)");
 
+	private CrawlDirUtils() {
+        // Enforce class isn't instantiated
+    }
 	
 	
 	/**
