@@ -26,13 +26,9 @@ import org.mockito.Mockito;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.RandomResponseHandler;
-import bixo.fetcher.SimpleHttpFetcher;
 import bixo.fetcher.StringResponseHandler;
 import bixo.fetcher.simulation.TestWebServer;
 import bixo.hadoop.FetchCounters;
-import bixo.robots.BaseRobotsParser;
-import bixo.robots.SimpleRobotRulesParser;
-import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
 import cascading.flow.FlowProcess;
 import cascading.flow.FlowProcess.NullFlowProcess;
@@ -43,6 +39,11 @@ import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryCollector;
 
 import com.scaleunlimited.cascading.NullContext;
+
+import crawlercommons.fetcher.http.SimpleHttpFetcher;
+import crawlercommons.fetcher.http.UserAgent;
+import crawlercommons.robots.BaseRobotsParser;
+import crawlercommons.robots.SimpleRobotRulesParser;
 
 
 public class FilterAndScoreByUrlAndRobotsTest {
@@ -68,7 +69,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
     public void testUsingAllThreads() throws Exception {
         final int maxThreads = 10;
         
-        SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, ConfigUtils.BIXO_TEST_AGENT);
+        SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, new UserAgent("testAgent", "crawler@domain.com", "http://www.domain.com"));
         BaseScoreGenerator scorer = new FixedScoreGenerator(1.0);
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, parser, scorer);
@@ -109,7 +110,7 @@ public class FilterAndScoreByUrlAndRobotsTest {
     public void testBlockedRobots() throws Exception {
         final int maxThreads = 1;
         
-        SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, ConfigUtils.BIXO_TEST_AGENT);
+        SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, new UserAgent("testAgent", "crawler@domain.com", "http://www.domain.com"));
         BaseScoreGenerator scorer = new FixedScoreGenerator(1.0);
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         FilterAndScoreByUrlAndRobots op = new FilterAndScoreByUrlAndRobots(fetcher, parser, scorer);

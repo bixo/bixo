@@ -49,6 +49,22 @@ public class UserAgent implements Serializable {
 		return _agentName;
 	}
 
+	public String getEmailAddress() {
+	    return _emailAddress;
+	}
+	
+	public String getWebAddress() {
+	    return _webAddress;
+	}
+	
+	public String getBrowserVersion() {
+	    return _browserVersion;
+	}
+	
+	public String getCrawlerVersion() {
+	    return _crawlerVersion;
+	}
+	
 	public String getUserAgentString() {
 		// Mozilla/5.0 (compatible; mycrawler/1.0; +http://www.mydomain.com; mycrawler@mydomain.com)
 		return String.format("%s (compatible; %s%s; +%s; %s)",

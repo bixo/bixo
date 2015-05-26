@@ -51,12 +51,11 @@ import bixo.fetcher.BaseFetcher;
 import bixo.fetcher.RandomResponseHandler;
 import bixo.fetcher.SimpleHttpFetcher;
 import bixo.fetcher.simulation.FakeHttpFetcher;
+import bixo.fetcher.simulation.FakeRobotsFetcher;
 import bixo.fetcher.simulation.TestWebServer;
 import bixo.operations.BaseGroupGenerator;
 import bixo.operations.BaseScoreGenerator;
 import bixo.operations.FixedScoreGenerator;
-import bixo.robots.BaseRobotsParser;
-import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
 import bixo.utils.GroupingKey;
 import cascading.CascadingTestCase;
@@ -75,6 +74,10 @@ import com.scaleunlimited.cascading.BasePath;
 import com.scaleunlimited.cascading.BasePlatform;
 import com.scaleunlimited.cascading.NullSinkTap;
 import com.scaleunlimited.cascading.Payload;
+
+import crawlercommons.fetcher.http.BaseHttpFetcher;
+import crawlercommons.robots.BaseRobotsParser;
+import crawlercommons.robots.SimpleRobotRulesParser;
 
 
 // Long-running test
@@ -121,7 +124,8 @@ public abstract class AbstractFetchPipeTest extends CascadingTestCase {
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
+        BaseHttpFetcher robotsFetcher = new FakeRobotsFetcher(1);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, robotsFetcher, parser, fetchJobPolicy, 1);
         
         
         BasePath outputPath = makeOutputPath(platform, "testHeadersInStatus");
@@ -369,7 +373,8 @@ public abstract class AbstractFetchPipeTest extends CascadingTestCase {
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
+        BaseHttpFetcher robotsFetcher = new FakeRobotsFetcher(10);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, robotsFetcher, parser, fetchJobPolicy, 1);
         
         String output = "build/test/FetchPipeTest/dual";
         BasePath outputPath = platform.makePath(output);
@@ -427,7 +432,8 @@ public abstract class AbstractFetchPipeTest extends CascadingTestCase {
         BaseScoreGenerator scorer = new SkippedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
+        BaseHttpFetcher robotsFetcher = new FakeRobotsFetcher(1);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, robotsFetcher, parser, fetchJobPolicy, 1);
         
         BasePath outputPath = makeOutputPath(platform, "testSkippingURLsByScore");
         BasePath contentPath = platform.makePath(outputPath, "content");
@@ -484,7 +490,8 @@ public abstract class AbstractFetchPipeTest extends CascadingTestCase {
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy(defaultPolicy);
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
+        BaseHttpFetcher robotsFetcher = new FakeRobotsFetcher(1);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, robotsFetcher, parser, fetchJobPolicy, 1);
 
         // Create the output
         BasePath outputPath = makeOutputPath(platform, "testDurationLimitSimple");
@@ -530,7 +537,8 @@ public abstract class AbstractFetchPipeTest extends CascadingTestCase {
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy(defaultPolicy.getMaxRequestsPerConnection(), maxUrls, BaseFetchJobPolicy.DEFAULT_CRAWL_DELAY);
-        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, fetcher, parser, fetchJobPolicy, 1);
+        BaseHttpFetcher robotsFetcher = new FakeRobotsFetcher(1);
+        FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, robotsFetcher, parser, fetchJobPolicy, 1);
 
         // Create the output
         BasePath outputPath = makeOutputPath(platform, "testMaxUrlsPerServer");

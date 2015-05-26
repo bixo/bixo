@@ -25,23 +25,23 @@ import java.util.Queue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-import com.scaleunlimited.cascading.LoggingFlowProcess;
-
 import bixo.config.BixoPlatform;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
-import bixo.fetcher.BaseFetcher;
 import bixo.hadoop.FetchCounters;
-import bixo.robots.BaseRobotRules;
-import bixo.robots.BaseRobotsParser;
-import bixo.robots.RobotUtils;
 import bixo.utils.DomainInfo;
 import bixo.utils.DomainNames;
 import bixo.utils.GroupingKey;
 import cascading.flow.FlowProcess;
 import cascading.tuple.TupleEntryCollector;
+
+import com.scaleunlimited.cascading.LoggingFlowProcess;
+
+import crawlercommons.fetcher.http.BaseHttpFetcher;
+import crawlercommons.robots.BaseRobotRules;
+import crawlercommons.robots.BaseRobotsParser;
+import crawlercommons.robots.RobotUtils;
 
 
 @SuppressWarnings("rawtypes")
@@ -51,12 +51,12 @@ public class ProcessRobotsTask implements Runnable {
     private String _protocolAndDomain;
     private BaseScoreGenerator _scorer;
     private Queue<GroupedUrlDatum> _urls;
-    private BaseFetcher _fetcher;
+    private BaseHttpFetcher _fetcher;
     private TupleEntryCollector _collector;
     private BaseRobotsParser _parser;
     private LoggingFlowProcess _flowProcess;
 
-    public ProcessRobotsTask(String protocolAndDomain, BaseScoreGenerator scorer, Queue<GroupedUrlDatum> urls, BaseFetcher fetcher, 
+    public ProcessRobotsTask(String protocolAndDomain, BaseScoreGenerator scorer, Queue<GroupedUrlDatum> urls, BaseHttpFetcher fetcher, 
                     BaseRobotsParser parser, TupleEntryCollector collector, LoggingFlowProcess flowProcess) {
         _protocolAndDomain = protocolAndDomain;
         _scorer = scorer;
