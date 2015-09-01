@@ -22,13 +22,19 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Queue;
 
+import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import bixo.config.BixoPlatform;
+import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.datum.UrlStatus;
+import bixo.exceptions.HttpFetchException;
+import bixo.exceptions.IOFetchException;
+import bixo.exceptions.RedirectFetchException;
+import bixo.fetcher.BaseFetcher;
 import bixo.hadoop.FetchCounters;
 import bixo.utils.DomainInfo;
 import bixo.utils.DomainNames;
@@ -38,10 +44,8 @@ import cascading.tuple.TupleEntryCollector;
 
 import com.scaleunlimited.cascading.LoggingFlowProcess;
 
-import crawlercommons.fetcher.http.BaseHttpFetcher;
 import crawlercommons.robots.BaseRobotRules;
 import crawlercommons.robots.BaseRobotsParser;
-import crawlercommons.robots.RobotUtils;
 
 
 @SuppressWarnings("rawtypes")
@@ -51,12 +55,12 @@ public class ProcessRobotsTask implements Runnable {
     private String _protocolAndDomain;
     private BaseScoreGenerator _scorer;
     private Queue<GroupedUrlDatum> _urls;
-    private BaseHttpFetcher _fetcher;
+    private BaseFetcher _fetcher;
     private TupleEntryCollector _collector;
     private BaseRobotsParser _parser;
     private LoggingFlowProcess _flowProcess;
 
-    public ProcessRobotsTask(String protocolAndDomain, BaseScoreGenerator scorer, Queue<GroupedUrlDatum> urls, BaseHttpFetcher fetcher, 
+    public ProcessRobotsTask(String protocolAndDomain, BaseScoreGenerator scorer, Queue<GroupedUrlDatum> urls, BaseFetcher fetcher, 
                     BaseRobotsParser parser, TupleEntryCollector collector, LoggingFlowProcess flowProcess) {
         _protocolAndDomain = protocolAndDomain;
         _scorer = scorer;
@@ -119,7 +123,7 @@ public class ProcessRobotsTask implements Runnable {
                 
                 emptyQueue(_urls, GroupingKey.SKIPPED_GROUPING_KEY, _collector, _flowProcess);
             } else {
-                BaseRobotRules robotRules = RobotUtils.getRobotRules(_fetcher, _parser, new URL(domainInfo.getProtocolAndDomain() + "/robots.txt"));
+                BaseRobotRules robotRules = getRobotRules(_fetcher, _parser, new URL(domainInfo.getProtocolAndDomain() + "/robots.txt"));
 
                 String validKey = null;
                 boolean isDeferred = robotRules.isDeferVisits();
@@ -187,6 +191,38 @@ public class ProcessRobotsTask implements Runnable {
         } finally {
             _flowProcess.decrement(FetchCounters.DOMAINS_PROCESSING, 1);
         }
+    }
+
+    private BaseRobotRules getRobotRules(BaseFetcher fetcher, BaseRobotsParser parser, URL robotsUrl) {
+            
+            try {
+                String urlToFetch = robotsUrl.toExternalForm();
+                FetchedDatum result = fetcher.get(new ScoredUrlDatum(urlToFetch));
+
+                // HACK! DANGER! Some sites will redirect the request to the top-level domain
+                // page, without returning a 404. So look for a response which has a redirect,
+                // and the fetched content is not plain text, and assume it's one of these...
+                // which is the same as not having a robots.txt file.
+                
+                String contentType = result.getContentType();
+                boolean isPlainText = (contentType != null) && (contentType.startsWith("text/plain"));
+                if ((result.getNumRedirects() > 0) && !isPlainText) {
+                    return parser.failedFetch(HttpStatus.SC_GONE);
+                }
+                
+                return parser.parseContent(urlToFetch, result.getContentBytes(), result.getContentType(), 
+                                fetcher.getUserAgent().getAgentName());
+            } catch (HttpFetchException e) {
+                return parser.failedFetch(e.getHttpStatus());
+            } catch (IOFetchException e) {
+                return parser.failedFetch(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            } catch (RedirectFetchException e) {
+                // Other sites will have circular redirects, so treat this as a missing robots.txt
+                return parser.failedFetch(HttpStatus.SC_GONE);
+            } catch (Exception e) {
+                LOGGER.error("Unexpected exception fetching robots.txt: " + robotsUrl, e);
+                return parser.failedFetch(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+            }
     }
 
 }

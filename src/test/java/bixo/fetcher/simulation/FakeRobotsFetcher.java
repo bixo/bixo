@@ -21,21 +21,22 @@ import java.net.URL;
 import java.util.Random;
 
 import org.apache.http.HttpStatus;
-import org.apache.tika.metadata.Metadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import bixo.utils.DomainNames;
-import crawlercommons.fetcher.BaseFetchException;
-import crawlercommons.fetcher.FetchedResult;
-import crawlercommons.fetcher.HttpFetchException;
-import crawlercommons.fetcher.Payload;
-import crawlercommons.fetcher.UrlFetchException;
-import crawlercommons.fetcher.http.BaseHttpFetcher;
-import crawlercommons.fetcher.http.UserAgent;
+import bixo.config.FetcherPolicy;
+import bixo.config.UserAgent;
+import bixo.datum.ContentBytes;
+import bixo.datum.FetchedDatum;
+import bixo.datum.HttpHeaders;
+import bixo.datum.ScoredUrlDatum;
+import bixo.exceptions.BaseFetchException;
+import bixo.exceptions.HttpFetchException;
+import bixo.exceptions.UrlFetchException;
+import bixo.fetcher.BaseFetcher;
 
 @SuppressWarnings("serial")
-public class FakeRobotsFetcher extends BaseHttpFetcher {
+public class FakeRobotsFetcher extends BaseFetcher {
     private static Logger LOGGER = LoggerFactory.getLogger(FakeRobotsFetcher.class);
     private static final UserAgent ROBOTS_TEST_AGENT = new UserAgent("test", "test@domain.com", "http://test.domain.com");
 
@@ -52,7 +53,7 @@ public class FakeRobotsFetcher extends BaseHttpFetcher {
     }
 
     public FakeRobotsFetcher(int maxThreads, UserAgent userAgent, boolean randomFetching) {
-        super(maxThreads, userAgent);
+        super(maxThreads, new FetcherPolicy(), userAgent);
         _randomFetching = randomFetching;
         _rand = new Random();
     }
@@ -63,7 +64,8 @@ public class FakeRobotsFetcher extends BaseHttpFetcher {
     }
 
     @Override
-    public FetchedResult get(String url, Payload payload) throws BaseFetchException {
+    public FetchedDatum get(ScoredUrlDatum scoredUrl) throws BaseFetchException {
+        String url = scoredUrl.getUrl();
         LOGGER.trace("Fake fetching " + url);
         
         URL theUrl;
@@ -113,14 +115,12 @@ public class FakeRobotsFetcher extends BaseHttpFetcher {
             Thread.currentThread().interrupt();
         }
 
-        Metadata headers = new Metadata(); 
+        HttpHeaders headers = new HttpHeaders();
         headers.add("x-responserate", "" + bytesPerSecond);
-        FetchedResult result = new FetchedResult(url, url, System.currentTimeMillis(),
-                        headers, new byte[contentSize], "text/html", bytesPerSecond,
-                        payload,
-                        url,
-                        0,
-                        DomainNames.safeGetHost(url), statusCode, "");
+        FetchedDatum result = new FetchedDatum(url, url, System.currentTimeMillis(),
+                        headers, new ContentBytes(new byte[contentSize]), "text/html", bytesPerSecond);
+        
+        result.setPayload(scoredUrl.getPayload());
         return result;
     }
     

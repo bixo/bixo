@@ -23,9 +23,11 @@ import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 
+import bixo.config.UserAgent;
 import bixo.datum.GroupedUrlDatum;
 import bixo.datum.ScoredUrlDatum;
 import bixo.fetcher.RandomResponseHandler;
+import bixo.fetcher.SimpleHttpFetcher;
 import bixo.fetcher.StringResponseHandler;
 import bixo.fetcher.simulation.TestWebServer;
 import bixo.hadoop.FetchCounters;
@@ -40,8 +42,6 @@ import cascading.tuple.TupleEntryCollector;
 
 import com.scaleunlimited.cascading.NullContext;
 
-import crawlercommons.fetcher.http.SimpleHttpFetcher;
-import crawlercommons.fetcher.http.UserAgent;
 import crawlercommons.robots.BaseRobotsParser;
 import crawlercommons.robots.SimpleRobotRulesParser;
 

@@ -82,6 +82,7 @@ import org.apache.http.protocol.HttpContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import bixo.config.BaseFetchJobPolicy;
 import bixo.config.FetcherPolicy;
 import bixo.config.FetcherPolicy.RedirectMode;
 import bixo.config.UserAgent;
@@ -866,6 +867,36 @@ public class SimpleHttpFetcher extends BaseFetcher {
     public void abort() {
         // TODO Actually try to abort
     }
+    
+    // Some robots.txt files are > 64K, amazingly enough.
+    private static final int MAX_ROBOTS_SIZE = 128 * 1024;
+
+    // subdomain.domain.com can direct to domain.com, so if we're simultaneously fetching
+    // a bunch of robots from subdomains that redirect, we'll exceed the default limit.
+    private static final int MAX_CONNECTIONS_PER_HOST = 20;
+    
+    // Crank down default values when fetching robots.txt, as this should be super
+    // fast to get back.
+    private static final int ROBOTS_CONNECTION_TIMEOUT = 10 * 1000;
+    private static final int ROBOTS_SOCKET_TIMEOUT = 10 * 1000;
+    private static final int ROBOTS_RETRY_COUNT = 2;
+
+
+    public static SimpleHttpFetcher createRobotsFetcher(UserAgent userAgent, int maxThreads) {
+        FetcherPolicy fetcherPolicy = new FetcherPolicy(FetcherPolicy.DEFAULT_MIN_RESPONSE_RATE,
+                                MAX_ROBOTS_SIZE, 
+                                FetcherPolicy.DEFAULT_CRAWL_END_TIME, 
+                                BaseFetchJobPolicy.DEFAULT_CRAWL_DELAY, 
+                                FetcherPolicy.DEFAULT_MAX_REDIRECTS);
+        fetcherPolicy.setMaxConnectionsPerHost(MAX_CONNECTIONS_PER_HOST);
+        SimpleHttpFetcher fetcher = new SimpleHttpFetcher(maxThreads, fetcherPolicy, userAgent);
+        fetcher.setMaxRetryCount(ROBOTS_RETRY_COUNT);
+        fetcher.setConnectionTimeout(ROBOTS_CONNECTION_TIMEOUT);
+        fetcher.setSocketTimeout(ROBOTS_SOCKET_TIMEOUT);
+        
+        return fetcher;
+    }
+
 
 
 }

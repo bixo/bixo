@@ -34,6 +34,7 @@ import bixo.datum.UrlDatum;
 import bixo.datum.UrlStatus;
 import bixo.exceptions.BaseFetchException;
 import bixo.fetcher.BaseFetcher;
+import bixo.fetcher.SimpleHttpFetcher;
 import bixo.operations.BaseGroupGenerator;
 import bixo.operations.BaseScoreGenerator;
 import bixo.operations.FetchBuffer;
@@ -61,7 +62,6 @@ import com.scaleunlimited.cascading.NullContext;
 import com.scaleunlimited.cascading.NullSinkTap;
 import com.scaleunlimited.cascading.SplitterAssembly;
 
-import crawlercommons.fetcher.http.BaseHttpFetcher;
 import crawlercommons.robots.BaseRobotsParser;
 import crawlercommons.robots.RobotUtils;
 import crawlercommons.robots.SimpleRobotRulesParser;
@@ -224,14 +224,16 @@ public class FetchPipe extends SubAssembly {
      */
     
     public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseFetcher fetcher, int numReducers) {
-        this(urlProvider, scorer, fetcher, 
-                        RobotUtils.createFetcher(convertBixoUserAgentToCCUserAgent(fetcher.getUserAgent()), fetcher.getMaxThreads()),
-                        new SimpleRobotRulesParser(),
-                        new DefaultFetchJobPolicy(fetcher.getFetcherPolicy()),
-                        numReducers);
+        this(   urlProvider,
+                scorer,
+                fetcher, 
+                SimpleHttpFetcher.createRobotsFetcher(fetcher.getUserAgent(), fetcher.getMaxThreads()),
+                new SimpleRobotRulesParser(),
+                new DefaultFetchJobPolicy(fetcher.getFetcherPolicy()),
+                numReducers);
     }
     
-    public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseFetcher fetcher, BaseHttpFetcher robotsFetcher, BaseRobotsParser parser,
+    public FetchPipe(Pipe urlProvider, BaseScoreGenerator scorer, BaseFetcher fetcher, BaseFetcher robotsFetcher, BaseRobotsParser parser,
                     BaseFetchJobPolicy fetchJobPolicy, int numReducers) {
         super(urlProvider);
         Pipe robotsPipe = new Each(urlProvider, new GroupFunction(new GroupByDomain()));
@@ -312,9 +314,4 @@ public class FetchPipe extends SubAssembly {
         return result;
     }
     
-    private static crawlercommons.fetcher.http.UserAgent convertBixoUserAgentToCCUserAgent(UserAgent userAgent) {
-        return new crawlercommons.fetcher.http.UserAgent(
-                        userAgent.getAgentName(), userAgent.getEmailAddress(), userAgent.getWebAddress(), 
-                        userAgent.getBrowserVersion(), userAgent.getCrawlerVersion());
-    }
 }

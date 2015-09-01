@@ -75,7 +75,6 @@ import com.scaleunlimited.cascading.BasePlatform;
 import com.scaleunlimited.cascading.NullSinkTap;
 import com.scaleunlimited.cascading.Payload;
 
-import crawlercommons.fetcher.http.BaseHttpFetcher;
 import crawlercommons.robots.BaseRobotsParser;
 import crawlercommons.robots.SimpleRobotRulesParser;
 
@@ -124,7 +123,7 @@ public abstract class AbstractFetchPipeTest extends CascadingTestCase {
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
-        BaseHttpFetcher robotsFetcher = new FakeRobotsFetcher(1);
+        BaseFetcher robotsFetcher = new FakeRobotsFetcher(1);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, robotsFetcher, parser, fetchJobPolicy, 1);
         
         
@@ -373,7 +372,7 @@ public abstract class AbstractFetchPipeTest extends CascadingTestCase {
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
-        BaseHttpFetcher robotsFetcher = new FakeRobotsFetcher(10);
+        BaseFetcher robotsFetcher = new FakeRobotsFetcher(10);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, robotsFetcher, parser, fetchJobPolicy, 1);
         
         String output = "build/test/FetchPipeTest/dual";
@@ -432,7 +431,7 @@ public abstract class AbstractFetchPipeTest extends CascadingTestCase {
         BaseScoreGenerator scorer = new SkippedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy();
-        BaseHttpFetcher robotsFetcher = new FakeRobotsFetcher(1);
+        BaseFetcher robotsFetcher = new FakeRobotsFetcher(1);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, robotsFetcher, parser, fetchJobPolicy, 1);
         
         BasePath outputPath = makeOutputPath(platform, "testSkippingURLsByScore");
@@ -490,7 +489,7 @@ public abstract class AbstractFetchPipeTest extends CascadingTestCase {
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy(defaultPolicy);
-        BaseHttpFetcher robotsFetcher = new FakeRobotsFetcher(1);
+        BaseFetcher robotsFetcher = new FakeRobotsFetcher(1);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, robotsFetcher, parser, fetchJobPolicy, 1);
 
         // Create the output
@@ -537,7 +536,7 @@ public abstract class AbstractFetchPipeTest extends CascadingTestCase {
         BaseScoreGenerator scorer = new FixedScoreGenerator();
         BaseRobotsParser parser = new SimpleRobotRulesParser();
         BaseFetchJobPolicy fetchJobPolicy = new DefaultFetchJobPolicy(defaultPolicy.getMaxRequestsPerConnection(), maxUrls, BaseFetchJobPolicy.DEFAULT_CRAWL_DELAY);
-        BaseHttpFetcher robotsFetcher = new FakeRobotsFetcher(1);
+        BaseFetcher robotsFetcher = new FakeRobotsFetcher(1);
         FetchPipe fetchPipe = new FetchPipe(pipe, scorer, fetcher, robotsFetcher, parser, fetchJobPolicy, 1);
 
         // Create the output
