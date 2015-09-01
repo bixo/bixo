@@ -21,12 +21,10 @@ import java.net.URL;
 import java.util.Iterator;
 import java.util.Set;
 
-/* 
 import org.archive.io.ArchiveReader;
 import org.archive.io.ArchiveReaderFactory;
 import org.archive.io.ArchiveRecord;
 import org.archive.io.ArchiveRecordHeader;
-*/
 
 import org.junit.Test;
 
@@ -54,9 +52,7 @@ public class ParsePipeTest extends CascadingTestCase {
 	@Test
     public void testParserPipe() throws Exception {
 
-/*
         BixoPlatform platform = new BixoPlatform(ParsePipeTest.class, Platform.Local);
-        
 
         Pipe pipe = new Pipe("parse_source");
         ParsePipe parserPipe = new ParsePipe(pipe, new SimpleParser());
@@ -101,7 +97,8 @@ public class ParsePipeTest extends CascadingTestCase {
                 HttpHeaders headers = new HttpHeaders();
                 Set<String> keys = header.getHeaderFieldKeys();
                 for (String key : keys) {
-                    String value = header.getHeaderValue(key).toString();
+                    Object headerValue = header.getHeaderValue(key);
+                    String value = headerValue == null ? "" : headerValue.toString();
                     headers.add(key, value);
                 }
                 
@@ -127,7 +124,6 @@ public class ParsePipeTest extends CascadingTestCase {
         // TODO - dump out individual files, and figure out what's wrong with them.
         final int invalidDocs = 12;
         validateLength(flow, validRecords - invalidDocs);
-        */
     }
 
 }

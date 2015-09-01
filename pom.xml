@@ -45,6 +45,11 @@
 			<name>Cascading repository</name>
 			<url>http://conjars.org/repo</url>
 		</repository>
+		<repository>
+			<id>Heritrix</id>
+			<name>Internet Archive repository</name>
+			<url>http://builds.archive.org/maven2</url>
+		</repository>
 	</repositories>
 
 	<properties>
@@ -255,10 +260,53 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.archive</groupId>
+			<artifactId>ia-web-commons</artifactId>
+			<version>1.1.0</version>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.hadoop</groupId>
+					<artifactId>hadoop-core</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.htmlparser</groupId>
+					<artifactId>htmlparser</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.mozilla</groupId>
+					<artifactId>juniversalchardet</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>commons-httpclient</groupId>
+					<artifactId>commons-httpclient</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.gnu.inet</groupId>
+					<artifactId>libidn</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>it.unimi.dsi</groupId>
+					<artifactId>mg4j</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.apache.httpcomponents</groupId>
+					<artifactId>httpcore</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
 			<groupId>it.unimi.dsi</groupId>
 			<artifactId>dsiutils</artifactId>
 			<version>2.2.4</version>
 			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>ch.qos.logback</groupId>
+					<artifactId>logback-classic</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
@@ -273,6 +321,12 @@
 			<artifactId>webgraph</artifactId>
 			<version>3.4.3</version>
 			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>ch.qos.logback</groupId>
+					<artifactId>logback-classic</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- For testing the parsing of HTML with markup -->
