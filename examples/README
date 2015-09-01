@@ -24,7 +24,10 @@ To build a job jar:
 To run the job jar (for DemoCrawlTool and DemoWebMiningTool):
 
   % hadoop jar build/bixo-examples-job-<x.y.z>.jar bixo.examples.crawl.DemoCrawlTool \
-	-agentname <your agent name> -domain <target domain> -numloops <number of loops> -outputdir <results dir>
+	-agentname <your agent name> -domain <target domain> -numloops <number of loops> -outputdir <results dir> \
+	-numreducetasks <number of reducer tasks>
+
+For a test crawl running on your local machine, you probably want to set -numreducetasks to 1.
 
 Note that you should pick a number of loops > 1, so that it crawls more than just the top-level
 page of your target domain. You can also provide the optional "-html" parameter, to generate
@@ -33,7 +36,8 @@ page of your target domain. You can also provide the optional "-html" parameter,
 To run the job jar for DemoWebMiningTool:
 
   % hadoop jar build/bixo-examples-job-<x.y.z>.jar bixo.examples.webmining.DemoWebMiningTool \
-	-agentname <your agent name> -workingdir <results dir>
+	-agentname <your agent name> -workingdir <results dir> \
+	-numreducetasks <number of reducer tasks>
 
 To create an Eclipse project:
 
