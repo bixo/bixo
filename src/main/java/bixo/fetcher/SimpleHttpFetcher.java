@@ -25,13 +25,18 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 
 import org.apache.http.Header;
@@ -181,6 +186,9 @@ public class SimpleHttpFetcher extends BaseFetcher {
                 return true;
             } else if (exception instanceof SSLHandshakeException) {
                 // Do not retry on SSL handshake exception
+                return false;
+            } else if (exception instanceof SSLPeerUnverifiedException) {
+                // Do not retry on SSL peer verification exception
                 return false;
             }
             
@@ -815,7 +823,7 @@ public class SimpleHttpFetcher extends BaseFetcher {
                 try {
                     SSLContext sslContext = SSLContext.getInstance(contextName);
                     sslContext.init(null, new TrustManager[] { new DummyX509TrustManager(null) }, null);
-                    sf = new SSLSocketFactory(sslContext);
+                    sf = new MySSLSocketFactory(sslContext);
                     break;
                 } catch (NoSuchAlgorithmException e) {
                     LOGGER.debug("SSLContext algorithm not available: " + contextName);
@@ -898,5 +906,32 @@ public class SimpleHttpFetcher extends BaseFetcher {
     }
 
 
+    private static class MySSLSocketFactory extends SSLSocketFactory {
+
+        public MySSLSocketFactory(SSLContext sslContext) {
+            super(sslContext);
+        }
+        
+        @Override
+        protected void prepareSocket(SSLSocket socket) throws IOException {
+            super.prepareSocket(socket);
+
+            String[] enabledCipherSuites = socket.getEnabledCipherSuites();
+
+            // avoid hardcoding a new list, we just remove the entries
+            // which cause the exception
+            List<String> asList = new ArrayList<String>(Arrays.asList(enabledCipherSuites));
+
+            // See http://stackoverflow.com/questions/10687200/java-7-and-could-not-generate-dh-keypair
+            // we identified the following entries causing the problems
+            // "Could not generate DH keypair"
+            // and "Caused by: java.security.InvalidAlgorithmParameterException: Prime size must be multiple of 64, and can only range from 512 to 1024 (inclusive)"
+            asList.remove("TLS_DHE_RSA_WITH_AES_128_CBC_SHA");
+            asList.remove("SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA");
+            asList.remove("TLS_DHE_RSA_WITH_AES_256_CBC_SHA");
+
+            socket.setEnabledCipherSuites(asList.toArray(new String[asList.size()]));
+        }
+    }
 
 }
