@@ -21,10 +21,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 
+import crawlercommons.robots.BaseRobotRules;
+import crawlercommons.robots.RobotUtils;
+import crawlercommons.robots.SimpleRobotRulesParser;
 import bixo.fetcher.BaseFetcher;
-import bixo.robots.BaseRobotRules;
-import bixo.robots.RobotUtils;
-import bixo.robots.SimpleRobotRulesParser;
 import bixo.utils.ConfigUtils;
 import bixo.utils.UrlUtils;
 
