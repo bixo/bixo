@@ -24,7 +24,6 @@ import java.util.Map;
 import bixo.config.BaseFetchJobPolicy;
 import bixo.config.BixoPlatform;
 import bixo.config.DefaultFetchJobPolicy;
-import bixo.config.UserAgent;
 import bixo.datum.FetchSetDatum;
 import bixo.datum.FetchedDatum;
 import bixo.datum.GroupedUrlDatum;
@@ -63,7 +62,6 @@ import com.scaleunlimited.cascading.NullSinkTap;
 import com.scaleunlimited.cascading.SplitterAssembly;
 
 import crawlercommons.robots.BaseRobotsParser;
-import crawlercommons.robots.RobotUtils;
 import crawlercommons.robots.SimpleRobotRulesParser;
 
 

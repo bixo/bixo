@@ -22,26 +22,14 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 public class DummyX509TrustManager implements X509TrustManager {
-    private X509TrustManager standardTrustManager = null;
 
     /**
      * Constructor for DummyX509TrustManager.
      */
     public DummyX509TrustManager(KeyStore keystore) throws NoSuchAlgorithmException, KeyStoreException {
-        super();
-        String algo = TrustManagerFactory.getDefaultAlgorithm();
-        TrustManagerFactory factory = TrustManagerFactory.getInstance(algo);
-        factory.init(keystore);
-        TrustManager[] trustmanagers = factory.getTrustManagers();
-        if (trustmanagers.length == 0) {
-            throw new NoSuchAlgorithmException(algo + " trust manager not supported");
-        }
-        this.standardTrustManager = (X509TrustManager)trustmanagers[0];
     }
 
     /**
@@ -62,7 +50,8 @@ public class DummyX509TrustManager implements X509TrustManager {
      * @see javax.net.ssl.X509TrustManager#getAcceptedIssuers()
      */
     public X509Certificate[] getAcceptedIssuers() {
-        return this.standardTrustManager.getAcceptedIssuers();
+        // Return null, which triggers the "accept all issuers" mode.
+        return null;
     }
 
     public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
@@ -72,6 +61,5 @@ public class DummyX509TrustManager implements X509TrustManager {
 
     public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
         // do nothing
-
     }
 }

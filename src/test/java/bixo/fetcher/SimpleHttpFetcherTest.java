@@ -23,16 +23,14 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.util.HashSet;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import junit.framework.Assert;
-
 import org.apache.http.HttpStatus;
-import org.apache.http.conn.HttpHostConnectException;
 import org.eclipse.jetty.http.HttpException;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Request;
@@ -54,6 +52,7 @@ import bixo.exceptions.RedirectFetchException;
 import bixo.exceptions.RedirectFetchException.RedirectExceptionReason;
 import bixo.fetcher.simulation.SimulationWebServer;
 import bixo.utils.ConfigUtils;
+import junit.framework.Assert;
 
 public class SimpleHttpFetcherTest extends SimulationWebServer {
     
@@ -158,7 +157,7 @@ public class SimpleHttpFetcherTest extends SimulationWebServer {
             fetcher.get(new ScoredUrlDatum(url));
             fail("Exception not thrown");
         } catch (IOFetchException e) {
-            assertTrue(e.getCause() instanceof HttpHostConnectException);
+            assertTrue(e.getCause() instanceof ConnectException);
         } finally {
             server.stop();
         }

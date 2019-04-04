@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2015 Scale Unlimited
+ * Copyright 2009-2019 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 
+import crawlercommons.fetcher.http.BaseHttpFetcher;
+import crawlercommons.fetcher.http.UserAgent;
 import crawlercommons.robots.BaseRobotRules;
-import crawlercommons.robots.RobotUtils;
 import crawlercommons.robots.SimpleRobotRulesParser;
-import bixo.fetcher.BaseFetcher;
 import bixo.utils.ConfigUtils;
+import bixo.utils.RobotUtils;
 import bixo.utils.UrlUtils;
 
 public class ProcessRobotsTool {
@@ -51,7 +52,10 @@ public class ProcessRobotsTool {
         // Uncomment this to see the wire log for HttpClient
         // System.setProperty("bixo.http.level", "DEBUG");
         
-        BaseFetcher fetcher = RobotUtils.createFetcher(ConfigUtils.BIXO_TOOL_AGENT, 1);
+        UserAgent agent = new UserAgent(ConfigUtils.BIXO_TOOL_AGENT.getAgentName(),
+                        ConfigUtils.BIXO_TOOL_AGENT.getEmailAddress(),
+                        ConfigUtils.BIXO_TOOL_AGENT.getWebAddress());
+        BaseHttpFetcher fetcher = RobotUtils.createFetcher(agent, 1);
         
         boolean interactive = args.length == 0;
         int index = 0;

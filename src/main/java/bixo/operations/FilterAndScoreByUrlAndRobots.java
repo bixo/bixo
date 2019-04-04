@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2015 Scale Unlimited
+ * Copyright 2009-2019 Scale Unlimited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import bixo.fetcher.BaseFetcher;
 import bixo.hadoop.FetchCounters;
 import bixo.utils.DiskQueue;
 import bixo.utils.GroupingKey;
+import bixo.utils.RobotUtils;
 import bixo.utils.ThreadedExecutor;
 import cascading.flow.FlowProcess;
 import cascading.operation.BaseOperation;
@@ -41,7 +42,6 @@ import com.scaleunlimited.cascading.LoggingFlowReporter;
 import com.scaleunlimited.cascading.NullContext;
 
 import crawlercommons.robots.BaseRobotsParser;
-import crawlercommons.robots.RobotUtils;
 
 
 /**
