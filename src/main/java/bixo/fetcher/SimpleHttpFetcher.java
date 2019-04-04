@@ -683,26 +683,22 @@ public class SimpleHttpFetcher extends BaseFetcher {
             //
             try {
                 if ("gzip".equals(contentEncoding) || "x-gzip".equals(contentEncoding)) {
-                    if (truncated) {
-                        throw new AbortedFetchException(url, "Truncated compressed data", AbortedFetchReason.CONTENT_SIZE);
+                    ExpandedResult expandedResult = EncodingUtils.processGzipEncoded(content, maxContentSize);
+                    truncated |= expandedResult.isTruncated();
+                    if  (   (truncated)
+                                    &&  (!isTextMimeType(mimeType))) {
+                        throw new AbortedFetchException(url, "Truncated decompressed image", AbortedFetchReason.CONTENT_SIZE);
                     } else {
-                        ExpandedResult expandedResult = EncodingUtils.processGzipEncoded(content, maxContentSize);
-                        truncated = expandedResult.isTruncated();
-                        if  (   (truncated)
-                            &&  (!isTextMimeType(mimeType))) {
-                            throw new AbortedFetchException(url, "Truncated decompressed image", AbortedFetchReason.CONTENT_SIZE);
-                        } else {
-                            content = expandedResult.getExpanded();
-                            if (LOGGER.isTraceEnabled()) {
-                                fetchTrace.append("; unzipped to " + content.length + " bytes");
-                            }
+                        content = expandedResult.getExpanded();
+                        if (LOGGER.isTraceEnabled()) {
+                            fetchTrace.append("; unzipped to " + content.length + " bytes");
                         }
-//                    } else if ("deflate".equals(contentEncoding)) {
-//                        content = EncodingUtils.processDeflateEncoded(content);
-//                        if (LOGGER.isTraceEnabled()) {
-//                            fetchTrace.append("; inflated to " + content.length + " bytes");
-//                        }
                     }
+                    //                    } else if ("deflate".equals(contentEncoding)) {
+                    //                        content = EncodingUtils.processDeflateEncoded(content);
+                    //                        if (LOGGER.isTraceEnabled()) {
+                    //                            fetchTrace.append("; inflated to " + content.length + " bytes");
+                    //                        }
                 }
             } catch (IOException e) {
                 throw new IOFetchException(url, e);
