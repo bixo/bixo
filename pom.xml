@@ -56,7 +56,7 @@
 		<cascading.version>2.6.3</cascading.version>
 		<cascading.utils>2.6.0</cascading.utils>
 		<hadoop.version>2.4.1</hadoop.version>
-		<jetty.version>8.1.8.v20121106</jetty.version>
+		<jetty.version>9.4.22.v20191022</jetty.version>
 		<slf4j.version>1.7.10</slf4j.version>
 		<tika.version>1.7</tika.version>
 	</properties>
