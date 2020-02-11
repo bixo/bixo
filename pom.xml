@@ -43,12 +43,12 @@
 		<repository>
 			<id>Conjars</id>
 			<name>Cascading repository</name>
-			<url>http://conjars.org/repo</url>
+			<url>https://conjars.org/repo</url>
 		</repository>
 		<repository>
 			<id>Heritrix</id>
 			<name>Internet Archive repository</name>
-			<url>http://builds.archive.org/maven2</url>
+			<url>https://builds.archive.org/maven2</url>
 		</repository>
 	</repositories>
 
