@@ -32,7 +32,7 @@
 	</repositories>
 	
 	<properties>
-        <hadoop.version>2.4.1</hadoop.version>
+        <hadoop.version>2.7.0</hadoop.version>
         <bixo.version>1.0-SNAPSHOT</bixo.version>
 	</properties>
 	
