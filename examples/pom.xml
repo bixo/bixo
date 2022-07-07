@@ -33,7 +33,7 @@
 	
 	<properties>
         <hadoop.version>2.4.1</hadoop.version>
-        <jetty.version>8.1.8.v20121106</jetty.version>
+        <jetty.version>10.0.10</jetty.version>
         <bixo.version>1.0-SNAPSHOT</bixo.version>
 	</properties>
 	
